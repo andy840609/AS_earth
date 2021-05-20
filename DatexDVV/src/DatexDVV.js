@@ -839,7 +839,7 @@ function DatexDVV() {
                                     ySelected_domain = null;
                                     selectionController
                                         .attr("display", 'none')
-                                    console.debug(removeData);
+                                    // console.debug(removeData);
                                 }
                                 // console.debug(selectionRect);
                                 if (mode == 'read') {

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+        canvas {
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="target">
+        <script>
+            let canvas = document.getElementById("target");
+            canvas.width = 500;
+            canvas.height = 500;
+            let ctx = canvas.getContext("2d");
+            let isDrawing = false;
+            let eventCircle = false;
+            canvas.addEventListener('mousedown', e => {
+                let x = e.offsetX;
+                let y = e.offsetY;
+                isDrawing = true;
+                if (Math.pow(x - pointCenter.x, 2) + Math.pow(y - pointCenter.y, 2) <= radius * radius) {
+                    eventCircle = true;
+                    pointCenter.x = x;
+                    pointCenter.y = y;
+                } else {
+                    pointP.x = x;
+                    pointP.y = y;
+                }
+                update();
+            });
+
+            canvas.addEventListener('mousemove', e => {
+                if (isDrawing === true) {
+                    let x = e.offsetX;
+                    let y = e.offsetY;
+                    if (eventCircle) {
+                        pointCenter.x = x;
+                        pointCenter.y = y;
+                    } else {
+                        pointP.x = x;
+                        pointP.y = y;
+                    }
+                    update();
+                }
+            });
+
+            canvas.addEventListener('mouseup', e => {
+                if (isDrawing === true) {
+                    isDrawing = false;
+                    eventCircle = false;
+                }
+            });
+
+            let pointP = { x: 300, y: 100 };
+            //圆心坐标
+            let pointCenter = { x: 250, y: 250 };
+            //圆点半径
+            let radius = 100;
+
+            function angle(p1, p2) {
+                return Math.atan2(p1.y - p2.y, p1.x - p2.x);
+            }
+
+            function getVector(cx, cy, a, r) {
+                return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+            }
+
+
+            function update() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                //圆心
+                drawPoint(pointCenter.x, pointCenter.y, "#986923");
+
+                //圆
+                ctx.beginPath();
+                ctx.arc(pointCenter.x, pointCenter.y, radius, 0, 2 * Math.PI, true);
+                ctx.stroke();
+                ctx.closePath();
+
+                // drawPoint(pointP.x, pointP.y, "#986923");
+
+
+                let p = calcQieDian3(pointCenter, radius, pointP);
+                drawText("P1", p.p1.x, p.p1.y);
+                drawText("P2", p.p2.x, p.p2.y);
+                drawText("M", pointP.x, pointP.y);
+                drawText("O", pointCenter.x, pointCenter.y);
+
+                // drawPoint(p.p1.x, p.p1.y, "#f00");
+                // drawPoint(p.p2.x, p.p2.y, "#f00");
+
+                drawLine(pointCenter, p.p1);
+                drawLine(pointCenter, p.p2);
+                drawLine(pointCenter, pointP);
+
+                drawLine(pointP, p.p1);
+                drawLine(pointP, p.p2);
+                drawLine({ x: 0, y: pointCenter.y }, { x: canvas.width, y: pointCenter.y });
+
+
+            }
+            update();
+
+            function drawPoint(x, y, color) {
+                ctx.beginPath();
+                ctx.fillStyle = color;
+                ctx.arc(x, y, 5, 0, 2 * Math.PI, true);
+                ctx.fill();
+            }
+
+            function drawLine(pointStart, pointEnd) {
+                ctx.beginPath();
+                ctx.moveTo(pointStart.x, pointStart.y);
+                ctx.lineTo(pointEnd.x, pointEnd.y);
+                ctx.stroke();
+            }
+
+            function calcQieDian3(pointCircle, radius, point) {
+                let d = Math.sqrt(Math.pow(pointCircle.x - point.x, 2) + Math.pow(pointCircle.y - point.y, 2));
+                const angleBetweenCenters = angle(point, pointCircle);
+                const spread = Math.acos(radius / d);
+                const angle1 = angleBetweenCenters + spread;
+                const angle2 = angleBetweenCenters - spread;
+                const p1 = getVector(pointCircle.x, pointCircle.y, angle1, radius);
+                const p2 = getVector(pointCircle.x, pointCircle.y, angle2, radius);
+                console.debug(p1, p1)
+                return { p1: p1, p2: p2 };
+            }
+
+
+            function drawText(text, x, y) {
+                ctx.beginPath();
+                ctx.font = "30px Arial";
+                ctx.fillText(text, x, y);
+                ctx.stroke();
+            }
+
+        </script>
+</body>
+
+</html>

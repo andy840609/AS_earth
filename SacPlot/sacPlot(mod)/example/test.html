@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        crossorigin="anonymous">
+    <link href="../src/sacPlot.css" rel="stylesheet">
+</head>
+
+<body>
+    <main class='container'></main>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"
+        crossorigin="anonymous"></script>
+    <script src="../src/sacPlot.js"></script>
+    <script>
+
+        // var paths = ['../data/201602051950.TW.0000549.BN3.sac', '../data/201602051950.TW.0000549.BN2.sac', '../data/201602051950.TW.0000549.BN1.sac'];
+        var paths = ['../data/A002.10.HLE.sac', '../data/A002.10.HLN.sac', '../data/A002.10.HLZ.sac'];
+        var chart = sacPlots()
+            .data(paths)
+            .selector('.container');
+        chart();
+    </script>
+
+</body>
+
+
+</html>

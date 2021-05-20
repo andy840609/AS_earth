@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+
+  <style>
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      margin: auto;
+      position: relative;
+      width: 960px;
+    }
+
+    text {
+      font: 10px sans-serif;
+    }
+
+    form {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <script src="https://d3js.org/d3.v3.min.js"></script>
+  <script>
+    var dataset = {
+      apples: [53245, 28479, 19697, 24037, 40245],
+    };
+
+    var width = 460,
+      height = 300,
+      radius = Math.min(width, height) / 2;
+
+    var color = d3.scale.category20();
+
+    var pie = d3.layout.pie()
+      .sort(null);
+
+
+    var eventObj = {
+
+      'mouseover': function (d, i, j) {
+        pathAnim(d3.select(this), 1);
+
+        /* var thisDonut = charts.select('.type' + j);
+         thisDonut.select('.value').text(function(donut_d) {
+             return d.data.val.toFixed(1) + donut_d.unit;
+         });
+         thisDonut.select('.percentage').text(function(donut_d) {
+             return (d.data.val/donut_d.total*100).toFixed(2) + '%';
+         });*/
+      },
+
+      'mouseout': function (d, i, j) {
+        var thisPath = d3.select(this);
+        if (!thisPath.classed('clicked')) {
+          pathAnim(thisPath, 0);
+        }
+        /*var thisDonut = charts.select('.type' + j);
+        setCenterText(thisDonut);*/
+      },
+
+
+      'click': function (d, i, j) {
+
+
+        var thisPath = d3.select(this);
+        var clicked = thisPath.classed('clicked');
+        console.debug(clicked)
+        pathAnim(thisPath, ~~(!clicked));
+        thisPath.classed('clicked', !clicked);
+
+        //setCenterText(thisDonut);
+      }
+    };
+
+    var pathAnim = function (path, dir) {
+      switch (dir) {
+        case 0:
+          path.transition()
+            .duration(500)
+            .ease('bounce')
+            .attr('d', d3.svg.arc()
+              .innerRadius((radius - 100))
+              .outerRadius(radius - 50)
+            );
+          break;
+
+        case 1:
+          path.transition()
+            .attr('d', d3.svg.arc()
+              .innerRadius((radius - 100))
+              .outerRadius((radius - 50) * 1.08)
+            );
+          break;
+      }
+    }
+
+    var arc = d3.svg.arc()
+      .innerRadius(radius - 100)
+      .outerRadius(function () {
+        return (d3.select(this).classed('clicked')) ? (radius - 50) * 1.08 :
+          (radius - 50);
+      });
+
+    var svg = d3.select("body").append("svg")
+      .attr("width", width)
+      .attr("height", height)
+      .append("g")
+      .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+    var paths = svg.selectAll("path")
+      .data(pie(dataset.apples));
+
+    console.debug(paths);
+
+    paths
+      .transition()
+      .duration(1000)
+      .attr('d', arc);
+
+    paths.enter()
+      .append('svg:path')
+      .attr('d', arc)
+      .style('fill', function (d, i) {
+        return color(i);
+      })
+      .style('stroke', '#FFFFFF')
+      .on(eventObj)
+
+    paths.exit().remove();
+
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+
+
+
+</head>
+
+<body>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
+    <script>
+        function ajaxGetData(inputurl, options) {
+
+            var url = inputurl;
+            var method = 'POST';
+            var inputdata;
+            var dataType = 'json';
+
+            if (options !== undefined) {
+                if (options.data !== undefined) {
+                    inputdata = options.data;
+                }
+
+            }
+
+            var outdata;
+            $.ajax({
+                url: url,
+                data: inputdata,
+                method: 'POST',
+                dataType: 'json',
+                async: false,
+                success: function (rtdata) {
+                    //console.log('??'+rtdata);
+                    outdata = rtdata;
+                }, error: function (jqXHR, textStatus, errorThrown) {
+                    console.log(jqXHR, textStatus, errorThrown);
+                }
+
+            });
+            return outdata;
+        }
+        var stlat = 21;
+        var edlat = 26;
+        var stlon = 118;
+        var edlon = 124;
+        var ML = 4.5;
+        var url = './getCatalog.php';
+        var staData = ajaxGetData(url, { data: { stlat: stlat, edlat: edlat, stlon: stlon, edlon: edlon, ML: ML } });
+        console.log('staData=');
+        console.log(staData);
+        // document.write(staData);
+
+    </script>
+
+</body>
+
+</html>

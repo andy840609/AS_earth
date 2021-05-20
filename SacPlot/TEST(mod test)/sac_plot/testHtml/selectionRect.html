@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>d3.js range selection with drag</title>
+</head>
+<style>
+    rect.selection {
+        cursor: move !important;
+        -webkit-touch-callout: none !important;
+        -webkit-user-select: none !important;
+        -khtml-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+        stroke: #545454;
+        stroke-width: 2px;
+        stroke-opacity: 1;
+        fill: white;
+        fill-opacity: 0.5;
+    }
+
+    /* @darkgrey: #878787;
+    @selection-border: darken(@darkgrey, 20%);
+
+    rect.selection {
+        cursor: move !important;
+        -webkit-touch-callout: none !important;
+        -webkit-user-select: none !important;
+        -khtml-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+        stroke: @selection-border;
+        stroke-width: 2px;
+        stroke-opacity: 1;
+        fill: white;
+        fill-opacity: 0.5;
+    } */
+</style>
+
+<body>
+    <p id="clicktime" style="position:absolute; margin-left:20px; pointer-events: none;">Click Time</p>
+    <p id="attributestext" style="position:absolute; margin-left:300px; pointer-events: none;">Attributes</p><svg
+        width="960" height="500"></svg>
+    <!-- <script src="https://d3js.org/d3.v3.min.js"></script> -->
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <!-- <script src="https://d3js.org/d3-selection-multi.v1.min.js"></script> -->
+    <script>
+        var d3_ver = ['v3', 'v6'];
+        var current_ver = d3_ver[1];
+
+
+
+        var selectionRect = {
+            element: null,
+            previousElement: null,
+            currentY: 0,
+            currentX: 0,
+            originX: 0,
+            originY: 0,
+            setElement: function (ele) {
+                this.previousElement = this.element;
+                this.element = ele;
+                // console.debug(this.element);
+            },
+            getNewAttributes: function () {
+                var x = this.currentX < this.originX ? this.currentX : this.originX;
+                var y = this.currentY < this.originY ? this.currentY : this.originY;
+                var width = Math.abs(this.currentX - this.originX);
+                var height = Math.abs(this.currentY - this.originY);
+                return {
+                    x: x,
+                    y: y,
+                    width: width,
+                    height: height
+                };
+            },
+            getCurrentAttributes: function () {
+                // use plus sign to convert string into number
+                var x = +this.element.attr("x");
+                var y = +this.element.attr("y");
+                var width = +this.element.attr("width");
+                var height = +this.element.attr("height");
+                // console.debug(x, y, width, height);
+                return {
+                    x1: x,
+                    y1: y,
+                    x2: x + width,
+                    y2: y + height
+                };
+            },
+            getCurrentAttributesAsText: function () {
+                var attrs = this.getCurrentAttributes();
+                return "x1: " + attrs.x1 + " x2: " + attrs.x2 + " y1: " + attrs.y1 + " y2: " + attrs.y2;
+            },
+            init: function (newX, newY) {
+                var rectElement = d3.select("svg")
+                    .append("rect")
+                    .attr('rx', 4)
+                    .attr('ry', 4)
+                    .attr('x', 0)
+                    .attr('y', 0)
+                    .attr('width', 0)
+                    .attr('height', 0)
+                    .attr('stroke', '#97CBFF')
+                    .attr('stroke-width', ' 2px')
+                    .attr('stroke-opacity', 1)
+                    .attr('fill', 'white')
+                    .attr('fill-opacity', 1);
+                this.setElement(rectElement);
+                this.originX = newX;
+                this.originY = newY;
+                this.update(newX, newY);
+            },
+            update: function (newX, newY) {
+                this.currentX = newX;
+                this.currentY = newY;
+                // console.debug(this.getNewAttributes());
+                // this.element.attr(this.getNewAttributes());
+                let newAttr = this.getNewAttributes();
+                this.element
+                    .attr('x', newAttr.x)
+                    .attr('y', newAttr.y)
+                    .attr('width', newAttr.width)
+                    .attr('height', newAttr.height);
+            },
+            focus: function () {
+                this.element
+                    .style("stroke", "#DE695B")
+                    .style("stroke-width", "2.5");
+            },
+            remove: function () {
+                this.element.remove();
+                this.element = null;
+            },
+            removePrevious: function () {
+                if (this.previousElement) {
+                    this.previousElement.remove();
+                }
+            }
+        };
+
+        var svg = d3.select("svg");
+        var clickTime = d3.select("#clicktime");
+        var attributesText = d3.select("#attributestext");
+
+        function dragStart() {
+            console.log("dragStart");
+            if (current_ver == 'v3')
+                var p = d3.mouse(this);
+            else
+                var p = d3.pointer(event, this);
+            console.debug(this);
+            selectionRect.init(p[0], 0);
+            selectionRect.removePrevious();
+        }
+
+        function dragMove() {
+            console.log("dragMove");
+            if (current_ver == 'v3')
+                var p = d3.mouse(this);
+            else
+                var p = d3.pointer(event, this);
+            selectionRect.update(p[0], 500);
+            attributesText
+                .text(selectionRect.getCurrentAttributesAsText());
+        }
+
+        function dragEnd() {
+            console.log("dragEnd");
+            var finalAttributes = selectionRect.getCurrentAttributes();
+            // console.debug(finalAttributes);
+            if (finalAttributes.x2 - finalAttributes.x1 > 1 && finalAttributes.y2 - finalAttributes.y1 > 1) {
+                console.log("range selected");
+                // range selected
+                event.preventDefault();
+                selectionRect.focus();
+            } else {
+                console.log("single point");
+                // single point selected
+                selectionRect.remove();
+                // trigger click event manually
+                clicked();
+            }
+            selectionRect.remove();
+        }
+
+        if (current_ver == 'v3')
+            var dragBehavior = d3.behavior.drag()
+                .on("drag", dragMove)
+                .on("dragstart", dragStart)
+                .on("dragend", dragEnd);
+        else
+            var dragBehavior = d3.drag()
+                .on("drag", dragMove)
+                .on("start", dragStart)
+                .on("end", dragEnd);
+
+        svg.call(dragBehavior);
+
+        function clicked() {
+            var d = new Date();
+            clickTime
+                .text("Clicked at " + d.toTimeString().substr(0, 8) + ":" + d.getMilliseconds());
+        }
+    </script>
+</body>
+
+</html>

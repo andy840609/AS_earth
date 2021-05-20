@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sac_plot</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        crossorigin="anonymous">
+    <!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"
+        integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous"> -->
+
+
+    <link href="./bootstrap-fileinput/css/fileinput.min.css" media="all" rel="stylesheet" type="text/css" />
+
+    <link href="./bootstrap-fileinput/themes/explorer/theme.css" media="all" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css">
+    <!-- <link rel="stylesheet"
+        href="https://cors-anywhere.herokuapp.com/https://plugins.krajee.com/assets/prod/all-krajee.min.css?ver=201903112143"
+        crossorigin="anonymous"> -->
+    <link href="./bootstrap-fileinput/themes/explorer/theme.css" rel="stylesheet">
+    <link href="./lineChart.css" rel="stylesheet">
+    <style>
+        #charts {
+            width: 100%;
+            /* height: 33%; */
+        }
+    </style>
+</head>
+
+<body>
+    <main class='container'>
+        <form>
+            <div class="form-group col-lg-12 col-md-12 col-sm-12">
+                <div class="file-loading">
+                    <input id="input-zone" name="input-zone[]" type="file" class="file"
+                        data-allowed-file-extensions='["sac", "SAC"]' multiple>
+                </div>
+            </div>
+        </form>
+
+        <form id="form-chart">
+            <div class="form-group" id="chartsOptions" style="display: inline;">
+                <div class="row">
+                    <div
+                        class="form-group col-lg-3 col-md-3 col-sm-6 d-flex justify-content-end  align-items-start flex-column col-md-6">
+                        <div id="normalize-group" class="form-group">
+                            <input class="form-check-label" type="checkbox" id="normalize" name="normalize">
+                            <label class="form-check-label" for="normalize" data-lang="">
+                                normalization
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- <div
+                        class="form-group col-lg-3 col-md-3 col-sm-6 d-flex justify-content-end  align-items-start flex-column col-md-6">
+                        <div id="window-group" class="form-group">
+                            <input class="form-check-label" type="checkbox" id="window" name="window">
+                            <label class="form-check-label" for="window" data-lang="">
+                                window
+                            </label>
+                        </div>
+                    </div> -->
+
+                    <div class="form-group col-lg-3 col-md-3 col-sm-6 ">
+                        <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                            <label class="btn btn-secondary active">
+                                <input type="radio" name="plotType" id="trace" value="trace" checked> trace
+                            </label>
+                            <label class="btn btn-secondary">
+                                <input type="radio" name="plotType" id="window" value="window"> window
+                            </label>
+                            <label class="btn btn-secondary">
+                                <input type="radio" name="plotType" id="overlay" value="overlay"> overlay
+                            </label>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="form-group" id="charts">
+
+            </div>
+            <div id="outerdiv"
+                style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:999;width:100%;height:100%;display:none;">
+                <div id="innerdiv" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
+                    <img id="bigimg" style=" background-color: rgb(255, 255, 255);" src="" />
+                </div>
+            </div>
+        </form>
+
+    </main>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
+
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"
+        crossorigin="anonymous"></script>
+    <!-- <script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"
+        integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd"
+        crossorigin="anonymous"></script> -->
+
+
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script> -->
+    <script src="./bootstrap-fileinput/js/fileinput.min.js"></script>
+    <script src="./bootstrap-fileinput/themes/explorer/theme.js"></script>
+    <script src="./SACchart.js"></script>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script>
+
+        var paths, ChartDatas;
+        //＝＝＝＝＝＝＝＝＝＝＝test=====================
+        // $('#window').trigger('click');
+        $('#overlay').trigger('click');
+        // $("#normalize").prop("checked", true);
+        // ChartDatas = getChartDatas(['upload/201602051950.TW.0000549.BN1.sac', 'upload/201602051950.TW.0000549.BN2.sac', 'upload/201602051950.TW.0000549.BN3.sac'], $("#normalize").prop("checked"));
+        // paths = ['upload/201602051950.TW.0000549.BN1.sac', 'upload/201602051950.TW.0000549.BN2.sac', 'upload/201602051950.TW.0000549.BN3.sac'];
+        ChartDatas = getChartDatas(['upload/201602051950.TW.0000549.BN3.sac', 'upload/201602051950.TW.0000549.BN2.sac', 'upload/201602051950.TW.0000549.BN1.sac'], $("#normalize").prop("checked"));
+        paths = ['upload/201602051950.TW.0000549.BN3.sac', 'upload/201602051950.TW.0000549.BN2.sac', 'upload/201602051950.TW.0000549.BN1.sac'];
+        // ChartDatas = getChartDatas(['upload/IU.HNR.00.BH1.M.2018.048.000000.SAC', 'upload/IU.HNR.00.BH2.M.2018.048.000000.SAC', 'upload/IU.HNR.00.BHZ.M.2018.048.000000.SAC'], $("#normalize").prop("checked"));
+        // paths = ["upload/IU.HNR.00.BH1.M.2018.048.000000.SAC", "upload/IU.HNR.00.BH2.M.2018.048.000000.SAC", "upload/IU.HNR.00.BHZ.M.2018.048.000000.SAC"];
+
+        // console.debug($('input[name ="plotType"]:checked').val());
+        printChart($('input[name ="plotType"]:checked').val());
+
+        //＝＝＝＝＝＝＝＝＝＝＝test=====================
+        $("#input-zone").fileinput({
+
+            fileActionSettings: {
+                showZoom: false,
+                showUpload: false,
+                // removeIcon: '<i class="kv-file-remove btn btn-sm btn-kv btn-default btn-outline-secondary"></i>',
+            },
+            theme: "explorer",
+            uploadUrl: "./upload.php",
+            // hideThumbnailContent: true, // hide image, pdf, text or other content in the thumbnail preview
+            maxFileSize: 10000,
+            removeFromPreviewOnError: true,
+            preferIconicPreview: true,
+            previewFileIcon: '<i class="fas fa-file"></i>',
+            uploadAsync: false,
+        });
+
+
+
+        function getChartDatas(paths, normalize = false) {
+            var ChartDatas = [];
+
+            paths.forEach(path => {
+                var pathStr = path + '.n' + (normalize ? 1 : 0) + 'xy';
+                console.debug('pathStr=' + pathStr);
+
+                var startIndex = pathStr.indexOf('/') + 1;
+                var endIndex = (pathStr.search(/.sac/) >= 0) ? pathStr.indexOf('.sac') : pathStr.indexOf('.SAC');
+                var fileName = pathStr.substring(startIndex, endIndex);
+                var fileNameArr = fileName.split('.');
+                if (fileNameArr[fileNameArr.length - 1].search(/_/) >= 0)
+                    fileName = fileName.substring(0, fileName.indexOf('_'));
+                // console.debug('fileName=' + fileName);
+                ChartDatas.push({ fileName: fileName, data: getData(pathStr, normalize) });
+            });
+
+            console.debug(normalize ? 'ChartDatas with normalization=' : 'ChartDatas =');
+            console.debug(ChartDatas);
+            return ChartDatas;
+        }
+
+
+        // CATCH RESPONSE
+        $('#input-zone').on('filebatchuploaderror', function (event, data, previewId, index) {
+            var form = data.form, files = data.files, extra = data.extra,
+                response = data.response, reader = data.reader;
+            console.debug('response=');
+            console.debug(response);
+            // alert(response);
+        });
+
+        $('#input-zone').on('filebatchuploadsuccess', function (event, data, previewId, index) {
+            var form = data.form, files = data.files, extra = data.extra,
+                response = data.response, reader = data.reader;
+
+            if (response) {
+                console.debug('response=');
+                console.debug(response);
+                paths = response;
+
+                ChartDatas = getChartDatas(response, $("#normalize").prop("checked"));
+                printChart($('input[name ="plotType"]:checked').val());
+            }
+            // $('#chartsOptions').show();
+            setTimeout(d => {
+                $('#input-zone').fileinput('clear');
+                $('.file-preview').hide();
+                // $('.file-preview').show();
+            }, 1000)
+            // $('#input-zone').fileinput('clear');
+            // alert(response);
+        });
+
+        $('.input-group-btn').on('click', e => $('.file-preview').show());
+        // $('#input-zone').on('change', e => $('#chartsOptions').hide());
+        $('.close').on('click', e => $('.file-preview').hide());
+
+
+
+        // $('#normalize').off('change');
+        $('#normalize').change(function (event) {
+            // console.debug(paths);
+            ChartDatas = getChartDatas(paths, this.checked);
+            printChart($('input[name ="plotType"]:checked').val());
+        });
+        $('input[name ="plotType"]').change(function (event) {
+            // console.debug(this);
+            // console.debug(paths);
+            printChart(this.value);
+        });
+
+        function printChart(plotType) {
+            $('#charts').children().remove();
+            // $('.tooltip').remove();
+            var i = 1;
+
+            function chartGroup(title) {
+                // console.log(d.data);
+                var div = document.createElement("div");
+                div.setAttribute("id", "chart" + i);
+                div.setAttribute("class", "col-md-12 col-sm-12");
+                div.setAttribute("style", "position:relative");
+
+                var nav = document.createElement('nav');
+                nav.setAttribute("id", "nav" + i);
+                nav.setAttribute("class", "toggle-menu");
+                nav.setAttribute("style", "position:absolute");
+                nav.style.right = "0";
+
+                var a = document.createElement('a');
+                a.setAttribute("class", "toggle-nav");
+                a.setAttribute("href", "#");
+                a.innerHTML = "&#9776;";
+                nav.append(a);
+
+                var ul = document.createElement("ul");
+                ul.classList.add("active");
+                nav.append(ul);
+
+                var chartDropDown = ['bigimg', 'svg', 'png', 'jpg'];
+                chartDropDown.forEach(type => {
+                    var li = document.createElement("li");
+                    var item = document.createElement("a");
+                    if (type != chartDropDown[0]) {
+                        item.href = "javascript:downloadSvg(\'#chart" + i + " svg\',\'" + title + "\',\'" + type + "\',\'download\')";
+                        item.innerHTML = "下載此圖表爲" + type;
+                    }
+                    else {
+                        item.href = "javascript:downloadSvg(\'#chart" + i + " svg\',\'" + title + "\',\'" + type + "\',\'show\')";
+                        item.innerHTML = "放大圖表";
+                    }
+                    li.append(item);
+                    ul.append(li);
+                });
+                $('#charts').append(div);
+                $('#chart' + i).append(nav);
+            }
+
+            if (plotType == 'window') {
+                chartGroup('??');
+                var cloneArray = ChartDatas.slice(0);
+                $('#chart' + i).append(windowChart(cloneArray.reverse(), $('#normalize').prop('checked')));
+            }
+            else if (plotType == 'overlay') {
+                chartGroup('??');
+                var cloneArray = ChartDatas.slice(0);
+                $('#chart' + i).append(overlayChart(cloneArray.reverse(), $('#normalize').prop('checked')));
+            }
+            else {
+                // ChartDatas.forEach(d => {
+                //     // console.debug(index);
+                //     chartGroup(d.fileName);
+                //     let chartNode = chart((i - 1), d.data, d.fileName, $('#normalize').prop('checked'));
+                //     console.debug(chartNode);
+                //     $('#chart' + i).append(chartNode);
+                //     i++;
+                // })
+                // console.debug(ChartDatas);
+                let chartNodes = chart(ChartDatas, $('#normalize').prop('checked'));
+                // console.debug(ChartDatas);
+                ChartDatas.forEach(d => {
+                    chartGroup(d.fileName);
+                    $('#chart' + i).append(chartNodes[i - 1]);
+                    i++;
+                })
+
+            }
+
+
+
+            var charts = document.getElementById('charts');
+            var stopPropagation = (e) => {
+                e.stopPropagation();
+            }
+            function chartEventControl(control) {
+                if (control == 'stop') {
+                    // console.debug('add');
+                    charts.addEventListener('mousemove', stopPropagation, true);
+                    charts.addEventListener('mouseenter', stopPropagation, true);
+                }
+                else {
+                    // console.debug('remove');
+                    charts.removeEventListener('mousemove', stopPropagation, true);
+                    charts.removeEventListener('mouseenter', stopPropagation, true);
+                }
+            }
+
+            $('.toggle-nav').off('click');
+            $('.toggle-nav').click(function (e) {
+                // console.debug(e.target);
+
+                $(this).toggleClass('active');
+                $(this).next().toggleClass('active');
+                e.preventDefault();
+
+                //選單打開後阻止事件傳遞SVG
+                if ($(e.target).hasClass('active'))
+                    chartEventControl('stop');
+                else
+                    chartEventControl('start');
+
+
+            });
+
+            $('body').off('click');
+            $('body').click(function (e) {
+                $(".toggle-nav").each((i, d) => {
+                    // console.debug(e.target == d);
+                    if (e.target != d && $(d).hasClass('active')) {
+                        $(d).toggleClass('active');
+                        $(d).next().toggleClass('active');
+
+                        setTimeout(() => chartEventControl('start'), 100);
+                    }
+                });
+            });
+        }
+
+
+    </script>
+</body>
+
+</html>

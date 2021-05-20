@@ -1,0 +1,14 @@
+{
+  "name": "@mbostock/walmarts-growth",
+  "main": "9fc7a290cf64994b@261.js",
+  "version": "261.0.0",
+  "homepage": "https://observablehq.com/@mbostock/walmarts-growth",
+  "author": {
+    "name": "Mike Bostock",
+    "url": "https://observablehq.com/@mbostock"
+  },
+  "type": "module",
+  "peerDependencies": {
+    "@observablehq/runtime": "4"
+  }
+}

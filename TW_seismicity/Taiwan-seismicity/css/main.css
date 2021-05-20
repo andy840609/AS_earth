@@ -1,0 +1,362 @@
+/*----- banner -----*/
+#banner * {
+    font-size: 6vmin;
+}
+
+/*----- Animation -----*/
+#animation div {
+    /* width: 100%; */
+    /* height: 100%; */
+    margin-left: 4vmin;
+}
+
+/*----- Menu theme -----*/
+.customtheme {
+    background-color: #000000;
+    color: #ffffff;
+
+}
+
+.customtheme .toggler {
+    background-color: #404040;
+}
+
+
+
+.customtheme.bootsidemenu-left,
+.customtheme.bootsidemenu-right,
+.customtheme.bootsidemenu-left>.toggler,
+.customtheme.bootsidemenu-right>.toggler {
+    border-color: #44475a;
+}
+
+
+
+
+/*----- Menu -----*/
+@media screen and (min-width: 1px) {
+    .menu {
+        /* width: 10vmin; */
+        /* padding: 0px ; */
+        box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.15);
+        border-radius: 3px;
+        background: #303030;
+    }
+}
+
+.menu ul {
+    display: inline-block;
+
+}
+
+.menu li {
+    float: bottom;
+    list-style: none;
+}
+
+.menu li:first-child h1 {
+    margin-top: 5vmin;
+    font-size: 0px;
+    visibility: hidden;
+}
+
+.menu li:first-child h1:after {
+    content: 'Taiwan Seismicity Animation';
+    font-size: 6vmin;
+    visibility: visible;
+    color: #fff;
+
+    /* position: absolute; */
+    /* top: 30vmin; */
+    /* font-size: 4vmin; */
+    /* z-index: 10; */
+}
+
+
+
+.menu li:nth-child(n + 2) {
+    margin-top: 13vmin;
+    font-size: 17px;
+    width: 100%;
+    height: 31px;
+}
+
+
+.menu li:last-child {
+    margin-right: 0px;
+}
+
+.menu form {
+    text-shadow: 0px 1px 0px rgba(224, 206, 206, 0.5);
+    color: rgb(255, 255, 255);
+    transition: color linear 0.15s;
+}
+
+.menu form label:hover,
+.menu .current-item {
+    text-decoration: none;
+    color: #66a992;
+}
+
+
+
+
+
+
+
+/*----- Toggle menu -----*/
+.toggle-menu {
+    display: none;
+    position: absolute;
+    /* top: 40vmin; */
+    font-size: 4vmin;
+    z-index: 20;
+}
+
+/* ----- Responsive ----- */
+@media screen and (max-width: 1150px) {
+    .wrap {
+        width: 90%;
+    }
+}
+
+
+@media screen and (max-width: 1000px) {
+
+    /* #date .observablehq--date {
+
+        position: absolute;
+        top: 150vmin;
+        font-size: 40vmin;
+        z-index: 10;
+    } */
+    /* #date {
+        position: fixed;
+        top: 40vmin;
+        z-index: 10;
+    } */
+
+
+    .toggle-menu {
+        /* position: relative; */
+        position: fixed;
+        top: 20vmin;
+        left: 5vmin;
+        display: inline-block;
+    }
+
+    .toggle-menu ul.active {
+        display: none;
+    }
+
+    .toggle-menu ul {
+        margin-left: 2vmin;
+        width: 70vmin;
+        height: 20vmin;
+        position: absolute;
+        top: 120%;
+        left: 0px;
+        padding: 10px 18px;
+        box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.15);
+        border-radius: 3px;
+        background: #303030;
+    }
+
+    .toggle-menu ul:after {
+        /* margin-left: 2vmin; */
+        width: 0px;
+        height: 0px;
+        position: absolute;
+        top: 0%;
+        left: 22px;
+        content: '';
+        transform: translate(0%, -100%);
+        border-left: 7px solid transparent;
+        border-right: 7px solid transparent;
+        border-bottom: 7px solid #303030;
+    }
+
+    .toggle-menu li {
+        height: 5vmin;
+        /* flex-direction: row; */
+        margin-top: 2vmin;
+        width: 80vmin;
+        float: none;
+        display: block;
+        color: rgb(255, 255, 255);
+    }
+
+    #playController>form {
+        display: flex;
+    }
+
+    #playController>form>label {
+        margin-left: 5vmin;
+        font-size: 0px;
+        /* visibility: hidden; */
+
+    }
+
+    #playController>form>label>input {
+        width: calc(100% - 42px);
+    }
+
+
+    #speedController>form {
+        margin-left: 1vmin;
+        /* font-size: 0px; */
+    }
+
+    #speedController>form>label>input {
+        width: calc(55% - 110px);
+    }
+
+    .toggle-menu a {
+        display: block;
+    }
+
+    .toggle-nav {
+        margin-left: 2vmin;
+        padding: 20px;
+        float: left;
+        display: inline-block;
+        box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.15);
+        border-radius: 3px;
+        background: #303030;
+        text-shadow: 0px 1px 0px rgba(0, 0, 0, 0.5);
+        color: #777;
+        font-size: 20px;
+        transition: color linear 0.15s;
+    }
+
+    .toggle-nav:hover,
+    .toggle-nav.active {
+        text-decoration: none;
+        color: #66a992;
+    }
+
+    /* .toggle-menu form:hover,
+    .toggle-menu .current-item {
+        text-decoration: none;
+        color: #66a992;
+    } */
+    #tools li {
+        /* width: 100px; */
+    }
+
+}
+
+/*----- button -----*/
+button {
+    width: 120px;
+    backface-visibility: hidden;
+    position: relative;
+    cursor: pointer;
+    display: inline-block;
+    white-space: nowrap;
+    background: linear-gradient(180deg, #44bbdd 0%, #40b5d6 30%, #30a5c6 65%, #129abc 100%);
+    border-radius: 50px;
+    border: 0px solid #379;
+    border-width: 0px 0px 5px 0px;
+    padding: 9px 15px 6px 15px;
+    box-shadow: inset 0px 1px 3px rgba(255, 255, 255, .4);
+    color: #fff;
+    font-size: 2.5vmin;
+    font-family: Comic Sans MS;
+    font-weight: 900;
+    font-variant-position: super;
+}
+
+/*----- date -----*/
+#date .observablehq--cellname {
+    /* display: none;、 */
+    /* position: absolute; */
+    font-size: 0px;
+    visibility: hidden;
+
+
+}
+
+#date .observablehq--cellname:after {
+
+    /* content: 'Date : '; */
+    /* font-size: 4vmin; */
+    /* visibility: visible; */
+
+    /* position: absolute; */
+    /* top: 30vmin; */
+    /* font-size: 4vmin; */
+    /* z-index: 10; */
+}
+
+#date .observablehq--date {
+
+    position: fixed;
+    top: 10%;
+    font-size: 5vmin;
+    z-index: 10;
+}
+
+#date {
+
+    /* left: 100px; */
+    /* position: relative;
+    top: 10vmin;
+    font-size: 4vmin;
+    z-index: 999; */
+
+}
+
+/*----- film -----*/
+#film {
+    position: relative;
+    z-index: 0;
+    /* min-width: 500px;
+min-height: 800px; */
+}
+
+/*----- #animation>#film用完剩餘空間 -----*/
+html,
+body {
+    height: 100%;
+    margin: 0;
+}
+
+#animation {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+
+
+#animation>div:last-child {
+    /* background-color: tomato; */
+    /* flex: 1; */
+}
+
+
+/*----- icons -----*/
+#icons {
+    margin-top: 29vmin;
+    background: rgb(255, 255, 255);
+}
+
+#icon2 {
+    margin-left: 25vmin;
+}
+
+/*----- legendGroup -----*/
+#legend {
+    position: fixed;
+    bottom: 10%;
+    z-index: 10;
+}
+
+/* .legendGroup:last-child {
+    -moz-transform: scaleX(-1);
+    -webkit-transform: scaleX(-1);
+    -o-transform: scaleX(-1);
+    transform: scaleX(-1);
+    filter: FlipH;
+} */

@@ -1,33 +1,31 @@
-function DatexDVV() {
+function requestRate() {
 
     var selector = 'body';
-    var dataPath = "../data/";
+    var dataPath;
+    var typeNamePath;
     var data = [];
+    var rateData = [];
+    var typeName = [];
 
     chart.selector = (vaule) => {
         selector = vaule;
         return chart;
     }
-
+    chart.data = (vaule) => {
+        dataPath = vaule;
+        return chart;
+    }
+    chart.typeName = (vaule) => {
+        typeNamePath = vaule;
+        return chart;
+    }
     function chart() {
         function init() {
             $(selector).append(`
             <form id="form-chart">
             <div class="form-group" id="chartsOptions" style="display: inline;">
             <div class="row">
-            
-                <!-- ... catalog ... -->
-                
-                    <div class="form-group col-lg-4 col-md-4 col-sm-6 d-flex flex-row align-items-start">
-                        <label for="catalog" class="col-form-label col-4" >Catalog</label>
-                        <div class="form-group col-8">
-                            <select class="form-control" id="catalog">
-                        
-                            </select>
-                        </div>
-                    </div>
-            
-
+                         
                 <!-- ... display selector ... -->    
                 <div class="form-group col-lg-4 col-md-4 col-sm-6 d-flex flex-row align-items-start">
                     <label for="displaySelectButton" class="col-form-label col-4" >Display</label>
@@ -139,111 +137,91 @@ function DatexDVV() {
 
         function getFileData() {
             //===get floder name(catalog) to make option
-            var catalogArr;
-            var title;
-            $.ajax({
-                url: "../src/php/getFile.php",
-                data: { path: dataPath },
-                method: 'POST',
-                dataType: 'json',
-                async: false,
-                success: function (result) {
-                    catalogArr = result;
-                    console.log("catlog = ");
-                    console.log(catalogArr);
-                    catalogArr.forEach((r, i) => {
-                        // let catalog = Object.keys(r)[0];
-                        let catalog = r.catalog;
-                        // console.debug(catalog);
-                        $("#catalog").append($("<option></option>").attr("value", i).text(catalog));
-                    });
-                },
-                error: function (jqXHR, textStatus, errorThrown) {
-                    console.error(jqXHR.responseText);
+            var readTextFile = (file) => {
+                var tmpData = [];
+                var rawFile = new XMLHttpRequest();
+                rawFile.open("GET", file, false);
+                rawFile.onreadystatechange = function () {
+                    if (rawFile.readyState === 4) {
+                        if (rawFile.status === 200 || rawFile.status == 0) {
+                            var rows = rawFile.responseText.split("\n");
+                            // console.debug(rows);
+                            var fileDataKey;
 
-                },
-            });
-
-            var getPaths = (optionValue) => {
-                let obj = catalogArr[optionValue];
-                let catalog = obj.catalog;
-                title = catalog;
-                // console.debug(catalog);
-
-                let file = obj.file;
-                let filePathArr = file.map(file => dataPath + catalog + "/" + file);
-
-                // console.debug(filePathArr);
-                return filePathArr;
-            }
-
-            var readData = (paths) => {
-                var readTextFile_and_merge = (file, fileDataKey) => {
-
-                    var rawFile = new XMLHttpRequest();
-                    // rawFile.open("GET", file, true);
-                    rawFile.open("GET", file, false);
-                    rawFile.onreadystatechange = function () {
-                        if (rawFile.readyState === 4) {
-                            if (rawFile.status === 200 || rawFile.status == 0) {
-                                const startStr = '/';
-                                const yearIndex = 1;
-                                let startIndex = file.lastIndexOf(startStr) + startStr.length;
-                                let fileName = file.substring(startIndex);
-                                let year = fileName.split('.')[yearIndex];
-
-
-                                var rows = rawFile.responseText.split("\n");
-                                // console.debug(rows);
-                                rows.forEach(row => {
-                                    if (row != '') {
-                                        var col = row.trim().split(/\s+/);
-                                        // console.debug(col);
+                            rows.forEach((row, i) => {
+                                if (row != '') {
+                                    var col = row.trim().split(',');
+                                    if (i == 0)
+                                        fileDataKey = col.map(c => c.replaceAll('\"', ''));
+                                    else {
                                         let obj = {};
-                                        col.forEach((c, index) => {
-                                            if (index == 0) {
-                                                let julianDay = c;
-                                                let dateInMs = Date.UTC(year, 0, 1) + ((julianDay - 1) * 24 * 60 * 60 * 1000);
-                                                // obj[fileDataKey[0]] = new Date(dateInMs).toISOString();
-                                                obj[fileDataKey[0]] = dateInMs;
-                                            }
-                                            else
-                                                obj[fileDataKey[index]] = (isNaN(c) ? c : parseFloat(c));
-                                        });
-                                        data.push(obj);
+                                        col.forEach((c, index) => obj[fileDataKey[index]] = (c.replaceAll('\"', '')));
+                                        tmpData.push(obj);
                                     }
+                                }
 
-                                })
-                            }
+                            })
+                            // var startStr = '/';
+                            // var startIndex = file.lastIndexOf(startStr) + startStr.length;
+                            // var fileName = file.substring(startIndex);
+                            // fileData.fileName = fileName;
+                            // fileData.data = tmpData;
                         }
                     }
-                    rawFile.send(null);
                 }
-                //==get fileData
-                const fileDataKey = ['date', 'p1_dvv', 'p1_ccc', 'p2_dvv', 'p2_ccc', 'p3_dvv', 'p3_ccc'];
+                rawFile.send(null);
+                return tmpData;
+            }
+            var readJsonFile = (file) => {
 
-                data.length = 0;
-                paths.forEach(path => readTextFile_and_merge(path, fileDataKey));
-                data.columns = fileDataKey;
-                data.title = title;
-                console.log("data = ");
-                console.log(data);
+            };
+            var getFileType = (path) => path.substring(path.lastIndexOf('.') + 1);
+
+            var getRateData = (data) => {
+                let dataKeys = data.column;
+
+                let getRate = (fileSize, date1, date2) => {
+                    let t1 = new Date(date1).getTime();
+                    let t2 = new Date(date2).getTime();
+                    return (fileSize / ((t2 - t1) / 1000)).toFixed(2);
+                }
+                let tmpData = data.map(d => {
+                    let fileSize = d[dataKeys[1]];
+                    let t1 = d[dataKeys[2]], t2 = d[dataKeys[3]], t3 = d[dataKeys[4]], t4 = d[dataKeys[5]];
+
+                    let t1Rate = getRate(fileSize, t1, t2);
+                    let t2Rate = getRate(fileSize, t2, t3);
+                    let t3Rate = getRate(fileSize, t3, t4);
+                    let totalRate = getRate(fileSize, t1, t4);
+                    return {
+                        // script_type: d[dataKeys[0]],
+                        t1Rate: t1Rate,
+                        t2Rate: t2Rate,
+                        t3Rate: t3Rate,
+                        totalRate: totalRate,
+                    }
+                })
+                tmpData.column = Object.keys(tmpData[0]);
+                return tmpData;
             }
 
-            $('#catalog').change(e => {
-                // console.debug(e.target.value);
-                let paths = getPaths(e.target.value);
-                readData(paths);
-                printChart();
-            });
-            //===show first data charts when onload
-            // $(document).ready(() => $('#catalog').change());
-            let catalogSelectValue = 0;
-            $('#catalog').val(catalogSelectValue);
-            readData(getPaths(catalogSelectValue));
+            dataPath.forEach(path => {
+                let fileType = getFileType(path);
+                let dataArr = fileType == 'json' ? readJsonFile(path) : readTextFile(path);
+                data = data.concat(dataArr);
+            })
+            data.column = Object.keys(data[0]);
+            rateData = getRateData(data);
+            typeName = readTextFile(typeNamePath);
+            console.log("data=");
+            console.log(data);
+            console.log("rateData=");
+            console.log(rateData);
+            console.log("typeName=");
+            console.log(typeName);
         }
 
-        function DVVchart() {
+        function RQRchart() {
             console.debug(data);
 
             const width = 800;
@@ -268,7 +246,6 @@ function DatexDVV() {
                 return color;
             }
             const dataKeys = data.columns;
-            const dvv_dataKey_index = [1, 3, 5];
             const dataTimeArr = data.map(d => d[dataKeys[0]]);
             // console.debug(dataTimeArr);
 
@@ -821,9 +798,7 @@ function DatexDVV() {
                                             let tmpData = data.slice(i1, i2);
                                             tmpData.forEach(d =>
                                                 dvv_dataKey_index.forEach(dki => {
-                                                    let in_xSelected = d[dataKeys[0]] >= xSelected_domain[0] && d[dataKeys[0]] <= xSelected_domain[1];
-                                                    let in_ySelected = d[dataKeys[dki]] >= ySelected_domain[0] && d[dataKeys[dki]] <= ySelected_domain[1];
-                                                    if (in_xSelected && in_ySelected) {
+                                                    if (d[dataKeys[dki]] >= ySelected_domain[0] && d[dataKeys[dki]] <= ySelected_domain[1]) {
                                                         // console.debug(d[dataKeys[dki]]);
                                                         let index = d3.bisectCenter(dataTimeArr, d[dataKeys[0]]);
                                                         // console.debug(index);                                                      
@@ -895,7 +870,7 @@ function DatexDVV() {
                                     // range selected
                                     event.preventDefault();
 
-                                    xSelected_domain = [x.invert(finalAttributes.x1).getTime(), x.invert(finalAttributes.x2).getTime()];
+                                    xSelected_domain = [x.invert(finalAttributes.x1), x.invert(finalAttributes.x2)];
                                     ySelected_domain = [y.invert(finalAttributes.y2), y.invert(finalAttributes.y1)];
                                     // console.debug(xSelected_domain, ySelected_domain);
 
@@ -1317,7 +1292,7 @@ function DatexDVV() {
             }
 
             var i = 1;
-            let chartNode = DVVchart();
+            let chartNode = RQRchart();
             // console.debug(chartNode);
             getChartMenu('A');
             $('#chart' + i).append(chartNode);

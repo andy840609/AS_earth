@@ -572,7 +572,7 @@ function DatexDVV() {
                         let i1 = d3.bisectCenter(newDataObj.newTimeArr, xSelected_domain[0]);
                         let i2 = d3.bisectCenter(newDataObj.newTimeArr, xSelected_domain[1]) + 1;//包含最大範圍
                         newData = newDataObj.newData.slice(i1, i2);
-                        newTimeArr = newDataObj.newTimeArr.slice(i1, i2);
+                        // newTimeArr = newDataObj.newTimeArr.slice(i1, i2);
                     }
                     return newData;
                 }

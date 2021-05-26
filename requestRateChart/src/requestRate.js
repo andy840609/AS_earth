@@ -4,7 +4,6 @@ function requestRate() {
     var dataPath;
     var typeNamePath;
     var data = [];
-    var rateData = [];
     var typeName = [];
 
     chart.selector = (vaule) => {
@@ -63,6 +62,18 @@ function requestRate() {
 
                             </div>
                         </div>
+                    </div>
+                </div>  
+
+                <!-- ... rate unit ... -->    
+                <div class="form-group col-lg-4 col-md-4 col-sm-6 d-flex flex-row align-items-start">
+                    <label for="rateUnit" class="col-form-label col-4" >Rate unit</label>
+                    <div class="form-group col-8">
+                        <select class="form-control" id="rateUnit">
+                            <option value="KB">KB/s</option>
+                            <option value="MB">MB/s</option>
+                            <option value="GB">GB/s</option>
+                        </select>
                     </div>
                 </div>  
             
@@ -165,43 +176,16 @@ function requestRate() {
             };
             var getFileType = (path) => path.substring(path.lastIndexOf('.') + 1);
 
-            var getRateData = (data) => {
-                let dataKeys = data.column;
-
-                let getRate = (fileSize, date1, date2) => parseFloat((fileSize / ((date2 - date1) / 1000)).toFixed(2));
-
-                let tmpData = data.map(d => {
-                    let fileSize = d[dataKeys[1]];
-                    let t1 = d[dataKeys[2]], t2 = d[dataKeys[3]], t3 = d[dataKeys[4]], t4 = d[dataKeys[5]];
-
-                    let t1Rate = getRate(fileSize, t1, t2);
-                    let t2Rate = getRate(fileSize, t2, t3);
-                    let t3Rate = getRate(fileSize, t3, t4);
-                    let totalRate = getRate(fileSize, t1, t4);
-                    return {
-                        processing_speed: t1Rate,
-                        internal_transmission_rate: t2Rate,
-                        external_transmission_rate: t3Rate,
-                        global_reaction_rate: totalRate,
-                    }
-                })
-                tmpData.column = Object.keys(tmpData[0]);
-                return tmpData;
-            }
-
             dataPath.forEach(path => {
                 let fileType = getFileType(path);
                 let dataArr = fileType == 'json' ? readJsonFile(path, 'request_log') : readTextFile(path, 'request_log');
                 data = data.concat(dataArr);
             })
             data.column = Object.keys(data[0]);
-            rateData = getRateData(data);
             typeName = readTextFile(typeNamePath, 'scriptList');
             typeName.column = Object.keys(typeName[0]);
             console.log("data=");
             console.log(data);
-            console.log("rateData=");
-            console.log(rateData);
             console.log("typeName=");
             console.log(typeName);
         }
@@ -246,7 +230,7 @@ function requestRate() {
                 }
                 return color;
             }
-            var getString = (value) => {
+            const getString = (value) => {
                 let string = '';
                 switch (value) {
                     case 'processing_speed':
@@ -267,12 +251,34 @@ function requestRate() {
                 }
                 return string;
             };
-            const dataKeys = data.column;
-            const rateDataKeys = rateData.column;
-            const typeNameKeys = typeName.column;
 
-            // const dataTimeArr = data.map(d => d[dataKeys[0]]);
-            // console.debug(dataTimeArr);
+            const dataKeys = data.column;
+            const typeNameKeys = typeName.column;
+            const rateDataKeys = ['processing_speed', 'internal_transmission_rate', 'external_transmission_rate', 'global_reaction_rate'];
+
+            {      //刪掉不需要的type ＆ 算rateData
+                const type_dont_show = [6, 7];
+                data = data.filter(d => !type_dont_show.includes(d[dataKeys[0]]));
+                typeName = typeName.filter(tn => !type_dont_show.includes(tn[typeNameKeys[0]]));
+                var rateData = function () {
+                    let rateData;
+                    let getRate = (fileSize, date1, date2) => parseFloat((fileSize / ((date2 - date1) / 1000)).toFixed(2));
+                    rateData = data.map(d => {
+                        let fileSize = d[dataKeys[1]];
+                        let t1 = d[dataKeys[2]], t2 = d[dataKeys[3]], t3 = d[dataKeys[4]], t4 = d[dataKeys[5]];
+                        let obj = {};
+                        obj[rateDataKeys[0]] = getRate(fileSize, t1, t2);
+                        obj[rateDataKeys[1]] = getRate(fileSize, t2, t3);
+                        obj[rateDataKeys[2]] = getRate(fileSize, t3, t4);
+                        obj[rateDataKeys[3]] = getRate(fileSize, t1, t4);
+                        return obj;
+                    })
+                    return rateData;
+                }();
+
+            }
+
+            // console.debug(data);
             // console.debug(dataKeys, rateDataKeys);
 
             const svg = d3.create("svg")
@@ -348,7 +354,7 @@ function requestRate() {
                             shapeSelection
                                 .attr("stroke-width", 1.5)
                                 .attr("fill", fillColor)
-                                .attr("points", triangle_points.join(' '))
+                                .attr("points", triangle_points.join(','))
                                 .style('opacity', 1);
                             break;
                         case 3:
@@ -377,7 +383,6 @@ function requestRate() {
                 function init() {
 
                     let title = 'GDMS系統負載監測';
-                    let newtypeName = newDataObj.newtypeName;
 
                     svg
                         .append("g")
@@ -438,9 +443,9 @@ function requestRate() {
                             .attr("alignment-baseline", "after-edge")
                             .attr("y", -2)
                             .text('type'))
-                        .attr("transform", `translate(${width - margin.right - newtypeName.length * (typeLegend_rect_width + typeLegend_rect_interval)}, ${margin.top * 0.7})`)
+                        .attr("transform", `translate(${width - margin.right - typeName.length * (typeLegend_rect_width + typeLegend_rect_interval)}, ${margin.top * 0.7})`)
                         .selectAll("g")
-                        .data(newtypeName)
+                        .data(typeName)
                         .join("g")
                         .attr("transform", (d, i) => `translate(${i * (typeLegend_rect_width + typeLegend_rect_interval)}, 0)`)
                         .call(g => {
@@ -477,9 +482,9 @@ function requestRate() {
                             .attr("alignment-baseline", "after-edge")
                             .attr("y", -2)
                             .text('type'))
-                        .attr("transform", `translate(${width - margin.right - newtypeName.length * (shapeLegend_rect_width + shapeLegend_rect_interval)}, ${margin.top * 1.1})`)
+                        .attr("transform", `translate(${width - margin.right - typeName.length * (shapeLegend_rect_width + shapeLegend_rect_interval)}, ${margin.top * 1.1})`)
                         .selectAll("g")
-                        .data(newtypeName)
+                        .data(typeName)
                         .join("g")
                         .attr("transform", (d, i) => `translate(${i * (shapeLegend_rect_width + shapeLegend_rect_interval)}, 0)`)
                         .call(g => {
@@ -544,7 +549,7 @@ function requestRate() {
 
                 }
                 function render() {
-                    console.debug(newDataObj);
+
                     var newData = newDataObj.newData;
                     var newRateData = newDataObj.newRateData;
                     var display_DataKeys = dataKeys.slice(2).filter((key, i) => display_timming_index.includes(i));
@@ -646,7 +651,7 @@ function requestRate() {
                                     // console.debug([d]);
                                     let dots = d3.select(this);
                                     let timingArr = display_DataKeys.map(key => d[key]);
-                                    let rateDataObj = rateData[i];
+                                    let rateDataObj = newRateData[i];
                                     let rateArr = display_rateDataKeys.map(key => rateDataObj[key]);
                                     let line = d3.line()
                                         .defined(d => !isNaN(d))
@@ -694,20 +699,13 @@ function requestRate() {
 
 
             };
-            function getNewData(xSelected_domain = null, ySelected_domain = null) {
-                const type_dont_show = [6, 7];
-                let newData, newRateData, newtypeName;
+            function getNewData(xSelected_domain = null, ySelected_domain = null, rateUnit = 'KB') {
+                let newData, newRateData;
 
-                var get_newData_and_newRateData = () => {
+                var update_newData_and_newRateData = () => {
                     if (!newDataObj) {
-                        let removeIndex = [];
-                        newData = data.filter((d, i) => {
-                            let remove = type_dont_show.includes(d[dataKeys[0]]);
-                            if (remove)
-                                removeIndex.push(i);
-                            return !remove;
-                        });
-                        newRateData = rateData.filter((rd, i) => !removeIndex.includes(i));
+                        newData = data;
+                        newRateData = rateData;
                     }
                     else if (!xSelected_domain) {
                         newData = newDataObj.newData;
@@ -718,25 +716,19 @@ function requestRate() {
                         // let i2 = d3.bisectCenter(newDataObj.newTimeArr, xSelected_domain[1]) + 1;//包含最大範圍
                         // newData = (getRateData ? newDataObj.newRateData : newDataObj.newData).slice(i1, i2);
                     }
-                    return newData;
                 }
 
-                var get_newTypeName = () => {
-                    if (!newDataObj)
-                        newtypeName = typeName.filter(tn => !type_dont_show.includes(tn[typeNameKeys[0]]));
-                    else {
-                        newtypeName = newDataObj.newtypeName;
-                    }
-                }
-                get_newData_and_newRateData()
-                get_newTypeName();
-                return {
+                update_newData_and_newRateData();
+
+                let tmpObj = {
                     newData: newData,
                     newRateData: newRateData,
-                    newtypeName: newtypeName,
                     xSelected_domain: xSelected_domain,
                     ySelected_domain: ySelected_domain,
                 };
+                console.debug(tmpObj);
+                return tmpObj;
+
             };
             updateChart();
 
@@ -1218,11 +1210,17 @@ function requestRate() {
                             updateChart(true);
                         });
                     //=====show info
+
                     d3.select('#showPath').on('change', e =>
                         d3.selectAll('.orderPath').attr("display", e.target.checked ? 'inline' : 'none'));
                     d3.select('#showLegend').on('change', e =>
-                        d3.selectAll('.legend').attr("display", e.target.checked ? 'inline' : 'none')
-                    );
+                        d3.selectAll('.legend').attr("display", e.target.checked ? 'inline' : 'none'));
+                    //=====rate unit
+
+                    d3.select('#rateUnit').on('change', e => {
+                        console.debug(e.target.value)
+
+                    });
 
                 }
                 // chartEvent();

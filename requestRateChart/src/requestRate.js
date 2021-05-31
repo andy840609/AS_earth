@@ -3,31 +3,42 @@ function requestRate() {
     var selector = 'body';
     var dataPath;
     var typeNamePath;
-    var data;
+    var originData;
     var typeName;
 
-    chart.selector = (vaule) => {
-        selector = vaule;
+    chart.selector = (value) => {
+        selector = value;
         return chart;
     }
-    chart.dataPath = (vaule) => {
-        dataPath = vaule;
+    chart.dataPath = (value) => {
+        dataPath = value;
         return chart;
     }
-    chart.typeNamePath = (vaule) => {
-        typeNamePath = vaule;
+    chart.typeNamePath = (value) => {
+        typeNamePath = value;
         return chart;
     }
-    chart.dataObj = (vaule) => {
-        data = vaule;
-        let column = ["script_type", "file_size", "datetime", "finish_process_time", "tmp_server_time", "complete_time"]
-        data.column = column;
-        console.log(data);
+    chart.dataObj = (value) => {
+        // console.log(value);
+        // data = value.map(d => {
+        //     let obj = {};
+        //     column.forEach((key, i) => obj[key] = i > 1 ? new Date(d[key] + "Z").getTime() : d[key]);
+        //     return obj;
+        // });
+        // data = value.map(d => {
+        //     // let obj = {};
+        //     let obj = d;
+        //     column.forEach((key, i) => obj[key] = i > 1 ? new Date(d[key] + "Z").getTime() : d[key]);
+        //     return obj;
+        // });
+        originData = value
+        console.log(originData);
         return chart;
     }
-    chart.typeNameObj = (vaule) => {
-        typeName = vaule;
-        typeName.column = Object.keys(typeName[0]);
+    chart.typeNameObj = (value) => {
+        typeName = value;
+        let column = ["id", "chinese_description"]
+        typeName.column = column;
         console.log(typeName);
         return chart;
     }
@@ -268,33 +279,62 @@ function requestRate() {
                 return string;
             };
 
-            const dataKeys = data.column;
-            // const typeNameKeys = typeName.column;
-            const typeNameKeys = null;
-            const rateDataKeys = ['processing_speed', 'internal_transmission_rate', 'external_transmission_rate', 'global_reaction_rate'];
-
-            {      //刪掉不需要的type ＆ 算rateData
+            const typeNameKeys = typeName.column;
+            // const typeNameKeys = [];
+            const dataKeys = ["id", "file_size", "datetime", "finish_process_time", "tmp_server_time", "complete_time"];
+            // const rateDataKeys = ['processing_speed', 'internal_transmission_rate', 'external_transmission_rate', 'global_reaction_rate'];
+            const rateDataKeys = ['v1', 'v2', 'v3', 'v_final'];
+            {      //刪掉不需要的type,orginData分成時間點data和速率rateData
                 const type_dont_show = [6, 7];
-                data = data.filter(d => !type_dont_show.includes(d[dataKeys[0]]));
+                // const type_dont_show = [];
                 typeName = typeName.filter(tn => !type_dont_show.includes(tn[typeNameKeys[0]]));
-                var rateData = function () {
-                    let rateData;
-                    let getRate = (fileSize, date1, date2) => parseFloat((fileSize / ((date2 - date1) / 1000)).toFixed(2));
-                    rateData = data.map(d => {
-                        let fileSize = d[dataKeys[1]];
-                        let t1 = d[dataKeys[2]], t2 = d[dataKeys[3]], t3 = d[dataKeys[4]], t4 = d[dataKeys[5]];
-                        let obj = {};
-                        obj[rateDataKeys[0]] = getRate(fileSize, t1, t2);
-                        obj[rateDataKeys[1]] = getRate(fileSize, t2, t3);
-                        obj[rateDataKeys[2]] = getRate(fileSize, t3, t4);
-                        obj[rateDataKeys[3]] = getRate(fileSize, t1, t4);
-                        return obj;
-                    })
-                    return rateData;
-                }();
+
+                let tmpData = originData.filter(d => !type_dont_show.includes(d[dataKeys[0]]));
+                var data = tmpData.map(d => {
+                    let obj = {};
+                    dataKeys.forEach((key, i) => obj[key] = i > 1 ? new Date(d[key] + "Z").getTime() : d[key]);
+                    return obj;
+                });
+                // console.debug(data);
+                var rateData = tmpData.map(d => {
+                    let obj = {};
+                    rateDataKeys.forEach((key, i) => obj[key] = d[key]);
+                    return obj;
+                });
 
             }
 
+            // ==比較rateData速率與原始資料異同
+            // {
+            //     console.debug(rateData);
+            //     console.debug(data);
+            //     let testKeys = ['v1', 'v2', 'v3', 'v_final']
+            //     let diff = [];
+            //     rateData.forEach((d, i) => {
+            //         let tmp = [];
+            //         let diffFlag = false;
+            //         rateDataKeys.forEach((key, ki) => {
+            //             // if (!d[key] === data[i][testKeys[ki]] || data[i][testKeys[ki]] == null) {
+            //             if (!(d[key] == data[i][testKeys[ki]])) {
+            //                 // console.debug('diff')
+            //                 if (!(d[key] == undefined && (data[i][testKeys[ki]] == 0 || data[i][testKeys[ki]] == -1))) {
+            //                     diffFlag = true;
+            //                     tmp.push(testKeys[ki] + ":" + data[i][testKeys[ki]] + " <-> " + d[key]);
+            //                 }
+            //             }
+            //             // if (data[i][testKeys[ki]] === null)
+            //             //     console.debug(i, d[key], data[i][testKeys[ki]])
+            //         });
+            //         if (diffFlag)
+            //             diff.push({
+            //                 index: i,
+            //                 diff: tmp,
+            //             })
+            //     });
+            //     console.debug(diff);
+            // }
+
+            // console.debug(undefined == true);
             // console.debug(data);
             // console.debug(dataKeys, rateDataKeys);
 
@@ -593,9 +633,12 @@ function requestRate() {
 
                     var xAxisDomain = newDataObj.xSelected_domain ?
                         newDataObj.xSelected_domain :
-                        getNiceDomain([data[0][dataKeys[2]], data[data.length - 1][dataKeys[dataKeys.length - 1]]], 0.01);
+                        // getNiceDomain([data[0][dataKeys[2]], data[data.length - 1][dataKeys[dataKeys.length - 1]]], 0.01);
+                        getNiceDomain(d3.extent([].concat(...newData.map(d => d3.extent([display_DataKeys[0], display_DataKeys[display_DataKeys.length - 1]], key => d[key])))), 0.01)
                     // getNiceDomain([data[0][display_DataKeys[0]], data[data.length - 1][display_DataKeys[display_DataKeys.length - 1]]], 0.01);
                     // console.debug(xAxisDomain);
+                    // console.debug(new Date(xAxisDomain[0]).toISOString(), new Date(xAxisDomain[1]).toISOString());
+                    // console.debug(dataKeys[2]);
 
 
                     var yAxisDomain = newDataObj.ySelected_domain ?
@@ -611,6 +654,7 @@ function requestRate() {
                         .domain(xAxisDomain)
                         .range([margin.left, width - margin.right])
                     // .nice();
+                    // console.debug(x.domain());
 
                     y = d3.scaleLinear()
                         .domain(yAxisDomain)
@@ -678,7 +722,7 @@ function requestRate() {
                                     let rateDataObj = newRateData[i];
                                     let rateArr = display_rateDataKeys.map(key => rateDataObj[key]);
                                     let line = d3.line()
-                                        .defined(d => !isNaN(d))
+                                        .defined((d, i) => !isNaN(rateArr[i]) && rateArr[i])
                                         .x(d => x(d))
                                         .y((d, i) => y(rateArr[i]));
 
@@ -696,10 +740,12 @@ function requestRate() {
 
 
                                     display_timming_index.forEach((shapeIndex, dataIndex) => {
-                                        let centre = { x: x(timingArr[dataIndex]), y: y(rateArr[dataIndex]) };
-                                        makeShape(dots, shapeIndex, centre, d);
-                                    }
-                                    );
+                                        if (!isNaN(rateArr[dataIndex]) && !(rateArr[dataIndex] == null) && !(rateArr[dataIndex] == 0)) {
+                                            let centre = { x: x(timingArr[dataIndex]), y: y(rateArr[dataIndex]) };
+                                            console.debug(centre)
+                                            makeShape(dots, shapeIndex, centre, d);
+                                        }
+                                    });
 
 
                                 }));

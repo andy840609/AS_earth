@@ -777,7 +777,7 @@ function requestRate() {
 
 
             };
-            function getNewData(xSelected_domain = null, ySelected_domain = null, rateUnit = 'KB') {
+            function getNewData(xSelected_domain = null, ySelected_domain = null, rateUnit) {
                 let newData, newRateData;
 
                 var update_newData_and_newRateData = () => {
@@ -795,14 +795,24 @@ function requestRate() {
                         // newData = (getRateData ? newDataObj.newRateData : newDataObj.newData).slice(i1, i2);
                     }
                 }
-
+                var update_newRateData_by_rateUnit = () => {
+                    if (!newDataObj) {
+                        newData = data;
+                        newRateData = rateData;
+                    }
+                    else if (!xSelected_domain) {
+                        newData = newDataObj.newData;
+                        newRateData = newDataObj.newRateData;
+                    }
+                }
                 update_newData_and_newRateData();
-
+                update_newRateData_by_rateUnit();
                 let tmpObj = {
                     newData: newData,
                     newRateData: newRateData,
                     xSelected_domain: xSelected_domain,
                     ySelected_domain: ySelected_domain,
+                    rateUnit: rateUnit,
                 };
                 console.debug(tmpObj);
                 return tmpObj;
@@ -1164,7 +1174,8 @@ function requestRate() {
                     //=====rate unit
 
                     d3.select('#rateUnit').on('change', e => {
-                        console.debug(e.target.value)
+                        console.debug(e.target.value);
+
 
                     });
 

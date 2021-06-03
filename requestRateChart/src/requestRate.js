@@ -779,7 +779,7 @@ function requestRate() {
             };
             function getNewData(xSelected_domain = null, ySelected_domain = null, rateUnit) {
                 let newData, newRateData;
-
+                // newDataObj.rateUnit != rateUnit
                 var update_newData_and_newRateData = () => {
                     if (!newDataObj) {
                         newData = data;

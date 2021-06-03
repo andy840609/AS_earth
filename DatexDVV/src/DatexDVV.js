@@ -58,7 +58,7 @@ function DatexDVV() {
                                 </div>
 
                                 <div class="form-check d-flex flex-row flex-wrap " style="text-align: ;">
-                                    <input class="form-check-input  col-4" type="checkbox" id="showLegend" name="show" value="0">
+                                    <input class="form-check-input  col-4" type="checkbox" id="showLegend" name="show" value="0" checked>
                                     <label class="form-check-label  col-12" for="showLegend">legend</label>
                                 </div>
 
@@ -89,8 +89,8 @@ function DatexDVV() {
                 <div
                 class="form-group col-lg-4 col-md-4 col-sm-6 d-flex justify-content-end  align-items-center flex-row">                   
                     <div id="output-group" class="col-8 d-flex  justify-content-around" >                
-                        <button type="button" class="btn btn-secondary col-5">check</button>  
-                        <button type="button" class="btn btn-secondary col-5">save</button>  
+                        <button type="button" id="checkBtn"  class="btn btn-secondary col-5">check</button>  
+                        <button type="button" id="saveBtn"  class="btn btn-secondary col-5">save</button>  
                     </div>                                                                
                 </div>
 
@@ -331,7 +331,57 @@ function DatexDVV() {
                         .attr("alignment-baseline", "text-before-edge")
                         .attr("transform", "rotate(-90)")
                         .text('dvv');
+                    //Legend
+                    let shapeLegend_eachShape_width = 50;
+                    let shapeLegend_eachShape_height = 30;
+                    let shapeLegend_rect_interval = shapeLegend_eachShape_height * 0.5;
 
+                    svg.append("g")
+                        .attr("class", "legend")
+                        .call(g => g.append("rect")
+                            .attr("width", shapeLegend_eachShape_width)
+                            .attr("height", shapeLegend_eachShape_height * dvv_dataKey_index.length)
+                            .attr("fill", "#D3D3D3")
+                            .attr("opacity", .5)
+                            .attr("stroke-width", "1")
+                            .attr("stroke", "black")
+                            .attr("stroke-opacity", .8)
+                        )
+                        .attr("transform", `translate(${width - margin.right - shapeLegend_eachShape_width}, ${margin.top * 0.3})`)
+                        .selectAll("g")
+                        .data(dvv_dataKey_index)
+                        .join("g")
+                        .attr("transform", (d, i) => `translate(0, ${i * shapeLegend_eachShape_height})`)
+                        .call(g_collection =>
+                            g_collection.each(function (d, i) {
+                                // console.debug(this);
+                                let g = d3.select(this);
+
+                                let rect_width = 5;
+                                g.append("rect")
+                                    .style('opacity', 1)
+                                    .attr("stroke", getColor(i))
+                                    .attr("stroke-width", 1.5)
+                                    .attr("fill", "none")
+                                    .attr("x", shapeLegend_rect_interval - rect_width * 0.5)
+                                    .attr("y", shapeLegend_rect_interval - rect_width * 0.5)
+                                    // .transition().duration(transitionDuration)
+                                    .attr("width", rect_width)
+                                    .attr("height", rect_width);
+
+                                g.append("text")
+                                    .attr("x", shapeLegend_eachShape_width * 0.5)
+                                    .attr("y", shapeLegend_rect_interval)
+                                    .attr("fill", "currentcolor")
+                                    .attr("color", "black")
+                                    .attr("font-family", "sans-serif")
+                                    .attr("font-size", 12)
+                                    .attr("font-weight", 600)
+                                    .attr("alignment-baseline", "central")
+                                    .text('p' + (i + 1))
+                            })
+
+                        );
                     //===create display dropdown option
                     d3.select('#displayDropDownMenu')
                         .selectAll('div')
@@ -1085,15 +1135,76 @@ function DatexDVV() {
                                 showRemove = check;
                                 updateChart();
                             });
+                        d3.select('#showLegend').on('change', e =>
+                            d3.selectAll('.legend').attr("display", e.target.checked ? 'inline' : 'none'));
 
+                        //=====save
+                        d3.select('#checkBtn')
+                            .on('click', e => {
+                                console.debug(data);
+                                console.debug(removeData);
+                            });
+                        d3.select('#saveBtn')
+                            .on('click', e => {
+                                // console.debug(removeData);
 
+                                var createOutputData = () => {
+                                    let outputData = '';
+                                    data.forEach((d, i) => {
+                                        dataKeys.forEach(key => {
+                                            outputData += d[key]
+                                        })
+
+                                    });
+                                }
+                                createOutputData();
+
+                                // let data = 'AAA';
+                                // let fileName = 'AAA';
+                                // let blob = new Blob([data], {
+                                //     type: "application/octet-stream",
+                                // });
+                                // var href = URL.createObjectURL(blob);
+                                // // 從 Blob 取出資料
+                                // var link = document.createElement("a");
+                                // document.body.appendChild(link);
+                                // link.href = href;
+                                // link.download = fileName;
+                                // link.click();
+
+                            });
                         // svg.on('click', e => console.debug(e.target));//test
                     }
                     modeControl('read');
                     chartOptionEvent();
                 }
-                chartEvent();
+                function legendEvent() {
+                    var x_fixed = 0, y_fixed = 0;
+                    var legend_dragBehavior = d3.drag()
+                        .on('start', function (e) {
+                            // console.log('drag start');
+                            let matrix = this.transform.baseVal[0].matrix;
+                            x_fixed = e.x - matrix.e;
+                            y_fixed = e.y - matrix.f;
+                        })
+                        .on('drag', function (e) {
+                            d3.select(this).attr("transform", `translate(${e.x - x_fixed}, ${e.y - y_fixed})`)
+                        })
+                        .on('end', e => {
+                            // console.log('drag end');
+                        });
 
+
+                    // var content = document.getElementById('FeaturedContent');
+                    // var parent = content.parentNode;svg.insertBefore(l.node(), svg.firstChild)
+                    // parent.insertBefore(content, parent.firstChild);
+                    svg.select('.legend')
+                        .call(lg => lg.raise())//把legend拉到最上層(比zoom的選取框優先)
+                        .call(legend_dragBehavior);
+
+                }
+                chartEvent();
+                legendEvent();
 
             }
 

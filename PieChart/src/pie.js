@@ -52,7 +52,9 @@ function pieChart() {
     chart.data = (vaule) => {
         // console.debug(vaule);
         data = [];
+        const columns = ['DB', 'count', 'size'];
         let dataType = typeof (vaule[0]);
+        // console.debug(dataType);
 
         var readTextFile = (file) => {
             var tmpData;
@@ -130,10 +132,44 @@ function pieChart() {
             });
         }
         else if (dataType == 'object') {
-            data = vaule;
-            let columns = Object.getOwnPropertyNames(data[0].data[0]);
-            data.forEach(d => {
-                d.data.columns = columns;
+            data = vaule.map(v => {
+                let dataObj = v.data;
+                let Objkeys = Object.getOwnPropertyNames(dataObj);
+                let countObj = dataObj[Objkeys[0]];
+                let sizeObj = dataObj[Objkeys[1]];
+                // console.debug(v);
+                // console.debug(Objkeys[0]);
+                let DBKeys = Object.getOwnPropertyNames(countObj).filter(key => key != 'total');
+
+                let chartData = DBKeys.map(key => {
+                    let obj = {};
+                    obj[columns[0]] = key;
+                    obj[columns[1]] = countObj[key];
+
+                    let sizeArr = sizeObj[key].split(' ');
+                    let size = parseFloat(sizeArr[0]);
+                    switch (sizeArr[1]) {//單位轉GB
+                        case 'KB':
+                            size /= 1048576;
+                            break;
+                        case 'MB':
+                            size /= 1024;
+                            break;
+                        case 'GB':
+                            break;
+                        default:
+                            break;
+                    }
+                    obj[columns[2]] = size;
+                    return obj;
+                })
+                chartData.columns = columns;
+                chartData.sizeUnit = 'GB';
+
+                return {
+                    data: chartData,
+                    title: v.title,
+                };
             });
 
 
@@ -158,7 +194,7 @@ function pieChart() {
                     case 'name':
                         keyName = '資料庫';
                         break;
-                    case 'times':
+                    case 'count':
                         keyName = '下載次數';
                         keyUnit = '次';
                         break;
@@ -169,7 +205,7 @@ function pieChart() {
                 }
                 return { name: keyName, unit: keyUnit };
             });
-            console.debug(dataKeyName);
+            // console.debug(dataKeyName);
 
 
 
@@ -182,7 +218,7 @@ function pieChart() {
                 .attr("viewBox", [-width / 2, -height / 2, width, height]);
 
             svg.append('g')
-                .attr("transform", `translate(${0},${-height / 2 + 10})`)
+                .attr("transform", `translate(${0},${-height / 2 + 20})`)
                 .append('text')
                 .attr("id", "title")
                 .attr("fill", "currentcolor")

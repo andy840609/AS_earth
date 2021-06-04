@@ -10,6 +10,7 @@ function DatexDVV() {
     }
 
     function chart() {
+        const remove_col_value = -999;//這個數值：1.讀檔時當成undefine,2.去除的點之輸出值
         function init() {
             $(selector).append(`
             <form id="form-chart">
@@ -202,13 +203,20 @@ function DatexDVV() {
                                         let obj = {};
                                         col.forEach((c, index) => {
                                             if (index == 0) {
-                                                let julianDay = c;
-                                                let dateInMs = Date.UTC(year, 0, 1) + ((julianDay - 1) * 24 * 60 * 60 * 1000);
-                                                // obj[fileDataKey[0]] = new Date(dateInMs).toISOString();
-                                                obj[fileDataKey[0]] = dateInMs;
+                                                if (!isNaN(c)) {
+                                                    let julianDay = c;
+                                                    let dateInMs = Date.UTC(year, 0, 1) + ((julianDay - 1) * 24 * 60 * 60 * 1000);
+                                                    // obj[fileDataKey[0]] = new Date(dateInMs).toISOString();
+                                                    obj[fileDataKey[0]] = dateInMs;
+                                                }
+                                                else//這個程式輸出的日期為ISO string
+                                                {
+                                                    let dateArr = c.split('-');
+                                                    obj[fileDataKey[0]] = Date.UTC(dateArr[0], dateArr[1] - 1, dateArr[2]);
+                                                }
                                             }
                                             else
-                                                obj[fileDataKey[index]] = (isNaN(c) ? c : parseFloat(c));
+                                                obj[fileDataKey[index]] = (isNaN(c) ? c : (c == remove_col_value ? undefined : parseFloat(c)));
                                         });
                                         data.push(obj);
                                     }
@@ -281,7 +289,7 @@ function DatexDVV() {
             var x, y;
             var newDataObj;
             var removeData = new Array(data.length);
-            var showRemove = false;
+            var showRemove = d3.select('#showRemove').property('checked');
             function updateChart(trans = false) {
 
                 function init() {
@@ -338,6 +346,7 @@ function DatexDVV() {
 
                     svg.append("g")
                         .attr("class", "legend")
+                        .attr("display", d3.select('#showLegend').property('checked') ? 'inline' : 'none')
                         .call(g => g.append("rect")
                             .attr("width", shapeLegend_eachShape_width)
                             .attr("height", shapeLegend_eachShape_height * dvv_dataKey_index.length)
@@ -1077,7 +1086,7 @@ function DatexDVV() {
                                                 .html((d, i) => {
                                                     // console.debug(d, i);
                                                     let y = newData[idx][dataKeys[d]];
-                                                    let html = "<font size='5'>" + (isNaN(y) ? 'no data' : y) + "</font>";
+                                                    let html = "<font size='5'>" + (isNaN(y) ? '' : y) + "</font>";
                                                     return html;
                                                 });
                                         }
@@ -1143,34 +1152,62 @@ function DatexDVV() {
                             .on('click', e => {
                                 console.debug(data);
                                 console.debug(removeData);
+                                console.debug(dataKeys);
+                                function BrowseFolder() {
+                                    try {
+                                        var Message = "Please select the folder path.";  //选择框提示信息
+                                        var Shell = new ActiveXObject("Shell.Application");
+                                        var Folder = Shell.BrowseForFolder(0, Message, 0x0040, 0x11); //起始目录为：我的电脑
+                                        //var Folder = Shell.BrowseForFolder(0,Message,0); //起始目录为：桌面
+                                        if (Folder != null) {
+                                            Folder = Folder.items();  // 返回 FolderItems 对象
+                                            Folder = Folder.item();  // 返回 Folderitem 对象
+                                            Folder = Folder.Path;   // 返回路径
+                                            if (Folder.charAt(Folder.length - 1) != "\\") {
+                                                Folder = Folder + "\\";
+                                            }
+                                            return Folder;
+                                        }
+                                    } catch (e) {
+                                        alert(e.message);
+                                    }
+                                }
+
+                                BrowseFolder();
                             });
                         d3.select('#saveBtn')
                             .on('click', e => {
                                 // console.debug(removeData);
 
                                 var createOutputData = () => {
+                                    // let outputData = dataKeys.join(' ') + '\n';// header
+
                                     let outputData = '';
+
                                     data.forEach((d, i) => {
-                                        dataKeys.forEach(key => {
-                                            outputData += d[key]
-                                        })
-
+                                        let remove_indexArr = removeData[i] ? removeData[i] : [];
+                                        dataKeys.forEach((key, dki) => {
+                                            let col = (dki == 0 ?
+                                                new Date(d[key]).toISOString().substring(0, 10) :
+                                                remove_indexArr.includes(dki) ? remove_col_value : (!isNaN(d[key]) ? d[key].toExponential() : remove_col_value));
+                                            outputData += col + (dki == dataKeys.length - 1 ? '' : ' ');
+                                        });
+                                        outputData += (i == data.length - 1 ? '' : '\n');
                                     });
+                                    return outputData;
                                 }
-                                createOutputData();
-
-                                // let data = 'AAA';
-                                // let fileName = 'AAA';
-                                // let blob = new Blob([data], {
-                                //     type: "application/octet-stream",
-                                // });
-                                // var href = URL.createObjectURL(blob);
-                                // // 從 Blob 取出資料
-                                // var link = document.createElement("a");
-                                // document.body.appendChild(link);
-                                // link.href = href;
-                                // link.download = fileName;
-                                // link.click();
+                                var outputData = createOutputData();
+                                let fileName = data.title + '.tsv';
+                                let blob = new Blob([outputData], {
+                                    type: "application/octet-stream",
+                                });
+                                var href = URL.createObjectURL(blob);
+                                // 從 Blob 取出資料
+                                var link = document.createElement("a");
+                                document.body.appendChild(link);
+                                link.href = href;
+                                link.download = fileName;
+                                link.click();
 
                             });
                         // svg.on('click', e => console.debug(e.target));//test
@@ -1214,6 +1251,8 @@ function DatexDVV() {
         }
 
         function printChart() {
+            $('#editMode').prop("checked", false);
+            $('#displayDropDownMenu').children().remove();
             $('#charts').children().remove();
             // $('.tooltip').remove();
             var getChartMenu = (title) => {

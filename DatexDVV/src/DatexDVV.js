@@ -76,7 +76,7 @@ function DatexDVV() {
                     <div id="editMode-group" class="form-check" >
                         <input class="form-check-input  col-4" type="checkbox" id="editMode" name="editMode">
                         <label class="form-check  col-12" for="editMode" data-lang="">
-                            edit mode
+                            edit mode(E)
                         </label>                        
                     </div>                         
                 </div>
@@ -160,8 +160,12 @@ function DatexDVV() {
                     });
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
-                    console.error(jqXHR.responseText);
-
+                    console.error(jqXHR);
+                    console.error(textStatus);
+                    console.error(errorThrown);
+                    console.debug(jqXHR);
+                    console.debug(textStatus);
+                    console.debug(errorThrown);
                 },
             });
 
@@ -339,7 +343,7 @@ function DatexDVV() {
                         .attr("alignment-baseline", "text-before-edge")
                         .attr("transform", "rotate(-90)")
                         .text('dvv');
-                    //Legend
+                    //===Legend
                     let shapeLegend_eachShape_width = 50;
                     let shapeLegend_eachShape_height = 30;
                     let shapeLegend_rect_interval = shapeLegend_eachShape_height * 0.5;
@@ -391,6 +395,11 @@ function DatexDVV() {
                             })
 
                         );
+
+                    //===overview
+                    svg.append("g")
+                        .attr("class", "overview")
+
                     //===create display dropdown option
                     d3.select('#displayDropDownMenu')
                         .selectAll('div')
@@ -829,7 +838,8 @@ function DatexDVV() {
                     // const SC_buttonText = ['zoom', 'remove'];
                     const SC_buttonAmount = 1;
                     const SC_buttonText = ['remove'];
-                    const SC_buttonWidth = 60, SC_buttonHeight = 30;
+                    const SC_buttonWidth = 65, SC_buttonHeight = 30;
+                    const remove_hotkeyString = '(R)';
 
                     selectionController
                         .selectAll('.buttonGroup')
@@ -842,7 +852,11 @@ function DatexDVV() {
                                 let bg = d3.select(this);
                                 let translateX = SC_width / SC_buttonAmount * i + (SC_width / SC_buttonAmount - SC_buttonWidth) * 0.5
                                 let translateY = (SC_height - SC_buttonHeight) * 0.5;
-                                bg.attr("transform", `translate(${translateX},${translateY})`);
+
+                                bg
+                                    .attr("transform", `translate(${translateX},${translateY})`)
+                                    .attr('act', 'none');
+
 
                                 let button = bg.append('rect')
                                     .attr("width", SC_buttonWidth)
@@ -861,19 +875,19 @@ function DatexDVV() {
                                     .style("text-anchor", "middle")
                                     .attr("alignment-baseline", "middle")
                                     .attr('x', SC_buttonWidth * 0.5)
-                                    .attr('y', SC_buttonHeight * 0.5)
-                                    .text(SC_buttonText[i]);
+                                    .attr('y', SC_buttonHeight * 0.5);
+                                // .text(SC_buttonText[i]);
 
 
                                 bg
                                     .on('click', function () {
-                                        // console.debug(buttonText.text());
+                                        // console.debug(bg.attr("mode"));
 
-                                        if (buttonText.text() == 'remove') {
+                                        if (bg.attr("act") == SC_buttonText[i]) {
                                             // console.debug(removeData);
                                             removeData_backup = JSON.parse(JSON.stringify(removeData));
-
-                                            buttonText.text('undo');
+                                            bg.attr("act", 'undo');
+                                            buttonText.text('Undo' + remove_hotkeyString);
                                             // console.debug(xSelected_domain, ySelected_domain);
                                             let i1 = d3.bisectCenter(dataTimeArr, xSelected_domain[0]);
                                             let i2 = d3.bisectCenter(dataTimeArr, xSelected_domain[1]) + 1;//包含最大範圍
@@ -896,8 +910,9 @@ function DatexDVV() {
                                             );
                                             // console.debug(removeData);
                                         }
-                                        else if (buttonText.text() == 'undo') {
-                                            buttonText.text('remove');
+                                        else if (bg.attr("act") == 'undo') {
+                                            bg.attr("act", SC_buttonText[i]);
+                                            buttonText.text('Remove' + remove_hotkeyString);
                                             removeData = removeData_backup;
                                         }
                                         updateChart();
@@ -914,8 +929,14 @@ function DatexDVV() {
                         );
 
                     var modeControl = (mode = 'read') => {
-                        if (selectionRect.element)
+                        if (selectionRect.element) {
                             selectionRect.remove();
+                            selectionController
+                                .select('#SC_remove')
+                                .attr('act', 'none')
+                            xSelected_domain = null;
+                            ySelected_domain = null;
+                        }
                         selectionController
                             .attr("display", 'none')
 
@@ -957,19 +978,6 @@ function DatexDVV() {
                                     xSelected_domain = [x.invert(finalAttributes.x1).getTime(), x.invert(finalAttributes.x2).getTime()];
                                     ySelected_domain = [y.invert(finalAttributes.y2), y.invert(finalAttributes.y1)];
                                     // console.debug(xSelected_domain, ySelected_domain);
-
-                                    if (mode == 'edit') {
-                                        let translateX = finalAttributes.x1 + (selectionRect_width - SC_width) * 0.5;
-                                        if (translateX + SC_width > width) translateX = width - SC_width;//超出svg右邊界
-                                        else if (translateX < 0) translateX = 0;//超出svg左邊界
-                                        let translateY = finalAttributes.y1 - SC_height - 10;
-
-                                        selectionController
-                                            .attr("display", 'inline')
-                                            .attr("transform", `translate(${translateX},${translateY})`);
-                                        selectionController.select('#SC_remove text')
-                                            .text('remove');
-                                    }
                                 }
                                 else {
                                     //-------- reset zoom
@@ -985,6 +993,27 @@ function DatexDVV() {
                                     newDataObj = getNewData(xSelected_domain, ySelected_domain);
                                     updateChart();
                                     selectionRect.remove();
+                                } else if (mode == 'edit') {
+                                    if (xSelected_domain && ySelected_domain) {//xSelected_domain 和 ySelected_domain !=null
+                                        let translateX = finalAttributes.x1 + (selectionRect_width - SC_width) * 0.5;
+                                        if (translateX + SC_width > width) translateX = width - SC_width;//超出svg右邊界
+                                        else if (translateX < 0) translateX = 0;//超出svg左邊界
+                                        let translateY = finalAttributes.y1 - SC_height - 10;
+
+                                        selectionController
+                                            .attr("display", 'inline')
+                                            .attr("transform", `translate(${translateX},${translateY})`);
+                                        selectionController
+                                            .select('#SC_remove')
+                                            .attr('act', SC_buttonText[0])
+                                            .select('text')
+                                            .text('Remove' + remove_hotkeyString);
+                                    }
+                                    else {
+                                        selectionController
+                                            .select('#SC_remove')
+                                            .attr('act', 'none');
+                                    }
                                 }
 
                             });
@@ -1003,33 +1032,39 @@ function DatexDVV() {
                                     .on('mousemove', function (event) { // update tooltip content, line, circles and text when mouse moves
                                         // console.log(event);
                                         event.preventDefault();
-                                        const newData = newDataObj.newData;
-                                        const newTimeArr = newDataObj.newTimeArr;
+                                        // const newdata = newDataObj.data;
+                                        // const newdataTimeArr = newDataObj.dataTimeArr;
+
                                         const ySelected_domain = newDataObj.ySelected_domain;
 
                                         const pointer = d3.pointer(event, this);
                                         const xm = x.invert(pointer[0]);
-                                        const idx = d3.bisectCenter(newTimeArr, xm);
+                                        const idx = d3.bisectCenter(dataTimeArr, xm);
 
                                         function getNew_dvvDataKeyIndex() {
 
                                             //1. 挑出ySelected_domain內的P點組別
                                             let inChart_dvv_dataKey_index = ySelected_domain ?
                                                 dvv_dataKey_index.filter(i => {
-                                                    let dvv = newData[idx][dataKeys[i]];
+                                                    let dvv = data[idx][dataKeys[i]];
                                                     // console.debug(dvv);
                                                     if (dvv >= ySelected_domain[0] && dvv <= ySelected_domain[1])
                                                         return i;
                                                 }) :
                                                 [...dvv_dataKey_index];//改變到原本dvv_dataKey_index圖表update顏色順序會錯
-                                            //2.undisplay的刪掉
-                                            inChart_dvv_dataKey_index = inChart_dvv_dataKey_index.filter(i => !undisplay_dataKeys_index.includes(i));
+                                            //2.undisplay的刪掉,removeData裡的也刪掉
+                                            inChart_dvv_dataKey_index = inChart_dvv_dataKey_index.filter(i => {
+                                                let isUndisplay = undisplay_dataKeys_index.includes(i);
+                                                let isRemove = removeData[idx] ? removeData[idx].includes(i) : false;
+                                                return !isUndisplay && !isRemove;
+                                            });
+                                            // console.debug(data[idx][dataKeys[0]]);
 
                                             //3.根據資料值排序(大到小)
                                             for (let i = 0; i < inChart_dvv_dataKey_index.length - 1; i++)
                                                 for (let j = 0; j < inChart_dvv_dataKey_index.length - 1 - i; j++)
-                                                    // console.debug(newData[idx][dataKeys[inChart_dvv_dataKey_index[sortedIndex[j]]]]);
-                                                    if (newData[idx][dataKeys[inChart_dvv_dataKey_index[j]]] < newData[idx][dataKeys[inChart_dvv_dataKey_index[j + 1]]]) {
+                                                    // console.debug(data[idx][dataKeys[inChart_dvv_dataKey_index[sortedIndex[j]]]]);
+                                                    if (data[idx][dataKeys[inChart_dvv_dataKey_index[j]]] < data[idx][dataKeys[inChart_dvv_dataKey_index[j + 1]]]) {
                                                         let tmp = inChart_dvv_dataKey_index[j];
                                                         inChart_dvv_dataKey_index[j] = inChart_dvv_dataKey_index[j + 1];
                                                         inChart_dvv_dataKey_index[j + 1] = tmp;
@@ -1040,7 +1075,7 @@ function DatexDVV() {
                                             //==move mouseLine
                                             mouseLine
                                                 .attr("d", function () {
-                                                    let xPos = x(newTimeArr[idx]);
+                                                    let xPos = x(dataTimeArr[idx]);
                                                     let p1 = xPos + "," + (height - margin.bottom);
                                                     let p2 = xPos + "," + margin.top;
                                                     let d = "M" + p1 + " L" + p2;
@@ -1055,13 +1090,13 @@ function DatexDVV() {
                                                     // console.debug(d, i)
                                                     let translate = null;
                                                     let mousePerLine = d3.select(this);
-                                                    let hasValue = !isNaN(newData[idx][dataKeys[d]]);
+                                                    let hasValue = !isNaN(data[idx][dataKeys[d]]);
                                                     let pointInChart = inChart_dvv_dataKey_index.includes(d);
 
                                                     // console.debug(d3.select(this).node())
                                                     if (hasValue && pointInChart) {
                                                         mousePerLine.selectAll('circle').style("opacity", "1");
-                                                        translate = `translate(${x(newTimeArr[idx])},${y(newData[idx][dataKeys[d]])})`;
+                                                        translate = `translate(${x(dataTimeArr[idx])},${y(data[idx][dataKeys[d]])})`;
                                                     }
                                                     else
                                                         mousePerLine.selectAll('circle').style("opacity", "0")
@@ -1069,7 +1104,7 @@ function DatexDVV() {
                                                 });
                                         }
                                         function updateTooltip() {
-                                            let timeStr = new Date(newTimeArr[idx]).toISOString();
+                                            let timeStr = new Date(dataTimeArr[idx]).toISOString();
                                             // console.debug(timeStr)
                                             const divHtml = "Date : <br/><font size='5'>" + timeStr.substring(0, timeStr.indexOf('T')) + "</font><br/>dvv : <br/>";
 
@@ -1085,7 +1120,7 @@ function DatexDVV() {
                                                 .style('font-size', 10)
                                                 .html((d, i) => {
                                                     // console.debug(d, i);
-                                                    let y = newData[idx][dataKeys[d]];
+                                                    let y = data[idx][dataKeys[d]];
                                                     let html = "<font size='5'>" + (isNaN(y) ? '' : y) + "</font>";
                                                     return html;
                                                 });
@@ -1099,6 +1134,7 @@ function DatexDVV() {
                                     });
                                 break;
                             case 'edit':
+                                event_rect.dispatch('mouseleave');
                                 event_rect
                                     .on('mouseleave', null)
                                     .on('mousemove', null);
@@ -1240,9 +1276,32 @@ function DatexDVV() {
                         .call(legend_dragBehavior);
 
                 }
+                function keyboardEvent() {
+                    d3.select("body")
+                        .on("keydown", (e) => {
+                            // console.debug(e);
+                            let editMode_ckb = d3.select("#editMode");
+                            let editMode_checked = editMode_ckb.property('checked');
+                            // console.debug(checked);
+                            switch (e.keyCode) {
+                                case 69://press e
+                                    editMode_ckb.property('checked', !editMode_checked);
+                                    editMode_ckb.dispatch("change");
+                                    break;
+                                case 82://press r
+                                    if (editMode_checked) {
+                                        let remove_btn = d3.select("#SC_remove");
+                                        remove_btn.dispatch("click");
+                                    }
+                                    break;
+                            }
+
+
+                        })
+                }
                 chartEvent();
                 legendEvent();
-
+                keyboardEvent();
             }
 
             svg.call(events);

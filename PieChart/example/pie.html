@@ -27,29 +27,30 @@
 
         var data = {
             "count": {
-                "CWBSN": 1032,
+                "TSMIP": 231,
+                "CWBSN": 1037,
                 "MAGNET": 68,
                 "GNSS": 72,
                 "GW": 27,
-                "TSMIP": 228,
-                "total": 1427
+                "total": 1435
             },
             "file_size": {
+                "TSMIP": "138.53 GB",
                 "CWBSN": "153.17 GB",
                 "MAGNET": "7.91 GB",
                 "GNSS": "39.85 GB",
                 "GW": "3.93 GB",
-                "TSMIP": "138.34 GB",
-                "total": "343.21 GB"
+                "total": "343.4 GB"
             }
         };
+
 
         var title = '全體下載量';
         obj = { data: data, title: title };
 
         // console.debug(objArray);
         // var Data = ["../data/2018",];
-        var Data = [obj, obj];
+        var Data = [obj,];
 
         var chart = pieChart()
             .data(Data)

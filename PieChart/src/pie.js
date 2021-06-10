@@ -3,47 +3,6 @@ function pieChart() {
     var selector = 'body';
     var data = [];
 
-
-    function init() {
-        $(selector).append(`
-            <form id="form-chart">
-            <div class="form-group" id="chartsOptions" style="display: inline;position: absolute; top: 3em; left: 3em;  z-index:3;">
-            <div class="row">
-                <div class="form-group col-lg-3 col-md-3 col-sm-6" >
-                    <button type="button" class="btn btn-secondary" id="reset">
-                        reset
-                    </button>
-                </div>
-            </div>
-            </div> 
-                <div class="form-group" id="charts" style="position: relative; z-index:0;"></div>          
-                <div id="outerdiv"
-                    style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:999;width:100%;height:100%;display:none;">
-                    <div id="innerdiv" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
-                        <img id="bigimg" style=" background-color: rgb(255, 255, 255);" src="" />
-                    </div>
-                </div>
-            </form>
-            `);
-
-        $('#reset').click(() => {
-            chart();
-        });
-
-        d3.select("#form-chart").append("div")
-            .attr("id", "tooltip")
-            .style('position', 'absolute')
-            .style('z-index', '1')
-            .style("opacity", 0)
-            .style('display', 'none');
-
-        //==========test=====
-        // $('body').on("mouseover", function (e) {
-        //     console.debug(e.target.nodeName);
-        // })
-        //===================
-    };
-
     chart.selector = (vaule) => {
         selector = vaule;
         return chart;
@@ -182,6 +141,41 @@ function pieChart() {
         return chart;
     }
     function chart() {
+        function init() {
+            $(selector).append(`
+                <form id="form-chart">
+                <div class="form-group" id="chartsOptions" style="display: inline;position: absolute; top: 3em; left: 3em;  z-index:3;">
+                <div class="row">
+                </div>
+                </div> 
+                    <div class="form-group" id="charts" style="position: relative; z-index:0;"></div>          
+                    <div id="outerdiv"
+                        style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:999;width:100%;height:100%;display:none;">
+                        <div id="innerdiv" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
+                            <img id="bigimg" style=" background-color: rgb(255, 255, 255);" src="" />
+                        </div>
+                    </div>
+                </form>
+                `);
+
+            // $('#reset').click(() => {
+            //     chart();
+            // });
+
+            d3.select("#form-chart").append("div")
+                .attr("id", "tooltip")
+                .style('position', 'absolute')
+                .style('z-index', '1')
+                .style("opacity", 0)
+                .style('display', 'none');
+
+            //==========test=====
+            // $('body').on("mouseover", function (e) {
+            //     console.debug(e.target.nodeName);
+            // })
+            //===================
+        };
+
         function PieSvg(Data) {
             // console.debug(Data);
             var data = Data.data;

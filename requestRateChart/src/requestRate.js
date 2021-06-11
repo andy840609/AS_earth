@@ -92,6 +92,7 @@ function requestRate() {
                 </div>  
 
                 <!-- ... rate unit ... -->    
+                <!--
                 <div class="form-group col-lg-4 col-md-4 col-sm-6 d-flex flex-row align-items-start">
                     <label for="rateUnit" class="col-form-label col-4" >Rate unit</label>
                     <div class="form-group col-8">
@@ -102,7 +103,9 @@ function requestRate() {
                         </select>
                     </div>
                 </div>  
-            
+                -->
+
+                
             </div>
 
             </div>

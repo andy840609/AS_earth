@@ -1030,10 +1030,10 @@ function DatexDVV() {
                                             .style("display", "none");
                                     })
                                     .on('mousemove', function (event) { // update tooltip content, line, circles and text when mouse moves
-                                        // console.log(event);
+                                        // console.log(newDataObj);
                                         event.preventDefault();
-                                        // const newdata = newDataObj.data;
-                                        // const newdataTimeArr = newDataObj.dataTimeArr;
+                                        // let data = newDataObj.newData;
+                                        // let dataTimeArr = newDataObj.newTimeArr;
 
                                         const ySelected_domain = newDataObj.ySelected_domain;
 

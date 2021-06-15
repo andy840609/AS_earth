@@ -9,7 +9,7 @@ function pieChart() {
     }
 
     chart.data = (vaule) => {
-        // console.debug(vaule);
+        console.log(vaule);
         data = [];
         const columns = ['DB', 'count', 'size'];
         let dataType = typeof (vaule[0]);
@@ -80,6 +80,7 @@ function pieChart() {
             return Data;
         }
 
+
         //判斷第一個元素是字串路徑要讀檔,還是物件資料
         if (dataType == 'string') {
             let paths = vaule;
@@ -91,53 +92,48 @@ function pieChart() {
             });
         }
         else if (dataType == 'object') {
-            data = vaule.map(v => {
-                let dataObj = v.data;
-                let Objkeys = Object.getOwnPropertyNames(dataObj);
-                let countObj = dataObj[Objkeys[0]];
-                let sizeObj = dataObj[Objkeys[1]];
-                // console.debug(v);
-                // console.debug(Objkeys[0]);
-                let DBKeys = Object.getOwnPropertyNames(countObj).filter(key => key != 'total');
+            data = vaule;
 
-                let chartData = DBKeys.map(key => {
-                    let obj = {};
-                    obj[columns[0]] = key;
-                    obj[columns[1]] = countObj[key];
+            // data = vaule.map(v => {
+            //     let dataObj = v.data;
+            //     let Objkeys = Object.getOwnPropertyNames(dataObj);
+            //     let countObj = dataObj[Objkeys[0]];
+            //     let sizeObj = dataObj[Objkeys[1]];
+            //     // console.debug(v);
+            //     // console.debug(Objkeys[0]);
+            //     let DBKeys = Object.getOwnPropertyNames(countObj).filter(key => key != 'total');
 
-                    let sizeArr = sizeObj[key].split(' ');
-                    let size = parseFloat(sizeArr[0]);
-                    switch (sizeArr[1]) {//單位轉GB
-                        case 'KB':
-                            size /= 1048576;
-                            break;
-                        case 'MB':
-                            size /= 1024;
-                            break;
-                        case 'GB':
-                            break;
-                        default:
-                            break;
-                    }
-                    obj[columns[2]] = size;
-                    return obj;
-                })
-                chartData.columns = columns;
-                chartData.sizeUnit = 'GB';
+            //     const dataUnit = 'GB';
+            //     let chartData = DBKeys.map(key => {
+            //         let obj = {};
+            //         obj[columns[0]] = key;
+            //         obj[columns[1]] = countObj[key];
 
-                return {
-                    data: chartData,
-                    title: v.title,
-                };
-            });
+            //         let sizeArr = sizeObj[key].split(' ');
+            //         let size = parseFloat(sizeArr[0]);
+            //         size = convert_download_unit(size, sizeArr[1], dataUnit).value;
 
+            //         // let aaa = convert_download_unit(2, 'MB', 'KB');
+            //         // let aaa = convert_download_unit(0.000000002, 'MB');
+            //         // console.debug(aaa);
+            //         obj[columns[2]] = size;
+            //         return obj;
+            //     })
+            //     chartData.columns = columns;
+            //     chartData.sizeUnit = dataUnit;
+
+            //     return {
+            //         data: chartData,
+            //         title: v.title,
+            //     };
+            // });
 
         }
         else {
             console.debug("unknow dataType");
         }
 
-        console.debug(data);
+        // console.debug(data);
         return chart;
     }
     function chart() {
@@ -177,10 +173,83 @@ function pieChart() {
         };
 
         function PieSvg(Data) {
-            // console.debug(Data);
-            var data = Data.data;
-            var dataKey = data.columns;
-            var dataKeyName = dataKey.map(key => {
+            const convert_download_unit = (value, unitBefore, unitAfter = undefined) => {
+                let newValue, newUnit;
+                const unit1 = ['b', 'B'];
+                const unit2 = ['', 'K', 'M', 'G', 'T'];
+
+
+                var getUnit = (unit) => {
+                    let unit1, unit2;
+
+                    if (unit.length > 1) {
+                        unit1 = unit[1];
+                        unit2 = unit[0];
+                    }
+                    else if (unit.length == 1) {
+                        unit1 = unit;
+                        unit2 = '';
+                    }
+
+                    return {
+                        unit1: unit1,
+                        unit2: unit2,
+                    }
+                }
+                var getRatio = (unitA, unitB, unitArr, powerBase) => {
+                    let ratio;
+                    let A_index = unitArr.indexOf(unitA);
+                    let B_index = unitArr.indexOf(unitB);
+
+                    if (A_index != -1 && B_index != -1) {
+                        let power = A_index - B_index;
+                        ratio = Math.pow(powerBase, power);
+                    }
+                    else {
+                        ratio = 1;
+                    }
+                    return ratio;
+                }
+
+                let unitBefore_obj = getUnit(unitBefore);
+
+                if (unitAfter) {//unitBefore 單位轉換到 unitAfter
+                    let unitAfter_obj = getUnit(unitAfter);
+                    let ratio1 = getRatio(unitBefore_obj.unit1, unitAfter_obj.unit1, unit1, 8);
+                    let ratio2 = getRatio(unitBefore_obj.unit2, unitAfter_obj.unit2, unit2, 1024);
+                    // console.debug(unitBefore_obj, unitAfter_obj);
+                    // console.debug(ratio1, ratio2);
+                    newValue = value * ratio1 * ratio2;
+                    newUnit = unitAfter;
+                }
+                else {//unitBefore 單位轉換到 value>=1或單位已是最小(b)為止 ,並給newUnit
+
+                    let unit1_index = unit1.indexOf(unitBefore_obj.unit1);
+                    let unit2_index = unit2.indexOf(unitBefore_obj.unit2);
+                    newValue = value;
+                    // let newUnit1 = unitBefore_unit1, newUnit2 = unitBefore_unit2;
+
+                    while (newValue < 1 && (unit1_index != 0 || unit2_index != 0)) {
+                        //先轉unit2,不夠才轉unit1
+                        if (unit2_index > 0) {
+                            unit2_index -= 1;
+                            newValue *= 1024;
+                        } else {
+                            unit1_index -= 1;
+                            newValue *= 8;
+                        }
+
+                    }
+                    newUnit = unit2[unit2_index] + unit1[unit1_index];
+
+                }
+
+                return {
+                    value: newValue,
+                    unit: newUnit,
+                };
+            }
+            const getDataKeyString = (key) => {
                 // console.debug(key);
                 let keyName = key;
                 let keyUnit = '';
@@ -192,57 +261,16 @@ function pieChart() {
                         keyName = '下載次數';
                         keyUnit = '次';
                         break;
-                    case 'size':
+                    case 'file_size':
                         keyName = '下載量';
                         keyUnit = 'GB';
                         break;
                 }
                 return { name: keyName, unit: keyUnit };
-            });
-            // console.debug(dataKeyName);
-
-
-
-            var dataGroup_count = dataKey.length - 1;
-            var width = 500;
-            var height = 500;
-
-
-            const svg = d3.create("svg")
-                .attr("viewBox", [-width / 2, -height / 2, width, height]);
-
-            svg.append('g')
-                .attr("transform", `translate(${0},${-height / 2 + 20})`)
-                .append('text')
-                .attr("id", "title")
-                .attr("fill", "currentcolor")
-                .attr("color", "black")
-                .attr("font-family", "sans-serif")
-                .attr("font-size", 20)
-                .attr("font-weight", 900)
-                .attr("text-anchor", "middle")
-                .attr("alignment-baseline", "middle")
-                // .attr("position", "relative")
-                // .attr("left", 0)
-                .text(Data.title);
-
-
-            svg.append('text')
-                .attr("id", "centre")
-                .attr("fill", "currentcolor")
-                .attr("color", "black")
-                .attr("font-family", "sans-serif")
-                .attr("font-size", 20)
-                .attr("font-weight", 900)
-                .attr("text-anchor", "middle")
-                .attr("alignment-baseline", "middle")
-                .attr("position", "relative")
-                .text("GDMS");
-
-
-            var getColor = (network, dataGroup = 1) => {
+            };
+            const getColor = (network, dataGroup = 0) => {
                 let color;
-                if (dataGroup == 1)
+                if (dataGroup == 0)
                     switch (network) {
                         case "CWBSN":
                             color = "#2ca9e1";
@@ -289,492 +317,587 @@ function pieChart() {
 
                 return color;
             };
+            const width = 500;
+            const height = 500;
+            const data = function () {
 
+                let dataObj = Data.data;
+                let Objkeys = Object.getOwnPropertyNames(dataObj);
+                // console.debug(Objkeys);
 
+                Objkeys.forEach(Objkey => {
+                    let obj = dataObj[Objkey];
+                    let DBKeys = Object.getOwnPropertyNames(obj);
+                    obj.columns = DBKeys;
 
-            var appendPie = (dataGroup) => {
-                var pie = d3.pie()
-                    .padAngle(0.01)
-                    .sort(null)
-                    .value(d => d[dataKey[dataGroup]]);
+                    if (Objkey == Objkeys[1]) //==file_size
+                    {
+                        const dataUnit = 'GB';
+                        DBKeys.forEach(DBkey => {
+                            let sizeArr = obj[DBkey].split(' ');
+                            let size = parseFloat(sizeArr[0]);
+                            let unit = sizeArr[1];
 
-                const margin = 50;
-                const diff = (Math.min(width, height) / 2 - margin * dataGroup_count) / (dataGroup_count + 1);
-                const radius = Math.min(width, height) / 2 - margin - (dataGroup - 1) * (diff + margin);
-
-                var arc = d3.arc()
-                    .innerRadius(radius - diff)
-                    .outerRadius(radius);
-
-
-                const arcs = pie(data);
-                // console.debug(arcs);
-
-                var pieGroup = svg
-                    .append("g")
-                    .attr("class", "pieGroup")
-                    .attr("id", "group" + dataGroup);
-
-                pieGroup
-                    .append("text")
-                    .attr("class", "groupName")
-                    .attr("transform", () => {
-                        // console.debug(radius);
-                        let rad = 0.25 * Math.PI;
-                        let r = radius - diff;
-                        let shift = Math.sin(rad) * r;
-                        return `translate(${shift},${shift})`
-                    })
-                    .attr("fill", "currentcolor")
-                    .attr("color", "#5B5B5B")
-                    .attr("font-family", "sans-serif")
-                    .attr("font-size", 8)
-                    .attr("font-weight", 600)
-                    .attr("text-anchor", "end")
-                    .text(dataKeyName[dataGroup].name);
-
-                var pie = pieGroup
-                    .selectAll("g")
-                    .data(arcs)
-                    .join("g")
-                    .attr("class", "pie");
-
-                pie
-                    .append("path")
-                    .attr("fill", d => getColor(d.data[dataKey[0]], dataGroup))
-                    .attr("d", arc)
-                    .attr("position", "relative")
-                    .attr("z-index", 100)
-                    .attr("stroke", "black")
-                    .attr("stroke-width", 0.1);
-
-
-                pie
-                    .append("g")
-                    .attr("class", "text")
-                    .attr("fill", "currentcolor")
-                    .attr("font-family", "sans-serif")
-                    .attr("font-weight", "bold")
-                    .attr("text-anchor", "middle")
-                    .attr("position", "relative")
-                    .attr("z-index", 0)
-                    .append("text")
-                    .attr("transform", d => `translate(${arc.centroid(d)})`)
-                    .call(text => {
-                        //===largePie
-                        text.filter(d => !isSmallPie(d))
-                            .attr("color", d => {
-                                let textColor;
-                                let Y = 120;//大於這個明亮度當成淺色
-                                let pieColor = getColor(d.data[dataKey[0]], dataGroup);
-                                let rgb = {
-                                    r: parseInt(pieColor.substring(1, 3), 16),
-                                    g: parseInt(pieColor.substring(3, 5), 16),
-                                    b: parseInt(pieColor.substring(5, 7), 16),
-                                }
-                                if (rgb.r * 0.299 + rgb.g * 0.578 + rgb.b * 0.114 >= Y)  //浅色
-                                    textColor = 'black';
-                                else  //深色
-                                    textColor = '#F0F0F0';
-
-                                // console.debug(rgb);
-                                return textColor;
-                            })
-                            .append("tspan")
-                            .attr("y", "-0.4em")
-                            .attr("font-size", d => {
-                                let textSize = 12;
-                                let arc = d.endAngle - d.startAngle;
-                                let textLength = d.data[dataKey[0]].length;
-                                if (arc < 0.5 && textLength >= 6)
-                                    textSize = 10
-                                return textSize;
-                            })
-                            .text(d => d.data[dataKey[0]])
-                            .append("tspan")
-                            .attr("x", 0)
-                            .attr("y", "0.7em")
-                            .attr("fill-opacity", 0.7)
-                            .attr("font-size", 10)
-                            .attr("font-weight", 500)
-                            .text(d => d.data[dataKey[dataGroup]])
-                            .append("tspan")
-                            .attr("font-size", 7)
-                            .attr("font-weight", "normal")
-                            .text(dataKeyName[dataGroup].unit);
-
-                        //===smallPie
-                        var smallPie = text.filter(d => isSmallPie(d));
-                        smallPie.nodes().forEach(d => {
-                            let label = d3.select(d.parentNode);
-                            let labelRadius = radius + margin / 5;
-
-                            label
-                                .append("circle")
-                                .attr('class', "label-circle")
-                                .attr('fill', "#393939")
-                                .attr("opacity", 0.7)
-                                .attr('r', 1.5);
-
-                            label
-                                .append('polyline')
-                                .attr('class', "label-line")
-                                .attr('stroke-width', "1px")
-                                .attr('stroke', "#393939")
-                                .attr("opacity", 0.7)
-                                .attr('fill', "none");
-
-                            label
-                                .attr('class', 'label')
-                                .select('text')
-                                .attr('dy', '.35em')
-                                .attr("color", "black")
-                                .attr("font-size", 12)
-                                .text(d => d.data[dataKey[0]]);
-
-                            setTimeout(() => label.call(relax), labelMove(label, labelRadius));
-                            // labelMove(label, labelRadius)
+                            obj[DBkey] = convert_download_unit(size, unit, dataUnit).value;
                         });
-
-                    });
-
-
-                function isSmallPie(data) {
-                    let isSmallPie = data.endAngle - data.startAngle < 0.25;
-                    return isSmallPie;
-                }
-                function labelMove(relaxLabel, labelRadius, duration = 0, circleMove = true) {
-                    // circleMove = false;
-
-
-                    var circlePos, midPos, textPos;
-                    // circleMove = false;
-                    // var pieData = relaxLabel.data()[0];
-                    // circlePos = arc.centroid(pieData);
-                    // console.debug(circlePos);
-
-                    var sign;
-
-                    // var labelName = relaxLabel.data()[0].data.name;
-
-                    // if (circleMove) {
-                    //     // console.debug(labelName + '\'s circleMove');
-                    //     relaxLabel.select('circle')
-                    //         .transition()
-                    //         .duration(duration)
-                    //         .attr('transform', d => `translate(${arc.centroid(d)})`);
-                    // }
-
-                    // console.debug(relaxLabel.select('circle'));
-                    // setTimeout(console.debug(relaxLabel.select('circle').attr('transform')), duration);
-
-                    relaxLabel
-                        .select('polyline')
-                        .transition()
-                        .duration(duration)
-                        .attr('points', function (d) {
-
-                            // console.log(labelName + '\'s');
-
-
-                            // console.debug(labelName + " move");
-                            // console.debug(this.points);
-
-
-
-                            // console.log(relaxLabel.select('circle'));
-                            if (circleMove) {
-                                circlePos = arc.centroid(d);
-                                relaxLabel.select('circle')
-                                    .transition()
-                                    .duration(duration)
-                                    .attr('transform', `translate(${circlePos})`);
-                            }
-                            else {
-                                var circleTransform = relaxLabel.select('circle').node().transform.baseVal[0];
-                                if (circleTransform) {
-                                    circlePos = [circleTransform.matrix.e, circleTransform.matrix.f];
-                                    // console.debug(circlePos);
-                                }
-                            }
-
-                            let midAngle = Math.atan2(circlePos[1], circlePos[0]);
-                            midPos = [Math.cos(midAngle) * labelRadius, Math.sin(midAngle) * labelRadius];
-                            // console.debug(midAngle);
-                            // console.debug(d.data.name);
-                            // console.debug(midPos[1]);
-                            let y = midPos[1];
-                            // console.debug("y=" + y);
-                            sign = (y > 0) ? 1 : -1;
-
-
-                            //垂直向量內積＝0、勾股 解方程式算切線上距離5的點
-                            let dist = 5;
-                            let dx = Math.sqrt(Math.pow(dist, 2) / (1 + Math.pow((circlePos[0] - midPos[0]) / (midPos[1] - circlePos[1]), 2)));
-                            let dy = dx * (circlePos[0] - midPos[0]) / (midPos[1] - circlePos[1]);
-
-                            // console.debug(dx, dy);
-                            textPos = [midPos[0] + dx * sign, midPos[1] + dy * sign];
-                            // console.debug(textPos);
-                            d.labelRadius = labelRadius;
-                            return [circlePos, midPos, textPos];
-
-                        });
-
-
-                    relaxLabel
-                        .select('text')
-                        .transition()
-                        .duration(duration)
-                        .attr('transform', "translate(" + textPos + ")")
-                        .attr('text-anchor', textPos[0] >= 0 ? 'start' : 'end')
-                        .attr("alignment-baseline", textPos[0] * textPos[1] < 0 ? (textPos[0] > 0 ? "after-edge" : "middle") : "baseline");
-
-                    return duration;
-
-                }
-                function relax(label) {
-                    console.log("collide checking...");
-
-                    var thisLabel_node = label.node();
-                    var thisPie_node = thisLabel_node.parentNode;
-                    var thisPieGroup_node = thisPie_node.parentNode;
-
-
-                    var allPies = thisPieGroup_node.childNodes;
-
-
-
-
-                    var thisIndex;
-                    //=========get event target's index in pieGroup childNodes
-                    for (let i = 0; i < allPies.length; i++) {
-                        if (allPies[i] == thisPie_node) {
-                            thisIndex = i;
-                            break;
-                        }
+                        obj.sizeUnit = dataUnit;
                     }
 
+                });
+                dataObj.columns = Objkeys;
+                return dataObj;
+            }();
+            console.debug(data);
 
-                    var preLabel_node, nextLabel_node;
-                    // thisLabel = allPies[thisIndex].querySelector('.label');
-                    if (thisIndex - 1 >= 0)
-                        preLabel_node = allPies[thisIndex - 1].querySelector('.label');
-                    if (thisIndex + 1 < allPies.length)
-                        nextLabel_node = allPies[thisIndex + 1].querySelector('.label');
+            const dataKey = data.columns;
 
-                    // console.debug(thisLabel, preLabel, nextLabel)
-                    var collide = (this_node, next_node, pre_node = null) => {
-                        let spacing = 8;
-                        if (this_node && next_node) {
-                            let a = d3.select(this_node);
-                            let b = d3.select(next_node);
-                            let a_textY = a.select('polyline').node().points[2].y;
-                            let b_textY = b.select('polyline').node().points[2].y;
-                            if (Math.abs(a_textY - b_textY) < spacing) {
-                                console.log("RELAXing");
-                                var circleMove = false;
-                                let labelRadius = b.data()[0].labelRadius;
-                                labelRadius += spacing;
-                                labelMove(a, labelRadius, 200, circleMove);
-                                // setTimeout(() => collide(a.node(), null, b.node()), 100)
+            const svg = d3.create("svg")
+                .attr("viewBox", [-width / 2, -height / 2, width, height]);
+            const focusGroup = svg.append("g").attr('class', 'focus');
 
-                            }
-                        }
-                        else if (this_node && pre_node) {
-                            let a = d3.select(this_node);
-                            let b = d3.select(pre_node);
-                            let a_textY = a.select('polyline').node().points[2].y;
-                            let b_textY = b.select('polyline').node().points[2].y;
-                            // console.debug(Math.abs(a_textY - b_textY))
+            function updateChart(trans = false) {
 
-                            if (Math.abs(a_textY - b_textY) < spacing) {
-                                console.log("RELAXing");
-                                var circleMove = false;
-                                let labelRadius = b.data()[0].labelRadius;
-                                labelRadius += spacing;
-                                labelMove(a, labelRadius, 200, circleMove);
-                            }
+                function init() {
+                    svg.append('g')
+                        .attr("class", "title")
+                        .attr("transform", `translate(${0},${-height / 2 + 20})`)
+                        .append('text')
+                        .attr("fill", "currentcolor")
+                        .attr("color", "black")
+                        .attr("font-family", "sans-serif")
+                        .attr("font-size", 20)
+                        .attr("font-weight", 900)
+                        .attr("text-anchor", "middle")
+                        .attr("alignment-baseline", "middle")
+                        // .attr("position", "relative")
+                        // .attr("left", 0)
+                        .text(Data.title);
 
-                        }
-
-                    }
-                    // collide(thisLabel_node, preLabel_node);
-                    collide(thisLabel_node, nextLabel_node, preLabel_node);
+                    focusGroup.append('text')
+                        .attr("id", "centre")
+                        .attr("fill", "currentcolor")
+                        .attr("color", "black")
+                        .attr("font-family", "sans-serif")
+                        .attr("font-size", 20)
+                        .attr("font-weight", 900)
+                        .attr("text-anchor", "middle")
+                        .attr("alignment-baseline", "middle")
+                        .attr("position", "relative")
+                        .text("GDMS");
 
 
+                };
 
-                }
+                function appendPie(dataGroup) {
+                    const margin = 50;
+                    const diff = (Math.min(width, height) / 2 - margin * dataKey.length) / (dataKey.length + 1);
+                    const radius = Math.min(width, height) / 2 - margin - dataGroup * (diff + margin);
 
-                function events() {
+                    const pieData = data[dataKey[dataGroup]];
+                    const pieDataKey = pieData.columns.filter(key => key != 'total');
 
-                    const tooltip = d3.select('#tooltip');
-                    const fadeOut = 0.4;
+                    // console.debug(pieData);
 
-                    var pieMove = function (pie, dir) {
-                        let pieData = pie.data()[0];
-                        let smallPie = isSmallPie(pieData);
+                    const getArcData = d3.pie()
+                        .padAngle(0.01)
+                        .sort(null)
+                        .value(key => pieData[key]);
 
+                    const arcData = getArcData(pieDataKey).filter(d => d.value != 0);
 
-                        var path = pie.select('path');
-                        if (smallPie)
-                            var label = pie.select('.label');
-                        else
-                            var text = pie.select('text');
+                    const arc = d3.arc()
+                        .innerRadius(radius - diff)
+                        .outerRadius(radius);
+                    // console.debug(arcData);
 
+                    const pieGroup = focusGroup
+                        .append("g")
+                        .attr("class", "pieGroup")
+                        .attr("id", "group" + dataGroup);
 
-                        switch (dir) {
-                            //===0:out 1:over
-                            case 0:
-                                var beenClicked = false;
+                    pieGroup
+                        .append("text")
+                        .attr("class", "groupName")
+                        .attr("transform", () => {
+                            // console.debug(radius);
+                            let rad = 0.25 * Math.PI;
+                            let r = radius - diff;
+                            let shift = Math.sin(rad) * r;
+                            return `translate(${shift},${shift})`
+                        })
+                        .attr("fill", "currentcolor")
+                        .attr("color", "#5B5B5B")
+                        .attr("font-family", "sans-serif")
+                        .attr("font-size", 8)
+                        .attr("font-weight", 600)
+                        .attr("text-anchor", "end")
+                        .text(getDataKeyString(dataKey[dataGroup]).name);
 
-                                var pathInnerRadius = radius - diff;
-                                var pathOuterRadius = radius;
-                                var duration = 100;
+                    pieGroup
+                        .selectAll("g")
+                        .data(arcData)
+                        .join("g")
+                        .attr("class", "pie")
+                        .call(g_collectuon =>
+                            g_collectuon.each(function (d) {
+                                let g = d3.select(this);
+                                let dbName = d.data;
+                                g
+                                    .append("path")
+                                    .attr("fill", getColor(dbName, dataGroup))
+                                    .attr("d", arc)
+                                    .attr("position", "relative")
+                                    .attr("z-index", 100)
+                                    .attr("stroke", "black")
+                                    .attr("stroke-width", 0.1);
 
+                                g
+                                    .append("g")
+                                    .attr("class", "text")
+                                    .attr("fill", "currentcolor")
+                                    .attr("font-family", "sans-serif")
+                                    .attr("font-weight", "bold")
+                                    .attr("text-anchor", "middle")
+                                    .attr("position", "relative")
+                                    .attr("z-index", 0)
+                                    .append("text")
+                                    .attr("transform", `translate(${arc.centroid(d)})`)
+                                    .call(text => {
+                                        //===largePie
+                                        // console.debug(text.node())
+                                        let size, unit;
+                                        if (!isSmallPie(d, dataGroup))
+                                            text.filter(d => !isSmallPie(d, dataGroup))
+                                                .attr("color", d => {
+                                                    // console.debug(d)
+                                                    let textColor;
+                                                    let Y = 120;//大於這個明亮度當成淺色
+                                                    let pieColor = getColor(dbName, dataGroup);
+                                                    let rgb = {
+                                                        r: parseInt(pieColor.substring(1, 3), 16),
+                                                        g: parseInt(pieColor.substring(3, 5), 16),
+                                                        b: parseInt(pieColor.substring(5, 7), 16),
+                                                    }
+                                                    if (rgb.r * 0.299 + rgb.g * 0.578 + rgb.b * 0.114 >= Y)  //浅色
+                                                        textColor = 'black';
+                                                    else  //深色
+                                                        textColor = '#F0F0F0';
 
-                                svg.selectAll('path')
-                                    .each(function () {
-                                        if (this.classList.contains("clicked"))
-                                            beenClicked = true;
+                                                    // console.debug(rgb);
+                                                    return textColor;
+                                                })
+                                                .append("tspan")
+                                                .attr("y", "-0.4em")
+                                                .attr("font-size", d => {
+                                                    // console.debug(d);
+                                                    let textSize = 12;
+                                                    let arc = d.endAngle - d.startAngle;
+                                                    let textLength = dbName.length;
+                                                    if (arc < 0.5 && textLength >= 6)
+                                                        textSize = 10
+                                                    return textSize;
+                                                })
+                                                .text(dbName)
+                                                .append("tspan")
+                                                .attr("x", 0)
+                                                .attr("y", "0.7em")
+                                                .attr("fill-opacity", 0.7)
+                                                .attr("font-size", 10)
+                                                .attr("font-weight", 500)
+                                                .text(d => d.value)
+                                                .append("tspan")
+                                                .attr("font-size", 7)
+                                                .attr("font-weight", "normal")
+                                                .text(getDataKeyString(dataKey[dataGroup]).unit);
+
+                                        //===smallPie
+                                        var smallPie = text.filter(d => isSmallPie(d, dataGroup));
+                                        smallPie.nodes().forEach(d => {
+                                            // console.debug(d)
+                                            let label = d3.select(d.parentNode);
+                                            let labelRadius = radius + margin / 5;
+
+                                            label
+                                                .append("circle")
+                                                .attr('class', "label-circle")
+                                                .attr('fill', "#393939")
+                                                .attr("opacity", 0.7)
+                                                .attr('r', 1.5);
+
+                                            label
+                                                .append('polyline')
+                                                .attr('class', "label-line")
+                                                .attr('stroke-width', "1px")
+                                                .attr('stroke', "#393939")
+                                                .attr("opacity", 0.7)
+                                                .attr('fill', "none");
+
+                                            label
+                                                .attr('class', 'label')
+                                                .select('text')
+                                                .attr('dy', '.35em')
+                                                .attr("color", "black")
+                                                .attr("font-size", 12)
+                                                .text(dbName);
+
+                                            setTimeout(() => label.call(relax), labelMove(label, labelRadius));
+                                            // labelMove(label, labelRadius)
+                                        });
+
                                     });
-                                if (!beenClicked)
-                                    svg.selectAll('path').attr("fill-opacity", 1);
-                                else
-                                    path.attr("fill-opacity", fadeOut);
+                                g.call(events);
+                            })
+                        );
 
-                                path
-                                    .transition()
-                                    .duration(duration)
-                                    .attr('d', arc
-                                        .innerRadius(pathInnerRadius)
-                                        .outerRadius(pathOuterRadius)
-                                    );
 
-                                if (smallPie) {
+                    function isSmallPie(data, dataGroup = 0) {
+                        let isSmallPie = data.endAngle - data.startAngle < 0.25 * (dataGroup + 1);
+                        return isSmallPie;
+                    }
+                    function labelMove(relaxLabel, labelRadius, duration = 0, circleMove = true) {
+                        // circleMove = false;
 
-                                    let labelRadius = pathOuterRadius + margin / 5;
 
-                                    // labelMove(label, labelRadius, duration);
-                                    // label.call(relax);
+                        var circlePos, midPos, textPos;
+                        // circleMove = false;
+                        // var pieData = relaxLabel.data()[0];
+                        // circlePos = arc.centroid(pieData);
+                        // console.debug(circlePos);
 
-                                    setTimeout(() => label.call(relax), labelMove(label, labelRadius, duration));
-                                }
-                                else
-                                    text
+                        var sign;
+
+                        // var labelName = relaxLabel.data()[0].data.name;
+
+                        // if (circleMove) {
+                        //     // console.debug(labelName + '\'s circleMove');
+                        //     relaxLabel.select('circle')
+                        //         .transition()
+                        //         .duration(duration)
+                        //         .attr('transform', d => `translate(${arc.centroid(d)})`);
+                        // }
+
+                        // console.debug(relaxLabel.select('circle'));
+                        // setTimeout(console.debug(relaxLabel.select('circle').attr('transform')), duration);
+
+                        relaxLabel
+                            .select('polyline')
+                            .transition()
+                            .duration(duration)
+                            .attr('points', function (d) {
+
+                                // console.log(labelName + '\'s');
+
+
+                                // console.debug(labelName + " move");
+                                // console.debug(this.points);
+
+
+
+                                // console.log(relaxLabel.select('circle'));
+                                if (circleMove) {
+                                    circlePos = arc.centroid(d);
+                                    relaxLabel.select('circle')
                                         .transition()
                                         .duration(duration)
-                                        .attr("transform", d => `translate(${arc.centroid(d)})`);
-                                break;
-
-                            case 1:
-
-                                var pathInnerRadius = radius - diff + margin / 5;
-                                var pathOuterRadius = (radius + margin / 5) * 1.08;
-                                var duration = 250;
-
-                                svg.selectAll('path')
-                                    .attr("fill-opacity", function () {
-                                        var isNotTarget = this != path.node();
-                                        var isNotClicked = !this.classList.contains("clicked");
-                                        // console.debug(this.classList.contains("clicked"));
-                                        if (isNotTarget && isNotClicked)
-                                            return fadeOut;
-                                    });
-                                path.transition()
-                                    .duration(duration)
-                                    .attr('d', arc
-                                        .innerRadius(pathInnerRadius)
-                                        .outerRadius(pathOuterRadius)
-                                    );
-
-                                if (smallPie) {
-
-                                    let labelRadius = pathOuterRadius + margin / 10;
-
-                                    // labelMove(label, labelRadius, duration);
-                                    // label.call(relax);
-                                    setTimeout(() => label.call(relax), labelMove(label, labelRadius, duration));
+                                        .attr('transform', `translate(${circlePos})`);
                                 }
-                                else
-                                    text
+                                else {
+                                    var circleTransform = relaxLabel.select('circle').node().transform.baseVal[0];
+                                    if (circleTransform) {
+                                        circlePos = [circleTransform.matrix.e, circleTransform.matrix.f];
+                                        // console.debug(circlePos);
+                                    }
+                                }
+
+                                let midAngle = Math.atan2(circlePos[1], circlePos[0]);
+                                midPos = [Math.cos(midAngle) * labelRadius, Math.sin(midAngle) * labelRadius];
+                                // console.debug(midAngle);
+                                // console.debug(d.data.name);
+                                // console.debug(midPos[1]);
+                                let y = midPos[1];
+                                // console.debug("y=" + y);
+                                sign = (y > 0) ? 1 : -1;
+
+
+                                //垂直向量內積＝0、勾股 解方程式算切線上距離5的點
+                                let dist = 5;
+                                let dx = Math.sqrt(Math.pow(dist, 2) / (1 + Math.pow((circlePos[0] - midPos[0]) / (midPos[1] - circlePos[1]), 2)));
+                                let dy = dx * (circlePos[0] - midPos[0]) / (midPos[1] - circlePos[1]);
+
+                                // console.debug(dx, dy);
+                                textPos = [midPos[0] + dx * sign, midPos[1] + dy * sign];
+                                // console.debug(textPos);
+                                d.labelRadius = labelRadius;
+                                return [circlePos, midPos, textPos];
+
+                            });
+
+
+                        relaxLabel
+                            .select('text')
+                            .transition()
+                            .duration(duration)
+                            .attr('transform', "translate(" + textPos + ")")
+                            .attr('text-anchor', textPos[0] >= 0 ? 'start' : 'end')
+                            .attr("alignment-baseline", textPos[0] * textPos[1] < 0 ? (textPos[0] > 0 ? "after-edge" : "middle") : "baseline");
+
+                        return duration;
+
+                    }
+                    function relax(label) {
+                        console.log("collide checking...");
+
+                        var thisLabel_node = label.node();
+                        var thisPie_node = thisLabel_node.parentNode;
+                        var thisPieGroup_node = thisPie_node.parentNode;
+
+
+                        var allPies = thisPieGroup_node.childNodes;
+
+
+
+
+                        var thisIndex;
+                        //=========get event target's index in pieGroup childNodes
+                        for (let i = 0; i < allPies.length; i++) {
+                            if (allPies[i] == thisPie_node) {
+                                thisIndex = i;
+                                break;
+                            }
+                        }
+
+
+                        var preLabel_node, nextLabel_node;
+                        // thisLabel = allPies[thisIndex].querySelector('.label');
+                        if (thisIndex - 1 >= 0)
+                            preLabel_node = allPies[thisIndex - 1].querySelector('.label');
+                        if (thisIndex + 1 < allPies.length)
+                            nextLabel_node = allPies[thisIndex + 1].querySelector('.label');
+
+                        // console.debug(thisLabel, preLabel, nextLabel)
+                        var collide = (this_node, next_node, pre_node = null) => {
+                            let spacing = 8;
+                            if (this_node && next_node) {
+                                let a = d3.select(this_node);
+                                let b = d3.select(next_node);
+                                let a_textY = a.select('polyline').node().points[2].y;
+                                let b_textY = b.select('polyline').node().points[2].y;
+                                if (Math.abs(a_textY - b_textY) < spacing) {
+                                    console.log("RELAXing");
+                                    var circleMove = false;
+                                    let labelRadius = b.data()[0].labelRadius;
+                                    labelRadius += spacing;
+                                    labelMove(a, labelRadius, 200, circleMove);
+                                    // setTimeout(() => collide(a.node(), null, b.node()), 100)
+
+                                }
+                            }
+                            else if (this_node && pre_node) {
+                                let a = d3.select(this_node);
+                                let b = d3.select(pre_node);
+                                let a_textY = a.select('polyline').node().points[2].y;
+                                let b_textY = b.select('polyline').node().points[2].y;
+                                // console.debug(Math.abs(a_textY - b_textY))
+
+                                if (Math.abs(a_textY - b_textY) < spacing) {
+                                    console.log("RELAXing");
+                                    var circleMove = false;
+                                    let labelRadius = b.data()[0].labelRadius;
+                                    labelRadius += spacing;
+                                    labelMove(a, labelRadius, 200, circleMove);
+                                }
+
+                            }
+
+                        }
+                        // collide(thisLabel_node, preLabel_node);
+                        collide(thisLabel_node, nextLabel_node, preLabel_node);
+
+
+
+                    }
+                    function events(pie) {
+
+                        const tooltip = d3.select('#tooltip');
+                        const fadeOut = 0.4;
+
+                        var pieMove = function (pie, dir) {
+                            // console.debug(dataGroup);
+                            let pieData = pie.data()[0];
+                            let smallPie = isSmallPie(pieData, dataGroup);
+
+
+                            var path = pie.select('path');
+                            if (smallPie)
+                                var label = pie.select('.label');
+                            else
+                                var text = pie.select('text');
+
+
+                            switch (dir) {
+                                //===0:out 1:over
+                                case 0:
+                                    var beenClicked = false;
+
+                                    var pathInnerRadius = radius - diff;
+                                    var pathOuterRadius = radius;
+                                    var duration = 100;
+
+
+                                    svg.selectAll('path')
+                                        .each(function () {
+                                            if (this.classList.contains("clicked"))
+                                                beenClicked = true;
+                                        });
+                                    if (!beenClicked)
+                                        svg.selectAll('path').attr("fill-opacity", 1);
+                                    else
+                                        path.attr("fill-opacity", fadeOut);
+
+                                    path
                                         .transition()
                                         .duration(duration)
-                                        .attr("transform", d => `translate(${arc.centroid(d)})`);
-                                break;
+                                        .attr('d', arc
+                                            .innerRadius(pathInnerRadius)
+                                            .outerRadius(pathOuterRadius)
+                                        );
+
+                                    if (smallPie) {
+
+                                        let labelRadius = pathOuterRadius + margin / 5;
+
+                                        // labelMove(label, labelRadius, duration);
+                                        // label.call(relax);
+
+                                        setTimeout(() => label.call(relax), labelMove(label, labelRadius, duration));
+                                    }
+                                    else
+                                        text
+                                            .transition()
+                                            .duration(duration)
+                                            .attr("transform", d => `translate(${arc.centroid(d)})`);
+                                    break;
+
+                                case 1:
+
+                                    var pathInnerRadius = radius - diff + margin / 5;
+                                    var pathOuterRadius = (radius + margin / 5) * 1.08;
+                                    var duration = 250;
+
+                                    svg.selectAll('path')
+                                        .attr("fill-opacity", function () {
+                                            var isNotTarget = this != path.node();
+                                            var isNotClicked = !this.classList.contains("clicked");
+                                            // console.debug(this.classList.contains("clicked"));
+                                            if (isNotTarget && isNotClicked)
+                                                return fadeOut;
+                                        });
+                                    path.transition()
+                                        .duration(duration)
+                                        .attr('d', arc
+                                            .innerRadius(pathInnerRadius)
+                                            .outerRadius(pathOuterRadius)
+                                        );
+
+                                    if (smallPie) {
+
+                                        let labelRadius = pathOuterRadius + margin / 10;
+
+                                        // labelMove(label, labelRadius, duration);
+                                        // label.call(relax);
+                                        setTimeout(() => label.call(relax), labelMove(label, labelRadius, duration));
+                                    }
+                                    else
+                                        text
+                                            .transition()
+                                            .duration(duration)
+                                            .attr("transform", d => `translate(${arc.centroid(d)})`);
+                                    break;
+                            }
                         }
+
+                        pie
+                            .on('mousemove', function (e) {
+                                tooltip
+                                    .style("left", (e.pageX + 5) + "px")
+                                    .style("top", (e.pageY + 5) + "px")
+
+                                // console.debug(e);
+                            })
+                            .on('mouseenter', function (e) {
+                                // console.debug('mouseenter');
+                                var thisPie = d3.select(this);
+                                // console.log(thisPie.node());
+                                var thisPieData = thisPie.data()[0];
+                                // console.log(this.parentNode.parentNode.id);
+                                // var tooltipTag, unit;
+                                // console.debug(thisPieData.endAngle - thisPieData.startAngle);
+
+                                var tooltipTag = getDataKeyString(dataKey[dataGroup]).name;
+                                var value = thisPieData.value, unit = '';
+                                if (tooltipTag == '下載量') {
+                                    let convertedObj = convert_download_unit(thisPieData.value, 'GB');
+                                    value = convertedObj.value;
+                                    unit = convertedObj.unit;
+                                }
+
+                                var tooltipHtml = "<font size='6'><b>" + thisPieData.data + "</b></font><hr style='background-color:white;'>" +
+                                    tooltipTag + " : <b>" + value + "</b><font size='1'> " + unit + "</font>";
+
+
+                                pieMove(thisPie, 1);
+
+                                // d3.timeout(() => pieMove_flag = true, 150);
+                                // console.log(thisPie);
+                                // console.log(e);
+                                // console.log(e.target.nodeName, this.nodeName);
+                                // console.log(event.pageX, event.pageY);
+
+                                tooltip
+                                    .html(tooltipHtml)
+                                    .style("display", "inline")
+                                    .transition().duration(200)
+                                    .style("opacity", .8);
+                            })
+                            .on('mouseleave', function (e) {
+                                // console.debug('mouseleave');
+                                var thisPie = d3.select(this);
+                                var thisPath = thisPie.select('path');
+                                // console.log(thisPie.node());
+                                if (!thisPath.classed('clicked'))
+                                    pieMove(thisPie, 0);
+
+
+                                tooltip
+                                    .style("display", "none")
+                                    .style("opacity", 0);
+
+
+                            })
+                            .on('click', function (e) {
+                                // console.log('click');
+                                var thisPie = d3.select(this);
+                                var thisPath = thisPie.select('path');
+                                var clicked = thisPath.classed('clicked');
+                                // console.debug(clicked);
+                                pieMove(thisPie, !clicked);
+                                thisPath.classed('clicked', !clicked);
+
+                            });
+
                     }
-
-                    pie
-                        .on('mousemove', function (e) {
-                            tooltip
-                                .style("left", (e.pageX + 5) + "px")
-                                .style("top", (e.pageY + 5) + "px")
-
-                            // console.debug(e);
-                        })
-                        .on('mouseenter', function (e) {
-                            // console.debug('mouseenter');
-                            var thisPie = d3.select(this);
-                            // console.log(thisPie.node());
-                            var thisPieData = thisPie.data()[0];
-                            // console.log(this.parentNode.parentNode.id);
-                            // var tooltipTag, unit;
-                            // console.debug(thisPieData);
-
-                            var tooltipTag = dataKeyName[dataGroup].name;
-                            var unit = (dataKeyName[dataGroup].unit == 'GB' ? ' GB' : '');
-
-                            var tooltipHtml = "<font size='6'><b>" + thisPieData.data[dataKey[0]] + "</b></font><hr style='background-color:white;'>" +
-                                tooltipTag + " : <b>" + thisPieData.value + "</b><font size='1'>" + unit + "</font>";
-
-
-                            pieMove(thisPie, 1);
-
-                            // d3.timeout(() => pieMove_flag = true, 150);
-                            // console.log(thisPie);
-                            // console.log(e);
-                            // console.log(e.target.nodeName, this.nodeName);
-                            // console.log(event.pageX, event.pageY);
-
-                            tooltip
-                                .html(tooltipHtml)
-                                .style("display", "inline")
-                                .transition().duration(200)
-                                .style("opacity", .8);
-                        })
-                        .on('mouseleave', function (e) {
-                            // console.debug('mouseleave');
-                            var thisPie = d3.select(this);
-                            var thisPath = thisPie.select('path');
-                            // console.log(thisPie.node());
-                            if (!thisPath.classed('clicked'))
-                                pieMove(thisPie, 0);
-
-
-                            tooltip
-                                .style("display", "none")
-                                .style("opacity", 0);
-
-
-                        })
-                        .on('click', function (e) {
-                            // console.log('click');
-                            var thisPie = d3.select(this);
-                            var thisPath = thisPie.select('path');
-                            var clicked = thisPath.classed('clicked');
-                            // console.debug(clicked);
-                            pieMove(thisPie, !clicked);
-                            thisPath.classed('clicked', !clicked);
-
-                        });
-
                 }
-                pie.call(events);
+
+                if (!(focusGroup.selectAll('*').nodes().length >= 1))
+                    init();
+
+                for (let i = 0; i < dataKey.length; i++)
+                    appendPie(i);
+
             }
+            updateChart();
 
-            for (let i = 1; i < dataKey.length; i++)
-                appendPie(i)
+
 
             return svg.node();
         }

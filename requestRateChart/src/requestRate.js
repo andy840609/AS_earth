@@ -39,7 +39,8 @@ function requestRate() {
     }
     chart.typeNameObj = (vaule) => {
         typeName = vaule;
-        let column = ["id", "chinese_description"]
+        // let column = ["id", "chinese_description"];
+        let column = Object.keys(typeName[0]);
         typeName.column = column;
         console.log(typeName);
         return chart;
@@ -105,7 +106,7 @@ function requestRate() {
                 </div>  
                 -->
 
-                
+
             </div>
 
             </div>

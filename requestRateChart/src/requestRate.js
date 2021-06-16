@@ -5,6 +5,8 @@ function requestRate() {
     var typeNamePath;
     var data;
     var typeName;
+    var typesOfException = [];
+
     // var test;
     chart.selector = (vaule) => {
         selector = vaule;
@@ -38,11 +40,19 @@ function requestRate() {
         return chart;
     }
     chart.typeNameObj = (vaule) => {
-        typeName = vaule;
+        typeName = vaule.map(v => {
+            v.id = !isNaN(v.id) ? parseInt(v.id) : v.id;
+            return v;
+        });
         // let column = ["id", "chinese_description"];
         let column = Object.keys(typeName[0]);
         typeName.column = column;
         console.log(typeName);
+        return chart;
+    }
+    chart.typesOfException = (vaule) => {
+        typesOfException = vaule.map(v => !isNaN(v) ? parseInt(v) : v);
+        console.log('typesOfException=' + typesOfException);
         return chart;
     }
     function chart() {
@@ -230,37 +240,31 @@ function requestRate() {
             const width = 800;
             const height = 600;
             const margin = ({ top: 80, right: 50, bottom: 40, left: 60 });
+
+            var colorPalette = {};
             const getColor = (type) => {
+                const allColor = ["red", "purple", "blue", "green", "steelblue", "orange", "pink", "brown", "goldenrod",
+                    "silver", "teal", "aqua", "slategray", "greenyellow", "mediumspringgreen"];
                 let color;
-                switch (type) {
-                    case 1:
-                        color = "red";
-                        break;
-                    case 2:
-                        color = "purple";
-                        break;
-                    case 3:
-                        color = "blue";
-                        break;
-                    case 4:
-                        color = "green";
-                        break;
-                    case 5:
-                        color = "yellow";
-                        break;
-                    case 6:
-                        color = "brown";
-                        break;
-                    case 7:
-                        color = "orange";
-                        break;
-                    case 8:
-                        color = "pink";
-                        break;
-                    default:
-                        color = "steelblue";
-                        break;
+                // type = parseInt(type);
+                color = colorPalette[type];
+
+                if (!color) {
+                    let index = type % allColor.length;
+                    color = allColor[index];
+
+                    index = 0;
+                    while (Object.values(colorPalette).includes(color)) {
+                        if (index == allColor.length - 1) {
+                            color = 'black';
+                            break;
+                        }
+                        color = allColor[index++];
+                        // console.debug(index);
+                    }
+                    colorPalette[type] = color;
                 }
+
                 return color;
             }
             const getString = (value) => {
@@ -290,8 +294,9 @@ function requestRate() {
             const rateDataKeys = ['processing_speed', 'internal_transmission_rate', 'external_transmission_rate', 'global_reaction_rate'];
 
             {      //刪掉不需要的type ＆ 算rateData
-                const type_dont_show = [6, 7];
-                // const type_dont_show = [];
+                // const type_dont_show = [6, 7];
+                // console.debug(typesOfException);
+                const type_dont_show = typesOfException;
                 data = data.filter(d => !type_dont_show.includes(d[dataKeys[0]]));
                 typeName = typeName.filter(tn => !type_dont_show.includes(tn[typeNameKeys[0]]));
                 var rateData = function () {
@@ -528,8 +533,9 @@ function requestRate() {
                                     .attr("fill", d => getColor(d[typeNameKeys[0]]));
 
                                 g.append("text")
-                                    .attr("x", typeLegend_rect_width / 2)
-                                    .attr("y", typeLegend_rect_height + 2)
+                                    // .attr("x", typeLegend_rect_width / 2)
+                                    // .attr("y", typeLegend_rect_height + 2)
+                                    .attr("transform", `translate(${typeLegend_rect_width / 2}, ${typeLegend_rect_height + 2})`)
                                     .attr("fill", "currentcolor")
                                     .attr("color", "black")
                                     .attr("font-family", "sans-serif")
@@ -537,8 +543,29 @@ function requestRate() {
                                     .attr("font-weight", 600)
                                     .attr("text-anchor", "middle")
                                     .attr("alignment-baseline", "before-edge")
-                                    // .text(d => d[typeNameKeys[0]])
-                                    .text(d => d[typeNameKeys[1]])
+                                    .attr("position", "relative")
+                                    .call(text_collection => text_collection.each(function (d) {
+                                        // console.debug(this);
+                                        let text = d3.select(this);
+                                        let string = d[typeNameKeys[1]];
+
+                                        if (string.includes('('))
+                                            text
+                                                .text(string.substring(0, string.indexOf('(')))
+                                                .append('tspan')
+                                                .attr("x", 0)
+                                                .attr("y", "2.5em")
+                                                .text(string.substring(string.indexOf('(')));
+                                        else if (string.length > 5)
+                                            text.text(string.substring(0, 4))
+                                                .append('tspan')
+                                                .attr("x", 0)
+                                                .attr("y", "2.5em")
+                                                .text(string.substring(4));
+                                        else
+                                            text.text(string);
+
+                                    }))
                             });
 
 
@@ -818,7 +845,7 @@ function requestRate() {
                     ySelected_domain: ySelected_domain,
                     rateUnit: rateUnit,
                 };
-                console.debug(tmpObj);
+                // console.debug(tmpObj);
                 return tmpObj;
 
             };

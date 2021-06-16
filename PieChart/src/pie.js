@@ -2,17 +2,93 @@ function pieChart() {
 
     var selector = 'body';
     var data = [];
+    const convert_download_unit = (value, unitBefore, unitAfter = undefined) => {
+        let newValue, newUnit;
+        const unit1 = ['b', 'B'];
+        const unit2 = ['', 'K', 'M', 'G', 'T'];
+
+
+        var getUnit = (unit) => {
+            let unit1, unit2;
+
+            if (unit.length > 1) {
+                unit1 = unit[1];
+                unit2 = unit[0];
+            }
+            else if (unit.length == 1) {
+                unit1 = unit;
+                unit2 = '';
+            }
+
+            return {
+                unit1: unit1,
+                unit2: unit2,
+            }
+        }
+        var getRatio = (unitA, unitB, unitArr, powerBase) => {
+            let ratio;
+            let A_index = unitArr.indexOf(unitA);
+            let B_index = unitArr.indexOf(unitB);
+
+            if (A_index != -1 && B_index != -1) {
+                let power = A_index - B_index;
+                ratio = Math.pow(powerBase, power);
+            }
+            else {
+                ratio = 1;
+            }
+            return ratio;
+        }
+
+        let unitBefore_obj = getUnit(unitBefore);
+
+        if (unitAfter) {//unitBefore 單位轉換到 unitAfter
+            let unitAfter_obj = getUnit(unitAfter);
+            let ratio1 = getRatio(unitBefore_obj.unit1, unitAfter_obj.unit1, unit1, 8);
+            let ratio2 = getRatio(unitBefore_obj.unit2, unitAfter_obj.unit2, unit2, 1024);
+            // console.debug(unitBefore_obj, unitAfter_obj);
+            // console.debug(ratio1, ratio2);
+            newValue = value * ratio1 * ratio2;
+            newUnit = unitAfter;
+        }
+        else {//unitBefore 單位轉換到 value>=1或單位已是最小(b)為止 ,並給newUnit
+
+            let unit1_index = unit1.indexOf(unitBefore_obj.unit1);
+            let unit2_index = unit2.indexOf(unitBefore_obj.unit2);
+            newValue = value;
+            // let newUnit1 = unitBefore_unit1, newUnit2 = unitBefore_unit2;
+
+            while (newValue < 1 && (unit1_index != 0 || unit2_index != 0)) {
+                //先轉unit2,不夠才轉unit1
+                if (unit2_index > 0) {
+                    unit2_index -= 1;
+                    newValue *= 1024;
+                } else {
+                    unit1_index -= 1;
+                    newValue *= 8;
+                }
+
+            }
+            newUnit = unit2[unit2_index] + unit1[unit1_index];
+
+        }
+
+        return {
+            value: newValue,
+            unit: newUnit,
+        };
+    };
 
     chart.selector = (vaule) => {
         selector = vaule;
         return chart;
-    }
+    };
 
     chart.data = (vaule) => {
-        console.log(vaule);
-        data = [];
+        // console.log(vaule);
         const columns = ['DB', 'count', 'size'];
-        let dataType = typeof (vaule[0]);
+        let copyObj = JSON.parse(JSON.stringify(vaule));//不影響原資料
+        let dataType = typeof (copyObj[0]);
         // console.debug(dataType);
 
         var readTextFile = (file) => {
@@ -83,7 +159,7 @@ function pieChart() {
 
         //判斷第一個元素是字串路徑要讀檔,還是物件資料
         if (dataType == 'string') {
-            let paths = vaule;
+            let paths = copyObj;
             //=========sorting and push to data
             paths.forEach(path => {
                 let tmp = readTextFile(path);
@@ -92,50 +168,63 @@ function pieChart() {
             });
         }
         else if (dataType == 'object') {
-            data = vaule;
+            const convertData = function (data) {
 
-            // data = vaule.map(v => {
-            //     let dataObj = v.data;
-            //     let Objkeys = Object.getOwnPropertyNames(dataObj);
-            //     let countObj = dataObj[Objkeys[0]];
-            //     let sizeObj = dataObj[Objkeys[1]];
-            //     // console.debug(v);
-            //     // console.debug(Objkeys[0]);
-            //     let DBKeys = Object.getOwnPropertyNames(countObj).filter(key => key != 'total');
+                let dataObj = data;
+                let Objkeys = Object.getOwnPropertyNames(dataObj).filter(key => key != 'columns');
+                // console.debug(Objkeys);
 
-            //     const dataUnit = 'GB';
-            //     let chartData = DBKeys.map(key => {
-            //         let obj = {};
-            //         obj[columns[0]] = key;
-            //         obj[columns[1]] = countObj[key];
+                Objkeys.forEach((Objkey, index, arr) => {
+                    let obj = dataObj[Objkey];
+                    let DBKeys = Object.getOwnPropertyNames(obj).filter(key => key != 'columns');
+                    obj.columns = DBKeys;
+                    // console.debug(DBKeys);
 
-            //         let sizeArr = sizeObj[key].split(' ');
-            //         let size = parseFloat(sizeArr[0]);
-            //         size = convert_download_unit(size, sizeArr[1], dataUnit).value;
 
-            //         // let aaa = convert_download_unit(2, 'MB', 'KB');
-            //         // let aaa = convert_download_unit(0.000000002, 'MB');
-            //         // console.debug(aaa);
-            //         obj[columns[2]] = size;
-            //         return obj;
-            //     })
-            //     chartData.columns = columns;
-            //     chartData.sizeUnit = dataUnit;
+                    if (Objkey == 'file_size') //==file_size
+                    {
+                        // console.debug(obj);
+                        const dataUnit = 'GB';
+                        DBKeys.forEach(DBkey => {
+                            if (typeof (obj[DBkey]) == 'string') {
+                                // console.debug(obj[DBkey]);
+                                let sizeArr = obj[DBkey].split(' ');
+                                let size = parseFloat(sizeArr[0]);
+                                let unit = sizeArr[1];
+                                obj[DBkey] = convert_download_unit(size, unit, dataUnit).value;
+                            }
+                        });
 
-            //     return {
-            //         data: chartData,
-            //         title: v.title,
-            //     };
-            // });
+                        // obj.sizeUnit = dataUnit;
+                    }
+
+                });
+                dataObj.columns = Objkeys.filter(key => {
+                    // console.debug(dataObj[key].total);
+                    let boolean = true;
+                    if (dataObj[key].hasOwnProperty('total'))
+                        if (dataObj[key].total == 0)
+                            boolean = false;
+                    return boolean;
+                });
+                // console.debug(dataObj);
+                return dataObj;
+            };
+            data = copyObj.map(v => {
+                // console.debug(v);
+                v.data = convertData(v.data);
+                return v;
+            });
+
+
 
         }
         else {
             console.debug("unknow dataType");
         }
-
         // console.debug(data);
         return chart;
-    }
+    };
     function chart() {
         function init() {
             $(selector).append(`
@@ -173,90 +262,16 @@ function pieChart() {
         };
 
         function PieSvg(Data) {
-            const convert_download_unit = (value, unitBefore, unitAfter = undefined) => {
-                let newValue, newUnit;
-                const unit1 = ['b', 'B'];
-                const unit2 = ['', 'K', 'M', 'G', 'T'];
+            // console.debug(Data);
 
-
-                var getUnit = (unit) => {
-                    let unit1, unit2;
-
-                    if (unit.length > 1) {
-                        unit1 = unit[1];
-                        unit2 = unit[0];
-                    }
-                    else if (unit.length == 1) {
-                        unit1 = unit;
-                        unit2 = '';
-                    }
-
-                    return {
-                        unit1: unit1,
-                        unit2: unit2,
-                    }
-                }
-                var getRatio = (unitA, unitB, unitArr, powerBase) => {
-                    let ratio;
-                    let A_index = unitArr.indexOf(unitA);
-                    let B_index = unitArr.indexOf(unitB);
-
-                    if (A_index != -1 && B_index != -1) {
-                        let power = A_index - B_index;
-                        ratio = Math.pow(powerBase, power);
-                    }
-                    else {
-                        ratio = 1;
-                    }
-                    return ratio;
-                }
-
-                let unitBefore_obj = getUnit(unitBefore);
-
-                if (unitAfter) {//unitBefore 單位轉換到 unitAfter
-                    let unitAfter_obj = getUnit(unitAfter);
-                    let ratio1 = getRatio(unitBefore_obj.unit1, unitAfter_obj.unit1, unit1, 8);
-                    let ratio2 = getRatio(unitBefore_obj.unit2, unitAfter_obj.unit2, unit2, 1024);
-                    // console.debug(unitBefore_obj, unitAfter_obj);
-                    // console.debug(ratio1, ratio2);
-                    newValue = value * ratio1 * ratio2;
-                    newUnit = unitAfter;
-                }
-                else {//unitBefore 單位轉換到 value>=1或單位已是最小(b)為止 ,並給newUnit
-
-                    let unit1_index = unit1.indexOf(unitBefore_obj.unit1);
-                    let unit2_index = unit2.indexOf(unitBefore_obj.unit2);
-                    newValue = value;
-                    // let newUnit1 = unitBefore_unit1, newUnit2 = unitBefore_unit2;
-
-                    while (newValue < 1 && (unit1_index != 0 || unit2_index != 0)) {
-                        //先轉unit2,不夠才轉unit1
-                        if (unit2_index > 0) {
-                            unit2_index -= 1;
-                            newValue *= 1024;
-                        } else {
-                            unit1_index -= 1;
-                            newValue *= 8;
-                        }
-
-                    }
-                    newUnit = unit2[unit2_index] + unit1[unit1_index];
-
-                }
-
-                return {
-                    value: newValue,
-                    unit: newUnit,
-                };
-            }
             const getDataKeyString = (key) => {
                 // console.debug(key);
                 let keyName = key;
                 let keyUnit = '';
                 switch (key) {
-                    case 'name':
-                        keyName = '資料庫';
-                        break;
+                    // case 'name':
+                    //     keyName = '資料庫';
+                    //     break;
                     case 'count':
                         keyName = '下載次數';
                         keyUnit = '次';
@@ -319,51 +334,24 @@ function pieChart() {
             };
             const width = 500;
             const height = 500;
-            const data = function () {
-
-                let dataObj = Data.data;
-                let Objkeys = Object.getOwnPropertyNames(dataObj);
-                // console.debug(Objkeys);
-
-                Objkeys.forEach(Objkey => {
-                    let obj = dataObj[Objkey];
-                    let DBKeys = Object.getOwnPropertyNames(obj);
-                    obj.columns = DBKeys;
-
-                    if (Objkey == Objkeys[1]) //==file_size
-                    {
-                        const dataUnit = 'GB';
-                        DBKeys.forEach(DBkey => {
-                            let sizeArr = obj[DBkey].split(' ');
-                            let size = parseFloat(sizeArr[0]);
-                            let unit = sizeArr[1];
-
-                            obj[DBkey] = convert_download_unit(size, unit, dataUnit).value;
-                        });
-                        obj.sizeUnit = dataUnit;
-                    }
-
-                });
-                dataObj.columns = Objkeys;
-                return dataObj;
-            }();
-            console.debug(data);
+            const data = Data.data;
 
             const dataKey = data.columns;
 
             const svg = d3.create("svg")
                 .attr("viewBox", [-width / 2, -height / 2, width, height]);
+
+            const titleGroup = svg.append('g').attr("class", "title");
             const focusGroup = svg.append("g").attr('class', 'focus');
 
             function updateChart(trans = false) {
 
                 function init() {
-                    svg.append('g')
-                        .attr("class", "title")
+                    titleGroup
                         .attr("transform", `translate(${0},${-height / 2 + 20})`)
                         .append('text')
                         .attr("fill", "currentcolor")
-                        .attr("color", "black")
+                        .attr("color", "#8E8E8E")
                         .attr("font-family", "sans-serif")
                         .attr("font-size", 20)
                         .attr("font-weight", 900)
@@ -394,161 +382,170 @@ function pieChart() {
                     const radius = Math.min(width, height) / 2 - margin - dataGroup * (diff + margin);
 
                     const pieData = data[dataKey[dataGroup]];
-                    const pieDataKey = pieData.columns.filter(key => key != 'total');
+                    //total 和 值爲0的不畫
+                    const pieDataKey = pieData.columns.filter(key => key != 'total' && pieData[key] != 0);
 
-                    // console.debug(pieData);
 
                     const getArcData = d3.pie()
                         .padAngle(0.01)
                         .sort(null)
                         .value(key => pieData[key]);
 
-                    const arcData = getArcData(pieDataKey).filter(d => d.value != 0);
+                    const arcData = getArcData(pieDataKey);
+                    // console.debug(arcData);
+
 
                     const arc = d3.arc()
                         .innerRadius(radius - diff)
                         .outerRadius(radius);
-                    // console.debug(arcData);
 
-                    const pieGroup = focusGroup
+
+                    focusGroup
                         .append("g")
                         .attr("class", "pieGroup")
-                        .attr("id", "group" + dataGroup);
+                        .attr("id", "group" + dataGroup)
+                        .call(pieGroup => {
 
-                    pieGroup
-                        .append("text")
-                        .attr("class", "groupName")
-                        .attr("transform", () => {
-                            // console.debug(radius);
-                            let rad = 0.25 * Math.PI;
-                            let r = radius - diff;
-                            let shift = Math.sin(rad) * r;
-                            return `translate(${shift},${shift})`
-                        })
-                        .attr("fill", "currentcolor")
-                        .attr("color", "#5B5B5B")
-                        .attr("font-family", "sans-serif")
-                        .attr("font-size", 8)
-                        .attr("font-weight", 600)
-                        .attr("text-anchor", "end")
-                        .text(getDataKeyString(dataKey[dataGroup]).name);
+                            pieGroup
+                                .append("text")
+                                .attr("class", "groupName")
+                                .attr("transform", () => {
+                                    // console.debug(radius);
+                                    let rad = 0.25 * Math.PI;
+                                    let r = radius - diff;
+                                    let shift = Math.sin(rad) * r;
+                                    return `translate(${shift},${shift})`
+                                })
+                                .attr("fill", "currentcolor")
+                                .attr("color", "#5B5B5B")
+                                .attr("font-family", "sans-serif")
+                                .attr("font-size", 8)
+                                .attr("font-weight", 600)
+                                .attr("text-anchor", "end")
+                                .text(getDataKeyString(dataKey[dataGroup]).name);
 
-                    pieGroup
-                        .selectAll("g")
-                        .data(arcData)
-                        .join("g")
-                        .attr("class", "pie")
-                        .call(g_collectuon =>
-                            g_collectuon.each(function (d) {
-                                let g = d3.select(this);
-                                let dbName = d.data;
-                                g
-                                    .append("path")
-                                    .attr("fill", getColor(dbName, dataGroup))
-                                    .attr("d", arc)
-                                    .attr("position", "relative")
-                                    .attr("z-index", 100)
-                                    .attr("stroke", "black")
-                                    .attr("stroke-width", 0.1);
+                            pieGroup
+                                .selectAll("g")
+                                .data(arcData)
+                                .join("g")
+                                .attr("class", "pie")
+                                .call(g_collectuon =>
+                                    g_collectuon.each(function (d) {
+                                        let g = d3.select(this);
+                                        let dbName = d.data;
+                                        g
+                                            .append("path")
+                                            .attr("fill", getColor(dbName, dataGroup))
+                                            .attr("d", arc)
+                                            .attr("position", "relative")
+                                            .attr("z-index", 100)
+                                            .attr("stroke", "black")
+                                            .attr("stroke-width", 0.1);
 
-                                g
-                                    .append("g")
-                                    .attr("class", "text")
-                                    .attr("fill", "currentcolor")
-                                    .attr("font-family", "sans-serif")
-                                    .attr("font-weight", "bold")
-                                    .attr("text-anchor", "middle")
-                                    .attr("position", "relative")
-                                    .attr("z-index", 0)
-                                    .append("text")
-                                    .attr("transform", `translate(${arc.centroid(d)})`)
-                                    .call(text => {
-                                        //===largePie
-                                        // console.debug(text.node())
-                                        let size, unit;
-                                        if (!isSmallPie(d, dataGroup))
-                                            text.filter(d => !isSmallPie(d, dataGroup))
-                                                .attr("color", d => {
-                                                    // console.debug(d)
-                                                    let textColor;
-                                                    let Y = 120;//大於這個明亮度當成淺色
-                                                    let pieColor = getColor(dbName, dataGroup);
-                                                    let rgb = {
-                                                        r: parseInt(pieColor.substring(1, 3), 16),
-                                                        g: parseInt(pieColor.substring(3, 5), 16),
-                                                        b: parseInt(pieColor.substring(5, 7), 16),
+                                        g
+                                            .append("g")
+                                            .attr("class", "text")
+                                            .attr("fill", "currentcolor")
+                                            .attr("font-family", "sans-serif")
+                                            .attr("font-weight", "bold")
+                                            .attr("text-anchor", "middle")
+                                            .attr("position", "relative")
+                                            .attr("z-index", 0)
+                                            .append("text")
+                                            .attr("transform", `translate(${arc.centroid(d)})`)
+                                            .call(text => {
+                                                // console.debug(text.node())
+                                                //===largePie
+                                                if (!isSmallPie(d, dataGroup)) {
+
+                                                    let size = d.value,
+                                                        unit = getDataKeyString(dataKey[dataGroup]).unit;
+                                                    if (unit == 'GB') {
+                                                        let convertedObj = convert_download_unit(size, unit);
+                                                        size = convertedObj.value;
+                                                        unit = convertedObj.unit;
                                                     }
-                                                    if (rgb.r * 0.299 + rgb.g * 0.578 + rgb.b * 0.114 >= Y)  //浅色
-                                                        textColor = 'black';
-                                                    else  //深色
-                                                        textColor = '#F0F0F0';
 
-                                                    // console.debug(rgb);
-                                                    return textColor;
-                                                })
-                                                .append("tspan")
-                                                .attr("y", "-0.4em")
-                                                .attr("font-size", d => {
-                                                    // console.debug(d);
-                                                    let textSize = 12;
-                                                    let arc = d.endAngle - d.startAngle;
-                                                    let textLength = dbName.length;
-                                                    if (arc < 0.5 && textLength >= 6)
-                                                        textSize = 10
-                                                    return textSize;
-                                                })
-                                                .text(dbName)
-                                                .append("tspan")
-                                                .attr("x", 0)
-                                                .attr("y", "0.7em")
-                                                .attr("fill-opacity", 0.7)
-                                                .attr("font-size", 10)
-                                                .attr("font-weight", 500)
-                                                .text(d => d.value)
-                                                .append("tspan")
-                                                .attr("font-size", 7)
-                                                .attr("font-weight", "normal")
-                                                .text(getDataKeyString(dataKey[dataGroup]).unit);
+                                                    text.attr("color", () => {
+                                                        // console.debug(d)
+                                                        let textColor;
+                                                        let Y = 120;//大於這個明亮度當成淺色
+                                                        let pieColor = getColor(dbName, dataGroup);
+                                                        let rgb = {
+                                                            r: parseInt(pieColor.substring(1, 3), 16),
+                                                            g: parseInt(pieColor.substring(3, 5), 16),
+                                                            b: parseInt(pieColor.substring(5, 7), 16),
+                                                        }
+                                                        if (rgb.r * 0.299 + rgb.g * 0.578 + rgb.b * 0.114 >= Y)  //浅色
+                                                            textColor = 'black';
+                                                        else  //深色
+                                                            textColor = '#F0F0F0';
 
-                                        //===smallPie
-                                        var smallPie = text.filter(d => isSmallPie(d, dataGroup));
-                                        smallPie.nodes().forEach(d => {
-                                            // console.debug(d)
-                                            let label = d3.select(d.parentNode);
-                                            let labelRadius = radius + margin / 5;
+                                                        // console.debug(rgb);
+                                                        return textColor;
+                                                    })
+                                                        .append("tspan")
+                                                        .attr("y", "-0.4em")
+                                                        .attr("font-size", () => {
+                                                            let textSize = 12;
+                                                            let arc = d.endAngle - d.startAngle;
+                                                            let textLength = dbName.length;
+                                                            if (arc < 0.5 && textLength >= 6)
+                                                                textSize = 10
+                                                            return textSize;
+                                                        })
+                                                        .text(dbName)
+                                                        .append("tspan")
+                                                        .attr("x", 0)
+                                                        .attr("y", "0.7em")
+                                                        .attr("fill-opacity", 0.7)
+                                                        .attr("font-size", 10)
+                                                        .attr("font-weight", 500)
+                                                        .text(size)
+                                                        .append("tspan")
+                                                        .attr("font-size", 7)
+                                                        .attr("font-weight", "normal")
+                                                        .text(unit);
+                                                }
+                                                //===smallPie
+                                                else {
+                                                    let label = d3.select(text.node().parentNode);
+                                                    let labelRadius = radius + margin / 5;
+                                                    // console.debug(label.node())
+                                                    let color = "#6C6C6C";
 
-                                            label
-                                                .append("circle")
-                                                .attr('class', "label-circle")
-                                                .attr('fill', "#393939")
-                                                .attr("opacity", 0.7)
-                                                .attr('r', 1.5);
+                                                    label
+                                                        .append("circle")
+                                                        .attr('class', "label-circle")
+                                                        .attr('fill', color)
+                                                        .attr("opacity", 0.7)
+                                                        .attr('r', 1.5);
 
-                                            label
-                                                .append('polyline')
-                                                .attr('class', "label-line")
-                                                .attr('stroke-width', "1px")
-                                                .attr('stroke', "#393939")
-                                                .attr("opacity", 0.7)
-                                                .attr('fill', "none");
+                                                    label
+                                                        .append('polyline')
+                                                        .attr('class', "label-line")
+                                                        .attr('stroke-width', "1px")
+                                                        .attr('stroke', color)
+                                                        .attr("opacity", 0.7)
+                                                        .attr('fill', "none");
 
-                                            label
-                                                .attr('class', 'label')
-                                                .select('text')
-                                                .attr('dy', '.35em')
-                                                .attr("color", "black")
-                                                .attr("font-size", 12)
-                                                .text(dbName);
+                                                    label
+                                                        .attr('class', 'label')
+                                                        .select('text')
+                                                        .attr('dy', '.35em')
+                                                        .attr("color", "black")
+                                                        .attr("font-size", 10)
+                                                        .text(dbName);
 
-                                            setTimeout(() => label.call(relax), labelMove(label, labelRadius));
-                                            // labelMove(label, labelRadius)
-                                        });
+                                                    setTimeout(() => label.call(relax), labelMove(label, labelRadius));
+                                                    // labelMove(label, labelRadius)
+                                                };
 
-                                    });
-                                g.call(events);
-                            })
-                        );
-
+                                            });
+                                        g.call(events);
+                                    })
+                                );
+                        })
 
                     function isSmallPie(data, dataGroup = 0) {
                         let isSmallPie = data.endAngle - data.startAngle < 0.25 * (dataGroup + 1);
@@ -645,7 +642,7 @@ function pieChart() {
 
                     }
                     function relax(label) {
-                        console.log("collide checking...");
+                        // console.log("collide checking...");
 
                         var thisLabel_node = label.node();
                         var thisPie_node = thisLabel_node.parentNode;
@@ -653,9 +650,6 @@ function pieChart() {
 
 
                         var allPies = thisPieGroup_node.childNodes;
-
-
-
 
                         var thisIndex;
                         //=========get event target's index in pieGroup childNodes
@@ -666,7 +660,6 @@ function pieChart() {
                             }
                         }
 
-
                         var preLabel_node, nextLabel_node;
                         // thisLabel = allPies[thisIndex].querySelector('.label');
                         if (thisIndex - 1 >= 0)
@@ -674,44 +667,47 @@ function pieChart() {
                         if (thisIndex + 1 < allPies.length)
                             nextLabel_node = allPies[thisIndex + 1].querySelector('.label');
 
-                        // console.debug(thisLabel, preLabel, nextLabel)
-                        var collide = (this_node, next_node, pre_node = null) => {
+                        var collide = (a_node, b_node) => {
                             let spacing = 8;
-                            if (this_node && next_node) {
-                                let a = d3.select(this_node);
-                                let b = d3.select(next_node);
-                                let a_textY = a.select('polyline').node().points[2].y;
-                                let b_textY = b.select('polyline').node().points[2].y;
-                                if (Math.abs(a_textY - b_textY) < spacing) {
-                                    console.log("RELAXing");
-                                    var circleMove = false;
-                                    let labelRadius = b.data()[0].labelRadius;
-                                    labelRadius += spacing;
-                                    labelMove(a, labelRadius, 200, circleMove);
-                                    // setTimeout(() => collide(a.node(), null, b.node()), 100)
+                            // let spacing = 11;
 
-                                }
-                            }
-                            else if (this_node && pre_node) {
-                                let a = d3.select(this_node);
-                                let b = d3.select(pre_node);
-                                let a_textY = a.select('polyline').node().points[2].y;
-                                let b_textY = b.select('polyline').node().points[2].y;
-                                // console.debug(Math.abs(a_textY - b_textY))
+                            let a = d3.select(a_node);
+                            let b = d3.select(b_node);
+                            let a_textY = a.select('polyline').node().points[2].y;
+                            let b_textY = b.select('polyline').node().points[2].y;
+                            // console.debug(Math.abs(a_textY - b_textY))
+                            // let a_pos = a.select('polyline').node().points[2];
+                            // let b_pos = b.select('polyline').node().points[2];
+                            // let dx = Math.abs(b_pos.x - a_pos.x);
+                            // let dy = Math.abs(b_pos.y - a_pos.y);
+                            // let dist = Math.sqrt(dx * dx + dy * dy);
+                            // console.debug(dist)
 
-                                if (Math.abs(a_textY - b_textY) < spacing) {
-                                    console.log("RELAXing");
-                                    var circleMove = false;
-                                    let labelRadius = b.data()[0].labelRadius;
-                                    labelRadius += spacing;
-                                    labelMove(a, labelRadius, 200, circleMove);
-                                }
-
+                            if (Math.abs(a_textY - b_textY) < spacing) {
+                                // if (dist < spacing) {
+                                // console.log("RELAXing");
+                                var circleMove = false;
+                                let labelRadius = b.data()[0].labelRadius;
+                                labelRadius += spacing;
+                                labelMove(a, labelRadius, 200, circleMove);
                             }
 
                         }
-                        // collide(thisLabel_node, preLabel_node);
-                        collide(thisLabel_node, nextLabel_node, preLabel_node);
+
+
+                        // if (thisLabel_node && nextLabel_node) {
+                        //     collide(thisLabel_node, nextLabel_node);
+                        // }
+                        // else if (thisLabel_node && preLabel_node) {
+                        //     collide(thisLabel_node, preLabel_node);
+                        // }
+
+                        if (thisLabel_node && preLabel_node) {
+                            collide(thisLabel_node, preLabel_node);
+                        } else if (thisLabel_node && nextLabel_node) {
+                            collide(thisLabel_node, nextLabel_node);
+                        }
+
 
 
 
@@ -895,6 +891,7 @@ function pieChart() {
                     appendPie(i);
 
             }
+
             updateChart();
 
 
@@ -1117,7 +1114,6 @@ function pieChart() {
 
             }
             data.forEach(d => {
-                // console.debug(d.data);
                 let chartNode = PieSvg(d);
                 // console.debug(chartNode);
                 getChartMenu('A');

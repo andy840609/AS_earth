@@ -63,7 +63,11 @@ function DatexDVV() {
                                     <label class="form-check-label  col-12" for="showLegend">legend</label>
                                 </div>
 
-
+                                <div class="form-check d-flex flex-row flex-wrap " style="text-align: ;">
+                                    <input class="form-check-input  col-4" type="checkbox" id="showOverview" name="show" value="0" checked>
+                                    <label class="form-check-label  col-12" for="showOverview">overview</label>
+                                </div>
+                                
                             </div>
                         </div>
                     </div>
@@ -289,11 +293,13 @@ function DatexDVV() {
             const xAxis = svg.append("g").attr("class", "xAxis");
             const yAxis = svg.append("g").attr("class", "yAxis");
             const focusGroup = svg.append("g").attr('class', 'focus').attr("clip-path", "url(#clip)");
+            const overviewGroup = svg.append("g").attr('class', 'overview');
 
             var x, y;
             var newDataObj;
-            var removeData = new Array(data.length);
+            var removeData;
             var showRemove = d3.select('#showRemove').property('checked');
+
             function updateChart(trans = false) {
 
                 function init() {
@@ -352,19 +358,19 @@ function DatexDVV() {
                         .attr("class", "legend")
                         .attr("display", d3.select('#showLegend').property('checked') ? 'inline' : 'none')
                         .call(g => g.append("rect")
-                            .attr("width", shapeLegend_eachShape_width)
-                            .attr("height", shapeLegend_eachShape_height * dvv_dataKey_index.length)
+                            .attr("width", shapeLegend_eachShape_width * dvv_dataKey_index.length)
+                            .attr("height", shapeLegend_eachShape_height)
                             .attr("fill", "#D3D3D3")
                             .attr("opacity", .5)
                             .attr("stroke-width", "1")
                             .attr("stroke", "black")
                             .attr("stroke-opacity", .8)
                         )
-                        .attr("transform", `translate(${width - margin.right - shapeLegend_eachShape_width}, ${margin.top * 0.3})`)
+                        .attr("transform", `translate(${width - margin.right - shapeLegend_eachShape_width * dvv_dataKey_index.length}, ${margin.top * 0.3})`)
                         .selectAll("g")
                         .data(dvv_dataKey_index)
                         .join("g")
-                        .attr("transform", (d, i) => `translate(0, ${i * shapeLegend_eachShape_height})`)
+                        .attr("transform", (d, i) => `translate(${i * shapeLegend_eachShape_width}, 0)`)
                         .call(g_collection =>
                             g_collection.each(function (d, i) {
                                 // console.debug(this);
@@ -397,8 +403,30 @@ function DatexDVV() {
                         );
 
                     //===overview
-                    svg.append("g")
-                        .attr("class", "overview")
+                    let overview_width = 100;
+                    let overview_height = 100;
+
+                    overviewGroup
+                        .attr("transform", `translate(${width - margin.right - overview_width}, ${margin.top * 0.3})`)
+                        .attr("display", d3.select('#showLegend').property('checked') ? 'inline' : 'none')
+                        .call(overviewGroup => {
+                            overviewGroup
+                                .append("rect")
+                                .style('opacity', .5)
+                                .attr("fill", "#D3D3D3")
+                                .attr("stroke", 'black')
+                                .attr("stroke-width", 1)
+                                .attr("stroke-opacity", .8)
+                                .attr("width", overview_width)
+                                .attr("height", overview_height);
+
+                            overviewGroup
+                                .append('g')
+                                .attr('id', 'overviewDots');
+
+                        });
+
+
 
                     //===create display dropdown option
                     d3.select('#displayDropDownMenu')
@@ -467,7 +495,51 @@ function DatexDVV() {
 
                         return [min, max];
                     }
+                    var makeDots = (dotsGroup, x, y, width, strokeWidth) => {
+                        dotsGroup
+                            .selectAll("g")
+                            .data(dvv_dataKey_index)
+                            .join("g")
+                            .attr("id", (d, i) => 'p' + (i + 1) + 'Group')
+                            .attr("class", "dots")
+                            .attr("stroke", (d, i) => getColor(i))
+                            .call(() =>
+                                dotsGroup.selectAll(".dots").each(function (dki) {
+                                    // console.debug( i)
+                                    let dots = d3.select(this);
+                                    let dataKey = dataKeys[dki];
+                                    // console.debug(dataKey);
 
+                                    dots
+                                        .selectAll("rect")
+                                        .data(newData)
+                                        .join("rect")
+                                        .attr("stroke-width", strokeWidth)
+                                        .attr("fill", "none")
+                                        .attr("x", d => x(d[dataKeys[0]]) - width / 2)
+                                        .attr("y", d => isNaN(d[dataKey]) ? undefined : y(d[dataKey]) - width / 2)
+                                        // .transition().duration(transitionDuration)
+                                        .attr("width", width)
+                                        .attr("height", width)
+                                        .style('opacity', 1)
+                                        .attr("stroke", function (d) {
+                                            if (!removeData) //第一次畫圖不用判斷移除點
+                                                return;
+
+                                            let rm_idx = d3.bisectCenter(dataTimeArr, d[dataKeys[0]]);
+                                            // console.debug(idx)
+                                            let rd = removeData[rm_idx];
+                                            if (rd)
+                                                if (rd.indexOf(dki) != -1) {
+                                                    if (!showRemove)
+                                                        this.style.opacity = 0;
+                                                    return 'grey';
+                                                }
+
+                                        });
+
+                                }));
+                    }
 
                     var xAxisDomain = newDataObj.xSelected_domain ?
                         newDataObj.xSelected_domain :
@@ -486,6 +558,7 @@ function DatexDVV() {
                     y = d3.scaleLinear()
                         .domain(yAxisDomain)
                         .range([height - margin.bottom, margin.top]);
+
 
                     var refreshText = () => {
                         xAxis
@@ -535,50 +608,29 @@ function DatexDVV() {
                     }
                     var updateFocus = () => {
                         var dataRect_width = 5;
-                        // var transitionDuration = 500;         
-                        var makeDots = focusGroup => focusGroup
-                            .selectAll("g")
-                            .data(dvv_dataKey_index)
-                            .join("g")
-                            .attr("id", (d, i) => 'p' + (i + 1) + 'Group')
-                            .attr("class", "dots")
-                            .attr("stroke", (d, i) => getColor(i))
-                            .call(() =>
-                                focusGroup.selectAll(".dots").each(function (dki) {
-                                    // console.debug( i)
-                                    let dots = d3.select(this);
-                                    let dataKey = dataKeys[dki];
-                                    // console.debug(dataKey);
+                        var dataRect_strokeWidth = 1.5;
+                        makeDots(focusGroup, x, y, dataRect_width, dataRect_strokeWidth);
+                    }
+                    var updateOverview = () => {
 
-                                    let rm_idx;
-                                    dots
-                                        .selectAll("rect")
-                                        .data(newData)
-                                        .join("rect")
-                                        .attr("stroke-width", 1.5)
-                                        .attr("fill", "none")
-                                        .attr("x", d => x(d[dataKeys[0]]) - dataRect_width / 2)
-                                        .attr("y", d => isNaN(d[dataKey]) ? undefined : y(d[dataKey]) - dataRect_width / 2)
-                                        // .transition().duration(transitionDuration)
-                                        .attr("width", dataRect_width)
-                                        .attr("height", dataRect_width)
-                                        .style('opacity', 1)
+                        let overviewDots = overviewGroup.select('#overviewDots');
 
-                                        .attr("stroke", function (d) {
-                                            rm_idx = d3.bisectCenter(dataTimeArr, d[dataKeys[0]]);
-                                            // console.debug(idx)
-                                            let rd = removeData[rm_idx];
-                                            if (rd)
-                                                if (rd.indexOf(dki) != -1) {
-                                                    if (!showRemove)
-                                                        this.style.opacity = 0;
-                                                    return 'grey';
-                                                }
-                                        });
+                        if (overviewDots.node().childNodes.length == 0) {
+                            const overview_x = d3.scaleUtc()
+                                // .domain([dataTimeArr[0], dataTimeArr[dataTimeArr.length - 1]])
+                                .domain(x.domain())
+                                .range([0, 100])
+                            // .nice();
 
-                                }));
+                            const overview_y = d3.scaleLinear()
+                                .domain(y.domain())
+                                .range([0, 100]);
 
-                        focusGroup.call(makeDots);
+                            var dataRect_width = 1;
+                            var dataRect_strokeWidth = 0.5;
+                            makeDots(overviewDots, overview_x, overview_y, dataRect_width, dataRect_strokeWidth);
+                            console.debug(overviewDots.node().childNodes.length == 0)
+                        }
                     }
                     var removeDots = () => {
 
@@ -620,6 +672,10 @@ function DatexDVV() {
                     refreshText();
                     updateAxis();
                     updateFocus();
+                    if (overviewGroup.attr('display') == 'inline')
+                        updateOverview();
+
+                    // updateOverview();
                     // if (remove) removeDots();太慢
 
                 }
@@ -665,11 +721,13 @@ function DatexDVV() {
             function events(svg) {
                 var undisplay_dataKeys_index = [];
                 var xSelected_domain = null, ySelected_domain = null;
-                // var removeData = new Array(data.length);
+                removeData = new Array(data.length);
                 var removeData_backup;//for undo
                 // console.debug(removeData);
 
                 function chartEvent() {
+                    var mousemoveFlag = true;//avoid from trigger event too often
+
                     const tooltip = d3.select("#charts").append("div")
                         .attr("id", "tooltip")
                         .style('position', 'absolute')
@@ -1031,6 +1089,8 @@ function DatexDVV() {
                                     })
                                     .on('mousemove', function (event) { // update tooltip content, line, circles and text when mouse moves
                                         // console.log(newDataObj);
+                                        if (!mousemoveFlag)
+                                            return;
                                         event.preventDefault();
                                         // let data = newDataObj.newData;
                                         // let dataTimeArr = newDataObj.newTimeArr;
@@ -1131,6 +1191,9 @@ function DatexDVV() {
                                         updateMouseLine();
                                         updateTooltip();
 
+                                        mousemoveFlag = false;
+                                        setTimeout(() => mousemoveFlag = true, 20);
+
                                     });
                                 break;
                             case 'edit':
@@ -1164,7 +1227,7 @@ function DatexDVV() {
                                     undisplay_dataKeys_index.push(dataKey_index);
                                 }
 
-                                d3.select('#p' + p_count + 'Group').attr("display", display);
+                                d3.selectAll('#p' + p_count + 'Group').attr("display", display);
                                 // console.debug(undisplay_dataKeys_index);
                             });
                         //=====editMode
@@ -1182,6 +1245,9 @@ function DatexDVV() {
                             });
                         d3.select('#showLegend').on('change', e =>
                             d3.selectAll('.legend').attr("display", e.target.checked ? 'inline' : 'none'));
+
+                        d3.select('#showOverview').on('change', e =>
+                            overviewGroup.attr("display", e.target.checked ? 'inline' : 'none'));
 
                         //=====save
                         d3.select('#checkBtn')
@@ -1251,7 +1317,7 @@ function DatexDVV() {
                     modeControl('read');
                     chartOptionEvent();
                 }
-                function legendEvent() {
+                function infoBoxEvent() {
                     var x_fixed = 0, y_fixed = 0;
                     var legend_dragBehavior = d3.drag()
                         .on('start', function (e) {
@@ -1271,9 +1337,14 @@ function DatexDVV() {
                     // var content = document.getElementById('FeaturedContent');
                     // var parent = content.parentNode;svg.insertBefore(l.node(), svg.firstChild)
                     // parent.insertBefore(content, parent.firstChild);
-                    svg.select('.legend')
-                        .call(lg => lg.raise())//把legend拉到最上層(比zoom的選取框優先)
-                        .call(legend_dragBehavior);
+                    var callEvent = d3_selection =>
+                        d3_selection
+                            .call(lg => lg.raise())//把選中元素拉到最上層(比zoom的選取框優先)
+                            .call(legend_dragBehavior);
+
+
+                    svg.select('.legend').call(callEvent);
+                    overviewGroup.call(callEvent);
 
                 }
                 function keyboardEvent() {
@@ -1300,7 +1371,7 @@ function DatexDVV() {
                         })
                 }
                 chartEvent();
-                legendEvent();
+                infoBoxEvent();
                 keyboardEvent();
             }
 

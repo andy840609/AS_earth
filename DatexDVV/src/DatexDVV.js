@@ -299,6 +299,7 @@ function DatexDVV() {
             var newDataObj;
             var removeData;
             var showRemove = d3.select('#showRemove').property('checked');
+            var overview_x, overview_y;
 
             function updateChart(trans = false) {
 
@@ -366,7 +367,7 @@ function DatexDVV() {
                             .attr("stroke", "black")
                             .attr("stroke-opacity", .8)
                         )
-                        .attr("transform", `translate(${width - margin.right - shapeLegend_eachShape_width * dvv_dataKey_index.length}, ${margin.top * 0.3})`)
+                        .attr("transform", `translate(${margin.left}, ${margin.top * 0.3})`)
                         .selectAll("g")
                         .data(dvv_dataKey_index)
                         .join("g")
@@ -403,26 +404,95 @@ function DatexDVV() {
                         );
 
                     //===overview
-                    let overview_width = 100;
-                    let overview_height = 100;
+                    let scale = 0.25;
+                    let overview_width = width * scale;
+                    let overview_height = height * scale;
+                    let overview_toolbar_height = 20;
 
                     overviewGroup
-                        .attr("transform", `translate(${width - margin.right - overview_width}, ${margin.top * 0.3})`)
+                        .attr("transform", `translate(${width - overview_width - 10}, ${margin.top * 0.3 + overview_toolbar_height})`)
                         .attr("display", d3.select('#showLegend').property('checked') ? 'inline' : 'none')
                         .call(overviewGroup => {
+
+                            let overviewRect_interval = 6;
+
+
+
+                            //功能列
+                            overviewGroup
+                                .append('g')
+                                .attr("transform", `translate(0, ${-overview_toolbar_height})`)
+                                .attr('id', 'overviewToolbar')
+                                .call(tool_g => {
+
+                                    let strokeWidth = 2;
+
+                                    tool_g
+                                        .append("rect")
+                                        .style('opacity', .8)
+                                        .attr("fill", "#D3D3D3")
+                                        .attr("stroke", 'black')
+                                        .attr("stroke-width", strokeWidth)
+                                        .attr("stroke-opacity", .6)
+                                        .attr("stroke-dasharray", `${overview_width + overview_toolbar_height * 0.6}, ${overview_width}`)
+                                        .attr('rx', 5)
+                                        .attr('ry', 5)
+                                        .attr("width", overview_width)
+                                        .attr("height", overview_toolbar_height + strokeWidth);
+
+
+                                    // tool_g
+                                    //     .append("defs")
+                                    //     .append("clipPath")
+                                    //     .attr("id", "overviewRoundCorner")
+                                    //     .append("rect")
+                                    //     .attr('rx', 5)
+                                    //     .attr('ry', 5)
+                                    //     .attr("width", overview_width)
+                                    //     .attr("height", overview_toolbar_height + 10);
+                                    // tool_g
+                                    //     .append("rect")
+                                    //     .style('opacity', .8)
+                                    //     .attr("fill", "#D3D3D3")
+                                    //     .attr("width", overview_width)
+                                    //     .attr("height", overview_toolbar_height)
+                                    //     .attr("clip-path", "url(#overviewRoundCorner)");
+                                })
+
+                            //外框
                             overviewGroup
                                 .append("rect")
-                                .style('opacity', .5)
+                                .style('opacity', .8)
                                 .attr("fill", "#D3D3D3")
                                 .attr("stroke", 'black')
-                                .attr("stroke-width", 1)
-                                .attr("stroke-opacity", .8)
+                                .attr("stroke-width", 2)
+                                .attr("stroke-opacity", .6)
                                 .attr("width", overview_width)
                                 .attr("height", overview_height);
 
+                            //內框
+                            overviewGroup
+                                .append("rect")
+                                .attr("transform", `translate(${overviewRect_interval * 0.5}, ${overviewRect_interval * 0.5})`)
+                                .attr('id', 'overviewRect')
+                                .attr("fill", "none")
+                                .attr("width", overview_width - overviewRect_interval)
+                                .attr("height", overview_height - overviewRect_interval);
+
+                            //資料點的g
                             overviewGroup
                                 .append('g')
+                                .attr("transform", `translate(${overviewRect_interval * 0.5}, ${overviewRect_interval * 0.5})`)
                                 .attr('id', 'overviewDots');
+
+                            //範圍選取框
+                            overviewGroup
+                                .append('g')
+                                .attr("transform", `translate(${overviewRect_interval * 0.5}, ${overviewRect_interval * 0.5})`)
+                                .attr('id', 'overviewSelectionGroup')
+                            // .attr("width", overview_width - overviewRect_interval)
+                            // .attr("height", overview_height - overviewRect_interval);
+
 
                         });
 
@@ -581,7 +651,7 @@ function DatexDVV() {
                     }
                     var updateAxis = () => {
                         var makeXAxis = g => g
-                            .attr("transform", `translate(0,${height - margin.bottom})`)
+                            .attr("transform", `translate(0, ${height - margin.bottom})`)
                             .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0))
                             .call(g => {
                                 // if (xAxisScale == 'band')
@@ -594,7 +664,7 @@ function DatexDVV() {
                             });
 
                         var makeYAxis = g => g
-                            .attr("transform", `translate(${margin.left},0)`)
+                            .attr("transform", `translate(${margin.left}, 0)`)
                             .call(d3.axisLeft(y)
                                 .ticks(height / 30))
                             .call(g => g.select(".domain").remove())
@@ -615,21 +685,26 @@ function DatexDVV() {
 
                         let overviewDots = overviewGroup.select('#overviewDots');
 
-                        if (overviewDots.node().childNodes.length == 0) {
-                            const overview_x = d3.scaleUtc()
-                                // .domain([dataTimeArr[0], dataTimeArr[dataTimeArr.length - 1]])
+                        if (overviewDots.node().childNodes.length == 0) {//init rects
+                            let overviewRect = overviewGroup.select('#overviewRect');
+                            let width = parseInt(overviewRect.attr('width'));
+                            let height = parseInt(overviewRect.attr('height'));
+
+                            overview_x = d3.scaleUtc()
                                 .domain(x.domain())
-                                .range([0, 100])
-                            // .nice();
-
-                            const overview_y = d3.scaleLinear()
+                                .range([0, width])
+                            overview_y = d3.scaleLinear()
                                 .domain(y.domain())
-                                .range([0, 100]);
+                                .range([height, 0]);
 
-                            var dataRect_width = 1;
-                            var dataRect_strokeWidth = 0.5;
+                            let dataRect_width = 2.5;
+                            let dataRect_strokeWidth = 0.5;
+
                             makeDots(overviewDots, overview_x, overview_y, dataRect_width, dataRect_strokeWidth);
-                            console.debug(overviewDots.node().childNodes.length == 0)
+                        }
+                        else {//update rects
+                            if (overviewGroup.attr('display') != 'inline')
+                                return;
                         }
                     }
                     var removeDots = () => {
@@ -672,8 +747,7 @@ function DatexDVV() {
                     refreshText();
                     updateAxis();
                     updateFocus();
-                    if (overviewGroup.attr('display') == 'inline')
-                        updateOverview();
+                    updateOverview();
 
                     // updateOverview();
                     // if (remove) removeDots();太慢
@@ -693,15 +767,15 @@ function DatexDVV() {
                     if (!xSelected_domain)
                         newData = data;
                     else {
-                        let i1 = d3.bisectCenter(newDataObj.newTimeArr, xSelected_domain[0]);
-                        let i2 = d3.bisectCenter(newDataObj.newTimeArr, xSelected_domain[1]) + 1;//包含最大範圍
-                        newData = newDataObj.newData.slice(i1, i2);
+                        let i1 = d3.bisectCenter(dataTimeArr, xSelected_domain[0]);
+                        let i2 = d3.bisectCenter(dataTimeArr, xSelected_domain[1]) + 1;//包含最大範圍
+                        newData = data.slice(i1, i2);
                         // newTimeArr = newDataObj.newTimeArr.slice(i1, i2);
                     }
                     return newData;
                 }
                 var get_newTimeArr = () => {
-                    let newTimeArr = newData.map(d => d[dataKeys[0]]);
+                    let newTimeArr = data.map(d => d[dataKeys[0]]);
                     return newTimeArr;
                 }
                 newData = get_newData();
@@ -726,7 +800,8 @@ function DatexDVV() {
                 // console.debug(removeData);
 
                 function chartEvent() {
-                    var mousemoveFlag = true;//avoid from trigger event too often
+
+
 
                     const tooltip = d3.select("#charts").append("div")
                         .attr("id", "tooltip")
@@ -865,6 +940,7 @@ function DatexDVV() {
                         //         .style("stroke-width", "2.5");
                         // },
                         remove: function () {
+                            console.debug(this.element.node())
                             this.element.remove();
                             this.element = null;
                         },
@@ -874,124 +950,15 @@ function DatexDVV() {
                             }
                         }
                     };
-
+                    const selectionController = selectionGroup.append('g').attr("display", 'none');
                     const SC_width = 150, SC_height = 50;
-                    const selectionController = selectionGroup
-                        .append('g')
-                        .attr("display", 'none');
-
-                    selectionController
-                        .append('rect')
-                        .attr("width", SC_width)
-                        .attr("height", SC_height)
-                        .attr("fill", "#D3D3D3")
-                        .attr('rx', 5)
-                        .attr('ry', 5)
-                        .attr('stroke', '#000000')
-                        .attr("stroke-width", "1")
-                        .attr('fill', '#D3D3D3')
-                        .attr('opacity', .9);
-
-                    // const SC_buttonAmount = 2;
-                    // const SC_buttonText = ['zoom', 'remove'];
-                    const SC_buttonAmount = 1;
-                    const SC_buttonText = ['remove'];
-                    const SC_buttonWidth = 65, SC_buttonHeight = 30;
-                    const remove_hotkeyString = '(R)';
-
-                    selectionController
-                        .selectAll('.buttonGroup')
-                        .data(d3.range(SC_buttonAmount))
-                        .join('g')
-                        .attr('class', 'buttonGroup')
-                        .attr('id', d => 'SC_' + SC_buttonText[d])
-                        .call(buttonGroupCollection =>
-                            buttonGroupCollection.each(function (i) {
-                                let bg = d3.select(this);
-                                let translateX = SC_width / SC_buttonAmount * i + (SC_width / SC_buttonAmount - SC_buttonWidth) * 0.5
-                                let translateY = (SC_height - SC_buttonHeight) * 0.5;
-
-                                bg
-                                    .attr("transform", `translate(${translateX},${translateY})`)
-                                    .attr('act', 'none');
-
-
-                                let button = bg.append('rect')
-                                    .attr("width", SC_buttonWidth)
-                                    .attr("height", SC_buttonHeight)
-                                    .attr('rx', 5)
-                                    .attr('ry', 5)
-                                    .attr('stroke', '#000000')
-                                    .attr("stroke-width", "0.3")
-                                    .attr('fill', '#9D9D9D');
-
-                                let buttonText = bg.append('text')
-                                    .attr("class", "axis_name")
-                                    .attr("fill", "black")
-                                    .attr("font-weight", "bold")
-                                    .attr("font-size", "12")
-                                    .style("text-anchor", "middle")
-                                    .attr("alignment-baseline", "middle")
-                                    .attr('x', SC_buttonWidth * 0.5)
-                                    .attr('y', SC_buttonHeight * 0.5);
-                                // .text(SC_buttonText[i]);
-
-
-                                bg
-                                    .on('click', function () {
-                                        // console.debug(bg.attr("mode"));
-
-                                        if (bg.attr("act") == SC_buttonText[i]) {
-                                            // console.debug(removeData);
-                                            removeData_backup = JSON.parse(JSON.stringify(removeData));
-                                            bg.attr("act", 'undo');
-                                            buttonText.text('Undo' + remove_hotkeyString);
-                                            // console.debug(xSelected_domain, ySelected_domain);
-                                            let i1 = d3.bisectCenter(dataTimeArr, xSelected_domain[0]);
-                                            let i2 = d3.bisectCenter(dataTimeArr, xSelected_domain[1]) + 1;//包含最大範圍
-                                            let tmpData = data.slice(i1, i2);
-                                            tmpData.forEach(d =>
-                                                dvv_dataKey_index.forEach(dki => {
-                                                    let in_xSelected = d[dataKeys[0]] >= xSelected_domain[0] && d[dataKeys[0]] <= xSelected_domain[1];
-                                                    let in_ySelected = d[dataKeys[dki]] >= ySelected_domain[0] && d[dataKeys[dki]] <= ySelected_domain[1];
-                                                    if (in_xSelected && in_ySelected) {
-                                                        // console.debug(d[dataKeys[dki]]);
-                                                        let index = d3.bisectCenter(dataTimeArr, d[dataKeys[0]]);
-                                                        // console.debug(index);                                                      
-                                                        if (!removeData[index])//==undefine or null 
-                                                            removeData[index] = [];
-                                                        if (removeData[index].indexOf(dki) == -1)//==不放入重複元素
-                                                            removeData[index].push(dki);
-                                                    }
-
-                                                })
-                                            );
-                                            // console.debug(removeData);
-                                        }
-                                        else if (bg.attr("act") == 'undo') {
-                                            bg.attr("act", SC_buttonText[i]);
-                                            buttonText.text('Remove' + remove_hotkeyString);
-                                            removeData = removeData_backup;
-                                        }
-                                        updateChart();
-                                    })
-                                    .on('mouseover', function () {
-                                        // console.debug(this)
-                                        button.attr('fill', '#E0E0E0');
-                                    })
-                                    .on('mouseout', function () {
-                                        // console.debug(this)
-                                        button.attr('fill', '#9D9D9D');
-                                    });
-                            })
-                        );
+                    const SC_buttonAmount = 2;
+                    const SC_buttonText = ['Zoom', 'Remove'];
 
                     var modeControl = (mode = 'read') => {
                         if (selectionRect.element) {
                             selectionRect.remove();
-                            selectionController
-                                .select('#SC_remove')
-                                .attr('act', 'none')
+                            // selectionController.select('#SC_remove').attr('act', 'none');
                             xSelected_domain = null;
                             ySelected_domain = null;
                         }
@@ -1033,7 +1000,7 @@ function DatexDVV() {
                                     // range selected
                                     event.preventDefault();
 
-                                    xSelected_domain = [x.invert(finalAttributes.x1).getTime(), x.invert(finalAttributes.x2).getTime()];
+                                    xSelected_domain = [x.invert(finalAttributes.x1), x.invert(finalAttributes.x2)];
                                     ySelected_domain = [y.invert(finalAttributes.y2), y.invert(finalAttributes.y1)];
                                     // console.debug(xSelected_domain, ySelected_domain);
                                 }
@@ -1043,7 +1010,7 @@ function DatexDVV() {
                                     xSelected_domain = null;
                                     ySelected_domain = null;
                                     selectionController
-                                        .attr("display", 'none')
+                                        .attr("display", 'none');
                                     // console.debug(removeData);
                                 }
                                 // console.debug(selectionRect);
@@ -1060,23 +1027,24 @@ function DatexDVV() {
 
                                         selectionController
                                             .attr("display", 'inline')
-                                            .attr("transform", `translate(${translateX},${translateY})`);
+                                            .attr("transform", `translate(${translateX}, ${translateY})`);
                                         selectionController
-                                            .select('#SC_remove')
-                                            .attr('act', SC_buttonText[0])
-                                            .select('text')
-                                            .text('Remove' + remove_hotkeyString);
+                                            .select('#SC_Remove')
+                                            .attr('act', SC_buttonText[1])
+                                        //     .select('text')
+                                        //     .text('Remove' + remove_hotkeyString);
                                     }
                                     else {
-                                        selectionController
-                                            .select('#SC_remove')
-                                            .attr('act', 'none');
+                                        // selectionController
+                                        //     .select('#SC_remove')
+                                        //     .attr('act', 'none');
                                     }
                                 }
 
                             });
                         switch (mode) {
                             case 'read':
+                                let mousemoveFlag = true;//avoid from trigger event too often
                                 event_rect
                                     .on('mouseleave', function () { // on mouse out hide line, circles and text
                                         // console.log('mouseleave');
@@ -1088,7 +1056,6 @@ function DatexDVV() {
                                             .style("display", "none");
                                     })
                                     .on('mousemove', function (event) { // update tooltip content, line, circles and text when mouse moves
-                                        // console.log(newDataObj);
                                         if (!mousemoveFlag)
                                             return;
                                         event.preventDefault();
@@ -1156,7 +1123,7 @@ function DatexDVV() {
                                                     // console.debug(d3.select(this).node())
                                                     if (hasValue && pointInChart) {
                                                         mousePerLine.selectAll('circle').style("opacity", "1");
-                                                        translate = `translate(${x(dataTimeArr[idx])},${y(data[idx][dataKeys[d]])})`;
+                                                        translate = `translate(${x(dataTimeArr[idx])}, ${y(data[idx][dataKeys[d]])})`;
                                                     }
                                                     else
                                                         mousePerLine.selectAll('circle').style("opacity", "0")
@@ -1192,7 +1159,7 @@ function DatexDVV() {
                                         updateTooltip();
 
                                         mousemoveFlag = false;
-                                        setTimeout(() => mousemoveFlag = true, 20);
+                                        d3.timeout(() => mousemoveFlag = true, 20);
 
                                     });
                                 break;
@@ -1206,7 +1173,6 @@ function DatexDVV() {
                         event_rect.call(dragBehavior);
                         // console.debug(event_rect);
                     }
-
                     var chartOptionEvent = () => {
                         var updateFlag = true;
 
@@ -1314,65 +1280,271 @@ function DatexDVV() {
                             });
                         // svg.on('click', e => console.debug(e.target));//test
                     }
+                    var selectionButtonEvent = () => {
+
+                        const SC_buttonWidth = 65, SC_buttonHeight = 30;
+                        const buttonAction = (buttonIndex) => {
+                            let text = SC_buttonText[buttonIndex];
+                            let buttonGroup = d3.select('#SC_' + text);
+                            let buttonText = buttonGroup.select('text');
+                            console.debug(text);
+                            switch (text) {
+                                case 'Zoom':
+                                    break;
+                                case 'Remove':
+                                    console.debug(buttonGroup.attr("act"));
+                                    let hotkeyString = '(' + text[0] + ')';
+                                    if (buttonGroup.attr("act") == text) {
+                                        // console.debug(removeData);
+                                        removeData_backup = JSON.parse(JSON.stringify(removeData));
+                                        buttonGroup.attr("act", 'Undo');
+                                        buttonText.text('Undo' + hotkeyString);
+                                        // console.debug(xSelected_domain, ySelected_domain);
+                                        let i1 = d3.bisectCenter(dataTimeArr, xSelected_domain[0]);
+                                        let i2 = d3.bisectCenter(dataTimeArr, xSelected_domain[1]) + 1;//包含最大範圍
+                                        let tmpData = data.slice(i1, i2);
+                                        tmpData.forEach(d =>
+                                            dvv_dataKey_index.forEach(dki => {
+                                                let in_xSelected = d[dataKeys[0]] >= xSelected_domain[0] && d[dataKeys[0]] <= xSelected_domain[1];
+                                                let in_ySelected = d[dataKeys[dki]] >= ySelected_domain[0] && d[dataKeys[dki]] <= ySelected_domain[1];
+                                                if (in_xSelected && in_ySelected) {
+                                                    // console.debug(d[dataKeys[dki]]);
+                                                    let index = d3.bisectCenter(dataTimeArr, d[dataKeys[0]]);
+                                                    // console.debug(index);                                                      
+                                                    if (!removeData[index])//==undefine or null 
+                                                        removeData[index] = [];
+                                                    if (removeData[index].indexOf(dki) == -1)//==不放入重複元素
+                                                        removeData[index].push(dki);
+                                                }
+
+                                            })
+                                        );
+                                        // console.debug(removeData);
+                                    }
+                                    else if (buttonGroup.attr("act") == 'Undo') {
+                                        buttonGroup.attr("act", text);
+                                        buttonText.text(text + hotkeyString);
+                                        removeData = removeData_backup;
+                                    }
+                                    updateChart();
+                                    break;
+
+                            }
+
+                        }
+
+                        selectionController
+                            .append('rect')
+                            .attr("width", SC_width)
+                            .attr("height", SC_height)
+                            .attr("fill", "#D3D3D3")
+                            .attr('rx', 5)
+                            .attr('ry', 5)
+                            .attr('stroke', '#000000')
+                            .attr("stroke-width", "1")
+                            .attr('fill', '#D3D3D3')
+                            .attr('opacity', .9);
+
+                        selectionController
+                            .selectAll('.buttonGroup')
+                            .data(d3.range(SC_buttonAmount))
+                            .join('g')
+                            .attr('class', 'buttonGroup')
+                            .attr('id', d => 'SC_' + SC_buttonText[d])
+                            .call(buttonGroupCollection =>
+                                buttonGroupCollection.each(function (i) {
+                                    let bg = d3.select(this);
+                                    let translateX = SC_width / SC_buttonAmount * i + (SC_width / SC_buttonAmount - SC_buttonWidth) * 0.5
+                                    let translateY = (SC_height - SC_buttonHeight) * 0.5;
+
+                                    bg
+                                        .attr("transform", `translate(${translateX}, ${translateY})`)
+                                        .attr('act', 'none');
+
+                                    let button = bg.append('rect')
+                                        .attr("width", SC_buttonWidth)
+                                        .attr("height", SC_buttonHeight)
+                                        .attr('rx', 5)
+                                        .attr('ry', 5)
+                                        .attr('stroke', '#000000')
+                                        .attr("stroke-width", "0.3")
+                                        .attr('fill', '#9D9D9D');
+
+                                    bg.append('text')
+                                        .attr("class", "axis_name")
+                                        .attr("fill", "black")
+                                        .attr("font-weight", "bold")
+                                        .attr("font-size", "12")
+                                        .style("text-anchor", "middle")
+                                        .attr("alignment-baseline", "middle")
+                                        .attr('x', SC_buttonWidth * 0.5)
+                                        .attr('y', SC_buttonHeight * 0.5)
+                                        .text(SC_buttonText[i] + '(' + SC_buttonText[i][0] + ')');
+
+
+                                    bg
+                                        .on('click', function (e) {
+                                            // console.debug(bg.attr("mode"));
+                                            // console.debug(e);
+                                            if (selectionController.attr('display') != 'inline')
+                                                return;
+                                            buttonAction(i);
+                                        })
+                                        .on('mouseover', function () {
+                                            // console.debug(this)
+                                            button.attr('fill', '#E0E0E0');
+                                        })
+                                        .on('mouseout', function () {
+                                            // console.debug(this)
+                                            button.attr('fill', '#9D9D9D');
+                                        });
+                                })
+                            );
+                    }
                     modeControl('read');
                     chartOptionEvent();
+                    selectionButtonEvent();
                 }
-                function infoBoxEvent() {
-                    var x_fixed = 0, y_fixed = 0;
-                    var legend_dragBehavior = d3.drag()
-                        .on('start', function (e) {
-                            // console.log('drag start');
-                            let matrix = this.transform.baseVal[0].matrix;
-                            x_fixed = e.x - matrix.e;
-                            y_fixed = e.y - matrix.f;
-                        })
-                        .on('drag', function (e) {
-                            d3.select(this).attr("transform", `translate(${e.x - x_fixed}, ${e.y - y_fixed})`)
-                        })
-                        .on('end', e => {
-                            // console.log('drag end');
-                        });
+                function infoBoxDragEvent() {
 
+                    var raiseAndDrag = (d3_selection, dragTarget = null) => {
+                        let x_fixed = 0, y_fixed = 0;
+                        let legend_dragBehavior = d3.drag()
+                            .on('start', function (e) {
+                                // console.log('drag start');
+                                let matrix = this.transform.baseVal[0].matrix;
+                                x_fixed = e.x - matrix.e;
+                                y_fixed = e.y - matrix.f;
+                            })
+                            .on('drag', function (e) {
+                                d3.select(this).attr("transform", `translate(${e.x - x_fixed}, ${e.y - y_fixed})`);
+                            })
+                            .on('end', e => {
+                                // console.log('drag end');
+                            });
+
+                        d3_selection
+                            .call(g => g.raise())//把選中元素拉到最上層(比zoom的選取框優先)
+                            .call(legend_dragBehavior);
+
+                    }
 
                     // var content = document.getElementById('FeaturedContent');
                     // var parent = content.parentNode;svg.insertBefore(l.node(), svg.firstChild)
                     // parent.insertBefore(content, parent.firstChild);
-                    var callEvent = d3_selection =>
-                        d3_selection
-                            .call(lg => lg.raise())//把選中元素拉到最上層(比zoom的選取框優先)
-                            .call(legend_dragBehavior);
 
-
-                    svg.select('.legend').call(callEvent);
-                    overviewGroup.call(callEvent);
+                    svg.select('.legend').call(raiseAndDrag);
+                    overviewGroup.call(raiseAndDrag);
 
                 }
                 function keyboardEvent() {
+                    let hotkeyPressFlag = true;//avoid from trigger event too often
+
                     d3.select("body")
                         .on("keydown", (e) => {
                             // console.debug(e);
+                            if (!hotkeyPressFlag) return;
                             let editMode_ckb = d3.select("#editMode");
                             let editMode_checked = editMode_ckb.property('checked');
                             // console.debug(checked);
-                            switch (e.keyCode) {
-                                case 69://press e
+                            switch (e.key) {
+                                case 'e'://press e
                                     editMode_ckb.property('checked', !editMode_checked);
                                     editMode_ckb.dispatch("change");
                                     break;
-                                case 82://press r
-                                    if (editMode_checked) {
-                                        let remove_btn = d3.select("#SC_remove");
-                                        remove_btn.dispatch("click");
-                                    }
+                                case 'r'://press r
+                                    if (editMode_checked)
+                                        d3.select("#SC_Remove").dispatch("click");
                                     break;
                             }
-
-
+                            hotkeyPressFlag = false;
+                            d3.timeout(() => hotkeyPressFlag = true, 10);
                         })
                 }
+                function overviewEvent() {
+
+                    const overviewSelectionGroup = overviewGroup.select('#overviewSelectionGroup');
+                    let width = overview_x.range()[1];
+                    let height = overview_y.range()[0];
+                    // console.debug(overview_x.range());
+                    // console.debug(overview_y.range());
+                    const updateDelay = 10;
+                    let brushFlag = true;
+                    let pre_updateTimeout = null;
+
+                    const brush = d3.brush()
+                        .extent([[0, 0], [width, height]])
+                        .on('start', e => {
+                            // selectionGroup
+                            //     .append('g')
+                            //     .attr("display", 'none');
+
+                            d3.select('.selectionGroup')
+                                .call(selectionGroup => {
+                                    selectionGroup.select('g').attr("display", 'none');
+                                    selectionGroup.selectChild('rect').remove();
+                                })
+
+                        })
+                        .on("brush end", e => {
+                            // console.debug(e.type, brushFlag);
+                            if (!e.sourceEvent) return;
+                            let selection = e.selection;
+                            if (!selection) {
+                                // console.debug('no selection');
+                                newDataObj = getNewData();
+                                updateChart();
+                                overviewSelectionGroup.call(brush.move, [[0, 0], [width, height]]);
+                                return;
+                            }
+                            if (!brushFlag)
+                                pre_updateTimeout.stop();
+
+                            pre_updateTimeout = d3.timeout(() => {
+                                // brushFlag = true
+                                xSelected_domain = [overview_x.invert(selection[0][0]), overview_x.invert(selection[1][0])];
+                                ySelected_domain = [overview_y.invert(selection[1][1]), overview_y.invert(selection[0][1])];
+                                // console.debug(xSelected_domain, ySelected_domain);
+                                newDataObj = getNewData(xSelected_domain, ySelected_domain);
+                                // console.debug(newDataObj);
+                                updateChart();
+                                brushFlag = true;
+                            }, updateDelay);
+
+                            brushFlag = false;
+
+                        });
+                    // .on("start", e => {
+                    //     // console.debug('start');
+                    // })
+                    // .on("brush", e => {
+                    //     // console.debug(e);
+                    //     if (!e.sourceEvent || !brushFlag) return;
+                    //     let selection = e.selection;
+                    //     xSelected_domain = [overview_x.invert(selection[0][0]).getTime(), overview_x.invert(selection[1][0]).getTime()];
+                    //     ySelected_domain = [overview_y.invert(selection[0][1]), overview_y.invert(selection[1][1])];
+                    //     // console.debug(xSelected_domain);
+                    //     newDataObj = getNewData(xSelected_domain, ySelected_domain);
+                    //     // console.debug(newDataObj);
+                    //     updateChart();
+                    //     brushFlag = false;
+                    //     d3.timeout(() => brushFlag = true, 100);
+                    // })
+                    // .on("end", e => {
+                    //     // console.debug('end');
+                    // })
+
+                    overviewSelectionGroup
+                        .on('mousedown', e => e.stopPropagation())//選取區取消drag事件
+                        .call(brush)
+                        .call(brush.move, [[0, 0], [width, height]]);
+
+
+                }
                 chartEvent();
-                infoBoxEvent();
+                infoBoxDragEvent();
                 keyboardEvent();
+                overviewEvent();
             }
 
             svg.call(events);

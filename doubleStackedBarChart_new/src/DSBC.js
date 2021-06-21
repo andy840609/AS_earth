@@ -68,7 +68,7 @@ function DSBC() {
     }
 
     chart.data = (vaule) => {
-        // console.debug(vaule);
+        console.debug(vaule);
         let copyObj = JSON.parse(JSON.stringify(vaule));//不影響原資料
         let dataType = typeof (copyObj[0]);
 
@@ -154,63 +154,96 @@ function DSBC() {
             });
         }
         else if (dataType == 'object') {
-            // console.debug(Data);
-            data = Data.map(D => {
-                // console.debug(D);
-                // ＝＝＝＝深拷貝物件（才不會改變原物件值）
-                let obj = JSON.parse(JSON.stringify(D));
-                let columns = Object.getOwnPropertyNames(obj.data[0]).sort((a, b) => isNaN(a) ? -1 : a - b);
-                obj.columns = columns;
-
-                // let sortedData = sortData(obj.data, obj.columns[0]);
-                // console.debug(obj.data);
-
-                obj.data.forEach(d => {
-                    // console.debug(d);
-                    let key = columns[1];
-                    let col = Object.getOwnPropertyNames(d[key]).sort((a, b) => {
-                        // console.debug(a, b)
-                        if (a == D.yAxis)
-                            return -1;
-                        else if (b == D.yAxis)
-                            return 1;
-                        else
-                            return;
-
-                    });
-                    d.columns = col;
-                })
-
-                return obj;
-            });
-
-
-
+            data = copyObj;
         }
         else {
             console.debug("unknow dataType");
         }
-        console.debug("===data===");
-        console.debug(data);
-        console.debug("===data===");
+
         return chart;
     }
 
     function chart() {
-        function stackedBar(Data, yAxisDomainMax = null, yAxis2DomainMax = null) {
-            console.debug(Data);
+        function stackedBar(chartData, yAxisDomainMax = null, yAxis2DomainMax = null) {
+            // console.debug(chartData);
 
-            var width = 800;
-            var height = 600;
-            var margin = ({ top: 80, right: 50, bottom: 40, left: 50 });
-            var max_barWidth = 50;
-            var bar_interval = 5;
+            const convert_download_unit = (value, unitBefore, unitAfter = undefined) => {
+                let newValue, newUnit;
+                const unit1 = ['b', 'B'];
+                const unit2 = ['', 'K', 'M', 'G', 'T'];
 
-            var data = Data.data;
-            var dataKeys = Data.columns;
-            // console.debug(dataKeys);
-            // console.debug(data);
-            var getKeyName = (key) => {
+
+                var getUnit = (unit) => {
+                    let unit1, unit2;
+
+                    if (unit.length > 1) {
+                        unit1 = unit[1];
+                        unit2 = unit[0];
+                    }
+                    else if (unit.length == 1) {
+                        unit1 = unit;
+                        unit2 = '';
+                    }
+
+                    return {
+                        unit1: unit1,
+                        unit2: unit2,
+                    }
+                }
+                var getRatio = (unitA, unitB, unitArr, powerBase) => {
+                    let ratio;
+                    let A_index = unitArr.indexOf(unitA);
+                    let B_index = unitArr.indexOf(unitB);
+
+                    if (A_index != -1 && B_index != -1) {
+                        let power = A_index - B_index;
+                        ratio = Math.pow(powerBase, power);
+                    }
+                    else {
+                        ratio = 1;
+                    }
+                    return ratio;
+                }
+
+                let unitBefore_obj = getUnit(unitBefore);
+
+                if (unitAfter) {//unitBefore 單位轉換到 unitAfter
+                    let unitAfter_obj = getUnit(unitAfter);
+                    let ratio1 = getRatio(unitBefore_obj.unit1, unitAfter_obj.unit1, unit1, 8);
+                    let ratio2 = getRatio(unitBefore_obj.unit2, unitAfter_obj.unit2, unit2, 1024);
+                    // console.debug(unitBefore_obj, unitAfter_obj);
+                    // console.debug(ratio1, ratio2);
+                    newValue = value * ratio1 * ratio2;
+                    newUnit = unitAfter;
+                }
+                else {//unitBefore 單位轉換到 value>=1或單位已是最小(b)為止 ,並給newUnit
+
+                    let unit1_index = unit1.indexOf(unitBefore_obj.unit1);
+                    let unit2_index = unit2.indexOf(unitBefore_obj.unit2);
+                    newValue = value;
+                    // let newUnit1 = unitBefore_unit1, newUnit2 = unitBefore_unit2;
+
+                    while (newValue < 1 && (unit1_index != 0 || unit2_index != 0)) {
+                        //先轉unit2,不夠才轉unit1
+                        if (unit2_index > 0) {
+                            unit2_index -= 1;
+                            newValue *= 1024;
+                        } else {
+                            unit1_index -= 1;
+                            newValue *= 8;
+                        }
+
+                    }
+                    newUnit = unit2[unit2_index] + unit1[unit1_index];
+
+                }
+
+                return {
+                    value: newValue,
+                    unit: newUnit,
+                };
+            };
+            const getKeyName = (key) => {
                 let keyName, keyUnit = '';
                 switch (key) {
                     case 'name':
@@ -233,40 +266,7 @@ function DSBC() {
                 }
                 return { name: keyName, unit: keyUnit };
             };
-            // console.debug(getKeyName('size'));
-
-
-            var group1_color = "red";
-            var group2_color = "blue";
-
-            //===size
-            var series = d3.stack()
-                .keys(dataKeys.slice(1))
-                .value((d, key) => d[key][d.columns[0]])
-                (data).map(d => {
-                    // console.debug(d);
-                    return (d.forEach(v => {
-                        // console.debug(v);
-                        return v.key = d.key
-                    }), d)
-                });
-            console.debug(series);
-
-            // === times
-            var series2 = d3.stack()
-                .keys(dataKeys.slice(1))
-                .value((d, key) => d[key][d.columns[1]])
-                (data).map(d => {
-                    // console.debug(d);
-                    return (d.forEach(v => {
-                        // console.debug(v);
-                        return v.key = d.key
-                    }), d)
-                });
-            // console.debug(series2);
-
-
-            var color = (network, dataCount) => {
+            const color = (network, dataCount) => {
                 // console.debug(network, dataCount);
                 let color, gradientColor;
                 function getGradientColor(hex, level) {
@@ -318,6 +318,102 @@ function DSBC() {
                 // console.debug(gradientColor);
                 return gradientColor;
             };
+
+            const width = 800;
+            const height = 600;
+            const margin = ({ top: 80, right: 50, bottom: 40, left: 50 });
+            const max_barWidth = 50;
+            const bar_interval = 5;
+
+            const data = function () {
+                const convertData = function (data) {
+
+                    let dataObj = data;
+                    let Objkeys = Object.getOwnPropertyNames(dataObj).filter(key => key != 'columns');
+                    // console.debug(Objkeys);
+                    let split_and_convert = (string, convertedUnit) => {
+                        let sizeArr = string.split(' ');
+                        let size = parseFloat(sizeArr[0]);
+                        let unit = sizeArr[1];
+                        return convert_download_unit(size, unit, convertedUnit).value;
+                    };
+
+                    Objkeys.forEach((Objkey, index, arr) => {
+                        let obj = dataObj[Objkey];
+                        let DBKeys = Object.getOwnPropertyNames(obj).filter(key => key != 'columns');
+                        obj.columns = DBKeys;
+                        // console.debug(DBKeys);
+
+                        DBKeys.forEach(DBkey => {
+                            // console.debug((obj[DBkey]));
+                            if (typeof (obj[DBkey]) == 'object') {
+                                let yearKeys = Object.getOwnPropertyNames(obj[DBkey]).filter(key => key != 'columns');
+                                obj[DBkey].columns = yearKeys;
+
+                                if (Objkey == 'file_size') //==file_size
+                                {
+                                    const dataUnit = 'GB';
+                                    yearKeys.forEach(yearKey => {
+                                        // console.debug(obj[DBkey][yearKey]);
+                                        if (typeof (obj[DBkey][yearKey]) == 'string')
+                                            obj[DBkey][yearKey] = split_and_convert(obj[DBkey][yearKey], dataUnit);
+                                    });
+                                };
+                            };
+
+                        });
+
+                    });
+                    dataObj.columns = Objkeys.filter(key => {
+                        // console.debug(dataObj[key].total);
+                        let boolean = true;
+                        if (dataObj[key].hasOwnProperty('total'))
+                            if (dataObj[key].total == 0)
+                                boolean = false;
+                        return boolean;
+                    });
+                    // console.debug(dataObj);
+                    return dataObj;
+                };
+                chartData.data = convertData(chartData.data);
+                return chartData.data;
+            }();
+            console.debug(data);
+            var dataKeys = data.columns;
+            // console.debug(dataKeys); 
+            // console.debug(getKeyName('size'));
+
+
+            var group1_color = "red";
+            var group2_color = "blue";
+
+            //===size
+            var series1 = d3.stack()
+                .keys(dataKeys.slice(1))
+                .value((d, key) => d[key][d.columns[0]])
+                (data).map(d => {
+                    // console.debug(d);
+                    return (d.forEach(v => {
+                        // console.debug(v);
+                        return v.key = d.key
+                    }), d)
+                });
+            // console.debug(series);
+
+            // === times
+            var series2 = d3.stack()
+                .keys(dataKeys.slice(1))
+                .value((d, key) => d[key][d.columns[1]])
+                (data).map(d => {
+                    // console.debug(d);
+                    return (d.forEach(v => {
+                        // console.debug(v);
+                        return v.key = d.key
+                    }), d)
+                });
+            // console.debug(series2);
+
+
 
 
             var x = d3.scaleBand()
@@ -1170,33 +1266,33 @@ function DSBC() {
 
             var yAxisDomainMax = null, yAxis2DomainMax = null;
             //====more than one chart so get the max domain to make yaxis in the same range
-            if (data.length > 1) {
+            // if (data.length > 1) {
 
-                function getMaxDomain(data, groupCount) {
-                    let maxDomain = d3.max(data, d => {
-                        // console.debug(d);
-                        let dataKeys = d.columns.slice(1);
-                        // console.debug(dataKeys);
-                        return d3.max(d.data, name => {
-                            // console.debug(name);
-                            let groupKey = name.columns;
-                            let total = 0;
-                            for (let i = 0; i < dataKeys.length; i++)
-                                total += parseFloat(name[dataKeys[i]][groupKey[groupCount]]);
-                            // console.debug(total);
-                            return total;
-                        })
-                    });
-                    return maxDomain;
-                }
+            //     function getMaxDomain(data, groupCount) {
+            //         let maxDomain = d3.max(data, d => {
+            //             // console.debug(d);
+            //             let dataKeys = d.columns.slice(1);
+            //             // console.debug(dataKeys);
+            //             return d3.max(d.data, name => {
+            //                 // console.debug(name);
+            //                 let groupKey = name.columns;
+            //                 let total = 0;
+            //                 for (let i = 0; i < dataKeys.length; i++)
+            //                     total += parseFloat(name[dataKeys[i]][groupKey[groupCount]]);
+            //                 // console.debug(total);
+            //                 return total;
+            //             })
+            //         });
+            //         return maxDomain;
+            //     }
 
 
-                // console.debug(dataKeys);
-                yAxisDomainMax = getMaxDomain(data, 0);
-                // console.debug(yAxisDomainMax);
-                yAxis2DomainMax = getMaxDomain(data, 1);
-                // console.debug(yAxis2DomainMax);
-            }
+            //     // console.debug(dataKeys);
+            //     yAxisDomainMax = getMaxDomain(data, 0);
+            //     // console.debug(yAxisDomainMax);
+            //     yAxis2DomainMax = getMaxDomain(data, 1);
+            //     // console.debug(yAxis2DomainMax);
+            // }
             data.forEach(d => {
                 // console.debug(d);
                 let chartNode = stackedBar(d, yAxisDomainMax, yAxis2DomainMax);

@@ -55,17 +55,17 @@ function DatexDVV() {
                             <div  id="showInfoDropDownMenu">
                                 <div class="form-check d-flex flex-row flex-wrap " style="text-align: ;">
                                     <input class="form-check-input  col-4" type="checkbox" id="showRemove" name="show" value="0">
-                                    <label class="form-check-label  col-12" for="showRemove">remove points</label>
+                                    <label class="form-check-label  col-12" for="showRemove">removed points</label>
                                 </div>
 
                                 <div class="form-check d-flex flex-row flex-wrap " style="text-align: ;">
                                     <input class="form-check-input  col-4" type="checkbox" id="showLegend" name="show" value="0" checked>
-                                    <label class="form-check-label  col-12" for="showLegend">legend</label>
+                                    <label class="form-check-label  col-12" for="showLegend">legend(L)</label>
                                 </div>
 
                                 <div class="form-check d-flex flex-row flex-wrap " style="text-align: ;">
                                     <input class="form-check-input  col-4" type="checkbox" id="showOverview" name="show" value="0" checked>
-                                    <label class="form-check-label  col-12" for="showOverview">overview</label>
+                                    <label class="form-check-label  col-12" for="showOverview">overview(O)</label>
                                 </div>
                                 
                             </div>
@@ -411,7 +411,7 @@ function DatexDVV() {
 
                     overviewGroup
                         .attr("transform", `translate(${width - overview_width - 10}, ${margin.top * 0.3 + overview_toolbar_height})`)
-                        .attr("display", d3.select('#showLegend').property('checked') ? 'inline' : 'none')
+                        .attr("display", d3.select('#showOverview').property('checked') ? 'inline' : 'none')
                         .call(overviewGroup => {
 
                             let overviewRect_interval = 6;
@@ -440,23 +440,18 @@ function DatexDVV() {
                                         .attr("width", overview_width)
                                         .attr("height", overview_toolbar_height + strokeWidth);
 
+                                    tool_g
+                                        .append("text")
+                                        .attr("transform", `translate(${overviewRect_interval}, ${overview_toolbar_height * 0.5})`)
+                                        .attr("fill", "currentcolor")
+                                        .attr("color", "black")
+                                        // .attr("font-family", "sans-serif")
+                                        .attr("font-size", 15)
+                                        .attr("font-weight", 600)
+                                        .attr("text-anchor", "start")
+                                        .attr("alignment-baseline", "central")
+                                        .text('overview')
 
-                                    // tool_g
-                                    //     .append("defs")
-                                    //     .append("clipPath")
-                                    //     .attr("id", "overviewRoundCorner")
-                                    //     .append("rect")
-                                    //     .attr('rx', 5)
-                                    //     .attr('ry', 5)
-                                    //     .attr("width", overview_width)
-                                    //     .attr("height", overview_toolbar_height + 10);
-                                    // tool_g
-                                    //     .append("rect")
-                                    //     .style('opacity', .8)
-                                    //     .attr("fill", "#D3D3D3")
-                                    //     .attr("width", overview_width)
-                                    //     .attr("height", overview_toolbar_height)
-                                    //     .attr("clip-path", "url(#overviewRoundCorner)");
                                 })
 
                             //外框
@@ -801,8 +796,6 @@ function DatexDVV() {
 
                 function chartEvent() {
 
-
-
                     const tooltip = d3.select("#charts").append("div")
                         .attr("id", "tooltip")
                         .style('position', 'absolute')
@@ -940,7 +933,6 @@ function DatexDVV() {
                         //         .style("stroke-width", "2.5");
                         // },
                         remove: function () {
-                            console.debug(this.element.node())
                             this.element.remove();
                             this.element = null;
                         },
@@ -953,17 +945,15 @@ function DatexDVV() {
                     const selectionController = selectionGroup.append('g').attr("display", 'none');
                     const SC_width = 150, SC_height = 50;
                     const SC_buttonAmount = 2;
-                    const SC_buttonText = ['Zoom', 'Remove'];
+                    const SC_buttonText = ['Zoom', 'Delete'];
 
                     var modeControl = (mode = 'read') => {
                         if (selectionRect.element) {
                             selectionRect.remove();
-                            // selectionController.select('#SC_remove').attr('act', 'none');
                             xSelected_domain = null;
                             ySelected_domain = null;
                         }
-                        selectionController
-                            .attr("display", 'none')
+                        selectionController.attr("display", 'none');
 
                         const dragBehavior = d3.drag()
                             .on("start", () => {
@@ -988,7 +978,7 @@ function DatexDVV() {
                                 selectionRect.update(p[0], p[1]);
                             })
                             .on("end", () => {
-                                // console.log("dragEnd");
+                                console.log("dragEnd");
                                 const finalAttributes = selectionRect.getCurrentAttributes();
                                 // console.debug(finalAttributes);
 
@@ -1009,9 +999,8 @@ function DatexDVV() {
                                     // console.log("single point");
                                     xSelected_domain = null;
                                     ySelected_domain = null;
-                                    selectionController
-                                        .attr("display", 'none');
-                                    // console.debug(removeData);
+                                    selectionController.attr("display", 'none');
+
                                 }
                                 // console.debug(selectionRect);
                                 if (mode == 'read') {
@@ -1027,21 +1016,17 @@ function DatexDVV() {
 
                                         selectionController
                                             .attr("display", 'inline')
-                                            .attr("transform", `translate(${translateX}, ${translateY})`);
-                                        selectionController
-                                            .select('#SC_Remove')
+                                            .attr("transform", `translate(${translateX}, ${translateY})`)
+                                            .select('#SC_' + SC_buttonText[1])
                                             .attr('act', SC_buttonText[1])
-                                        //     .select('text')
-                                        //     .text('Remove' + remove_hotkeyString);
+                                            .select('text')
+                                            .text(SC_buttonText[1] + '(' + SC_buttonText[1][0] + ')');
                                     }
-                                    else {
-                                        // selectionController
-                                        //     .select('#SC_remove')
-                                        //     .attr('act', 'none');
-                                    }
+
                                 }
 
                             });
+
                         switch (mode) {
                             case 'read':
                                 let mousemoveFlag = true;//avoid from trigger event too often
@@ -1171,7 +1156,7 @@ function DatexDVV() {
                                 break;
                         }
                         event_rect.call(dragBehavior);
-                        // console.debug(event_rect);
+                        // console.debug(event_rect._groups[0][0].__on);
                     }
                     var chartOptionEvent = () => {
                         var updateFlag = true;
@@ -1287,12 +1272,12 @@ function DatexDVV() {
                             let text = SC_buttonText[buttonIndex];
                             let buttonGroup = d3.select('#SC_' + text);
                             let buttonText = buttonGroup.select('text');
-                            console.debug(text);
-                            switch (text) {
-                                case 'Zoom':
+                            // console.debug(text);
+                            switch (buttonIndex) {//0:zoom,1:remove
+                                case 0:
                                     break;
-                                case 'Remove':
-                                    console.debug(buttonGroup.attr("act"));
+                                case 1:
+                                    // console.debug(buttonGroup.attr("act"));
                                     let hotkeyString = '(' + text[0] + ')';
                                     if (buttonGroup.attr("act") == text) {
                                         // console.debug(removeData);
@@ -1331,7 +1316,7 @@ function DatexDVV() {
 
                             }
 
-                        }
+                        };
 
                         selectionController
                             .append('rect')
@@ -1400,6 +1385,11 @@ function DatexDVV() {
                                         });
                                 })
                             );
+
+                        selectionController.on('change', e => {
+                            console.debug('change');
+                        });
+
                     }
                     modeControl('read');
                     chartOptionEvent();
@@ -1407,7 +1397,7 @@ function DatexDVV() {
                 }
                 function infoBoxDragEvent() {
 
-                    var raiseAndDrag = (d3_selection, dragTarget = null) => {
+                    var raiseAndDrag = (d3_selection) => {
                         let x_fixed = 0, y_fixed = 0;
                         let legend_dragBehavior = d3.drag()
                             .on('start', function (e) {
@@ -1444,17 +1434,29 @@ function DatexDVV() {
                         .on("keydown", (e) => {
                             // console.debug(e);
                             if (!hotkeyPressFlag) return;
-                            let editMode_ckb = d3.select("#editMode");
-                            let editMode_checked = editMode_ckb.property('checked');
+
                             // console.debug(checked);
                             switch (e.key) {
                                 case 'e'://press e
+                                    let editMode_ckb = d3.select("#editMode");
+                                    let editMode_checked = editMode_ckb.property('checked');
                                     editMode_ckb.property('checked', !editMode_checked);
                                     editMode_ckb.dispatch("change");
                                     break;
-                                case 'r'://press r
-                                    if (editMode_checked)
-                                        d3.select("#SC_Remove").dispatch("click");
+                                case 'd'://press d
+                                    d3.select("#SC_Delete").dispatch("click");
+                                    break;
+                                case 'l'://press l
+                                    let showLegend = d3.select("#showLegend");
+                                    let showLegend_checked = showLegend.property('checked');
+                                    showLegend.property('checked', !showLegend_checked);
+                                    showLegend.dispatch("change");
+                                    break;
+                                case 'o'://press o
+                                    let showOverview = d3.select("#showOverview");
+                                    let showOverview_checked = showOverview.property('checked');
+                                    showOverview.property('checked', !showOverview_checked);
+                                    showOverview.dispatch("change");
                                     break;
                             }
                             hotkeyPressFlag = false;

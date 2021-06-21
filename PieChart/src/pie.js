@@ -222,7 +222,7 @@ function pieChart() {
         else {
             console.debug("unknow dataType");
         }
-        // console.debug(data);
+        console.debug(data);
         return chart;
     };
     function chart() {

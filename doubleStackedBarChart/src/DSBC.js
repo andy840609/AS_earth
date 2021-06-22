@@ -241,8 +241,11 @@ function DSBC() {
 
             //===size
             var series = d3.stack()
-                .keys(dataKeys.slice(1))
-                .value((d, key) => d[key][d.columns[0]])
+                .keys(dataKeys)
+                .value((d, key) => {
+                    console.debug(d, key);
+                    return d[key][d.columns[0]];
+                })
                 (data).map(d => {
                     // console.debug(d);
                     return (d.forEach(v => {

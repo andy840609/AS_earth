@@ -176,7 +176,7 @@ function pieChart() {
 
                 Objkeys.forEach((Objkey, index, arr) => {
                     let obj = dataObj[Objkey];
-                    let DBKeys = Object.getOwnPropertyNames(obj).filter(key => key != 'columns');
+                    let DBKeys = Object.getOwnPropertyNames(obj).filter(key => key != 'columns' && key != 'total');
                     obj.columns = DBKeys;
                     // console.debug(DBKeys);
 

@@ -68,7 +68,7 @@ function DSBC() {
     }
 
     chart.data = (vaule) => {
-        console.debug(vaule);
+        console.log(vaule);
         let copyObj = JSON.parse(JSON.stringify(vaule));//不影響原資料
         let dataType = typeof (copyObj[0]);
 
@@ -340,7 +340,7 @@ function DSBC() {
 
                     Objkeys.forEach((Objkey, index, arr) => {
                         let obj = dataObj[Objkey];
-                        let DBKeys = Object.getOwnPropertyNames(obj).filter(key => key != 'columns');
+                        let DBKeys = Object.getOwnPropertyNames(obj).filter(key => key != 'columns' && key != 'total');
                         obj.columns = DBKeys;
                         // console.debug(DBKeys);
 
@@ -379,38 +379,62 @@ function DSBC() {
                 return chartData.data;
             }();
             console.debug(data);
-            var dataKeys = data.columns;
-            // console.debug(dataKeys); 
+            const dataKeys = data.columns;
+            //===取出所有最下層key(ex:每個DB的年份)並去重複
+            const categories = Array.from(new Set([].concat(...dataKeys.map(key => [].concat(...data[key].columns.map(k => data[key][k].columns))))));
+            // console.debug(categories);
             // console.debug(getKeyName('size'));
 
 
-            var group1_color = "red";
-            var group2_color = "blue";
+            const group1_color = "red";
+            const group2_color = "blue";
 
-            //===size
-            var series1 = d3.stack()
-                .keys(dataKeys.slice(1))
-                .value((d, key) => d[key][d.columns[0]])
-                (data).map(d => {
-                    // console.debug(d);
-                    return (d.forEach(v => {
-                        // console.debug(v);
-                        return v.key = d.key
-                    }), d)
-                });
-            // console.debug(series);
+
+            var getSeriesArr = () => {
+
+            }
+            //===count
+            const countData = data[dataKeys[0]];
+            const countDataKeys = countData.columns;
+            console.debug(countData);
+            console.debug(countDataKeys);
+
+            // let aaa = {};
+            // countDataKeys.forEach(key => {
+            //     aaa[key] = countData[key].columns;
+            // })
+            // console.debug(aaa);
+
+            const series1 = d3.stack()
+                .keys(categories)
+                .value((d, key) => {
+
+                    console.debug(d);
+                    return false
+                    d[key][d.columns[0]]
+                })
+                (countDataKeys)
+            // (data[dataKeys[0]])
+            // (data).map(d => {
+            //     // console.debug(d);
+            //     return (d.forEach(v => {
+            //         // console.debug(v);
+            //         return v.key = d.key
+            //     }), d)
+            // });
+            console.debug(series1);
 
             // === times
-            var series2 = d3.stack()
-                .keys(dataKeys.slice(1))
-                .value((d, key) => d[key][d.columns[1]])
-                (data).map(d => {
-                    // console.debug(d);
-                    return (d.forEach(v => {
-                        // console.debug(v);
-                        return v.key = d.key
-                    }), d)
-                });
+            // var series2 = d3.stack()
+            //     .keys(data[dataKeys[0]].columns.filter(col => col != 'total'))
+            //     .value((d, key) => d[key][d.columns[1]])
+            //     (data).map(d => {
+            //         // console.debug(d);
+            //         return (d.forEach(v => {
+            //             // console.debug(v);
+            //             return v.key = d.key
+            //         }), d)
+            //     });
             // console.debug(series2);
 
 

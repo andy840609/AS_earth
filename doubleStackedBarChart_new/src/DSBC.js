@@ -384,355 +384,349 @@ function DSBC() {
             const categories = Array.from(new Set([].concat(...dataKeys.map(key => [].concat(...data[key].columns.map(k => data[key][k].columns))))));
             // console.debug(categories);
             // console.debug(getKeyName('size'));
-
+            const svg = d3.create("svg").attr("viewBox", [0, 0, width, height]);
+            const xAxis = svg.append("g").attr("class", "xAxis");
+            const yAxis = svg.append("g").attr("class", "yAxis");
+            const yAxis2 = svg.append("g").attr("class", "yAxis2");
 
             const group1_color = "red";
             const group2_color = "blue";
 
+            var All_series;
+            function updateChart(trans = false) {
 
-            var getSeriesArr = () => {
+                function init() {
+                    svg.append('g')
+                        .attr("class", "title")
+                        .attr("transform", `translate(${margin.left + (width - margin.left - margin.right) / 2}, ${margin.top / 2})`)
+                        .append('text')
+                        .attr("fill", "currentcolor")
+                        .attr("color", "black")
+                        .attr("font-family", "sans-serif")
+                        .attr("font-size", 20)
+                        .attr("font-weight", 900)
+                        .attr("text-anchor", "middle")
+                        .attr("alignment-baseline", "middle")
+                        .text(Data.title);
+                    //===single year chart dont need legend
+                    // console.debug(dataKeys.length);
+                    if (dataKeys.length != 2) {
+                        var rect_interval = 1;
+                        var rect_width = 50;
+                        var rect_height = 10;
+                        var legend = svg.append("g")
+                            .attr("class", "legend")
+                            .attr("transform", `translate(${width - margin.right - series.length * (rect_width + rect_interval)}, ${margin.top * 0.6})`)
+                            .selectAll("g")
+                            .data(series)
+                            .join("g")
+                            .attr("transform", (d, i) => `translate(${i * (rect_width + rect_interval)
+                                }, 0)`);
 
-            }
-            //===count
-            const countData = data[dataKeys[0]];
-            const countDataKeys = countData.columns;
-            console.debug(countData);
-            console.debug(countDataKeys);
+                        svg.select('.legend')
+                            .append("text")
+                            .attr("font-size", 10)
+                            .attr("font-weight", 900)
+                            .attr("text-anchor", "start")
+                            .attr("alignment-baseline", "after-edge")
+                            .text(getKeyName(Data.legend).name);
 
-            // let aaa = {};
-            // countDataKeys.forEach(key => {
-            //     aaa[key] = countData[key].columns;
-            // })
-            // console.debug(aaa);
-
-            const series1 = d3.stack()
-                .keys(categories)
-                .value((d, key) => {
-
-                    console.debug(d);
-                    return false
-                    d[key][d.columns[0]]
-                })
-                (countDataKeys)
-            // (data[dataKeys[0]])
-            // (data).map(d => {
-            //     // console.debug(d);
-            //     return (d.forEach(v => {
-            //         // console.debug(v);
-            //         return v.key = d.key
-            //     }), d)
-            // });
-            console.debug(series1);
-
-            // === times
-            // var series2 = d3.stack()
-            //     .keys(data[dataKeys[0]].columns.filter(col => col != 'total'))
-            //     .value((d, key) => d[key][d.columns[1]])
-            //     (data).map(d => {
-            //         // console.debug(d);
-            //         return (d.forEach(v => {
-            //             // console.debug(v);
-            //             return v.key = d.key
-            //         }), d)
-            //     });
-            // console.debug(series2);
+                        legend
+                            .call(g => {
+                                g.append("rect")
+                                    .attr("width", rect_width)
+                                    .attr("height", rect_height)
+                                    .attr("fill", (d, i) => color('year', i));
 
 
+                                g.append("text")
+                                    // .attr("y", rect_width)
+                                    .attr("x", rect_width / 2)
+                                    .attr("y", rect_height)
+                                    .attr("fill", "currentcolor")
+                                    .attr("color", "black")
+                                    .attr("font-family", "sans-serif")
+                                    .attr("font-size", 8)
+                                    .attr("font-weight", 600)
+                                    .attr("text-anchor", "middle")
+                                    .attr("alignment-baseline", "before-edge")
+                                    .text(d => d.key)
+                            });
+
+                    }
+                };
+                function render() {
+                    var updateAxis = () => {
+                        var makeXAxis
+                        xAxis.call(xAxis);
+                        yAxis.call(yAxis);
+                        yAxis2.call(yAxis2);
+                    }
+
+                    var x = d3.scaleBand()
+                        .domain(data.map(d => d[dataKeys[0]]))
+                        .range([margin.left, width - margin.right])
+                        .padding(0.1);
+
+                    var y_domain = (yAxisDomainMax ? [0, yAxisDomainMax] : [0, d3.max(series, d => d3.max(d, d => d[1]))]);
+                    var y = d3.scaleLinear()
+                        .domain(y_domain)
+                        .rangeRound([height - margin.bottom, margin.top]);
+                    var y2_domain = (yAxis2DomainMax ? [0, yAxis2DomainMax] : [0, d3.max(series2, d => d3.max(d, d => d[1]))]);
+                    var y2 = d3.scaleLinear()
+                        .domain(y2_domain)
+                        .rangeRound([height - margin.bottom, margin.top]);
+
+                    var xAxis = g => g
+                        .attr("transform", `translate(0,${height - margin.bottom})`)
+                        .call(d3.axisBottom(x).tickSizeOuter(0))
+                        .append('text')
+                        .attr('x', margin.left + (width - margin.left - margin.right) / 2)
+                        .attr("y", margin.bottom * 0.8)
+                        .attr("fill", "black")
+                        .attr("font-weight", "bold")
+                        .attr("font-size", 12)
+                        .text(getKeyName(dataKeys[0]).name);
+                    // .call(g => g.selectAll(".domain").remove());
+
+                    let yAxisTag = getKeyName(Data.yAxis);
+                    var yAxis = g => g
+                        .attr("transform", `translate(${margin.left},0)`)
+                        .call(d3.axisLeft(y).ticks(null, "s").tickSizeOuter(0))
+                        .call(g =>
+                            g.append('rect')
+                                .attr('class', 'group')
+                                .attr('x', -margin.left * 0.85)
+                                .attr("y", height * 0.4)
+                                .attr("width", 10)
+                                .attr("height", 10)
+                                .attr("fill", 'none')
+                                .attr("stroke", group1_color)
+                                .attr("stroke-width", 2)
+                                .attr("stroke-dasharray", "4,1")
+                                .attr("stroke-dashoffset", "2")
+                        )
+                        .append('text')
+                        .attr('x', -height / 2)
+                        .attr("y", -margin.left * 0.9)
+                        .attr("fill", "black")
+                        .attr("font-weight", "bold")
+                        .attr("font-size", 12)
+                        .style("text-anchor", "middle")
+                        .attr("alignment-baseline", "text-before-edge")
+                        .attr("transform", "rotate(-90)")
+                        .text(yAxisTag.name + (yAxisTag.unit ? "(" + yAxisTag.unit + ")" : ""));
 
 
-            var x = d3.scaleBand()
-                .domain(data.map(d => d[dataKeys[0]]))
-                .range([margin.left, width - margin.right])
-                .padding(0.1);
+                    let yAxis2Tag = getKeyName(Data.yAxis2);
+                    var yAxis2 = g => g
+                        .attr("transform", `translate(${width - margin.right},0)`)
+                        .call(d3.axisRight(y2).ticks(null, "s").tickSizeOuter(0))
+                        .call(g =>
+                            g.append('rect')
+                                .attr('class', 'group')
+                                .attr('x', margin.right * 0.85 - 10)
+                                .attr("y", height * 0.4)
+                                .attr("width", 10)
+                                .attr("height", 10)
+                                .attr("fill", 'none')
+                                .attr("stroke", group2_color)
+                                .attr("stroke-width", 2)
+                                .attr("stroke-dasharray", "4,1")
+                                .attr("stroke-dashoffset", "2")
+                        )
+                        .append('text')
+                        .attr('x', height / 2)
+                        .attr("y", -margin.left * 0.9)
+                        .attr("fill", "black")
+                        .attr("font-weight", "bold")
+                        .attr("font-size", 12)
+                        .style("text-anchor", "middle")
+                        .attr("alignment-baseline", "text-before-edge")
+                        .attr("transform", "rotate(90)")
+                        .text(yAxis2Tag.name + (yAxis2Tag.unit ? "(" + yAxis2Tag.unit + ")" : ""));
 
-            var y_domain = (yAxisDomainMax ? [0, yAxisDomainMax] : [0, d3.max(series, d => d3.max(d, d => d[1]))]);
-            var y = d3.scaleLinear()
-                .domain(y_domain)
-                .rangeRound([height - margin.bottom, margin.top]);
-            var y2_domain = (yAxis2DomainMax ? [0, yAxis2DomainMax] : [0, d3.max(series2, d => d3.max(d, d => d[1]))]);
-            var y2 = d3.scaleLinear()
-                .domain(y2_domain)
-                .rangeRound([height - margin.bottom, margin.top]);
 
-            var xAxis = g => g
-                .attr("transform", `translate(0,${height - margin.bottom})`)
-                .call(d3.axisBottom(x).tickSizeOuter(0))
-                .append('text')
-                .attr('x', margin.left + (width - margin.left - margin.right) / 2)
-                .attr("y", margin.bottom * 0.8)
-                .attr("fill", "black")
-                .attr("font-weight", "bold")
-                .attr("font-size", 12)
-                .text(getKeyName(dataKeys[0]).name);
-            // .call(g => g.selectAll(".domain").remove());
 
-            let yAxisTag = getKeyName(Data.yAxis);
-            var yAxis = g => g
-                .attr("transform", `translate(${margin.left},0)`)
-                .call(d3.axisLeft(y).ticks(null, "s").tickSizeOuter(0))
-                .call(g =>
-                    g.append('rect')
-                        .attr('class', 'group')
-                        .attr('x', -margin.left * 0.85)
-                        .attr("y", height * 0.4)
-                        .attr("width", 10)
-                        .attr("height", 10)
-                        .attr("fill", 'none')
+
+
+
+                    let barWidth = x.bandwidth() / 2 > max_barWidth ? max_barWidth : x.bandwidth() / 2;
+                    function getDasharrayStr(barWidth, barHeight) {
+                        let showLength = barWidth + barHeight - 1.5;
+                        let hideLength = barWidth + 3;
+
+                        let dashLength = 10;
+                        let gapLength = 1;
+
+                        //***quotient=dashes and gaps count 
+                        //***remainder=
+                        let quotient = parseInt(showLength / (dashLength + gapLength));
+                        let remainder = showLength % (dashLength + gapLength);
+
+                        let dashStr = '';
+                        for (let i = 0; i < quotient; i++)
+                            dashStr += dashLength + ',' + gapLength + ',';
+
+                        // let endWithGap = (quotient % 2 == 0);
+                        dashStr += remainder + ',' + hideLength;
+                        return dashStr;
+                    }
+
+                    var barGroup1 = svg
+                        .append("g")
+                        .attr("class", "barGroup")
+                        .attr("id", "barGroup1")
+                        .attr("groupIndex", 0);
+
+                    barGroup1
+                        .selectAll("g")
+                        .data(series)
+                        .join("g")
+                        .selectAll("rect")
+                        .data(d => d)
+                        .join("rect")
+                        .attr("class", "bar")
+                        .attr("id", (d, i) => "G1-" + (dataKeys.indexOf(d.key) + i * (dataKeys.length - 1)))
+                        .attr("fill", d => color(d.data[dataKeys[0]], dataKeys.indexOf(d.key)))
+                        .attr("x", d => x(d.data[dataKeys[0]]))
+                        .attr("y", d => y(d[1]))
+                        .attr("height", d => y(d[0]) - y(d[1]))
+                        .attr("width", barWidth)
+                        .attr("stroke", "#D3D3D3")
+                        .attr("stroke-width", 3)
+                        .attr('stroke-opacity', 0)
+                        .attr("transform", function () {
+                            // let barWidth = parseInt(this.getAttribute('width'));
+                            return `translate(${x.bandwidth() / 2 - barWidth - bar_interval},0)`;
+                        });
+
+                    // console.debug(series[series.length - 1])
+                    // let groupTotal_interval = 3;
+                    barGroup1
+                        .append('g')
+                        .attr("class", "groupTotal")
+                        .attr("position", "relative")
+                        .attr("top", 5)
+                        .selectAll("rect")
+                        .data(series[series.length - 1])
+                        .join("rect")
+                        .attr("fill", "none")
+                        .attr("x", d => x(d.data[dataKeys[0]]))
+                        .attr("y", d => y(d[1]) - 1.5)
+                        .attr("height", d => y(0) - y(d[1]) + 3)
+                        .attr("width", barWidth + 3)
                         .attr("stroke", group1_color)
-                        .attr("stroke-width", 2)
-                        .attr("stroke-dasharray", "4,1")
-                        .attr("stroke-dashoffset", "2")
-                )
-                .append('text')
-                .attr('x', -height / 2)
-                .attr("y", -margin.left * 0.9)
-                .attr("fill", "black")
-                .attr("font-weight", "bold")
-                .attr("font-size", 12)
-                .style("text-anchor", "middle")
-                .attr("alignment-baseline", "text-before-edge")
-                .attr("transform", "rotate(-90)")
-                .text(yAxisTag.name + (yAxisTag.unit ? "(" + yAxisTag.unit + ")" : ""));
+                        .attr("stroke-width", 3)
+                        .attr("stroke-dasharray", function () {
+                            let barWidth = parseInt(this.getAttribute("width"));
+                            let barHeight = parseInt(this.getAttribute("height"));
+                            let dashStr = getDasharrayStr(barWidth, barHeight);
+                            return dashStr;
+                        })
+                        .attr('stroke-opacity', .8)
+                        .attr("transform", `translate(${(x.bandwidth() - 3) / 2 - (barWidth) - bar_interval}, 0)`);
+
+                    var barGroup2 = svg
+                        .append("g")
+                        .attr("class", "barGroup")
+                        .attr("id", "barGroup2")
+                        .attr("groupIndex", 1);
+
+                    barGroup2
+                        .selectAll("g")
+                        .data(series2)
+                        .join("g")
+                        // .call(g => console.debug(g.nodes()))
+                        .selectAll("rect")
+                        .data(d => d)
+                        .join("rect")
+                        .attr("class", "bar")
+                        .attr("id", (d, i) => "G2-" + (dataKeys.indexOf(d.key) + i * (dataKeys.length - 1)))
+                        .attr("fill", d => color(d.data[dataKeys[0]], dataKeys.indexOf(d.key)))
+                        .attr("x", d => x(d.data[dataKeys[0]]))
+                        .attr("y", d => y2(d[1]))
+                        .attr("height", d => y2(d[0]) - y2(d[1]))
+                        .attr("width", barWidth)
+                        .attr("stroke", "#D3D3D3")
+                        .attr("stroke-width", 3)
+                        .attr('stroke-opacity', 0)
+                        .attr("transform", function () {
+                            return `translate(${x.bandwidth() / 2 + bar_interval}, 0)`;
+                        });
 
 
-            let yAxis2Tag = getKeyName(Data.yAxis2);
-            var yAxis2 = g => g
-                .attr("transform", `translate(${width - margin.right},0)`)
-                .call(d3.axisRight(y2).ticks(null, "s").tickSizeOuter(0))
-                .call(g =>
-                    g.append('rect')
-                        .attr('class', 'group')
-                        .attr('x', margin.right * 0.85 - 10)
-                        .attr("y", height * 0.4)
-                        .attr("width", 10)
-                        .attr("height", 10)
-                        .attr("fill", 'none')
+                    // console.debug(series2[series2.length - 1])
+                    // console.debug(dataKeys)
+
+                    barGroup2
+                        .append('g')
+                        .attr("class", "groupTotal")
+                        .attr("position", "relative")
+                        .attr("top", 5)
+                        .selectAll("rect")
+                        .data(series2[series2.length - 1])
+                        .join("rect")
+                        .attr("fill", "none")
+                        .attr("x", d => x(d.data[dataKeys[0]]))
+                        .attr("y", d => y2(d[1]) - 1.5)
+                        .attr("height", d => y2(0) - y2(d[1]) + 3)
+                        .attr("width", barWidth + 3)
                         .attr("stroke", group2_color)
-                        .attr("stroke-width", 2)
-                        .attr("stroke-dasharray", "4,1")
-                        .attr("stroke-dashoffset", "2")
-                )
-                .append('text')
-                .attr('x', height / 2)
-                .attr("y", -margin.left * 0.9)
-                .attr("fill", "black")
-                .attr("font-weight", "bold")
-                .attr("font-size", 12)
-                .style("text-anchor", "middle")
-                .attr("alignment-baseline", "text-before-edge")
-                .attr("transform", "rotate(90)")
-                .text(yAxis2Tag.name + (yAxis2Tag.unit ? "(" + yAxis2Tag.unit + ")" : ""));
+                        .attr("stroke-width", 3)
+                        .attr("stroke-dasharray", function () {
+                            let barWidth = parseInt(this.getAttribute("width"));
+                            let barHeight = parseInt(this.getAttribute("height"));
+                            let dashStr = getDasharrayStr(barWidth, barHeight);
+                            return dashStr;
+                        })
+                        .attr('stroke-opacity', .8)
+                        .attr("transform", `translate(${(x.bandwidth() - 3) / 2 + bar_interval}, 0)`);
+                };
+                if (!All_series) {
+                    All_series = getNewData();
+                    init();
+                }
+                render();
+            }
+            function getNewData() {
+                let All_series = [];
+                var getSeries = (key) => {
+                    //===count or size....
+                    const seriesData = data[key];
+                    const subjects = seriesData.columns;
+                    // console.debug(seriesData);
+                    // console.debug(seriesDataKeys);
 
-            const svg = d3.create("svg")
-                .attr("viewBox", [0, 0, width, height]);
-
-
-
-
-
-            let barWidth = x.bandwidth() / 2 > max_barWidth ? max_barWidth : x.bandwidth() / 2;
-            function getDasharrayStr(barWidth, barHeight) {
-                let showLength = barWidth + barHeight - 1.5;
-                let hideLength = barWidth + 3;
-
-                let dashLength = 10;
-                let gapLength = 1;
-
-                //***quotient=dashes and gaps count 
-                //***remainder=
-                let quotient = parseInt(showLength / (dashLength + gapLength));
-                let remainder = showLength % (dashLength + gapLength);
-
-                let dashStr = '';
-                for (let i = 0; i < quotient; i++)
-                    dashStr += dashLength + ',' + gapLength + ',';
-
-                // let endWithGap = (quotient % 2 == 0);
-                dashStr += remainder + ',' + hideLength;
-                return dashStr;
+                    const series = d3.stack()
+                        .keys(categories)
+                        .value((subject, category) => seriesData[subject][category])
+                        (subjects)
+                    // (data[dataKeys[0]])
+                    // (data).map(d => {
+                    //     // console.debug(d);
+                    //     return (d.forEach(v => {
+                    //         // console.debug(v);
+                    //         return v.key = d.key
+                    //     }), d)
+                    // });
+                    // console.debug(series);
+                    return series;
+                }
+                dataKeys.forEach(key => All_series.push(getSeries(key)));
+                return All_series;
             }
 
-            var barGroup1 = svg
-                .append("g")
-                .attr("class", "barGroup")
-                .attr("id", "barGroup1")
-                .attr("groupIndex", 0);
 
-            barGroup1
-                .selectAll("g")
-                .data(series)
-                .join("g")
-                .selectAll("rect")
-                .data(d => d)
-                .join("rect")
-                .attr("class", "bar")
-                .attr("id", (d, i) => "G1-" + (dataKeys.indexOf(d.key) + i * (dataKeys.length - 1)))
-                .attr("fill", d => color(d.data[dataKeys[0]], dataKeys.indexOf(d.key)))
-                .attr("x", d => x(d.data[dataKeys[0]]))
-                .attr("y", d => y(d[1]))
-                .attr("height", d => y(d[0]) - y(d[1]))
-                .attr("width", barWidth)
-                .attr("stroke", "#D3D3D3")
-                .attr("stroke-width", 3)
-                .attr('stroke-opacity', 0)
-                .attr("transform", function () {
-                    // let barWidth = parseInt(this.getAttribute('width'));
-                    return `translate(${x.bandwidth() / 2 - barWidth - bar_interval},0)`;
-                });
-
-            // console.debug(series[series.length - 1])
-            // let groupTotal_interval = 3;
-            barGroup1
-                .append('g')
-                .attr("class", "groupTotal")
-                .attr("position", "relative")
-                .attr("top", 5)
-                .selectAll("rect")
-                .data(series[series.length - 1])
-                .join("rect")
-                .attr("fill", "none")
-                .attr("x", d => x(d.data[dataKeys[0]]))
-                .attr("y", d => y(d[1]) - 1.5)
-                .attr("height", d => y(0) - y(d[1]) + 3)
-                .attr("width", barWidth + 3)
-                .attr("stroke", group1_color)
-                .attr("stroke-width", 3)
-                .attr("stroke-dasharray", function () {
-                    let barWidth = parseInt(this.getAttribute("width"));
-                    let barHeight = parseInt(this.getAttribute("height"));
-                    let dashStr = getDasharrayStr(barWidth, barHeight);
-                    return dashStr;
-                })
-                .attr('stroke-opacity', .8)
-                .attr("transform", `translate(${(x.bandwidth() - 3) / 2 - (barWidth) - bar_interval}, 0)`);
-
-            var barGroup2 = svg
-                .append("g")
-                .attr("class", "barGroup")
-                .attr("id", "barGroup2")
-                .attr("groupIndex", 1);
-
-            barGroup2
-                .selectAll("g")
-                .data(series2)
-                .join("g")
-                // .call(g => console.debug(g.nodes()))
-                .selectAll("rect")
-                .data(d => d)
-                .join("rect")
-                .attr("class", "bar")
-                .attr("id", (d, i) => "G2-" + (dataKeys.indexOf(d.key) + i * (dataKeys.length - 1)))
-                .attr("fill", d => color(d.data[dataKeys[0]], dataKeys.indexOf(d.key)))
-                .attr("x", d => x(d.data[dataKeys[0]]))
-                .attr("y", d => y2(d[1]))
-                .attr("height", d => y2(d[0]) - y2(d[1]))
-                .attr("width", barWidth)
-                .attr("stroke", "#D3D3D3")
-                .attr("stroke-width", 3)
-                .attr('stroke-opacity', 0)
-                .attr("transform", function () {
-                    return `translate(${x.bandwidth() / 2 + bar_interval}, 0)`;
-                });
+            updateChart();
 
 
-            // console.debug(series2[series2.length - 1])
-            // console.debug(dataKeys)
-
-            barGroup2
-                .append('g')
-                .attr("class", "groupTotal")
-                .attr("position", "relative")
-                .attr("top", 5)
-                .selectAll("rect")
-                .data(series2[series2.length - 1])
-                .join("rect")
-                .attr("fill", "none")
-                .attr("x", d => x(d.data[dataKeys[0]]))
-                .attr("y", d => y2(d[1]) - 1.5)
-                .attr("height", d => y2(0) - y2(d[1]) + 3)
-                .attr("width", barWidth + 3)
-                .attr("stroke", group2_color)
-                .attr("stroke-width", 3)
-                .attr("stroke-dasharray", function () {
-                    let barWidth = parseInt(this.getAttribute("width"));
-                    let barHeight = parseInt(this.getAttribute("height"));
-                    let dashStr = getDasharrayStr(barWidth, barHeight);
-                    return dashStr;
-                })
-                .attr('stroke-opacity', .8)
-                .attr("transform", `translate(${(x.bandwidth() - 3) / 2 + bar_interval}, 0)`);
-
-            svg.append("g")
-                .attr("class", "xAxis")
-                .call(xAxis);
-
-            svg.append("g")
-                .attr("class", "yAxis")
-                .call(yAxis);
-
-            svg.append("g")
-                .attr("class", "yAxis2")
-                .call(yAxis2);
-
-            //===single year chart dont need legend
-            // console.debug(dataKeys.length);
-            if (dataKeys.length != 2) {
-                var rect_interval = 1;
-                var rect_width = 50;
-                var rect_height = 10;
-                var legend = svg.append("g")
-                    .attr("class", "legend")
-                    .attr("transform", `translate(${width - margin.right - series.length * (rect_width + rect_interval)}, ${margin.top * 0.6})`)
-                    .selectAll("g")
-                    .data(series)
-                    .join("g")
-                    .attr("transform", (d, i) => `translate(${i * (rect_width + rect_interval)
-                        }, 0)`);
-
-                svg.select('.legend')
-                    .append("text")
-                    .attr("font-size", 10)
-                    .attr("font-weight", 900)
-                    .attr("text-anchor", "start")
-                    .attr("alignment-baseline", "after-edge")
-                    .text(getKeyName(Data.legend).name);
-
-                legend
-                    .call(g => {
-                        g.append("rect")
-                            .attr("width", rect_width)
-                            .attr("height", rect_height)
-                            .attr("fill", (d, i) => color('year', i));
 
 
-                        g.append("text")
-                            // .attr("y", rect_width)
-                            .attr("x", rect_width / 2)
-                            .attr("y", rect_height)
-                            .attr("fill", "currentcolor")
-                            .attr("color", "black")
-                            .attr("font-family", "sans-serif")
-                            .attr("font-size", 8)
-                            .attr("font-weight", 600)
-                            .attr("text-anchor", "middle")
-                            .attr("alignment-baseline", "before-edge")
-                            .text(d => d.key)
-                    });
 
-            }
 
-            svg.append('g')
-                .attr("class", "title")
-                .attr("transform", `translate(${margin.left + (width - margin.left - margin.right) / 2}, ${margin.top / 2})`)
-                .append('text')
-                .attr("fill", "currentcolor")
-                .attr("color", "black")
-                .attr("font-family", "sans-serif")
-                .attr("font-size", 20)
-                .attr("font-weight", 900)
-                .attr("text-anchor", "middle")
-                .attr("alignment-baseline", "middle")
-                .text(Data.title);
+
+
 
 
 

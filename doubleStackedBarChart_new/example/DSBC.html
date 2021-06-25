@@ -64,40 +64,40 @@
                 "total": "15.59 GB"
             }
         }
-        // var data = {
-        //     "count": {
-        //         "2020": {
-        //             "GNSS": 9,
-        //             "TSMIP": 60,
-        //             "CWBSN": 98,
-        //             "GW": 2,
-        //             "MAGNET": 2,
-        //         },
-        //         "2021": {
-        //             "GNSS": 9,
-        //             "TSMIP": 60,
-        //             "CWBSN": 98,
-        //             "GW": 2,
-        //             "MAGNET": 2,
-        //         },
-        //     },
-        //     "file_size": {
-        //         "2020": {
-        //             "GNSS": 9,
-        //             "TSMIP": 60,
-        //             "CWBSN": 98,
-        //             "GW": 2,
-        //             "MAGNET": 2,
-        //         },
-        //         "2021": {
-        //             "GNSS": 9,
-        //             "TSMIP": 60,
-        //             "CWBSN": 98,
-        //             "GW": 2,
-        //             "MAGNET": 2,
-        //         },
-        //     }
-        // }
+        var data2 = {
+            "count": {
+                "2020": {
+                    "GNSS": 9,
+                    "TSMIP": 60,
+                    "CWBSN": 98,
+                    "GW": 2,
+                    "MAGNET": 2,
+                },
+                "2021": {
+                    "GNSS": 9,
+                    "TSMIP": 60,
+                    "CWBSN": 98,
+                    "GW": 2,
+                    "MAGNET": 2,
+                },
+            },
+            "file_size": {
+                "2020": {
+                    "GNSS": 9,
+                    "TSMIP": 60,
+                    "CWBSN": 98,
+                    "GW": 2,
+                    "MAGNET": 2,
+                },
+                "2021": {
+                    "GNSS": 9,
+                    "TSMIP": 60,
+                    "CWBSN": 98,
+                    "GW": 2,
+                    "MAGNET": 2,
+                },
+            }
+        }
         var title = 'GDMS資料服務統計';
         var obj = { data: data, title: title };
         var obj2 = JSON.parse(JSON.stringify(obj));
@@ -106,6 +106,8 @@
 
         var chart = DSBC()
             .data(Data)
+            .string({ subject: '資料庫', category: '年' })
+            // .string({ subject: '年', category: '資料庫' })
             .selector('.container');
         chart();
 

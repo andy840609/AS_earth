@@ -198,7 +198,7 @@ function DSBC() {
 
     function chart() {
         function stackedBar(Data, yAxisDomainMax = null, yAxis2DomainMax = null) {
-            console.debug(Data);
+            // console.debug(Data);
 
             var width = 800;
             var height = 600;
@@ -243,7 +243,7 @@ function DSBC() {
             var series = d3.stack()
                 .keys(dataKeys)
                 .value((d, key) => {
-                    console.debug(d, key);
+                    // console.debug(d, key);
                     return d[key][d.columns[0]];
                 })
                 (data).map(d => {
@@ -253,7 +253,7 @@ function DSBC() {
                         return v.key = d.key
                     }), d)
                 });
-            console.debug(series);
+            // console.debug(series);
 
             // === times
             var series2 = d3.stack()
@@ -941,8 +941,11 @@ function DSBC() {
 
 
                 // each bar call barEvent
-                barGroup1.selectAll('.bar').each(function () { d3.select(this).call(barEvent) });
-                barGroup2.selectAll('.bar').each(function () { d3.select(this).call(barEvent) });
+                // console.debug(svg.selectAll('.bar'))
+                svg.selectAll('.bar').call(barEvent);
+
+                // barGroup1.selectAll('.bar').each(function () { d3.select(this).call(barEvent) });
+                // barGroup2.selectAll('.bar').each(function () { d3.select(this).call(barEvent) });
 
                 let ticks = svg.select('.xAxis').selectAll('.tick');
                 ticks.each(function (d, i) { xAxisEvent(d3.select(this), d, i) });

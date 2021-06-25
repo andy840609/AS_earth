@@ -2,6 +2,7 @@ function DSBC() {
 
     var selector = 'body';
     var data = [];
+    var dataString = {};
     var colorPalette = null;
 
     function init() {
@@ -19,7 +20,7 @@ function DSBC() {
             ...-->
 
             <!-- ...change chart   ...-->
-            <div class="form-group col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start">
+            <div class="form-group col-lg-4 col-md-4 col-sm-6 d-flex flex-row align-items-start">
                 <label for="changeChart" class="col-form-label col-4" >chart</label>
                 <div class="btn-group btn-group-toggle col-8" data-toggle="buttons">
                     <label class="btn btn-secondary">
@@ -30,6 +31,27 @@ function DSBC() {
                     </label>
                 </div>
             </div>   
+
+            <!-- ... show info ... -->    
+            <div class="form-group col-lg-4 col-md-4 col-sm-6 d-flex flex-row align-items-start">
+                <label for="showInfoButton" class="col-form-label col-4" >Show</label>
+                <div class="btn-group btn-group-toggle col-8" role="group">
+                    <button id="showInfoButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        select
+                    </button>
+                    <div class="dropdown-menu" id="showInfoMenu" aria-labelledby="showInfoButton">
+                        <div  id="showInfoDropDownMenu">
+                           
+                            <div class="form-check d-flex flex-row flex-wrap " style="text-align: ;">
+                                <input class="form-check-input  col-4" type="checkbox" id="showLegend" name="show" value="0" checked>
+                                <label class="form-check-label  col-12" for="showLegend">legend</label>
+                            </div>
+                           
+                        </div>
+                    </div>
+                </div>
+            </div>  
+
 
 
             </div>
@@ -48,6 +70,9 @@ function DSBC() {
         //     chart();
         // });
 
+        //================dropdown-menu內元素被點擊不關閉menu
+        let All_dropdownMenu = $('.dropdown-menu');
+        All_dropdownMenu.on("click.bs.dropdown", e => e.stopPropagation());
 
 
         ~function requestColors() {
@@ -68,7 +93,7 @@ function DSBC() {
                         GW: "#f8b500",
                         MAGNET: "#005243",
                         TSMIP: "#7a4171",
-                        year: '#808080',
+                        categories: '#808080',
                     }
                 }
 
@@ -82,14 +107,14 @@ function DSBC() {
         //===================
     };
 
-    chart.selector = (vaule) => {
-        selector = vaule;
+    chart.selector = (value) => {
+        selector = value;
         return chart;
     }
 
-    chart.data = (vaule) => {
-        console.log(vaule);
-        let copyObj = JSON.parse(JSON.stringify(vaule));//不影響原資料
+    chart.data = (value) => {
+        console.log(value);
+        let copyObj = JSON.parse(JSON.stringify(value));//不影響原資料
         let dataType = typeof (copyObj[0]);
 
         var readTextFile = (file) => {
@@ -165,7 +190,7 @@ function DSBC() {
 
         //判斷第一個元素是字串路徑要讀檔,還是物件資料
         if (dataType == 'string') {
-            let paths = vaule;
+            let paths = value;
             //=========sorting and push to data
             paths.forEach(path => {
                 let tmp = readTextFile(path);
@@ -183,6 +208,10 @@ function DSBC() {
         return chart;
     }
 
+    chart.string = (value) => {
+        dataString = value;
+        return chart;
+    }
     function chart() {
         function stackedBar(chartData, series1DomainMax = null, series2DomainMax = null) {
             console.debug(chartData);
@@ -266,19 +295,19 @@ function DSBC() {
             const getKeyName = (key) => {
                 let keyName, keyUnit = '';
                 switch (key) {
-                    case 'name':
-                        keyName = '資料庫';
+                    case 'subject':
+                        keyName = dataString.subject ? dataString.subject : 'subject';
                         break;
-                    case 'year':
-                        keyName = '年';
+                    case 'category':
+                        keyName = dataString.category ? dataString.category : 'category';
                         break;
-                    case 'times':
+                    case 'count':
                         keyName = '下載次數';
                         keyUnit = '次';
                         break;
-                    case 'size':
+                    case 'file_size':
                         keyName = '下載量';
-                        keyUnit = 'GB';
+                        keyUnit = dataSizeUnit;
                         break;
                     default:
                         keyName = key;
@@ -286,16 +315,15 @@ function DSBC() {
                 }
                 return { name: keyName, unit: keyUnit };
             };
-            const getColor = (network, dataCount) => {
-                // console.debug(network, dataCount);
+            const getColor = (key, dataCount = 0) => {
+                // console.debug(key, dataCount);
                 let color, gradientColor;
                 function getGradientColor(hex, level) {
                     // console.debug(hex, level);
-                    let maxLevel = dataKeys.length - 1;
+                    let maxLevel = categories.length - 1;
 
                     var gradient = (color, level) => {
-                        let val = 20;
-
+                        let val = 30;
                         if (color + maxLevel * val > 240) {
                             val = (d3.max([color, 240]) - color) / maxLevel;
                             // console.debug(val);
@@ -318,7 +346,7 @@ function DSBC() {
                     return rgb;
                 }
 
-                color = colorPalette[network];
+                color = colorPalette[key];
                 //===if color not in colorPalette, get a random color and put in
                 if (!color) {
                     var randomColor = () => {
@@ -330,11 +358,11 @@ function DSBC() {
                     color = '#';
                     for (let i = 0; i < 3; i++)
                         color += randomColor();
-                    colorPalette[network] = color;
+                    colorPalette[key] = color;
                 }
 
                 // console.debug(colorPalette);
-                gradientColor = getGradientColor(color, dataCount - 1);
+                gradientColor = getGradientColor(color, dataCount);
                 // console.debug(gradientColor);
                 return gradientColor;
             };
@@ -343,7 +371,7 @@ function DSBC() {
             const height = 600;
             const margin = ({ top: 80, right: 50, bottom: 40, left: 50 });
 
-
+            const dataSizeUnit = 'GB';
             const data = function () {
                 const convertData = function (data) {
 
@@ -371,11 +399,10 @@ function DSBC() {
 
                                 if (Objkey == 'file_size') //==file_size
                                 {
-                                    const dataUnit = 'GB';
                                     yearKeys.forEach(yearKey => {
                                         // console.debug(obj[DBkey][yearKey]);
                                         if (typeof (obj[DBkey][yearKey]) == 'string')
-                                            obj[DBkey][yearKey] = split_and_convert(obj[DBkey][yearKey], dataUnit);
+                                            obj[DBkey][yearKey] = split_and_convert(obj[DBkey][yearKey], dataSizeUnit);
                                     });
                                 };
                             };
@@ -398,11 +425,17 @@ function DSBC() {
                 return chartData.data;
             }();
             console.debug(data);
-            const dataKeys = data.columns;
+            const dataKeys = data.columns;//series key
+            console.debug(dataKeys);
+            //放入seriesColor
+            ~function () {
+                const seriesColor = ["#d53e4f", "#3288bd"];
+                dataKeys.forEach((key, i) => colorPalette[key] = seriesColor[i % seriesColor.length]);
+            }()
 
             //===取出所有主要的key(ex:每個DB)並去重複
             const subjects = Array.from(new Set([].concat(...dataKeys.map(key => [].concat(...data[key].columns)))));
-            // console.debug(subjects);
+            console.debug(subjects);
             //===取出所有最下層key(ex:每個DB的年份)並去重複
             const categories = Array.from(new Set([].concat(...dataKeys.map(key => [].concat(...data[key].columns.map(k => data[key][k].columns))))));
             // console.debug(categories);
@@ -415,13 +448,14 @@ function DSBC() {
 
 
             var newDataObj;
+            var subjectScale, series1Scale, series2Scale;
+            var bar_interval;
             function updateChart(chartType = 'vertical', trans = false) {
                 // console.debug(chartType)
                 // console.debug(newDataObj)
                 // var chartType = chartType;//vertical horizontal
-                const max_barWidth = 50;
-                const bar_interval = chartType == 'vertical' ? 5 : 50;
-                const seriesColor = ["red", "blue"];
+                const max_barWidth = chartType == 'vertical' ? 50 : 60;
+                bar_interval = chartType == 'vertical' ? 5 : 50;
                 const trans_duration = trans ? 500 : 0;
 
                 function init() {
@@ -437,82 +471,51 @@ function DSBC() {
                         .attr("font-weight", 900)
                         .attr("text-anchor", "middle")
                         .attr("alignment-baseline", "middle")
-                    // .text(chartData.title);
+                        .text(chartData.title);
 
                     //===Axis
                     subjectAxis
                         .append('text')
-                        .attr('x', margin.left + (width - margin.left - margin.right) / 2)
-                        .attr("y", margin.bottom * 0.8)
+                        .attr("class", "axisName")
                         .attr("fill", "black")
                         .attr("font-weight", "bold")
                         .attr("font-size", 12)
-                        .text('subjects');
+                        .text(getKeyName('subject').name);
 
                     series1Axis
-                        .call(g => {
-                            g.append('rect')
-                                .attr('class', 'group')
-                                .attr('x', -margin.left * 0.85)
-                                .attr("y", height * 0.4)
-                                .attr("width", 10)
-                                .attr("height", 10)
-                                .attr("fill", 'none')
-                                .attr("stroke", seriesColor[0])
-                                .attr("stroke-width", 2)
-                                .attr("stroke-dasharray", "4,1")
-                                .attr("stroke-dashoffset", "2");
-                        })
+                        .attr("color", getColor(dataKeys[0]))
                         .append('text')
-                        .attr('x', -height / 2)
-                        .attr("y", -margin.left * 0.9)
-                        .attr("fill", "black")
+                        .attr("class", "axisName")
+                        .attr("fill", "currentcolor")
                         .attr("font-weight", "bold")
                         .attr("font-size", 12)
                         .style("text-anchor", "middle")
-                        .attr("alignment-baseline", "text-before-edge")
-                        .attr("transform", "rotate(-90)")
-                        .text('y1');
+                        .attr("alignment-baseline", "text-before-edge");
 
                     series2Axis
-                        .call(g => {
-                            g.append('rect')
-                                .attr('class', 'group')
-                                .attr('x', margin.right * 0.85 - 10)
-                                .attr("y", height * 0.4)
-                                .attr("width", 10)
-                                .attr("height", 10)
-                                .attr("fill", 'none')
-                                .attr("stroke", seriesColor[1])
-                                .attr("stroke-width", 2)
-                                .attr("stroke-dasharray", "4,1")
-                                .attr("stroke-dashoffset", "2");
-                        })
+                        .attr("color", getColor(dataKeys[1]))
                         .append('text')
-                        .attr('x', height / 2)
-                        .attr("y", -margin.left * 0.9)
-                        .attr("fill", "black")
+                        .attr("class", "axisName")
+                        .attr("fill", "currentcolor")
                         .attr("font-weight", "bold")
                         .attr("font-size", 12)
                         .style("text-anchor", "middle")
-                        .attr("alignment-baseline", "text-before-edge")
-                        .attr("transform", "rotate(90)")
-                        .text('y2');
+                        .attr("alignment-baseline", "text-before-edge");
 
-                    //===single year chart dont need legend
+
+                    //===single categories dont need legend
                     // console.debug(dataKeys.length);
-                    if (dataKeys.length != 2) {
+                    if (categories.length >= 2) {
                         var rect_interval = 1;
                         var rect_width = 50;
                         var rect_height = 10;
                         var legend = svg.append("g")
                             .attr("class", "legend")
-                            .attr("transform", `translate(${width - margin.right - series1.length * (rect_width + rect_interval)}, ${margin.top * 0.6})`)
+                            .attr("transform", `translate(${width - margin.right - categories.length * (rect_width + rect_interval)}, ${margin.top * 0.6})`)
                             .selectAll("g")
-                            .data(series1)
+                            .data(categories)
                             .join("g")
-                            .attr("transform", (d, i) => `translate(${i * (rect_width + rect_interval)
-                                }, 0)`);
+                            .attr("transform", (d, i) => `translate(${i * (rect_width + rect_interval)}, 0)`);
 
                         svg.select('.legend')
                             .append("text")
@@ -520,15 +523,14 @@ function DSBC() {
                             .attr("font-weight", 900)
                             .attr("text-anchor", "start")
                             .attr("alignment-baseline", "after-edge")
-                            .text(getKeyName(Data.legend).name);
+                            .text(getKeyName('category').name);
 
                         legend
                             .call(g => {
                                 g.append("rect")
                                     .attr("width", rect_width)
                                     .attr("height", rect_height)
-                                    .attr("fill", (d, i) => color('year', i));
-
+                                    .attr("fill", (d, i) => getColor('categories', i));
 
                                 g.append("text")
                                     // .attr("y", rect_width)
@@ -541,7 +543,7 @@ function DSBC() {
                                     .attr("font-weight", 600)
                                     .attr("text-anchor", "middle")
                                     .attr("alignment-baseline", "before-edge")
-                                    .text(d => d.key)
+                                    .text(d => d)
                             });
 
                     }
@@ -565,7 +567,6 @@ function DSBC() {
                         case 'horizontal':
                             let chartWidth = width - margin.right - margin.left;
                             let seriesAxisWidth = (chartWidth - bar_interval) * 0.5;
-
                             subjectScaleRange = [height - margin.bottom, margin.top];
                             series1ScaleRange = [margin.left + seriesAxisWidth, margin.left];
                             series2ScaleRange = [series1ScaleRange[0] + bar_interval, width - margin.right];
@@ -573,76 +574,120 @@ function DSBC() {
 
                     }
 
-                    var subjectScale = d3.scaleBand()
+                    subjectScale = d3.scaleBand()
                         .domain(subjects)
                         .range(subjectScaleRange)
                         .padding(0.1);
 
-                    var series1Scale = d3.scaleLinear()
+                    series1Scale = d3.scaleLinear()
                         .domain(series1Domain).nice()
                         .range(series1ScaleRange);
 
-                    var series2Scale = d3.scaleLinear()
+                    series2Scale = d3.scaleLinear()
                         .domain(series2Domain).nice()
                         .range(series2ScaleRange);
 
                     var updateAxis = () => {
-                        var removeAxis = g => g.selectAll('*').remove();
+                        var removeAxis = g => g.selectAll(":not(.axisName)").remove();
                         var makeSubjectAxis = g => {
-                            let axisPos, translate;
+                            let axisPos, translate, refreshing;
                             if (chartType == 'vertical') {
                                 axisPos = 'axisBottom';
                                 translate = [0, height - margin.bottom];
+                                refreshing = g => {
+                                    g.select('.axisName')
+                                        .attr("transform", `translate(${[margin.left + (width - margin.left - margin.right) / 2, margin.bottom * 0.8]})`);
+                                };
+
                             }
                             else {
                                 axisPos = 'axisLeft';
                                 translate = [width * 0.5, 0];
+                                refreshing = g => {
+                                    g.selectAll(".domain, line").remove();
+                                    g.selectAll('line')
+                                        .data(All_seriesData)
+                                        .join('line')
+                                        .attr("transform", (d, i) => `translate(${bar_interval * 0.5 * (i * 2 - 1)},0)`)
+                                        .attr('y1', margin.top)
+                                        .attr('y2', height - margin.bottom)
+                                        .attr('stroke', 'currentColor');
+                                    g.selectAll("text").attr('x', 0);
+                                    g.select('.axisName').attr("transform", `translate(0,${height - margin.bottom * 0.2})`)
+                                }
                             }
 
-                            g
-                                .attr("transform", `translate(${translate})`)
+                            g.attr("transform", `translate(${translate})`)
                                 .call(removeAxis)
-                                .call(d3[axisPos](subjectScale).tickSizeOuter(0));
-
-                            if (chartType == 'horizontal')
-                                g.call(g => {
-                                    g.select(".domain").attr("transform", `translate(${-50},0)`)
-                                    g.selectAll("line").remove();
-                                    g.selectAll("text").attr('x', 0);
-                                });
-
+                                .call(d3[axisPos](subjectScale).tickSizeOuter(0))
+                                .call(refreshing)
+                                .call(g => g.selectAll('.tick')
+                                    .attr('font-size', 11)
+                                    .attr("font-weight", 500)
+                                );
                         }
-
                         var makeSeriesAxis = (g, yNum) => {
+                            let seriesScale = yNum - 1 ? series2Scale : series1Scale;
+                            let axisPos, translate, refreshing;
+                            let sign = { 1: -1, 2: 1 }[yNum];
+                            let seriesName = getKeyName(dataKeys[yNum - 1]);
+                            let axisText = seriesName.name + '(' + seriesName.unit + ')';
 
-
-                            let axisPos, translate;
+                            // console.debug(seriesName)
                             if (chartType == 'vertical') {
                                 axisPos = { 1: 'axisLeft', 2: 'axisRight' }[yNum];
                                 translate = { 1: [margin.left, 0], 2: [width - margin.right, 0] }[yNum];
+                                refreshing = g => {
+                                    g
+                                        .select('.axisName')
+                                        .attr("transform", `rotate(${90 * sign}) translate(${[height / 2 * sign, -margin.left * 0.9]})`)
+                                        .text(axisText);
+                                };
                             }
                             else {
                                 axisPos = 'axisBottom';
                                 translate = [0, height - margin.bottom];
-                            }
+                                refreshing = g => {
+                                    let axisOrigin = seriesScale.range()[0];//0的位置
+                                    let axisTextArrow = { 1: '← ', 2: ' →' }[yNum];
+                                    let axisText_arrow = axisText + axisTextArrow;
 
-                            let seriesScale = yNum - 1 ? series2Scale : series1Scale;
+                                    g.selectAll('.tick').style("text-anchor", "middle");
+                                    g.select('.axisName')
+                                        .attr("transform", `translate(${[axisOrigin + 2 * bar_interval * sign, margin.bottom * 0.5]})`)
+                                        .text(axisText)
+                                        .call(text => d3.select(text.node())
+                                            // .append('tspan')
+                                            // .attr("x", -25)
+                                            // .attr("dy", 8)
+                                            // .attr("font-size", "9")
+                                            // .text(axisTextArrow)
+                                        )
+                                    // .append('tspan')
+                                    // .attr("x", -25)
+                                    // .attr("dy", 8)
+                                    // .attr("font-size", "9")
+                                    // console.debug(d3.select(g.select('.axisName')).append('tspan'))
 
-                            g
-                                .attr("transform", `translate(${translate})`)
+                                    // .append('tspan')
+                                    // .text(axisTextArrow);
+                                };
+                            };
+
+                            g.attr("transform", `translate(${translate})`)
                                 .call(removeAxis)
                                 .transition().duration(trans_duration)
                                 .call(d3[axisPos](seriesScale).ticks(null, "s").tickSizeOuter(0))
+                                .call(refreshing)
+                                .selectAll("text");
                         }
-
                         subjectAxis.call(makeSubjectAxis);
                         series1Axis.call(series1Axis => makeSeriesAxis(series1Axis, 1));
                         series2Axis.call(series1Axis => makeSeriesAxis(series1Axis, 2));
                     }
 
                     var updateFocus = () => {
-                        // console.debug(subjectScale.bandwidth())
-                        let barWidth = subjectScale.bandwidth() / 2 > max_barWidth ? max_barWidth : subjectScale.bandwidth() / 2;
+
                         function getDasharrayStr(barWidth, barHeight) {
                             let showLength = barWidth + barHeight - 1.5;
                             let hideLength = barWidth + 3;
@@ -664,103 +709,100 @@ function DSBC() {
                             return dashStr;
                         }
 
-                        var barGroup1 =
-                            svg
-                                .selectAll("g.barGroup")
-                                .data(dataKeys)
-                                .join("g")
-                                .attr("class", "barGroup")
-                                .attr("id", (d, i) => "barGroup" + (i + 1))
-                                // .attr("groupIndex", 0)
-                                .call(barGroup_collection =>
-                                    barGroup_collection.each(function (dataKey, i) {
-                                        // console.debug(dataKey, i)
-                                        let barGroup = d3.select(this);
-                                        let seriesData = All_seriesData[i];
-                                        let seriesScale = i ? series2Scale : series1Scale;
+                        svg.selectAll("g.seriesGroup")
+                            .data(dataKeys)
+                            .join("g")
+                            .attr("class", "seriesGroup")
+                            .attr("id", (d, i) => "seriesGroup" + (i + 1))
+                            // .attr("groupIndex", 0)
+                            .call(barGroup_collection =>
+                                barGroup_collection.each(function (dataKey, i) {
+                                    // console.debug(dataKey, i)
+                                    let seriesGroup = d3.select(this);
+                                    let seriesData = All_seriesData[i];
+                                    let seriesScale = i ? series2Scale : series1Scale;
 
-                                        // if (chartType == 'vertical') {
-                                        //     let x=
-                                        //     translate = [0, height - margin.bottom];
-                                        // }
-                                        // else {
-                                        //     axisPos = 'axisLeft';
-                                        //     translate = [width * 0.5, 0];
-                                        // }
+                                    // if (chartType == 'vertical') {
+                                    //     let x=
+                                    //     translate = [0, height - margin.bottom];
+                                    // }
+                                    // else {
+                                    //     axisPos = 'axisLeft';
+                                    //     translate = [width * 0.5, 0];
+                                    // }
 
+                                    seriesGroup
+                                        .selectAll("g")
+                                        .data(seriesData)
+                                        .join("g")
+                                        .selectAll("rect")
+                                        .data(d => d)
+                                        .join("rect")
+                                        .attr("class", "bar")
+                                        // .attr("id", (d, i) => "G1-" + (dataKeys.indexOf(d.key) + i * (dataKeys.length - 1)))
+                                        .attr("fill", d => getColor(dataKeys[i], categories.indexOf(d.key)))
+                                        .attr("stroke", "#D3D3D3")
+                                        .attr("stroke-width", 3)
+                                        .attr('stroke-opacity', 0)
+                                        .call(rect_collection =>
+                                            rect_collection.each(function (d) {
+                                                // console.debug(d)
+                                                let rect = d3.select(this);
 
-                                        barGroup
-                                            .selectAll("g")
-                                            .data(seriesData)
-                                            .join("g")
-                                            .selectAll("rect")
-                                            .data(d => d)
-                                            .join("rect")
-                                            .attr("class", "bar")
-                                            // .attr("id", (d, i) => "G1-" + (dataKeys.indexOf(d.key) + i * (dataKeys.length - 1)))
-                                            .attr("fill", d => getColor(d.data, categories.indexOf(d.key)))
-                                            .attr("stroke", "#D3D3D3")
-                                            .attr("stroke-width", 3)
-                                            .attr('stroke-opacity', 0)
-                                            .call(rect_collection =>
-                                                rect_collection.each(function (d) {
-                                                    // console.debug(d)
-                                                    let rect = d3.select(this);
+                                                if (chartType == 'vertical') {
+                                                    let barWidth = subjectScale.bandwidth() / 2 > max_barWidth ? max_barWidth : subjectScale.bandwidth() / 2;
+                                                    let transX = i ? subjectScale.bandwidth() / 2 + bar_interval : subjectScale.bandwidth() / 2 - barWidth - bar_interval;
+                                                    rect
+                                                        .transition().duration(trans_duration)
+                                                        .attr("transform", `translate(${transX}, 0)`)
+                                                        .attr("x", d => subjectScale(d.data))
+                                                        .attr("y", d => seriesScale(d[1]))
+                                                        .attr("height", d => seriesScale(d[0]) - seriesScale(d[1]))
+                                                        .attr("width", barWidth)
+                                                }
+                                                else {
+                                                    let barWidth = subjectScale.bandwidth() > max_barWidth ? max_barWidth : subjectScale.bandwidth();
+                                                    let transY = (subjectScale.bandwidth() - barWidth) * 0.5;
+                                                    rect
+                                                        .transition().duration(trans_duration)
+                                                        .attr("transform", `translate(0, ${transY})`)
+                                                        .attr("x", d => seriesScale(d[i ? 0 : 1]))
+                                                        .attr("y", d => subjectScale(d.data))
+                                                        .attr("height", barWidth)
+                                                        .attr("width", d => Math.abs(seriesScale(d[0]) - seriesScale(d[1])))
 
-                                                    if (chartType == 'vertical') {
-                                                        // console.debug(seriesScale.domain(), seriesScale.range())
-                                                        // console.debug(d)
-                                                        let transX = i ? subjectScale.bandwidth() / 2 + bar_interval : subjectScale.bandwidth() / 2 - barWidth - bar_interval;
-                                                        rect
-                                                            .transition().duration(trans_duration)
-                                                            .attr("transform", `translate(${transX},0)`)
-                                                            .attr("x", d => subjectScale(d.data))
-                                                            .attr("y", d => seriesScale(d[1]))
-                                                            .attr("height", d => seriesScale(d[0]) - seriesScale(d[1]))
-                                                            .attr("width", barWidth)
-                                                    }
-                                                    else {
-                                                        let transY = barWidth * 0.5;
-                                                        rect
-                                                            .transition().duration(trans_duration)
-                                                            .attr("transform", `translate(0,${transY})`)
-                                                            .attr("x", d => seriesScale(d[i ? 0 : 1]))
-                                                            .attr("y", d => subjectScale(d.data))
-                                                            .attr("height", barWidth)
-                                                            .attr("width", d => Math.abs(seriesScale(d[0]) - seriesScale(d[1])))
-
-                                                    }
-                                                }))
+                                                }
+                                            }))
 
 
-                                        let subjectTotal_width = 3;
+                                    let subjectTotal_width = 3;
 
-                                        // barGroup
-                                        //     .append('g')
-                                        //     .attr("class", "subjectTotal")
-                                        //     .attr("position", "relative")
-                                        //     .attr("top", 5)
-                                        //     .selectAll("rect")
-                                        //     .data(seriesData[seriesData.length - 1])
-                                        //     .join("rect")
-                                        //     .attr("fill", "none")
-                                        //     .attr("x", d => subjectScale(d.data))
-                                        //     .attr("y", d => seriesScale(d[1]) - subjectTotal_width * 0.5)
-                                        //     .attr("height", d => seriesScale(0) - seriesScale(d[1]) + subjectTotal_width)
-                                        //     .attr("width", barWidth + subjectTotal_width)
-                                        //     .attr("stroke", seriesColor[i])
-                                        //     .attr("stroke-width", subjectTotal_width)
-                                        //     .attr("stroke-dasharray", function () {
-                                        //         let barWidth = parseInt(this.getAttribute("width"));
-                                        //         let barHeight = parseInt(this.getAttribute("height"));
-                                        //         let dashStr = getDasharrayStr(barWidth, barHeight);
-                                        //         return dashStr;
-                                        //     })
-                                        //     .attr('stroke-opacity', .8)
-                                        //     .attr("transform", `translate(${transX - subjectTotal_width * 0.5}, 0)`);
+                                    // seriesGroup
+                                    //     .append('g')
+                                    //     .attr("class", "subjectTotal")
+                                    //     .attr("position", "relative")
+                                    //     .attr("top", 5)
+                                    //     .selectAll("rect")
+                                    //     .data(seriesData[seriesData.length - 1])
+                                    //     .join("rect")
+                                    //     .attr("fill", "none")
+                                    //     .attr("x", d => subjectScale(d.data))
+                                    //     .attr("y", d => seriesScale(d[1]) - subjectTotal_width * 0.5)
+                                    //     .attr("height", d => seriesScale(0) - seriesScale(d[1]) + subjectTotal_width)
+                                    //     .attr("width", barWidth + subjectTotal_width)
+                                    //     .attr("stroke", seriesColor[i])
+                                    //     .attr("stroke-width", subjectTotal_width)
+                                    //     .attr("stroke-dasharray", function () {
+                                    //         let barWidth = parseInt(this.getAttribute("width"));
+                                    //         let barHeight = parseInt(this.getAttribute("height"));
+                                    //         let dashStr = getDasharrayStr(barWidth, barHeight);
+                                    //         return dashStr;
+                                    //     })
+                                    //     .attr('stroke-opacity', .8)
+                                    //     .attr("transform", `translate(${ transX - subjectTotal_width * 0.5}, 0)`);
 
-                                    })
-                                );
+                                })
+                            );
 
                     }
 
@@ -783,12 +825,12 @@ function DSBC() {
                     // console.debug(seriesData);
                     // console.debug(seriesDataKeys);
 
-                    const series1 = d3.stack()
+                    const series = d3.stack()
                         .keys(categories)
                         .value((subject, category) => seriesData[subject][category] || 0)//沒有值當0(bar heigth=0)
                         (subjects).map(d => { return d.forEach(v => v.key = d.key), d });
                     // console.debug(series1);
-                    return series1;
+                    return series;
                 }
                 var getSeriesDomain = () => {
                     let series1 = All_seriesData[0];
@@ -813,90 +855,103 @@ function DSBC() {
             function events(svg) {
 
                 var tooltipEvent = () => {
-                    var tooltip_width = 100;
-                    var tooltip_height = margin.bottom * 2;
+                    const tooltip_width = 100;
+                    const tooltip_height = margin.bottom * 2;
 
                     const tooltip = svg
                         .append("g")
                         .attr('id', 'tooltip')
                         .attr('display', 'none')
-                        .attr("opacity", .9);
+                        .attr("opacity", .9)
+                        .call(tooltip => {
+                            // console.debug(tooltip)
 
-                    tooltip.append('rect')
-                        .attr("fill", "currentcolor")
-                        .attr('width', tooltip_width)
-                        .attr('height', tooltip_height)
-                        .attr('stroke', '#000000')
-                        .attr('stroke-opacity', 0)
-                        .attr('fill', '#D3D3D3');
+                            tooltip.append('rect')
+                                .attr("fill", "currentcolor")
+                                .attr('width', tooltip_width)
+                                .attr('height', tooltip_height)
+                                .attr('stroke', '#000000')
+                                .attr('stroke-opacity', 0)
+                                .attr('fill', '#D3D3D3');
 
-                    tooltip.append('polygon')
-                        .attr("fill", "currentcolor")
-                        .attr('stroke', '#D3D3D3')
-                        .attr('stroke-opacity', 1)
-                        .attr('fill', '#D3D3D3');
+                            tooltip.append('polygon')
+                                .attr("fill", "currentcolor")
+                                .attr('stroke', '#D3D3D3')
+                                .attr('stroke-opacity', 1)
+                                .attr('fill', '#D3D3D3');
 
-                    tooltip.append('text')
-                        .attr('x', tooltip_width / 2)
-                        .attr('y', tooltip_height / 3)
-                        .attr('text-anchor', 'middle')
-                        // .attr("font-family", "DFKai-sb")
-                        .attr("font-size", 18)
-                        .attr('opacity', 1);
+                            tooltip.append('text')
+                                .attr('class', 'tooltipSubject')
+                                .attr('x', tooltip_width / 2)
+                                .attr('y', tooltip_height / 3)
+                                .attr('text-anchor', 'middle')
+                                // .attr("font-family", "DFKai-sb")
+                                .attr("font-size", 18)
+                                .attr('opacity', 1);
+                        })
+
                     function barEvent(bar) {
                         var tooltipMove = (bar) => {
 
                             let barData = bar.__data__;
-                            let barDataKey = barData.key;
-                            let groupIndex = parseInt(bar.parentNode.parentNode.getAttribute('groupIndex'));
-                            let group = barData.data.columns[groupIndex];
-                            let dataUnit = getKeyName(group).unit;
-                            // console.debug((!groupIndex - groupIndex));
-
+                            let catagoryKey = barData.key;
+                            let subjectKey = barData.data;
+                            let seriesKey = bar.parentNode.parentNode.__data__;
+                            let seriesIndex = dataKeys.indexOf(seriesKey);
+                            // console.debug(data[seriesKey][subjectKey][catagoryKey]);
+                            // console.debug((!seriesIndex - seriesIndex));
+                            // console.debug(dataUnit);
                             let bar_x = parseInt(bar.getAttribute('x'));
                             let bar_y = parseInt(bar.getAttribute('y'));
                             let barWidth = parseInt(bar.getAttribute('width'));
                             let barHeight = parseInt(bar.getAttribute('height'));
 
-                            let trans_x = bar_x + subjectScale.bandwidth() / 2 + groupIndex * barWidth + (groupIndex - !groupIndex) * bar_interval + tooltip_width * 0.1;
+                            let trans_x = bar_x + subjectScale.bandwidth() / 2 + seriesIndex * barWidth + (seriesIndex - !seriesIndex) * bar_interval + tooltip_width * 0.1;
                             let trans_y = bar_y + (barHeight - tooltip_height) / 2;
 
-                            // console.debug(trans_x + tooltip_width * 1.1, width);
-
-
-                            let polygon = tooltip.select('polygon');
-                            if (trans_x + tooltip_width * 1.1 > width) {
-                                trans_x -= barWidth + tooltip_width * 1.2;
-
-                                polygon
-                                    .attr("points", `${tooltip_width}, ${tooltip_height * 0.4} ${tooltip_width}, ${tooltip_height * 0.6} ${tooltip_width + tooltip_width * 0.1}, ${tooltip_height / 2} `)
-                            }
-                            else
-                                polygon
-                                    .attr("points", `0, ${tooltip_height * 0.4} 0, ${tooltip_height * 0.6} ${-tooltip_width * 0.1}, ${tooltip_height / 2} `)
+                            //tooltip超出圖表邊界要移動
+                            var checkOverEdge = () => {
+                                let polygonPoints;
+                                if (trans_x + tooltip_width * 1.1 > width) {
+                                    trans_x -= barWidth + tooltip_width * 1.2;
+                                    polygonPoints = `${tooltip_width}, ${tooltip_height * 0.4} ${tooltip_width}, ${tooltip_height * 0.6} ${tooltip_width + tooltip_width * 0.1}, ${tooltip_height / 2} `;
+                                }
+                                else
+                                    polygonPoints = `0, ${tooltip_height * 0.4} 0, ${tooltip_height * 0.6} ${-tooltip_width * 0.1}, ${tooltip_height / 2} `;
+                                tooltip.select('polygon').attr("points", polygonPoints);
+                            };
+                            checkOverEdge();
 
                             tooltip
                                 .attr("transform", `translate(${trans_x}, ${trans_y})`)
                                 .attr('display', 'inline');
 
-                            let tooltip_text = tooltip.select('text');
-                            tooltip_text
-                                .text(barData.data[dataKeys[0]])
+                            let dataValue = data[seriesKey][subjectKey][catagoryKey];
+                            let dataUnit = getKeyName(seriesKey).unit;
+                            if (seriesKey == 'file_size') {
+                                let convertedData = convert_download_unit(dataValue, dataUnit);
+                                dataValue = convertedData.value;
+                                dataUnit = convertedData.unit;
+                            }
+
+                            tooltip.select('text')
+                                .text(subjectKey)
                                 .append('tspan')
                                 .attr('x', function () { return this.parentNode.getAttribute('x') })
                                 .attr("dy", "1em")
                                 .attr("font-size", 20)
-                                .text(barDataKey + " " + getKeyName(Data.legend).name)
+                                .text(catagoryKey + " " + getKeyName('category').name)
                                 .append('tspan')
                                 .attr('x', function () { return this.parentNode.getAttribute('x') })
                                 .attr("dy", "1em")
                                 .attr("font-weight", 900)
                                 .attr("font-size", 25)
-                                .text(barData.data[barDataKey][group])
+                                .text(dataValue)
                                 .append('tspan')
                                 .attr("font-weight", "normal")
                                 .attr("font-size", 14)
                                 .text(" " + dataUnit);
+
                         };
                         var barHighLight = (bar, dir) => {
                             // console.debug()
@@ -905,12 +960,12 @@ function DSBC() {
                             const highLight = 1;
 
 
-                            let group = d3.select(bar.parentNode.parentNode);
+                            let seriesGroup = d3.select(bar.parentNode.parentNode);
                             switch (dir) {
                                 //===0:out 1:over
                                 case 0:
                                     var beenClicked = false;
-                                    group.selectAll('.bar')
+                                    seriesGroup.selectAll('.bar')
                                         .attr("fill-opacity", function () {
                                             if (this.classList.contains("clicked")) {
                                                 beenClicked = true;
@@ -923,12 +978,12 @@ function DSBC() {
                                         });
 
                                     if (!beenClicked)
-                                        group.selectAll('.bar')
+                                        seriesGroup.selectAll('.bar')
                                             .attr("fill-opacity", 1);
                                     break;
 
                                 case 1:
-                                    group.selectAll('.bar')
+                                    seriesGroup.selectAll('.bar')
                                         .attr("fill-opacity", function () {
                                             var isTarget = (this == bar);
                                             var beenClicked = this.classList.contains("clicked");
@@ -946,14 +1001,14 @@ function DSBC() {
                         var checkAllBarClicked = (bar, barID) => {
                             let data = bar.data()[0];
                             let barIDArr = barID.split('-');
-                            let barGroup = barIDArr[0];
+                            let seriesGroup = barIDArr[0];
                             let barNo = barIDArr[1];
                             let years = dataKeys.length - 1;
                             let netWorkCount = (parseInt(barNo) - dataKeys.indexOf(data.key)) / years;
 
 
                             //===all barID in same group
-                            let allBarID = dataKeys.slice(1).map((key, i) => barGroup + "-" + (netWorkCount * years + i + 1));
+                            let allBarID = dataKeys.slice(1).map((key, i) => seriesGroup + "-" + (netWorkCount * years + i + 1));
                             // console.debug(allBarID);
 
                             let allBarBeenClicked = true;
@@ -965,9 +1020,10 @@ function DSBC() {
                                 }
                                 // console.debug(clicked);
                             }
-                            return { clicked: allBarBeenClicked, netWorkCount: netWorkCount, barGroup: barGroup };
+                            return { clicked: allBarBeenClicked, netWorkCount: netWorkCount, seriesGroup: seriesGroup };
                         };
                         bar
+
                             .on('mouseover', function (e) {
                                 console.log('mouseover');
                                 tooltipMove(this);
@@ -1009,7 +1065,7 @@ function DSBC() {
 
                                     if (allBarStatus.clicked) {
                                         let netWorkCount = allBarStatus.netWorkCount + 1;
-                                        let groupCount = (allBarStatus.barGroup == "G1" ? 1 : 2);
+                                        let groupCount = (allBarStatus.seriesGroup == "G1" ? 1 : 2);
                                         makeTotalTooltip(netWorkCount, groupCount);
                                     }
                                 }
@@ -1022,7 +1078,7 @@ function DSBC() {
                                     // console.debug(use.node());
                                     use.remove();
                                     if (!allBarStatus.clicked) {
-                                        let totalTooltipID = 'totalTooltip-' + "N" + (allBarStatus.netWorkCount + 1) + allBarStatus.barGroup;
+                                        let totalTooltipID = 'totalTooltip-' + "N" + (allBarStatus.netWorkCount + 1) + allBarStatus.seriesGroup;
                                         let totalTooltip = svg.select('#' + totalTooltipID);
                                         totalTooltip.remove();
                                         let use = svg.select("#use-" + totalTooltipID);
@@ -1035,7 +1091,7 @@ function DSBC() {
 
 
                     }
-                    function xAxisEvent(tick, tickString, i) {
+                    function subjectClickEvent(tick, tickString, i) {
                         // console.debug(tick, tickString, i);
                         tick.on('click', function (e) {
                             let clicked = tick.classed('clicked');
@@ -1059,14 +1115,14 @@ function DSBC() {
                         });
                     }
 
-                    var makeTotalTooltip = (netWorkCount, groupCount) => {
+                    function makeTotalTooltip(netWorkCount, groupCount) {
                         let totalTooltipID = 'totalTooltip-' + "N" + netWorkCount + "G" + groupCount;
 
                         let totalTooltip_exist = (svg.select('#' + totalTooltipID).node() != null);
                         // console.debug(totalTooltip_exist);
                         //=== if totalTooltip exist then do nothing
                         if (!totalTooltip_exist) {
-                            let subjectTotal = svg.select('#barGroup' + groupCount).select('.subjectTotal');
+                            let subjectTotal = svg.select('#seriesGroup' + groupCount).select('.subjectTotal');
                             let totalRect = subjectTotal.selectAll('rect').filter(':nth-child(' + netWorkCount + ')');
                             let rectData = totalRect.data()[0];
 
@@ -1130,12 +1186,11 @@ function DSBC() {
 
 
                     // each bar call barEvent
-                    barGroup1.selectAll('.bar').each(function () { d3.select(this).call(barEvent) });
-                    barGroup2.selectAll('.bar').each(function () { d3.select(this).call(barEvent) });
+                    svg.selectAll('.bar').call(barEvent);
 
-                    let ticks = svg.select('.subjectAxis').selectAll('.tick');
-                    ticks.each(function (d, i) { xAxisEvent(d3.select(this), d, i) });
-                }
+                    // let ticks = svg.select('.subjectAxis').selectAll('.tick');
+                    // ticks.each(function (d, i) { subjectClickEvent(d3.select(this), d, i) });
+                };
                 var chartOptionEvent = () => {
                     //=====change sortBy dist/az
                     d3.selectAll('input[name ="changeChart"]')
@@ -1144,8 +1199,39 @@ function DSBC() {
                             // console.debug(changeChart);
                             updateChart(changeChart, true);
                         });
-                }
+                    //=====shows
+                    d3.select('#showLegend').on('change', e =>
+                        d3.selectAll('.legend').attr("display", e.target.checked ? 'inline' : 'none'));
+                };
+                var infoBoxDragEvent = () => {
+
+                    var raiseAndDrag = (d3_selection) => {
+                        let x_fixed = 0, y_fixed = 0;
+                        let legend_dragBehavior = d3.drag()
+                            .on('start', function (e) {
+                                // console.log('drag start');
+                                let matrix = this.transform.baseVal[0].matrix;
+                                x_fixed = e.x - matrix.e;
+                                y_fixed = e.y - matrix.f;
+                            })
+                            .on('drag', function (e) {
+                                d3.select(this).attr("transform", `translate(${e.x - x_fixed}, ${e.y - y_fixed})`);
+                            })
+                            .on('end', e => {
+                                // console.log('drag end');
+                            });
+
+                        d3_selection
+                            .call(g => g.raise())//把選中元素拉到最上層(比zoom的選取框優先)
+                            .call(legend_dragBehavior);
+
+                    }
+                    svg.select('.legend').call(raiseAndDrag);
+
+                };
+                tooltipEvent();
                 chartOptionEvent();
+                infoBoxDragEvent();
             }
 
             svg.call(events);

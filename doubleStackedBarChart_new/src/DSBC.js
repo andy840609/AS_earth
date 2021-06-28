@@ -722,15 +722,6 @@ function DSBC() {
                                     let seriesData = All_seriesData[i];
                                     let seriesScale = i ? series2Scale : series1Scale;
 
-                                    // if (chartType == 'vertical') {
-                                    //     let x=
-                                    //     translate = [0, height - margin.bottom];
-                                    // }
-                                    // else {
-                                    //     axisPos = 'axisLeft';
-                                    //     translate = [width * 0.5, 0];
-                                    // }
-
                                     seriesGroup
                                         .selectAll("g")
                                         .data(seriesData)
@@ -739,7 +730,8 @@ function DSBC() {
                                         .data(d => d)
                                         .join("rect")
                                         .attr("class", "bar")
-                                        // .attr("id", (d, i) => "G1-" + (dataKeys.indexOf(d.key) + i * (dataKeys.length - 1)))
+                                        //for index of barCollection
+                                        .property("value", (d, index) => i * subjects.length * categories.length + categories.indexOf(d.key) * subjects.length + index)
                                         .attr("fill", d => getColor(dataKeys[i], categories.indexOf(d.key)))
                                         .attr("stroke", "#D3D3D3")
                                         .attr("stroke-width", 3)
@@ -775,7 +767,7 @@ function DSBC() {
                                             }))
 
 
-                                    let subjectTotal_width = 3;
+                                    // let subjectTotal_width = 3;
 
                                     // seriesGroup
                                     //     .append('g')
@@ -858,7 +850,8 @@ function DSBC() {
                     const tooltip_width = 100;
                     const tooltip_height = margin.bottom * 2;
 
-                    const tooltip = svg
+                    const tooltipGroup = svg.append("g").attr('class', 'tooltipGroup');
+                    const tooltip = tooltipGroup
                         .append("g")
                         .attr('id', 'tooltip')
                         .attr('display', 'none')
@@ -890,6 +883,8 @@ function DSBC() {
                                 .attr('opacity', 1);
                         })
 
+                    const barCollection = svg.selectAll('.bar');
+                    const barNodes = barCollection.nodes();
                     function barEvent(bar) {
                         var tooltipMove = (bar) => {
 
@@ -998,29 +993,26 @@ function DSBC() {
                                     break;
                             }
                         };
-                        var checkAllBarClicked = (bar, barID) => {
-                            let data = bar.data()[0];
-                            let barIDArr = barID.split('-');
-                            let seriesGroup = barIDArr[0];
-                            let barNo = barIDArr[1];
-                            let years = dataKeys.length - 1;
-                            let netWorkCount = (parseInt(barNo) - dataKeys.indexOf(data.key)) / years;
+                        var checkAllBarClicked = (barValue) => {
 
+                            let seriesIndex = parseInt(barValue / (subjects.length * categories.length));
+                            let subjectIndex = barValue % subjects.length;
+                            // console.debug(seriesIndex, subjectIndex);
+                            let sameBarValueArr = categories.map((d, i) => i * subjects.length + subjectIndex + seriesIndex * subjects.length * categories.length)
+                            // console.debug(sameBarValueArr);
 
-                            //===all barID in same group
-                            let allBarID = dataKeys.slice(1).map((key, i) => seriesGroup + "-" + (netWorkCount * years + i + 1));
-                            // console.debug(allBarID);
-
+                            //==check allBarBeenClicked in same bar
                             let allBarBeenClicked = true;
-                            for (let i = 0; i < allBarID.length; i++) {
-                                let clicked = svg.select("#" + allBarID[i]).classed('clicked');
+                            for (let i = 0; i < sameBarValueArr.length; i++) {
+                                let clicked = barNodes[sameBarValueArr[i]].classList.contains('clicked');
                                 if (!clicked) {
                                     allBarBeenClicked = false;
                                     break;
                                 }
                                 // console.debug(clicked);
                             }
-                            return { clicked: allBarBeenClicked, netWorkCount: netWorkCount, seriesGroup: seriesGroup };
+
+                            return { clicked: allBarBeenClicked, subjectIndex: subjectIndex, seriesIndex: seriesIndex };
                         };
                         bar
 
@@ -1046,45 +1038,28 @@ function DSBC() {
                                 // console.debug(clicked);
                                 // pieMove(thisPie, !clicked);
                                 bar.classed('clicked', !clicked);
-                                let barID = this.id;
-                                let allBarStatus = checkAllBarClicked(bar, barID);
-
+                                let barValue = this.value;
+                                let allBarStatus = checkAllBarClicked(barValue);
                                 // console.debug(allBarStatus);
 
 
                                 if (!clicked) {
                                     let tooltip_colne = tooltip.clone(true).node();
-                                    tooltip_colne.setAttribute('id', 'tooltip' + barID);
-                                    this.parentNode.append(tooltip_colne);
+                                    tooltip_colne.setAttribute('id', 'tooltip' + barValue);
+                                    tooltipGroup.node().append(tooltip_colne);
 
-                                    //====make tooltip always on top layer
-                                    svg
-                                        .append('use')
-                                        .attr('xlink:href', "#tooltip" + barID)
-                                        .attr('id', "use" + barID);
-
-                                    if (allBarStatus.clicked) {
-                                        let netWorkCount = allBarStatus.netWorkCount + 1;
-                                        let groupCount = (allBarStatus.seriesGroup == "G1" ? 1 : 2);
-                                        makeTotalTooltip(netWorkCount, groupCount);
-                                    }
                                 }
+                                else
+                                    tooltipGroup.select("#tooltip" + barValue).remove();
+
+                                // total tooltip
+                                let subjectIndex = allBarStatus.subjectIndex;
+                                let seriesIndex = allBarStatus.seriesIndex;
+                                if (allBarStatus.clicked)
+                                    makeTotalTooltip(subjectIndex, seriesIndex);
                                 else {
-                                    let tooltip_colne = this.parentNode.querySelector("#tooltip" + barID);
-                                    // console.debug(tooltip_colne);
-                                    tooltip_colne.remove();
-
-                                    let use = svg.select("#use" + barID);
-                                    // console.debug(use.node());
-                                    use.remove();
-                                    if (!allBarStatus.clicked) {
-                                        let totalTooltipID = 'totalTooltip-' + "N" + (allBarStatus.netWorkCount + 1) + allBarStatus.seriesGroup;
-                                        let totalTooltip = svg.select('#' + totalTooltipID);
-                                        totalTooltip.remove();
-                                        let use = svg.select("#use-" + totalTooltipID);
-                                        use.remove();
-
-                                    }
+                                    let totalTooltipID = 'totalTooltip-' + subjects[subjectIndex] + '-' + dataKeys[seriesIndex];
+                                    tooltipGroup.select('#' + totalTooltipID).remove();
                                 }
 
                             })
@@ -1108,85 +1083,77 @@ function DSBC() {
                                     let totalTooltipID = 'totalTooltip-' + "N" + networkCount + "G" + groupCount;
                                     let totalTooltip = svg.select('#' + totalTooltipID);
                                     totalTooltip.remove();
-                                    let use = svg.select("#use-" + totalTooltipID);
-                                    use.remove();
+                                    // let use = svg.select("#use-" + totalTooltipID);
+                                    // use.remove();
                                 });
                             }
                         });
                     }
 
-                    function makeTotalTooltip(netWorkCount, groupCount) {
-                        let totalTooltipID = 'totalTooltip-' + "N" + netWorkCount + "G" + groupCount;
-
+                    function makeTotalTooltip(subjectIndex, seriesIndex) {
+                        let totalTooltipID = 'totalTooltip-' + subjects[subjectIndex] + '-' + dataKeys[seriesIndex];
                         let totalTooltip_exist = (svg.select('#' + totalTooltipID).node() != null);
                         // console.debug(totalTooltip_exist);
                         //=== if totalTooltip exist then do nothing
                         if (!totalTooltip_exist) {
-                            let subjectTotal = svg.select('#seriesGroup' + groupCount).select('.subjectTotal');
-                            let totalRect = subjectTotal.selectAll('rect').filter(':nth-child(' + netWorkCount + ')');
-                            let rectData = totalRect.data()[0];
-
-                            // console.debug(totalRect.node());
-
-                            let total = Number.isInteger(rectData[1]) ? rectData[1] : parseFloat(rectData[1].toFixed(3));
-                            let unit = getKeyName(rectData.data.columns[groupCount - 1]).unit;
+                            let barValue = seriesIndex * subjects.length * categories.length + subjectIndex + (categories.length - 1) * subjects.length;
+                            // console.debug(barValue);
+                            let topRect = barNodes[barValue];
+                            let rectMaxData = topRect.__data__[1];
+                            // console.debug(topRect.__data__  );
+                            let total = Number.isInteger(rectMaxData) ? rectMaxData : rectMaxData.toFixed(3);
+                            let unit = getKeyName(dataKeys[seriesIndex]).unit;
 
                             let totalTooltip = tooltip.clone(true);
-                            subjectTotal.node().append(totalTooltip.node());
-                            // console.debug(totalTooltip.node());
+                            tooltipGroup.node().append(totalTooltip.node());
 
-                            let x = parseInt(totalRect.attr('x'));
-                            let y = parseInt(totalRect.attr('y'));
-                            let width = parseInt(totalRect.attr('width'));
+                            let x = topRect.x.baseVal.value
+                            let y = topRect.y.baseVal.value
+                            let width = topRect.width.baseVal.value
+                            let transform = topRect.transform.baseVal[0].matrix;
 
-                            let transformStr = totalRect.attr('transform');
-                            let transformArr = transformStr.substring(transformStr.indexOf('(') + 1, transformStr.indexOf(')')).split(',');
-                            let transformX = parseInt(transformArr[0]);
-                            let transformY = parseInt(transformArr[1]);
 
                             let rect_width = 100;
                             let rect_height = 65;
-                            let trans_x = x + transformX + width * 0.5 - rect_width * 0.5;
-                            let trans_y = y + transformY - rect_height - rect_width * 0.1;
+                            let trans_x = x + transform.e + width * 0.5 - rect_width * 0.5;
+                            let trans_y = y + transform.f - rect_height - rect_width * 0.1;
                             // console.debug(x, y, width, transformArr);
 
-                            totalTooltip.select('rect')
-                                .attr("width", rect_width)
-                                .attr("height", rect_height);
+                            totalTooltip.call(totalTooltip => {
 
-                            totalTooltip.select('polygon')
-                                .attr("points", `${rect_width * 0.4}, ${rect_height} ${rect_width * 0.6}, ${rect_height} ${rect_width * 0.5}, ${rect_height + rect_width * 0.1} `)
+                                totalTooltip.select('rect')
+                                    .attr("width", rect_width)
+                                    .attr("height", rect_height);
 
+                                totalTooltip.select('polygon')
+                                    .attr("points", `${rect_width * 0.4}, ${rect_height} ${rect_width * 0.6}, ${rect_height} ${rect_width * 0.5}, ${rect_height + rect_width * 0.1} `)
 
-                            // console.debug(totalTooltipID);
-                            totalTooltip
-                                .attr('id', totalTooltipID)
-                                .attr("transform", `translate(${trans_x}, ${trans_y})`)
-                                .attr('display', 'inline');
+                                // console.debug(totalTooltipID);
+                                totalTooltip
+                                    .attr('id', totalTooltipID)
+                                    .attr("transform", `translate(${trans_x}, ${trans_y})`)
+                                    .attr('display', 'inline');
 
-                            totalTooltip.select('text')
-                                .text('Total:')
-                                .append('tspan')
-                                .attr('x', function () { return this.parentNode.getAttribute('x') })
-                                .attr("dy", "1em")
-                                .attr("font-weight", 900)
-                                .attr("font-size", 25)
-                                .text(total)
-                                .append('tspan')
-                                .attr("font-weight", "normal")
-                                .attr("font-size", 14)
-                                .text(" " + unit);
+                                totalTooltip.select('text')
+                                    .text('Total:')
+                                    .append('tspan')
+                                    .attr('x', function () { return this.parentNode.getAttribute('x') })
+                                    .attr("dy", "1em")
+                                    .attr("font-weight", 900)
+                                    .attr("font-size", 25)
+                                    .text(total)
+                                    .append('tspan')
+                                    .attr("font-weight", "normal")
+                                    .attr("font-size", 14)
+                                    .text(" " + unit);
+                            })
 
-                            svg
-                                .append('use')
-                                .attr('xlink:href', "#" + totalTooltipID)
-                                .attr('id', "use-" + totalTooltipID);
                         }
                     };
 
 
                     // each bar call barEvent
-                    svg.selectAll('.bar').call(barEvent);
+                    barCollection.call(barEvent);
 
                     // let ticks = svg.select('.subjectAxis').selectAll('.tick');
                     // ticks.each(function (d, i) { subjectClickEvent(d3.select(this), d, i) });
@@ -1229,9 +1196,9 @@ function DSBC() {
                     svg.select('.legend').call(raiseAndDrag);
 
                 };
-                tooltipEvent();
                 chartOptionEvent();
                 infoBoxDragEvent();
+                tooltipEvent();
             }
 
             svg.call(events);

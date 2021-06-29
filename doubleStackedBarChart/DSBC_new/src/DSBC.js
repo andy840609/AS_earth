@@ -444,6 +444,7 @@ function DSBC() {
             const subjectAxis = svg.append("g").attr("class", "subjectAxis");
             const series1Axis = svg.append("g").attr("class", "series1Axis");
             const series2Axis = svg.append("g").attr("class", "series2Axis");
+            const focusGroup = svg.append("g").attr("class", "focusGroup");
 
 
 
@@ -595,6 +596,9 @@ function DSBC() {
                                 axisPos = 'axisBottom';
                                 translate = [0, height - margin.bottom];
                                 refreshing = g => {
+                                    g.selectAll('line').attr('x2', 0).attr('opacity', 1);
+                                    g.selectAll(".tick text").attr('dy', '0.71em');
+                                    g.selectAll('.domain').attr("transform", null);
                                     g.select('.axisName')
                                         .attr("transform", `translate(${[margin.left + (width - margin.left - margin.right) / 2, margin.bottom * 0.8]})`);
                                 };
@@ -604,21 +608,29 @@ function DSBC() {
                                 axisPos = 'axisLeft';
                                 translate = [width * 0.5, 0];
                                 refreshing = g => {
-                                    g.selectAll(".domain, line").remove();
-                                    g.selectAll('line')
+                                    g.selectAll("line").attr('opacity', 0);
+
+
+                                    // let domain = g.selectAll(".domain").clone(true);
+                                    // console.debug(domain)
+                                    // tooltipGroup.node().append(totalTooltip.node());
+
+                                    let domain_d = g.select('.domain').attr('d');
+                                    g.selectAll('.domain')
                                         .data(All_seriesData)
-                                        .join('line')
+                                        .join('path')
+                                        .attr('class', 'domain')
+                                        .attr('stroke', 'currentColor')
+                                        .attr('d', domain_d)
                                         .attr("transform", (d, i) => `translate(${bar_interval * 0.5 * (i * 2 - 1)},0)`)
-                                        .attr('y1', margin.top)
-                                        .attr('y2', height - margin.bottom)
-                                        .attr('stroke', 'currentColor');
-                                    g.selectAll("text").attr('x', 0);
+
+                                    g.selectAll(".tick text").attr('x', 0).attr('y', 0).attr('dy', '0.32em');
                                     g.select('.axisName').attr("transform", `translate(0,${height - margin.bottom * 0.2})`)
                                 }
                             }
 
                             g.attr("transform", `translate(${translate})`)
-                                .call(removeAxis)
+                                // .call(removeAxis)
                                 .call(d3[axisPos](subjectScale).tickSizeOuter(0))
                                 .call(refreshing)
                                 .call(g => g.selectAll('.tick')
@@ -709,7 +721,8 @@ function DSBC() {
                             return dashStr;
                         }
 
-                        svg.selectAll("g.seriesGroup")
+                        focusGroup
+                            .selectAll("g.seriesGroup")
                             .data(dataKeys)
                             .join("g")
                             .attr("class", "seriesGroup")
@@ -797,15 +810,19 @@ function DSBC() {
                             );
 
                     }
+                    var updateTooltips = () => {
 
+                    }
                     updateAxis();
                     updateFocus();
+                    updateTooltips();
                 };
                 if (!newDataObj) {
                     newDataObj = getNewData();
                     init();
                 }
                 render();
+                return trans_duration;
             }
             function getNewData() {
                 let All_seriesData = [];
@@ -838,6 +855,7 @@ function DSBC() {
                     seriesData: All_seriesData,
                     series1Domain: series1Domain,
                     series2Domain: series2Domain,
+                    chartType: 'vertical',
                 };
             }
 
@@ -846,11 +864,15 @@ function DSBC() {
 
             function events(svg) {
 
+                const tooltipGroup = svg.append("g").attr('class', 'tooltipGroup');
+                const barCollection = svg.selectAll('.bar');
+                const barNodes = barCollection.nodes();
+                const subjectTickCollection = svg.select('.subjectAxis').selectAll('.tick');
+
                 var tooltipEvent = () => {
                     const tooltip_width = 100;
                     const tooltip_height = margin.bottom * 2;
 
-                    const tooltipGroup = svg.append("g").attr('class', 'tooltipGroup');
                     const tooltip = tooltipGroup
                         .append("g")
                         .attr('id', 'tooltip')
@@ -883,8 +905,66 @@ function DSBC() {
                                 .attr('opacity', 1);
                         })
 
-                    const barCollection = svg.selectAll('.bar');
-                    const barNodes = barCollection.nodes();
+                    function makeTotalTooltip(subjectIndex, seriesIndex) {
+                        let totalTooltipID = 'totalTooltip-' + subjects[subjectIndex] + '-' + dataKeys[seriesIndex];
+                        let totalTooltip_exist = (svg.select('#' + totalTooltipID).node() != null);
+                        // console.debug(totalTooltip_exist);
+                        //=== if totalTooltip exist then do nothing
+                        if (!totalTooltip_exist) {
+                            let barValue = seriesIndex * subjects.length * categories.length + subjectIndex + (categories.length - 1) * subjects.length;
+                            // console.debug(barValue);
+                            let topRect = barNodes[barValue];
+                            let rectMaxData = topRect.__data__[1];
+                            // console.debug(topRect.__data__  );
+                            let total = Number.isInteger(rectMaxData) ? rectMaxData : rectMaxData.toFixed(3);
+                            let unit = getKeyName(dataKeys[seriesIndex]).unit;
+
+                            let totalTooltip = tooltip.clone(true);
+                            tooltipGroup.node().append(totalTooltip.node());
+
+                            let x = topRect.x.baseVal.value;
+                            let y = topRect.y.baseVal.value;
+                            let width = topRect.width.baseVal.value;
+                            let transform = topRect.transform.baseVal[0].matrix;
+
+
+                            let rect_width = 100;
+                            let rect_height = 65;
+                            let trans_x = x + transform.e + width * 0.5 - rect_width * 0.5;
+                            let trans_y = y + transform.f - rect_height - rect_width * 0.1;
+                            // console.debug(x, y, width, transformArr);
+
+                            totalTooltip.call(totalTooltip => {
+
+                                totalTooltip.select('rect')
+                                    .attr("width", rect_width)
+                                    .attr("height", rect_height);
+
+                                totalTooltip.select('polygon')
+                                    .attr("points", `${rect_width * 0.4}, ${rect_height} ${rect_width * 0.6}, ${rect_height} ${rect_width * 0.5}, ${rect_height + rect_width * 0.1} `)
+
+                                // console.debug(totalTooltipID);
+                                totalTooltip
+                                    .attr('id', totalTooltipID)
+                                    .attr("transform", `translate(${trans_x}, ${trans_y})`)
+                                    .attr('display', 'inline');
+
+                                totalTooltip.select('text')
+                                    .text('Total:')
+                                    .append('tspan')
+                                    .attr('x', function () { return this.parentNode.getAttribute('x') })
+                                    .attr("dy", "1em")
+                                    .attr("font-weight", 900)
+                                    .attr("font-size", 25)
+                                    .text(total)
+                                    .append('tspan')
+                                    .attr("font-weight", "normal")
+                                    .attr("font-size", 14)
+                                    .text(" " + unit);
+                            })
+
+                        }
+                    };
                     function barEvent(bar) {
                         var tooltipMove = (bar) => {
 
@@ -901,8 +981,15 @@ function DSBC() {
                             let barWidth = parseInt(bar.getAttribute('width'));
                             let barHeight = parseInt(bar.getAttribute('height'));
 
-                            let trans_x = bar_x + subjectScale.bandwidth() / 2 + seriesIndex * barWidth + (seriesIndex - !seriesIndex) * bar_interval + tooltip_width * 0.1;
-                            let trans_y = bar_y + (barHeight - tooltip_height) / 2;
+                            // let trans_x = bar_x + subjectScale.bandwidth() / 2 + seriesIndex * barWidth + (seriesIndex - !seriesIndex) * bar_interval + tooltip_width * 0.1;
+                            // let trans_y = bar_y + (barHeight - tooltip_height) / 2;
+                            let trans_x =
+                                newDataObj.chartType == 'vertical' ?
+                                    bar_x + subjectScale.bandwidth() / 2 + seriesIndex * barWidth + (seriesIndex - !seriesIndex) * bar_interval + tooltip_width * 0.1 :
+                                    bar_x + barWidth + tooltip_width * 0.1;
+                            let trans_y = newDataObj.chartType == 'vertical' ?
+                                bar_y + (barHeight - tooltip_height) / 2 :
+                                bar_y;
 
                             //tooltip超出圖表邊界要移動
                             var checkOverEdge = () => {
@@ -1014,15 +1101,16 @@ function DSBC() {
 
                             return { clicked: allBarBeenClicked, subjectIndex: subjectIndex, seriesIndex: seriesIndex };
                         };
-                        bar
 
+
+                        bar
                             .on('mouseover', function (e) {
-                                console.log('mouseover');
+                                // console.log('mouseover');
                                 tooltipMove(this);
                                 barHighLight(this, 1);
                             })
                             .on('mouseout', function (e) {
-                                console.log('mouseout');
+                                // console.log('mouseout');
                                 // console.debug(this.classList.contains("clicked"))
 
                                 if (!this.classList.contains("clicked")) {
@@ -1044,10 +1132,9 @@ function DSBC() {
 
 
                                 if (!clicked) {
-                                    let tooltip_colne = tooltip.clone(true).node();
-                                    tooltip_colne.setAttribute('id', 'tooltip' + barValue);
-                                    tooltipGroup.node().append(tooltip_colne);
-
+                                    let tooltip_colne = tooltip.clone(true);
+                                    tooltip_colne.attr('id', 'tooltip' + barValue);
+                                    // tooltipGroup.node().append(tooltip_colne.node());
                                 }
                                 else
                                     tooltipGroup.select("#tooltip" + barValue).remove();
@@ -1063,108 +1150,86 @@ function DSBC() {
                                 }
 
                             })
-
-
                     }
-                    function subjectClickEvent(tick, tickString, i) {
-                        // console.debug(tick, tickString, i);
-                        tick.on('click', function (e) {
-                            let clicked = tick.classed('clicked');
-                            tick.classed('clicked', !clicked);
-                            // console.debug(tick.node());
+                    function subjectClickEvent(tickCollection) {
+                        // console.debug(tickCollection);
 
-                            let networkCount = i + 1;
-                            let groupCountArr = [1, 2];
+                        tickCollection
+                            .on('click', function (e) {
+                                // console.debug(this);
+                                let tick = d3.select(this);
+                                let clicked = tick.classed('clicked');
+                                tick.classed('clicked', !clicked);
 
-                            if (!clicked)
-                                groupCountArr.forEach(groupCount => makeTotalTooltip(networkCount, groupCount));
-                            else {
-                                groupCountArr.forEach(groupCount => {
-                                    let totalTooltipID = 'totalTooltip-' + "N" + networkCount + "G" + groupCount;
-                                    let totalTooltip = svg.select('#' + totalTooltipID);
-                                    totalTooltip.remove();
-                                    // let use = svg.select("#use-" + totalTooltipID);
-                                    // use.remove();
-                                });
-                            }
-                        });
-                    }
+                                let subjectIndex = subjects.indexOf(tick.data()[0]);
 
-                    function makeTotalTooltip(subjectIndex, seriesIndex) {
-                        let totalTooltipID = 'totalTooltip-' + subjects[subjectIndex] + '-' + dataKeys[seriesIndex];
-                        let totalTooltip_exist = (svg.select('#' + totalTooltipID).node() != null);
-                        // console.debug(totalTooltip_exist);
-                        //=== if totalTooltip exist then do nothing
-                        if (!totalTooltip_exist) {
-                            let barValue = seriesIndex * subjects.length * categories.length + subjectIndex + (categories.length - 1) * subjects.length;
-                            // console.debug(barValue);
-                            let topRect = barNodes[barValue];
-                            let rectMaxData = topRect.__data__[1];
-                            // console.debug(topRect.__data__  );
-                            let total = Number.isInteger(rectMaxData) ? rectMaxData : rectMaxData.toFixed(3);
-                            let unit = getKeyName(dataKeys[seriesIndex]).unit;
-
-                            let totalTooltip = tooltip.clone(true);
-                            tooltipGroup.node().append(totalTooltip.node());
-
-                            let x = topRect.x.baseVal.value
-                            let y = topRect.y.baseVal.value
-                            let width = topRect.width.baseVal.value
-                            let transform = topRect.transform.baseVal[0].matrix;
+                                if (!clicked)
+                                    dataKeys.forEach((series, seriesIndex) => makeTotalTooltip(subjectIndex, seriesIndex))
+                                else
+                                    dataKeys.forEach((series, seriesIndex) => {
+                                        let totalTooltipID = 'totalTooltip-' + subjects[subjectIndex] + '-' + dataKeys[seriesIndex];
+                                        tooltipGroup.select('#' + totalTooltipID).remove();
+                                    })
 
 
-                            let rect_width = 100;
-                            let rect_height = 65;
-                            let trans_x = x + transform.e + width * 0.5 - rect_width * 0.5;
-                            let trans_y = y + transform.f - rect_height - rect_width * 0.1;
-                            // console.debug(x, y, width, transformArr);
-
-                            totalTooltip.call(totalTooltip => {
-
-                                totalTooltip.select('rect')
-                                    .attr("width", rect_width)
-                                    .attr("height", rect_height);
-
-                                totalTooltip.select('polygon')
-                                    .attr("points", `${rect_width * 0.4}, ${rect_height} ${rect_width * 0.6}, ${rect_height} ${rect_width * 0.5}, ${rect_height + rect_width * 0.1} `)
-
-                                // console.debug(totalTooltipID);
-                                totalTooltip
-                                    .attr('id', totalTooltipID)
-                                    .attr("transform", `translate(${trans_x}, ${trans_y})`)
-                                    .attr('display', 'inline');
-
-                                totalTooltip.select('text')
-                                    .text('Total:')
-                                    .append('tspan')
-                                    .attr('x', function () { return this.parentNode.getAttribute('x') })
-                                    .attr("dy", "1em")
-                                    .attr("font-weight", 900)
-                                    .attr("font-size", 25)
-                                    .text(total)
-                                    .append('tspan')
-                                    .attr("font-weight", "normal")
-                                    .attr("font-size", 14)
-                                    .text(" " + unit);
                             })
+                            .on('mouseenter', function (e) {
+                                // console.debug("mouseenter");
+                                let tick = d3.select(this);
 
-                        }
-                    };
+                                tick.select('text')
+                                    .attr('font-size', 11)
+                                    .transition().duration(100)
+                                    .attr("fill", getColor(tick.data()[0]))
+                                    .attr("font-size", 15)
+                                    .attr("font-weight", 900)
+                                    .attr("cursor", 'pointer');
+                                // .attr('pointer-events', 'fill');
+
+                            })
+                            .on('mouseleave', function (e) {
+                                // console.debug("mouseleave");
+                                let tick = d3.select(this);
+                                tick.select('text')
+                                    .transition().duration(100)
+                                    .attr("fill", "black")
+                                    .attr('font-size', 11)
+                                    .attr("font-weight", 500);
+                            });
+                    }
 
 
                     // each bar call barEvent
                     barCollection.call(barEvent);
 
-                    // let ticks = svg.select('.subjectAxis').selectAll('.tick');
-                    // ticks.each(function (d, i) { subjectClickEvent(d3.select(this), d, i) });
+                    // tick click Event
+                    subjectTickCollection.call(subjectClickEvent);
                 };
                 var chartOptionEvent = () => {
                     //=====change sortBy dist/az
                     d3.selectAll('input[name ="changeChart"]')
                         .on('change', e => {
+                            //===for reset tooltip after chart change
+                            let barBeenClicked = barNodes.filter(bar => bar.classList.contains('clicked') ? true : false);
+                            let tickBeenClicked = subjectTickCollection.nodes().filter(bar => bar.classList.contains('clicked') ? true : false);
+                            //===for reset tooltip after chart change
                             let changeChart = e.target.value;
                             // console.debug(changeChart);
-                            updateChart(changeChart, true);
+                            newDataObj.chartType = changeChart;
+                            let trans_duration = updateChart(changeChart, true);
+                            //=== reset tooltip
+                            // tooltipGroup.selectAll("g[id^='totalTooltip']").remove();
+                            tickBeenClicked.forEach(tick => d3.select(tick).dispatch("click"));//remove totalTooltip
+                            d3.timeout(() => {
+                                barBeenClicked.forEach((bar) => {
+                                    tooltipGroup.select("#tooltip" + bar.value).remove();
+                                    d3.select(bar)
+                                        .dispatch("mouseover")
+                                        .dispatch("click");
+                                });
+                                tickBeenClicked.forEach(tick => d3.select(tick).dispatch("click"));//make totalTooltip
+                            }, trans_duration);
+
                         });
                     //=====shows
                     d3.select('#showLegend').on('change', e =>

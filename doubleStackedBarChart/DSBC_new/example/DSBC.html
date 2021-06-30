@@ -10,7 +10,8 @@
 </head>
 
 <body>
-    <main class='container'></main>
+    <main class='container' id="A"></main>
+    <main class='container' id="B"></main>
     <script src="../src/jquery/jquery-3.5.1.min.js"></script>
     <script src="../src/d3/d3.min.js"></script>
     <script src="../src/bootstrap-4.5.3-dist/js/bootstrap.bundle.min.js"></script>
@@ -98,8 +99,66 @@
                 },
             }
         }
+        var data3 = {
+            "count": {
+                "GNSS_ETEC": {
+                    "2021": 2
+                },
+                "CWBSN": {
+                    "2020": 98,
+                    "2021": 61
+                },
+                "GNSS_IES": {
+                    "2021": 1
+                },
+                "GNSS": {
+                    "2020": 9,
+                    "2021": 1
+                },
+                "TSMIP": {
+                    "2020": 60,
+                    "2021": 3
+                },
+                "GW": {
+                    "2020": 2,
+                    "2021": 3
+                },
+                "MAGNET": {
+                    "2020": 2
+                },
+                "total": 242
+            },
+            "file_size": {
+                "GNSS_ETEC": {
+                    "2021": "53.61 MB"
+                },
+                "CWBSN": {
+                    "2020": "4.53 GB",
+                    "2021": "382.3 MB"
+                },
+                "GNSS_IES": {
+                    "2021": "394.21 MB"
+                },
+                "GNSS": {
+                    "2020": "8.7 GB",
+                    "2021": "1.3 MB"
+                },
+                "TSMIP": {
+                    "2020": "1.55 GB",
+                    "2021": "220.55 MB"
+                },
+                "GW": {
+                    "2020": "72.99 MB",
+                    "2021": "21.66 MB"
+                },
+                "MAGNET": {
+                    "2020": "131.76 MB"
+                },
+                "total": "16.02 GB"
+            }
+        }
         var title = 'GDMS資料服務統計';
-        var obj = { data: data, title: title };
+        var obj = { data: data3, title: title };
         var obj2 = JSON.parse(JSON.stringify(obj));
         var Data = [obj,];
         // console.debug(Data);
@@ -108,8 +167,16 @@
             .data(Data)
             .string({ subject: '資料庫', category: '年' })
             // .string({ subject: '年', category: '資料庫' })
-            .selector('.container');
+            .selector('#A');
         chart();
+
+
+        // var chart2 = DSBC()
+        //     .data(Data)
+        //     .string({ subject: '資料庫', category: '年' })
+        //     // .string({ subject: '年', category: '資料庫' })
+        //     .selector('#B');
+        // chart2();
 
     </script>
 

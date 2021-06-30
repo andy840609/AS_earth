@@ -5,113 +5,10 @@ function DSBC() {
     var dataString = {};
     var colorPalette = null;
 
-    function init() {
-        $(selector).append(`
-            <form id="form-chart">
-            <div class="form-group" id="chartsOptions" style="display: inline;">
-            <div class="row">
-
-            <!-- ... reset 
-            <div class="form-group col-lg-3 col-md-3 col-sm-6" >
-                <button type="button" class="btn btn-secondary" id="reset">
-                    reset
-                </button>
-            </div>
-            ...-->
-
-            <!-- ...change chart   ...-->
-            <div class="form-group col-lg-4 col-md-4 col-sm-6 d-flex flex-row align-items-start">
-                <label for="changeChart" class="col-form-label col-4" >chart</label>
-                <div class="btn-group btn-group-toggle col-8" data-toggle="buttons">
-                    <label class="btn btn-secondary">
-                        <input type="radio" name ="changeChart" value="vertical" checked> chart1
-                    </label>
-                    <label class="btn btn-secondary active">
-                        <input type="radio" name ="changeChart" value="horizontal"> chart2
-                    </label>
-                </div>
-            </div>   
-
-            <!-- ... show info ... -->    
-            <div class="form-group col-lg-4 col-md-4 col-sm-6 d-flex flex-row align-items-start">
-                <label for="showInfoButton" class="col-form-label col-4" >Show</label>
-                <div class="btn-group btn-group-toggle col-8" role="group">
-                    <button id="showInfoButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        select
-                    </button>
-                    <div class="dropdown-menu" id="showInfoMenu" aria-labelledby="showInfoButton">
-                        <div  id="showInfoDropDownMenu">
-                           
-                            <div class="form-check d-flex flex-row flex-wrap " style="text-align: ;">
-                                <input class="form-check-input  col-4" type="checkbox" id="showLegend" name="show" value="0" checked>
-                                <label class="form-check-label  col-12" for="showLegend">legend</label>
-                            </div>
-                           
-                        </div>
-                    </div>
-                </div>
-            </div>  
-
-
-
-            </div>
-            </div>
-                <div class="form-group" id="charts" style="position: relative; z-index:0;"></div>          
-                <div id="outerdiv"
-                    style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:999;width:100%;height:100%;display:none;">
-                    <div id="innerdiv" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
-                        <img id="bigimg" style=" background-color: rgb(255, 255, 255);" src="" />
-                    </div>
-                </div>
-            </form>
-            `);
-
-        // $('#reset').click(() => {
-        //     chart();
-        // });
-
-        //================dropdown-menu內元素被點擊不關閉menu
-        let All_dropdownMenu = $('.dropdown-menu');
-        All_dropdownMenu.on("click.bs.dropdown", e => e.stopPropagation());
-
-
-        ~function requestColors() {
-            var url = '../src/php/getNetworkList.php';
-            $.ajax({
-                url: url,
-                dataType: 'json',
-                async: false,
-                success: function (rtdata) {
-                    let obj = {};
-                    rtdata.forEach(d => obj[d.network_code] = d.color);
-                    colorPalette = obj;
-                }, error: function (jqXHR, textStatus, errorThrown) {
-                    console.log("can't get color on database");
-                    colorPalette = {
-                        CWBSN: "#2ca9e1",
-                        GNSS: "#df7163",
-                        GW: "#f8b500",
-                        MAGNET: "#005243",
-                        TSMIP: "#7a4171",
-                        categories: '#808080',
-                    }
-                }
-
-            });
-        }();
-        // console.debug(colorPalette);
-        //==========test=====
-        // $('body').on("mouseover", function (e) {
-        //     console.debug(e.target.nodeName);
-        // })
-        //===================
-    };
-
     chart.selector = (value) => {
         selector = value;
         return chart;
     }
-
     chart.data = (value) => {
         console.log(value);
         let copyObj = JSON.parse(JSON.stringify(value));//不影響原資料
@@ -207,14 +104,112 @@ function DSBC() {
 
         return chart;
     }
-
     chart.string = (value) => {
         dataString = value;
         return chart;
     }
     function chart() {
+
+        const chartContainerJQ = $(selector);
+
+        function init() {
+            chartContainerJQ.append(`
+            <form id="form-chart">
+            <div class="form-group" id="chartsOptions" style="display: inline;">
+            <div class="row">
+
+            <!-- ... reset 
+            <div class="form-group col-lg-3 col-md-3 col-sm-6" >
+                <button type="button" class="btn btn-secondary" id="reset">
+                    reset
+                </button>
+            </div>
+            ...-->
+
+            <!-- ...change chart   ...-->
+            <div class="form-group col-md-6  d-flex flex-row align-items-start">
+                <label for="changeChart" class="col-form-label col-4" >chart</label>
+                <div class="btn-group btn-group-toggle col-8" data-toggle="buttons">
+                    <label class="btn btn-secondary">
+                        <input type="radio" name ="changeChart" value="vertical" checked> chart1
+                    </label>
+                    <label class="btn btn-secondary active">
+                        <input type="radio" name ="changeChart" value="horizontal"> chart2
+                    </label>
+                </div>
+            </div>   
+
+            <!-- ... show info ... -->    
+            <div class="form-group col-md-6 d-flex flex-row align-items-start">
+                <label for="showInfoButton" class="col-form-label col-4" >Show</label>
+                <div class="btn-group btn-group-toggle col-8" role="group">
+                    <button id="showInfoButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        select
+                    </button>
+                    <div class="dropdown-menu" id="showInfoMenu" aria-labelledby="showInfoButton">
+                        <div  id="showInfoDropDownMenu">
+
+                            <div class="form-check d-flex flex-row flex-wrap " style="text-align: ;">
+                                <input class="form-check-input  col-4" type="checkbox" id="showLegend" name="show" value="0" checked>
+                                <label class="form-check-label  col-12" for="showLegend">legend</label>
+                            </div>
+                           
+                        </div>
+                    </div>
+                </div>
+            </div>  
+
+
+
+            </div>
+            </div>
+                <div class="form-group" id="charts" style="position: relative; z-index:0;"></div>          
+                <div id="outerdiv"
+                     style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:999;width:100%;height:100%;display:none;">
+                    <div id="innerdiv" style=" background-color: rgb(255, 255, 255);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
+                </div>
+            </div>
+            </form>
+            `);
+
+            //================dropdown-menu內元素被點擊不關閉menu
+            let All_dropdownMenu = $('.dropdown-menu');
+            All_dropdownMenu.on("click.bs.dropdown", e => e.stopPropagation());
+
+
+            ~function requestColors() {
+                var url = '../src/php/getNetworkList.php';
+                $.ajax({
+                    url: url,
+                    dataType: 'json',
+                    async: false,
+                    success: function (rtdata) {
+                        let obj = {};
+                        rtdata.forEach(d => obj[d.network_code] = d.color);
+                        colorPalette = obj;
+                    }, error: function (jqXHR, textStatus, errorThrown) {
+                        console.log("can't get color on database");
+                        colorPalette = {
+                            CWBSN: "#2ca9e1",
+                            GNSS: "#df7163",
+                            GW: "#f8b500",
+                            MAGNET: "#005243",
+                            TSMIP: "#7a4171",
+                            categories: '#808080',
+                        }
+                    }
+
+                });
+            }();
+            // console.debug(colorPalette);
+            //==========test=====
+            // $('body').on("mouseover", function (e) {
+            //     console.debug(e.target.nodeName);
+            // })
+            //===================
+        };
         function stackedBar(chartData, series1DomainMax = null, series2DomainMax = null) {
-            console.debug(chartData);
+            // console.debug(chartData);
 
             const convert_download_unit = (value, unitBefore, unitAfter = undefined) => {
                 let newValue, newUnit;
@@ -366,6 +361,24 @@ function DSBC() {
                 // console.debug(gradientColor);
                 return gradientColor;
             };
+            //TSMIP放第一, CWBSN第二
+            const sortDataKeys = (array) => {
+                array.sort(function (a, b) {
+                    // console.debug(a, b);
+
+                    // if (a > b) {
+                    //     return 1;
+                    // }
+                    if (a < b) {
+                        return -1;
+                    }
+                    if (a == 'TSMIP' || a == 'CWBSN') {
+                        return -1;
+                    }
+                    return 0;
+                });
+
+            }
 
             const width = 800;
             const height = 600;
@@ -424,27 +437,35 @@ function DSBC() {
                 chartData.data = convertData(chartData.data);
                 return chartData.data;
             }();
-            console.debug(data);
+            // console.debug(data);
             const dataKeys = data.columns;//series key
-            console.debug(dataKeys);
+            // console.debug(dataKeys);
+            // console.debug(colorPalette);
             //放入seriesColor
             ~function () {
                 const seriesColor = ["#d53e4f", "#3288bd"];
+                if (!colorPalette) colorPalette = {};
                 dataKeys.forEach((key, i) => colorPalette[key] = seriesColor[i % seriesColor.length]);
-            }()
+            }();
 
             //===取出所有主要的key(ex:每個DB)並去重複
             const subjects = Array.from(new Set([].concat(...dataKeys.map(key => [].concat(...data[key].columns)))));
-            console.debug(subjects);
+            // console.debug(subjects);
+            sortDataKeys(subjects);
+
             //===取出所有最下層key(ex:每個DB的年份)並去重複
             const categories = Array.from(new Set([].concat(...dataKeys.map(key => [].concat(...data[key].columns.map(k => data[key][k].columns))))));
+            sortDataKeys(categories);
             // console.debug(categories);
+            // console.debug(categories);
+
             // console.debug(getKeyName('size'));
             const svg = d3.create("svg").attr("viewBox", [0, 0, width, height]);
+            const focusGroup = svg.append("g").attr("class", "focusGroup");
             const subjectAxis = svg.append("g").attr("class", "subjectAxis");
             const series1Axis = svg.append("g").attr("class", "series1Axis");
             const series2Axis = svg.append("g").attr("class", "series2Axis");
-            const focusGroup = svg.append("g").attr("class", "focusGroup");
+
 
 
 
@@ -455,8 +476,8 @@ function DSBC() {
                 // console.debug(chartType)
                 // console.debug(newDataObj)
                 // var chartType = chartType;//vertical horizontal
-                const max_barWidth = chartType == 'vertical' ? 50 : 60;
-                bar_interval = chartType == 'vertical' ? 5 : 50;
+                const max_barWidth = chartType == 'vertical' ? 500 : 60;
+                bar_interval = chartType == 'vertical' ? 1 : 50;
                 const trans_duration = trans ? 500 : 0;
 
                 function init() {
@@ -520,7 +541,7 @@ function DSBC() {
 
                         svg.select('.legend')
                             .append("text")
-                            .attr("font-size", 10)
+                            .attr("font-size", 13)
                             .attr("font-weight", 900)
                             .attr("text-anchor", "start")
                             .attr("alignment-baseline", "after-edge")
@@ -540,7 +561,7 @@ function DSBC() {
                                     .attr("fill", "currentcolor")
                                     .attr("color", "black")
                                     .attr("font-family", "sans-serif")
-                                    .attr("font-size", 8)
+                                    .attr("font-size", 13)
                                     .attr("font-weight", 600)
                                     .attr("text-anchor", "middle")
                                     .attr("alignment-baseline", "before-edge")
@@ -610,7 +631,6 @@ function DSBC() {
                                 refreshing = g => {
                                     g.selectAll("line").attr('opacity', 0);
 
-
                                     // let domain = g.selectAll(".domain").clone(true);
                                     // console.debug(domain)
                                     // tooltipGroup.node().append(totalTooltip.node());
@@ -628,7 +648,6 @@ function DSBC() {
                                     g.select('.axisName').attr("transform", `translate(0,${height - margin.bottom * 0.2})`)
                                 }
                             }
-
                             g.attr("transform", `translate(${translate})`)
                                 // .call(removeAxis)
                                 .call(d3[axisPos](subjectScale).tickSizeOuter(0))
@@ -639,6 +658,7 @@ function DSBC() {
                                 );
                         }
                         var makeSeriesAxis = (g, yNum) => {
+
                             let seriesScale = yNum - 1 ? series2Scale : series1Scale;
                             let axisPos, translate, refreshing;
                             let sign = { 1: -1, 2: 1 }[yNum];
@@ -650,8 +670,7 @@ function DSBC() {
                                 axisPos = { 1: 'axisLeft', 2: 'axisRight' }[yNum];
                                 translate = { 1: [margin.left, 0], 2: [width - margin.right, 0] }[yNum];
                                 refreshing = g => {
-                                    g
-                                        .select('.axisName')
+                                    g.select('.axisName')
                                         .attr("transform", `rotate(${90 * sign}) translate(${[height / 2 * sign, -margin.left * 0.9]})`)
                                         .text(axisText);
                                 };
@@ -662,36 +681,28 @@ function DSBC() {
                                 refreshing = g => {
                                     let axisOrigin = seriesScale.range()[0];//0的位置
                                     let axisTextArrow = { 1: '← ', 2: ' →' }[yNum];
-                                    let axisText_arrow = axisText + axisTextArrow;
 
                                     g.selectAll('.tick').style("text-anchor", "middle");
                                     g.select('.axisName')
                                         .attr("transform", `translate(${[axisOrigin + 2 * bar_interval * sign, margin.bottom * 0.5]})`)
                                         .text(axisText)
-                                        .call(text => d3.select(text.node())
-                                            // .append('tspan')
-                                            // .attr("x", -25)
-                                            // .attr("dy", 8)
-                                            // .attr("font-size", "9")
-                                            // .text(axisTextArrow)
-                                        )
-                                    // .append('tspan')
-                                    // .attr("x", -25)
-                                    // .attr("dy", 8)
-                                    // .attr("font-size", "9")
-                                    // console.debug(d3.select(g.select('.axisName')).append('tspan'))
-
-                                    // .append('tspan')
-                                    // .text(axisTextArrow);
+                                        .append('tspan')
+                                        .attr("x", sign * bar_interval * 1.5)
+                                        .attr("dy", 2)
+                                        .attr("alignment-baseline", "middle")
+                                        .attr("font-size", 60)
+                                        .text(axisTextArrow);
+                                    // console.debug(g.node())
                                 };
                             };
 
-                            g.attr("transform", `translate(${translate})`)
+                            g
+                                .attr("transform", `translate(${translate})`)
                                 .call(removeAxis)
                                 .transition().duration(trans_duration)
                                 .call(d3[axisPos](seriesScale).ticks(null, "s").tickSizeOuter(0))
-                                .call(refreshing)
-                                .selectAll("text");
+
+                            g.call(refreshing)//有呼叫補間動畫會不能append所以另外call一次
                         }
                         subjectAxis.call(makeSubjectAxis);
                         series1Axis.call(series1Axis => makeSeriesAxis(series1Axis, 1));
@@ -830,13 +841,12 @@ function DSBC() {
                 var getSeries = (key) => {
                     //===count or size....
                     const seriesData = data[key];
-                    const subjects = seriesData.columns;
+                    // const subjects = seriesData.columns;
                     // console.debug(seriesData);
-                    // console.debug(seriesDataKeys);
-
+                    // console.debug(subjects);
                     const series = d3.stack()
                         .keys(categories)
-                        .value((subject, category) => seriesData[subject][category] || 0)//沒有值當0(bar heigth=0)
+                        .value((subject, category) => seriesData[subject] ? (seriesData[subject][category] || 0) : 0)//沒有值當0(bar heigth=0)
                         (subjects).map(d => { return d.forEach(v => v.key = d.key), d });
                     // console.debug(series1);
                     return series;
@@ -912,8 +922,9 @@ function DSBC() {
                         //=== if totalTooltip exist then do nothing
                         if (!totalTooltip_exist) {
                             let barValue = seriesIndex * subjects.length * categories.length + subjectIndex + (categories.length - 1) * subjects.length;
-                            // console.debug(barValue);
+                            // console.debug(barNodes);
                             let topRect = barNodes[barValue];
+                            // console.debug(barValue);
                             let rectMaxData = topRect.__data__[1];
                             // console.debug(topRect.__data__  );
                             let total = Number.isInteger(rectMaxData) ? rectMaxData : rectMaxData.toFixed(3);
@@ -987,9 +998,8 @@ function DSBC() {
                                 newDataObj.chartType == 'vertical' ?
                                     bar_x + subjectScale.bandwidth() / 2 + seriesIndex * barWidth + (seriesIndex - !seriesIndex) * bar_interval + tooltip_width * 0.1 :
                                     bar_x + barWidth + tooltip_width * 0.1;
-                            let trans_y = newDataObj.chartType == 'vertical' ?
-                                bar_y + (barHeight - tooltip_height) / 2 :
-                                bar_y;
+                            let trans_y = bar_y + (barHeight - tooltip_height) / 2;
+
 
                             //tooltip超出圖表邊界要移動
                             var checkOverEdge = () => {
@@ -1033,6 +1043,8 @@ function DSBC() {
                                 .attr("font-weight", "normal")
                                 .attr("font-size", 14)
                                 .text(" " + dataUnit);
+
+                            tooltip.raise();//new tooltip always on top
 
                         };
                         var barHighLight = (bar, dir) => {
@@ -1091,7 +1103,13 @@ function DSBC() {
                             //==check allBarBeenClicked in same bar
                             let allBarBeenClicked = true;
                             for (let i = 0; i < sameBarValueArr.length; i++) {
-                                let clicked = barNodes[sameBarValueArr[i]].classList.contains('clicked');
+                                let data = barNodes[sameBarValueArr[i]].__data__;
+
+                                // console.debug(data[1] - data[0] == 0);
+                                let clicked =
+                                    barNodes[sameBarValueArr[i]].classList.contains('clicked') ||
+                                    data[1] - data[0] == 0;//無資料的bar點不到所以當作點了
+
                                 if (!clicked) {
                                     allBarBeenClicked = false;
                                     break;
@@ -1120,7 +1138,7 @@ function DSBC() {
                                 }
                             })
                             .on('click', function (e) {
-                                console.log('click');
+                                // console.log('click');
                                 var bar = d3.select(this);
                                 var clicked = bar.classed('clicked');
                                 // console.debug(clicked);
@@ -1206,9 +1224,12 @@ function DSBC() {
                     subjectTickCollection.call(subjectClickEvent);
                 };
                 var chartOptionEvent = () => {
-                    //=====change sortBy dist/az
-                    d3.selectAll('input[name ="changeChart"]')
-                        .on('change', e => {
+                    const chartContainer = d3.select(selector);
+                    //=====change 
+                    // console.debug(chartContainer.select('input[name ="changeChart"]'))
+                    chartContainer.selectAll('input[name ="changeChart"]')
+                        .on('click', e => {
+                            // console.debug('change')
                             //===for reset tooltip after chart change
                             let barBeenClicked = barNodes.filter(bar => bar.classList.contains('clicked') ? true : false);
                             let tickBeenClicked = subjectTickCollection.nodes().filter(bar => bar.classList.contains('clicked') ? true : false);
@@ -1232,8 +1253,8 @@ function DSBC() {
 
                         });
                     //=====shows
-                    d3.select('#showLegend').on('change', e =>
-                        d3.selectAll('.legend').attr("display", e.target.checked ? 'inline' : 'none'));
+                    chartContainer.select('#showLegend').on('change', e =>
+                        svg.selectAll('.legend').attr("display", e.target.checked ? 'inline' : 'none'));
                 };
                 var infoBoxDragEvent = () => {
 
@@ -1270,10 +1291,8 @@ function DSBC() {
 
             return svg.node();
         }
-
         function printChart() {
-            $('#charts').children().remove();
-            // $('.tooltip').remove();
+            chartContainerJQ.find('#charts').children().remove();
             var i = 1;
 
             var getChartMenu = (title) => {
@@ -1311,17 +1330,19 @@ function DSBC() {
                         item.innerHTML = "檢視圖片";
 
                     item.addEventListener("click", (e, a) => {
-                        let chartIDArr = [];
-                        chartIDArr.push("#" + $(e.target).parents('.chart')[0].id + " svg");
-                        // console.log(chartIDArr);
-                        downloadSvg(chartIDArr, title, option);
+                        let svgArr = [];
+                        let svg = chartContainerJQ.find("#" + $(e.target).parents('.chart')[0].id).children('svg')[0];
+                        // console.debug(svg);
+                        svgArr.push(svg);
+                        downloadSvg(svgArr, title, option);
                     });
 
                     li.append(item);
                     ul.append(li);
                 });
-                $('#charts').append(div);
-                $('#chart' + i).append(nav);
+                // console.debug(chartContainerJQ.find());
+                chartContainerJQ.find('#charts').append(div);
+                chartContainerJQ.find('#chart' + i).append(nav);
             }
             var MenuEvents = () => {
                 var charts = document.getElementById('charts');
@@ -1374,7 +1395,7 @@ function DSBC() {
                     });
                 });
             }
-            var downloadSvg = (chartQueryStrs, fileName, option) => {
+            var downloadSvg = (svgArr, fileName, option) => {
 
                 function getSvgUrl(svgNode) {
                     var svgData = (new XMLSerializer()).serializeToString(svgNode);
@@ -1387,23 +1408,32 @@ function DSBC() {
                     let canvas = document.createElement('canvas');
                     let context = canvas.getContext('2d');
 
-                    var svgWidth = $(chartQueryStrs[0])[0].viewBox.baseVal.width;
-                    var svgHeight = $(chartQueryStrs[0])[0].viewBox.baseVal.height * chartQueryStrs.length;
+                    var svgWidth = svgArr[0].viewBox.baseVal.width;
+                    var svgHeight = svgArr[0].viewBox.baseVal.height * svgArr.length;
                     var canvasWidth, canvasHeight;
                     //檢視時縮放,下載時放大
                     if (resize) {
-                        var windowW = $(window).width();//获取当前窗口宽度 
-                        var windowH = $(window).height();//获取当前窗口高度 
+                        // var windowW = $(window).width();//获取当前窗口宽度 
+                        // var windowH = $(window).height();//获取当前窗口高度 
+
+                        var windowW = window.innerWidth;//获取当前窗口宽度 
+                        var windowH = window.innerHeight;//获取当前窗口高度 
+
+                        // console.debug("window = ");
                         // console.debug(windowW, windowH);
                         // console.debug(svgW, svgH);
                         var width, height;
                         var scale = 0.9;//缩放尺寸
                         height = windowH * scale;
                         width = height / svgHeight * svgWidth;
+                        // console.debug("before scale = ");
+                        // console.debug(width, height);
                         while (width > windowW * scale) {//如宽度扔大于窗口宽度 
                             height = height * scale;//再对宽度进行缩放
                             width = width * scale;
                         }
+                        // console.debug("scaled = ");
+                        // console.debug(width, height);
                         canvasWidth = width;
                         canvasHeight = height;
                     }
@@ -1429,13 +1459,34 @@ function DSBC() {
                     downloadLink.click();
                     document.body.removeChild(downloadLink);
                 }
-                function show(img) {
-                    $('#bigimg').attr("src", img);//设置#bigimg元素的src属性 
-                    $('#outerdiv').fadeIn("fast");//淡入显示#outerdiv及.pimg 
-                    $('#outerdiv').off('click');
-                    $('#outerdiv').click(function () {//再次点击淡出消失弹出层 
+                function show(width, height) {
+                    // $('#bigimg').attr("src", img);//设置#bigimg元素的src属性 
+                    // $('#outerdiv').fadeIn("fast");//淡入显示#outerdiv及.pimg 
+                    // $('#outerdiv').off('click');
+                    // $('#outerdiv').click(function () {//再次点击淡出消失弹出层 
+                    //     $(this).fadeOut("fast");
+                    // });
+                    let outerdiv = $('#outerdiv');
+
+                    outerdiv.fadeIn("fast");//淡入显示#outerdiv及.pimg 
+                    outerdiv.off('click');
+                    outerdiv.click(function (e) {//再次点击淡出消失弹出层 
+                        if (e.target.id != 'outerdiv') return;
                         $(this).fadeOut("fast");
+                        $(originParent).children('svg').remove();
+                        originSvg.removeAttribute('width');
+                        originSvg.removeAttribute('height');
+                        originParent.append(originSvg);
                     });
+
+                    let originSvg = svgArr[0];
+                    let originParent = originSvg.parentNode;
+                    let cloneSvg = originSvg.cloneNode(true);
+                    originSvg.setAttribute('width', width);
+                    originSvg.setAttribute('height', height);
+                    document.querySelector('#innerdiv').append(originSvg);
+                    originParent.append(cloneSvg);
+
                 }
 
                 if (option == 'svg') {
@@ -1443,8 +1494,8 @@ function DSBC() {
                     var newSvg = document.createElement('svg');
 
 
-                    chartQueryStrs.forEach(queryStr => {
-                        var svgjQobj = $(queryStr);
+                    svgArr.forEach(svg => {
+                        var svgjQobj = $(svg);
                         svgjQobj.clone().appendTo(newSvg);
                     });
                     // console.debug(newSvg);
@@ -1454,15 +1505,15 @@ function DSBC() {
                 else {
                     //==============each svg draw to canvas
                     var CanvasObjArr = getCanvas(option == 'bigimg');
-
+                    // console.debug(CanvasObjArr);
                     var canvas = CanvasObjArr[0];
                     var context = CanvasObjArr[1];
                     var imageWidth = canvas.width;
-                    var imageHeight = canvas.height / chartQueryStrs.length;
+                    var imageHeight = canvas.height / svgArr.length;
 
 
-                    chartQueryStrs.forEach((queryStr, index) => {
-                        var svgNode = $(queryStr)[0];
+                    svgArr.forEach((svg, index) => {
+                        var svgNode = svg;
                         var svgUrl = getSvgUrl(svgNode);
                         var image = new Image();
                         image.src = svgUrl;
@@ -1470,11 +1521,14 @@ function DSBC() {
                             context.drawImage(image, 0, index * imageHeight, imageWidth, imageHeight);
 
                             //done drawing and output
-                            if (index == chartQueryStrs.length - 1) {
+                            if (index == svgArr.length - 1) {
                                 var imgUrl;
                                 if (option == 'bigimg') {
-                                    imgUrl = canvas.toDataURL();// default png
-                                    show(imgUrl);
+                                    // imgUrl = canvas.toDataURL();// default png
+                                    // show(imgUrl);
+                                    // let canvas = getCanvas(true)[0];
+                                    // // console.debug(canvas);
+                                    show(imageWidth, imageHeight);
                                 }
                                 else {
                                     imgUrl = canvas.toDataURL('image/' + option);
@@ -1486,8 +1540,6 @@ function DSBC() {
                 }
 
             }
-
-
             var series1DomainMax = null, series2DomainMax = null;
             //====more than one chart so get the max domain to make yaxis in the same range
             // if (data.length > 1) {
@@ -1522,15 +1574,15 @@ function DSBC() {
                 let chartNode = stackedBar(d, series1DomainMax, series2DomainMax);
                 // console.debug(chartNode);
                 getChartMenu('A');
-                $('#chart' + i).append(chartNode);
+                chartContainerJQ.find('#chart' + i).append(chartNode);
                 i++;
                 // console.debug(i);
             })
             MenuEvents();
         }
 
-        if (!($('#form-chart').length >= 1))
-            init()
+        if (!(chartContainerJQ.find('#form-chart').length >= 1))
+            init();
 
         printChart();
     }

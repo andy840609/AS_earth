@@ -1,0 +1,664 @@
+<html lang="zh-Hant-TW">
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="description" content="">
+<meta name="author" content="IES AS">
+
+<title>GDMS</title>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+<!--jquery dataTable-->
+<!--link rel="stylesheet" type="text/css" href="./js/DataTables/datatables.min.css"/-->
+<link rel="stylesheet" type="text/css"
+    href="https://cdn.datatables.net/v/bs4-4.1.1/jq-3.3.1/dt-1.10.18/datatables.min.css" />
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/select/1.2.7/css/select.bootstrap.min.css" />
+<!--calendar-heatmap -->
+<link rel="stylesheet" type="text/css" href="./js/calendar-heatmap/calendar-heatmap.css" />
+<link rel="stylesheet" href="./css/datatable.addition.css" />
+<!--jquery ui-->
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<!--jquery-ui-timepicker-addon>
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-ui-timepicker-addon/1.6.3/jquery-ui-timepicker-addon.min.css"-->
+<!-- Bootstrap Datetimepicker CSS -->
+
+<link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.1.2/css/tempusdominus-bootstrap-4.min.css"
+    integrity="sha512-PMjWzHVtwxdq7m7GIxBot5vdxUY+5aKP9wpKtvnNBZrVv1srI8tU6xvFMzG8crLNcMj/8Xl/WWmo/oAP/40p1g=="
+    crossorigin="anonymous" />
+
+<link rel="stylesheet" href="./fontawesome/css/gdms.css" />
+
+
+<link rel="stylesheet" href="./css/main.css" />
+
+<body>
+    <div id="to-main-div">
+        <a tabindex="1" title="移至網頁之主要內容區位置 To the Main Section" href="#main"
+            class="focusable to-main-link">移至網頁之主要內容區位置</a>
+    </div>
+    <div id="header"
+        class="d-flex flex-row flex-md-row align-items-center p-2 px-md-4 bg-light border-bottom justify-content-between align-self-center sticky0">
+        <div class="my-0 mr-md-auto title-logo align-items-center align-self-center">
+            <img class="pr-1 title-logo-element" style="height:2rem;" alt="CWB氣象局logo" src="./img/logoBlue.svg" />
+            <h1 class="p-2 font-weight-normal title-logo-element" style="line-height:2rem;font-size:1em;">GDMS-2020</h1>
+
+        </div>
+
+        <nav class="my-0 mr-md-3 align-items-center align-self-center">
+            <a tabindex="2" class="p-2 text-dark" href="siteMap.php" data-lang="Site Map">網站導覽</a>
+            <span>|</span>
+            <a class="p-2 text-dark" style="font-size:1em;" href="javascript:setFontSize(0)">A</a>
+            <a class="p-2 text-dark" style="font-size:1.25em;" href="javascript:setFontSize(1)">A</a>
+            <a class="p-2 text-dark" style="font-size:1.5em;" href="javascript:setFontSize(2)">A</a>
+            <span>|</span>
+            <!--a class="p-2 text-dark" style="font-size:1em;" href="javascript:language.setLanguage('en');">English</a>
+                <a class="p-2 text-dark" style="font-size:1em;" href="javascript:language.setLanguage('zh');">中文</a-->
+            <a class="p-2 text-dark" id="change-lang-btn" style="font-size:1em;"
+                href="javascript:language.setLanguage();">選擇語言</a>
+
+
+
+        </nav>
+        <nav class="my-0 mr-md-3 align-items-center align-self-center">
+            <script async src="https://cse.google.com/cse.js?cx=938bdd61ac3da5dca"></script>
+            <div class="gcse-search"></div>
+        </nav>
+        <a href="./userpage.php" title="您的身分:USER">andy</a><a class="btn btn-outline-info btn-sm ml-1"
+            href="./logout.php"><span data-lang="Logout">登出</span></a>
+
+    </div>
+
+
+    <nav id="navbar" class="navbar navbar-expand-md navbar-dark bg-this sticky">
+
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbars"
+            aria-controls="navbars" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-center" id="navbars">
+            <ul class="navbar-nav text-center">
+                <li class="nav-item text-center">
+
+                    <div class="nav-icon">
+                        <svg class="bi bi-house-fill" width="2em" height="2em" viewBox="0 0 20 20" fill="currentColor"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M8.5 12.995V16.5a.5.5 0 01-.5.5H4a.5.5 0 01-.5-.5v-7a.5.5 0 01.146-.354l6-6a.5.5 0 01.708 0l6 6a.5.5 0 01.146.354v7a.5.5 0 01-.5.5h-4a.5.5 0 01-.5-.5V13c0-.25-.25-.5-.5-.5H9c-.25 0-.5.25-.5.495z" />
+                            <path fill-rule="evenodd" d="M15 4.5V8l-2-2V4.5a.5.5 0 01.5-.5h1a.5.5 0 01.5.5z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </div>
+
+                    <a class="nav-link" href="./index.php"><span data-lang="Home">首頁</span> <span
+                            class="sr-only">(current)</span></a>
+
+                </li>
+
+                <li class="nav-item">
+                    <div class="nav-icon">
+                        <svg class="bi bi-chat" width="2em" height="2em" viewBox="0 0 20 20" fill="currentColor"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd"
+                                d="M8.207 13.293L7.5 14a5.5 5.5 0 110-11h5a5.5 5.5 0 110 11s-1.807 2.169-4.193 2.818C7.887 16.933 7.449 17 7 17c.291-.389.488-.74.617-1.052C8.149 14.649 7.5 14 7.5 14c.707-.707.708-.707.708-.706h.001l.002.003.004.004.01.01a1.184 1.184 0 01.074.084c.039.047.085.108.134.183.097.15.206.36.284.626.114.386.154.855.047 1.394.717-.313 1.37-.765 1.895-1.201a10.266 10.266 0 001.013-.969l.05-.056.01-.012m0 0A1 1 0 0112.5 13a4.5 4.5 0 100-9h-5a4.5 4.5 0 000 9 1 1 0 01.707.293"
+                                clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <a class="nav-link" data-lang="Network Introduction" href="./network.php">測網介紹</a>
+                </li>
+                <li class="nav-item">
+                    <div class="nav-icon">
+                        <svg class="bi bi-map" width="2em" height="2em" viewBox="0 0 20 20" fill="currentColor"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd"
+                                d="M17.817 2.613A.5.5 0 0118 3v13a.5.5 0 01-.402.49l-5 1a.502.502 0 01-.196 0L7.5 16.51l-4.902.98A.5.5 0 012 17V4a.5.5 0 01.402-.49l5-1a.5.5 0 01.196 0l4.902.98 4.902-.98a.5.5 0 01.415.103zM12 4.41l-4-.8v11.98l4 .8V4.41zm1 11.98l4-.8V3.61l-4 .8v11.98zm-6-.8V3.61l-4 .8v11.98l4-.8z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <a class="nav-link" data-lang="Station map" href="./map.php">測站查詢</a>
+                </li>
+                <!--li class="nav-item dropdown">
+                <div class="nav-icon">	
+                    <svg class="bi bi-cloud-download" width="2em" height="2em" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M6.887 7.2l-.964-.165A2.5 2.5 0 105.5 12H8v1H5.5a3.5 3.5 0 11.59-6.95 5.002 5.002 0 119.804 1.98A2.501 2.501 0 0115.5 13H12v-1h3.5a1.5 1.5 0 00.237-2.981L14.7 8.854l.216-1.028a4 4 0 10-7.843-1.587l-.185.96z"/>
+                      <path fill-rule="evenodd" d="M7 14.5a.5.5 0 01.707 0L10 16.793l2.293-2.293a.5.5 0 11.707.707l-2.646 2.647a.5.5 0 01-.708 0L7 15.207a.5.5 0 010-.707z" clip-rule="evenodd"/>
+                      <path fill-rule="evenodd" d="M10 8a.5.5 0 01.5.5v8a.5.5 0 01-1 0v-8A.5.5 0 0110 8z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <a class="nav-link dropdown-toggle" data-lang="download data" href="#" id="navbar-download-Dropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">下載資料</a>
+                <div class="dropdown-menu" aria-labelledby="navbar-download-Dropdown">
+                    
+                                        </div>
+              
+              </li-->
+                <li class="nav-item">
+                    <div class="nav-icon">
+                        <svg class="bi bi-cloud-download" width="2em" height="2em" viewBox="0 0 20 20"
+                            fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M6.887 7.2l-.964-.165A2.5 2.5 0 105.5 12H8v1H5.5a3.5 3.5 0 11.59-6.95 5.002 5.002 0 119.804 1.98A2.501 2.501 0 0115.5 13H12v-1h3.5a1.5 1.5 0 00.237-2.981L14.7 8.854l.216-1.028a4 4 0 10-7.843-1.587l-.185.96z" />
+                            <path fill-rule="evenodd"
+                                d="M7 14.5a.5.5 0 01.707 0L10 16.793l2.293-2.293a.5.5 0 11.707.707l-2.646 2.647a.5.5 0 01-.708 0L7 15.207a.5.5 0 010-.707z"
+                                clip-rule="evenodd" />
+                            <path fill-rule="evenodd" d="M10 8a.5.5 0 01.5.5v8a.5.5 0 01-1 0v-8A.5.5 0 0110 8z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <a class="nav-link" data-lang="Download data" href="dataDownload.php">資料下載</a>
+                </li>
+                <li class="nav-item">
+                    <div class="nav-icon">
+                        <svg width="2em" height="2em" viewBox="0 0 16 16" class="bi bi-book-half" fill="currentColor"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd"
+                                d="M12.786 1.072C11.188.752 9.084.71 7.646 2.146A.5.5 0 0 0 7.5 2.5v11a.5.5 0 0 0 .854.354c.843-.844 2.115-1.059 3.47-.92 1.344.14 2.66.617 3.452 1.013A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.276-.447L15.5 2.5l.224-.447-.002-.001-.004-.002-.013-.006-.047-.023a12.582 12.582 0 0 0-.799-.34 12.96 12.96 0 0 0-2.073-.609zM15 2.82v9.908c-.846-.343-1.944-.672-3.074-.788-1.143-.118-2.387-.023-3.426.56V2.718c1.063-.929 2.631-.956 4.09-.664A11.956 11.956 0 0 1 15 2.82z" />
+                            <path fill-rule="evenodd"
+                                d="M3.214 1.072C4.813.752 6.916.71 8.354 2.146A.5.5 0 0 1 8.5 2.5v11a.5.5 0 0 1-.854.354c-.843-.844-2.115-1.059-3.47-.92-1.344.14-2.66.617-3.452 1.013A.5.5 0 0 1 0 13.5v-11a.5.5 0 0 1 .276-.447L.5 2.5l-.224-.447.002-.001.004-.002.013-.006a5.017 5.017 0 0 1 .22-.103 12.958 12.958 0 0 1 2.7-.869z" />
+                        </svg>
+                    </div>
+                    <a class="nav-link" data-lang="Education" href="./education.php">教育推廣</a>
+                </li>
+
+                <li class="nav-item">
+                    <div class="nav-icon">
+                        <svg width="2em" height="2em" viewBox="0 0 16 16" class="bi bi-question-circle"
+                            fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd"
+                                d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                            <path
+                                d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z" />
+                        </svg>
+                    </div>
+                    <a class="nav-link" data-lang="Help_title" href="./help.php">使用說明</a>
+                </li>
+                <li class="nav-item">
+                    <div class="nav-icon">
+                        <svg class="bi bi-info" width="2em" height="2em" viewBox="0 0 20 20" fill="currentColor"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd"
+                                d="M10 17a7 7 0 100-14 7 7 0 000 14zm8-7a8 8 0 11-16 0 8 8 0 0116 0z"
+                                clip-rule="evenodd"></path>
+                            <path
+                                d="M10.93 8.588l-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533l1.002-4.705z">
+                            </path>
+                            <circle cx="10" cy="6.5" r="1"></circle>
+                        </svg>
+                    </div>
+                    <a class="nav-link" data-lang="Links" href="./links.php">相關連結</a>
+                </li>
+                <li class="nav-item">
+                    <div class="nav-icon"><svg width="2em" height="2em" viewBox="0 0 16 16" class="bi bi-person-fill"
+                            fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd"
+                                d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" /></svg>
+                    </div> <a class="nav-link" data-lang="My Account" href="./userpage.php">我的帳戶</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <noscript>
+        <span class="jsAlert">本站使用Javascript，請開啟JavaScipt否則無法完整顯示內容。Please enable javaScript in this Site, Otherwise you
+            can not see full content in this site.</span>
+    </noscript>
+
+    <div id="main" class="container-fluid">
+
+        <div class="container my-2">
+            <h3 id="Search-title">Search</h3>
+            <div class="search-div">
+                <form id="form-search" method="POST" action="javascript:empty;">
+                    <div class="row">
+                        <div class="form-group col-lg-4 col-md-6 col-sm-6">
+                            <div class="row">
+                                <div class="col-6">
+                                    <label for="stdate" class="col-form-label" data-lang="Start Date">start date</label>
+                                </div>
+                                <div class="col-6">
+                                    <label for="sttime" class="col-form-label" data-lang="Start Time(UTC)">start
+                                        time</label>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-6">
+                                    <input type="text" id="stdate" name="stdate" class="form-control"
+                                        placeholder="0000-00-00" />
+                                </div>
+                                <div class="col-6">
+                                    <input type="text" id="sttime" name="sttime" class="form-control"
+                                        placeholder="00:00:00" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group col-lg-4 col-md-6 col-sm-6">
+                            <div class="row">
+                                <div class="col-6">
+                                    <label for="eddate" class="col-form-label" data-lang="End Date">end date</label>
+                                </div>
+                                <div class="col-6">
+                                    <label for="edtime" class="col-form-label" data-lang="End Time(UTC)">end
+                                        time</label>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-6">
+                                    <input type="text" id="eddate" name="eddate" class="form-control"
+                                        placeholder="0000-00-00" />
+                                </div>
+                                <div class="col-6">
+                                    <input type="text" id="edtime" name="edtime" class="form-control"
+                                        placeholder="00:00:00" />
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </div>
+                    <div class="row">
+                        <div class="form-group col-lg-2 col-md-3 col-sm-3">
+                            <label for="status" class="col-form-label">狀態</label>
+                            <select id="status" class="form-control form-select" aria-label="">
+                                <option value="">全部</option>
+                                <option value="1" selected>成功</option>
+                                <option value="2">失敗</option>
+                                <option value="3">逾時</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-lg-2 col-md-3 col-sm-3">
+                            <label for="type" class="col-form-label">處理類型</label>
+                            <select id="type" class="form-control form-select" aria-label="">
+                                <option value="" selected>全部</option>
+                                <option value="1">GNSS</option>
+                                <option value="2">地下水</option>
+                                <option value="3">地磁</option>
+                                <option value="4">地震 (資料)</option>
+                                <option value="5">地震 (GMT畫圖)</option>
+                                <option value="6">地震 (儀器響應檔)</option>
+                                <option value="7">地震 (儀器響應常數)</option>
+                                <option value="8">地震 (繪圖)</option>
+                                <option value="9">地震 (多筆資料)</option>
+                                <option value="99">預造地震資料</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-lg-2 col-md-3 col-sm-3">
+                            <label for="network" class="col-form-label">Network</label>
+                            <select id="network" class="form-control form-select" aria-label="">
+                                <option value="" selected>全部</option>
+                                <option value="TSMIP">TSMIP</option>
+                                <option value="CWBSN">CWBSN</option>
+                                <option value="GNSS">GNSS</option>
+                                <option value="GW">GW</option>
+                                <option value="MAGNET">MAGNET</option>
+                                <option value="GNSS_IES">GNSS_IES</option>
+                                <option value="GNSS_ETEC">GNSS_ETEC</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary">查詢</button>
+                    </div>
+                </form>
+            </div>
+            <div class="d-flex justify-content-start my-1">
+                <div class="mr-5">
+                    <text>索取總數</text> :
+                    <text id="count_total"></text>
+                </div>
+                <div class="mr-5">
+                    <text>檔案大小</text> :
+                    <text id="size_total"></text>
+                </div>
+
+
+            </div>
+
+
+            <table class="table">
+                <thead>
+                    <th scope="col"></th>
+                    <th scope="col">TSMIP</th>
+                    <th scope="col">CWBSN</th>
+                    <th scope="col">GNSS</th>
+                    <th scope="col">GNSS_IES</th>
+                    <th scope="col">GNSS_ETEC</th>
+                    <th scope="col">MAGNET</th>
+                    <th scope="col">GW</th>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>下載次數</td>
+                        <td id="count_TSMIP"></td>
+                        <td id="count_CWBSN"></td>
+                        <td id="count_GNSS"></td>
+                        <td id="count_GNSS_IES"></td>
+                        <td id="count_GNSS_ETEC"></td>
+                        <td id="count_MAGNET"></td>
+                        <td id="count_GW"></td>
+                    </tr>
+                    <tr>
+                        <td>檔案大小</td>
+                        <td id="size_TSMIP"></td>
+                        <td id="size_CWBSN"></td>
+                        <td id="size_GNSS"></td>
+                        <td id="size_GNSS_IES"></td>
+                        <td id="size_GNSS_ETEC"></td>
+                        <td id="size_MAGNET"></td>
+                        <td id="size_GW"></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div></div>
+
+        </div>
+        <div class="row">
+
+            <div class="d-flex justify-content-center col-md-6 ">
+                <div id="show-pie-diagram" style="width: 100%;max-width:700px;"> </div>
+            </div>
+            <div class="d-flex justify-content-center col-md-6 col-12">
+                <div id="show-histogram" style="width: 100%;max-width:700px;"> </div>
+            </div>
+        </div>
+        <div>
+            <table class="table" id="download-table">
+                <thead>
+                    <th scope="col">使用者</th>
+                    <th scope="col">申請時間</th>
+
+                    <th scope="col">完成時間</th>
+                    <th scope="col">資料類型</th>
+                    <th scope="col">詳細資料</th>
+                    <th scope="col">Network</th>
+                    <th scope="col">狀態</th>
+                    <th scope="col">檔案大小(KB)</th>
+
+                </thead>
+            </table>
+
+        </div>
+
+    </div>
+
+
+    <div id="loading">
+        <div class="center">
+            <img src="./img/ajax-loader_gray.gif" alt="loading" />
+        </div>
+    </div>
+    <!-- Modal -->
+    <div class="modal fade" id="Modal" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ModalLabel" data-lang="content">Title</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times; </span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <table class="table" style="word-break: break-all;">
+
+                        <tbody id="para-body">
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <footer class="my-md-3 pt-md-5 border-top px-5 mt-5">
+        <div class="row text-center">
+            <div class="col-12 mb-4">
+                <a href="https://www.cwb.gov.tw/" target="_blank" title="氣象局網頁CWB web (另開視窗 New Tab)">
+                    <img class="mx-2" src="./img/logo_cwb.png" alt="CWB氣象局 logo" height="60" />
+                </a>
+                <a href="http://www.earth.sinica.edu.tw/" target="_blank" title="地球所網頁IES web (另開新頁 New Tab)">
+                    <img class="mx-2" src="./img/logo_ies.jpg" alt="IES地球所 logo" height="60" />
+                </a>
+                <a href="https://tec.earth.sinica.edu.tw/" target="_blank" title="地震科學中心TEC web (另開新頁 New Tab)">
+                    <img class="mx-2" src="./img/logo_TEC.png" alt="TEC地震中心 logo" height="60" />
+                </a>
+            </div>
+            <div class="col-12" style="color:#000">
+                <div><span class="font-weight-bold" style="color:#000;font-size:1.5em;">gdmsn.cwb.gov.tw</span></div>
+                <p><small style="color:#000">Taiwan Seismological and Geophysical Data Management System</small></p>
+            </div>
+
+            <div class="offset-2 col-8 col-md text-muted" style="font-size:0.8em;">
+                <div class="">© Copyright 2020 CWB</div>
+                <div class="mb-2">gdms@cwb.gov.tw</div>
+                <div><a href="siteMap.php" data-lang="Site Map">網站導覽</a></div>
+            </div>
+            <div class="col-2">
+                <a href="https://accessibility.ncc.gov.tw/Applications/Detail?category=20201022154930" title="無障礙網站">
+
+                    <img src="./img/2.0AALogo.png" border="0" width="88" height="31" alt="通過AA無障礙網頁檢測" />
+
+                </a>
+            </div>
+
+
+        </div>
+
+    </footer>
+</body>
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"
+    integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+    integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+    crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+    integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+    crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<!--script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-ui-timepicker-addon/1.6.3/jquery-ui-timepicker-addon.min.js"></script-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.1.2/js/tempusdominus-bootstrap-4.min.js"
+    integrity="sha512-2JBCbWoMJPH+Uj7Wq5OLub8E5edWHlTM4ar/YJkZh3plwB2INhhOC3eDoqHm1Za/ZOSksrLlURLoyXVdfQXqwg=="
+    crossorigin="anonymous"></script>
+
+
+<!--jquery DataTable plugin-->
+<script src="./js/DataTables/datatables.min.js"></script>
+<!--jquery validation plugin-->
+<script src="./js/jquery-validation/jquery.validate.min.js"></script>
+<script src="./js/jquery-validation/additional-methods.min.js"></script>
+<script src="./js/jquery-validation/validation.otherMethod.js"></script>
+<!--sweet alert 2 https://sweetalert2.github.io/-->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
+
+
+<script src="./js/functions.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.6.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.6.1/js/buttons.html5.min.js"></script>
+<script src="./js/adminSearch.js"></script>
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<script src="./js/PieChart/pie.js"></script>
+<link href="./js/PieChart/pie.css" rel="stylesheet">
+<script src="../src/DSBC.js"></script>
+<link href="../src/DSBC.css" rel="stylesheet">
+<script>
+    //先在前面讀頁面上要show的資料
+
+
+
+
+    var orderstyear = {
+        "count": {
+            "GNSS_ETEC": {
+                "2021": 2
+            },
+            "CWBSN": {
+                "2020": 98,
+                "2021": 61
+            },
+            "GNSS_IES": {
+                "2021": 1
+            },
+            "GNSS": {
+                "2020": 9,
+                "2021": 1
+            },
+            "TSMIP": {
+                "2020": 60,
+                "2021": 3
+            },
+            "GW": {
+                "2020": 2,
+                "2021": 3
+            },
+            "MAGNET": {
+                "2020": 2
+            },
+            "total": 242
+        },
+        "file_size": {
+            "GNSS_ETEC": {
+                "2021": "53.61 MB"
+            },
+            "CWBSN": {
+                "2020": "4.53 GB",
+                "2021": "382.3 MB"
+            },
+            "GNSS_IES": {
+                "2021": "394.21 MB"
+            },
+            "GNSS": {
+                "2020": "8.7 GB",
+                "2021": "1.3 MB"
+            },
+            "TSMIP": {
+                "2020": "1.55 GB",
+                "2021": "220.55 MB"
+            },
+            "GW": {
+                "2020": "72.99 MB",
+                "2021": "21.66 MB"
+            },
+            "MAGNET": {
+                "2020": "131.76 MB"
+            },
+            "total": "16.02 GB"
+        }
+    }
+
+    var chart_histogram = DSBC()
+        .data([{ title: "統計資料", data: orderstyear }])
+        .string({ subject: '資料庫', category: '年' })
+        // .string({ subject: '年', category: '資料庫' })
+        .selector('#show-histogram');
+    chart_histogram();
+    //console.log(SttList);
+    //console.log(DlList);
+    stdate = $('#stdate').datepicker({
+        "dateFormat": 'yy-mm-dd',
+        "minDate": new Date("2020-01-01"),
+        "defaultDate": new Date('2020-01-01'),
+    }).on("change", function () {
+        eddate.datepicker("option", "minDate", getDate(this));
+    });
+
+    eddate = $('#eddate').datepicker({
+        "dateFormat": 'yy-mm-dd',
+        "minDate": new Date("2020-01-01"),
+        "defaultDate": new Date(),
+    }).on("change", function () {
+        stdate.datepicker("option", "maxDate", getDate(this));
+    });
+    $(function () {
+        $('#form-search').validate({
+            rules: {
+                stdate: {
+                    validDate: true
+                },
+                sttime: {
+                    validTime: true
+                },
+                eddate: {
+                    validDate: true
+                },
+                edtime: {
+                    validTime: true
+                }
+            },
+            submitHandler: function (form) {
+                $('#loading').show();
+                searchLog();
+                console.log('form has been sent.');
+            }
+        });
+    })
+
+    var DLtable = $('#download-table').DataTable({
+        data: DlList,
+        "order": [[1, 'desc'], [2, 'asc']],
+        //paging: false,
+        columnDefs: [
+        ],
+        dom: 'BSrtip',
+        columns: [
+            { data: 'user_id' },
+            { data: 'datetime' },
+
+            { data: 'complete_time' },
+            { data: 'script_type' },
+            { data: 'para' },
+            { data: 'network' },
+            { data: 'final_status' },
+            { data: 'file_size' },
+        ],
+        "bAutoWidth": true,
+        "lengthMenu": [[10, 25, 50, 100, 500, -1], [10, 25, 50, 100, 500, "All"]],
+        "buttons": [
+            'pageLength'
+            , {
+                text: 'JSON',
+                action: function (e, dt, button, config) {
+                    var data = dt.buttons.exportData();
+
+                    $.fn.dataTable.fileSave(
+                        new Blob([JSON.stringify(data)]),
+                        'GDMS_Download_history.json'
+                    );
+                }
+            }, {
+                text: 'CSV',
+                action: function (e, dt, button, config) {
+                    var data = dt.buttons.exportData();
+                    var lineArray = [];
+                    lineArray.push(data.header.join(",") + "\n");
+                    data.body.forEach(function (dataArray, index) {
+                        var line = dataArray.join(",") + "\n";
+                        lineArray.push(line);
+                    });
+                    console.log(lineArray);
+                    $.fn.dataTable.fileSave(
+                        new Blob(lineArray),
+                        'GDMS_Download_history.csv'
+                    );
+                }
+            }, {
+                text: 'Text',
+                action: function (e, dt, button, config) {
+                    var data = dt.buttons.exportData();
+                    var lineArray = [];
+                    lineArray.push(data.header.join(" ") + "\r\n");
+                    data.body.forEach(function (dataArray, index) {
+                        var line = dataArray.join(" ") + "\r\n";
+                        lineArray.push(line);
+                    });
+                    console.log(lineArray);
+                    $.fn.dataTable.fileSave(
+                        new Blob(lineArray),
+                        'GDMS_Download_history.txt'
+                    );
+                }
+            }
+        ]
+    });
+
+
+</script>
+
+</html>

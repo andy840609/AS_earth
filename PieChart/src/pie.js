@@ -226,8 +226,11 @@ function pieChart() {
         return chart;
     };
     function chart() {
+
+        const chartContainerJQ = $(selector);
+
         function init() {
-            $(selector).append(`
+            chartContainerJQ.append(`
                 <form id="form-chart">
                 <div class="form-group" id="chartsOptions" style="display: inline;position: absolute; top: 3em; left: 3em;  z-index:3;">
                 <div class="row">
@@ -236,10 +239,8 @@ function pieChart() {
                     <div class="form-group" id="charts" style="position: relative; z-index:0;"></div>          
                     <div id="outerdiv"
                         style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:999;width:100%;height:100%;display:none;">
-                        <div id="innerdiv" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
-                            <img id="bigimg" style=" background-color: rgb(255, 255, 255);" src="" />
-                        </div>
-                    </div>
+                        <div id="innerdiv" style=" background-color: rgb(255, 255, 255);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
+                     </div>
                 </form>
                 `);
 
@@ -900,7 +901,7 @@ function pieChart() {
         }
 
         function printChart() {
-            $('#charts').children().remove();
+            chartContainerJQ.find('#charts').children().remove();
             var i = 1;
 
             var getChartMenu = (title) => {
@@ -938,17 +939,19 @@ function pieChart() {
                         item.innerHTML = "檢視圖片";
 
                     item.addEventListener("click", (e, a) => {
-                        let chartIDArr = [];
-                        chartIDArr.push("#" + $(e.target).parents('.chart')[0].id + " svg");
-                        // console.log(chartIDArr);
-                        downloadSvg(chartIDArr, title, option);
+                        let svgArr = [];
+                        let svg = chartContainerJQ.find("#" + $(e.target).parents('.chart')[0].id).children('svg')[0];
+                        // console.debug(svg);
+                        svgArr.push(svg);
+                        downloadSvg(svgArr, title, option);
                     });
 
                     li.append(item);
                     ul.append(li);
                 });
-                $('#charts').append(div);
-                $('#chart' + i).append(nav);
+                // console.debug(chartContainerJQ.find());
+                chartContainerJQ.find('#charts').append(div);
+                chartContainerJQ.find('#chart' + i).append(nav);
             }
             var MenuEvents = () => {
                 var charts = document.getElementById('charts');
@@ -1001,7 +1004,7 @@ function pieChart() {
                     });
                 });
             }
-            var downloadSvg = (chartQueryStrs, fileName, option) => {
+            var downloadSvg = (svgArr, fileName, option) => {
 
                 function getSvgUrl(svgNode) {
                     var svgData = (new XMLSerializer()).serializeToString(svgNode);
@@ -1014,15 +1017,14 @@ function pieChart() {
                     let canvas = document.createElement('canvas');
                     let context = canvas.getContext('2d');
 
-                    var svgWidth = $(chartQueryStrs[0])[0].viewBox.baseVal.width;
-                    var svgHeight = $(chartQueryStrs[0])[0].viewBox.baseVal.height * chartQueryStrs.length;
+                    var svgWidth = svgArr[0].viewBox.baseVal.width;
+                    var svgHeight = svgArr[0].viewBox.baseVal.height * svgArr.length;
                     var canvasWidth, canvasHeight;
                     //檢視時縮放,下載時放大
                     if (resize) {
-                        var windowW = $(window).width();//获取当前窗口宽度 
-                        var windowH = $(window).height();//获取当前窗口高度 
-                        // console.debug(windowW, windowH);
-                        // console.debug(svgW, svgH);
+                        var windowW = window.innerWidth;//获取当前窗口宽度 
+                        var windowH = window.innerHeight;//获取当前窗口高度 
+
                         var width, height;
                         var scale = 0.9;//缩放尺寸
                         height = windowH * scale;
@@ -1056,21 +1058,43 @@ function pieChart() {
                     downloadLink.click();
                     document.body.removeChild(downloadLink);
                 }
-                function show(img) {
-                    $('#bigimg').attr("src", img);//设置#bigimg元素的src属性 
-                    $('#outerdiv').fadeIn("fast");//淡入显示#outerdiv及.pimg 
-                    $('#outerdiv').off('click');
-                    $('#outerdiv').click(function () {//再次点击淡出消失弹出层 
+                function show(width, height) {
+                    // $('#bigimg').attr("src", img);//设置#bigimg元素的src属性 
+                    // $('#outerdiv').fadeIn("fast");//淡入显示#outerdiv及.pimg 
+                    // $('#outerdiv').off('click');
+                    // $('#outerdiv').click(function () {//再次点击淡出消失弹出层 
+                    //     $(this).fadeOut("fast");
+                    // });
+                    let outerdiv = $('#outerdiv');
+
+                    outerdiv.fadeIn("fast");//淡入显示#outerdiv及.pimg 
+                    outerdiv.off('click');
+                    outerdiv.click(function (e) {//再次点击淡出消失弹出层 
+                        if (e.target.id != 'outerdiv') return;
                         $(this).fadeOut("fast");
+                        $(originParent).children('svg').remove();
+                        originSvg.removeAttribute('width');
+                        originSvg.removeAttribute('height');
+                        originParent.append(originSvg);
                     });
+
+                    let originSvg = svgArr[0];
+                    let originParent = originSvg.parentNode;
+                    let cloneSvg = originSvg.cloneNode(true);
+                    originSvg.setAttribute('width', width);
+                    originSvg.setAttribute('height', height);
+                    document.querySelector('#innerdiv').append(originSvg);
+                    originParent.append(cloneSvg);
+
                 }
+
 
                 if (option == 'svg') {
                     //==============merge svg
                     var newSvg = document.createElement('svg');
 
 
-                    chartQueryStrs.forEach(queryStr => {
+                    svgArr.forEach(queryStr => {
                         var svgjQobj = $(queryStr);
                         svgjQobj.clone().appendTo(newSvg);
                     });
@@ -1085,10 +1109,10 @@ function pieChart() {
                     var canvas = CanvasObjArr[0];
                     var context = CanvasObjArr[1];
                     var imageWidth = canvas.width;
-                    var imageHeight = canvas.height / chartQueryStrs.length;
+                    var imageHeight = canvas.height / svgArr.length;
 
 
-                    chartQueryStrs.forEach((queryStr, index) => {
+                    svgArr.forEach((queryStr, index) => {
                         var svgNode = $(queryStr)[0];
                         var svgUrl = getSvgUrl(svgNode);
                         var image = new Image();
@@ -1097,11 +1121,10 @@ function pieChart() {
                             context.drawImage(image, 0, index * imageHeight, imageWidth, imageHeight);
 
                             //done drawing and output
-                            if (index == chartQueryStrs.length - 1) {
+                            if (index == svgArr.length - 1) {
                                 var imgUrl;
                                 if (option == 'bigimg') {
-                                    imgUrl = canvas.toDataURL();// default png
-                                    show(imgUrl);
+                                    show(imageWidth, imageHeight);
                                 }
                                 else {
                                     imgUrl = canvas.toDataURL('image/' + option);
@@ -1117,13 +1140,13 @@ function pieChart() {
                 let chartNode = PieSvg(d);
                 // console.debug(chartNode);
                 getChartMenu('A');
-                $('#chart' + i).append(chartNode);
+                chartContainerJQ.find('#chart' + i).append(chartNode);
                 i++;
             })
             MenuEvents();
         }
 
-        if (!($('#form-chart').length >= 1))
+        if (!(chartContainerJQ.find('#form-chart').length >= 1))
             init();
 
         printChart();

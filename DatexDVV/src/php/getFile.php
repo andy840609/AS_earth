@@ -16,7 +16,7 @@ $resultArr = [];
 foreach ($output as $catalog) {
     // echo $catalog;
     exec($CMD . $catalog, $file, $reval);
-
+    // echo  $CMD;
     $obj = [
         'catalog' => $catalog,
         'file' => $file,

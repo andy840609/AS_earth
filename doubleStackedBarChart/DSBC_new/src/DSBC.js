@@ -159,7 +159,18 @@ function DSBC() {
                 </div>
             </div>  
 
+            <!-- ...log scale  ...-->
+            <div
+            class="form-group col-md-6  d-flex  flex-row justify-content-start  align-items-end">               
+                <div id="logScale-group" class="form-check" >
+                    <input class="form-check-input  col-4" type="checkbox" id="logScale" name="logScale">
+                    <label class="form-check  col-12" for="logScale" data-lang="">
+                        log scale
+                    </label>                        
+                </div>                         
+            </div>
 
+ 
 
             </div>
             </div>
@@ -472,7 +483,7 @@ function DSBC() {
             var newDataObj;
             var subjectScale, series1Scale, series2Scale;
             var bar_interval;
-            function updateChart(chartType = 'vertical', trans = false) {
+            function updateChart(chartType = 'vertical', trans = false, logScale = false) {
                 // console.debug(chartType)
                 // console.debug(newDataObj)
                 // var chartType = chartType;//vertical horizontal
@@ -601,13 +612,32 @@ function DSBC() {
                         .range(subjectScaleRange)
                         .padding(0.1);
 
-                    series1Scale = d3.scaleLinear()
-                        .domain(series1Domain).nice()
+                    let seriesScale = logScale ? 'scaleLog' : 'scaleLinear';
+
+                    //test
+                    console.debug(series1ScaleRange)
+                    series1Domain[0] = 1
+                    series2Domain[0] = 1
+                    // series1ScaleRange.reverse();
+                    // series2ScaleRange.reverse();
+
+                    // var logScale = d3.scaleLog()
+                    //     .domain([0, 100000])
+                    //     .range([0, 700]);
+                    //test
+
+                    series1Scale = d3[seriesScale]()
+                        .domain(series1Domain)
+                        .nice()
                         .range(series1ScaleRange);
 
-                    series2Scale = d3.scaleLinear()
-                        .domain(series2Domain).nice()
+                    series2Scale = d3[seriesScale]()
+                        .domain(series2Domain)
+                        .nice()
                         .range(series2ScaleRange);
+
+                    console.debug(series1Scale.domain())
+                    console.debug(series1Scale.range())
 
                     var updateAxis = () => {
                         var removeAxis = g => g.selectAll(":not(.axisName)").remove();
@@ -1085,7 +1115,7 @@ function DSBC() {
                                             // console.debug(isTarget, beenClicked)
                                             // console.debug(bar)
                                             if (!(isTarget || beenClicked))
-                                                return fadeOut
+                                                return fadeOut;
                                             else
                                                 d3.select(bar).attr('stroke-opacity', 1);
                                         });
@@ -1222,6 +1252,22 @@ function DSBC() {
 
                     // tick click Event
                     subjectTickCollection.call(subjectClickEvent);
+
+                    //close all tooltip
+                    svg.call(svg => svg.on('click', function (e) {
+                        if (e.target === svg.node()) {
+                            tooltipGroup.selectAll('g')
+                                .filter(function (d) { return this.id !== 'tooltip' })//不刪範本的
+                                .remove();
+                            subjectTickCollection.classed('clicked', false);
+                            barCollection
+                                .classed('clicked', false)
+                                .attr('fill-opacity', 1)
+                                .attr('stroke-opacity', 0);
+                            tooltip
+                                .attr("display", 'none');
+                        }
+                    }))
                 };
                 var chartOptionEvent = () => {
                     const chartContainer = d3.select(selector);
@@ -1255,6 +1301,15 @@ function DSBC() {
                     //=====shows
                     chartContainer.select('#showLegend').on('change', e =>
                         svg.selectAll('.legend').attr("display", e.target.checked ? 'inline' : 'none'));
+
+
+                    //=====logScale
+                    chartContainer.select('#logScale').on('change', e => {
+                        let check = e.target.checked;
+                        // console.debug(check)
+                        updateChart(newDataObj.chartType, true, check);
+                    });
+
                 };
                 var infoBoxDragEvent = () => {
 

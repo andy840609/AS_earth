@@ -169,6 +169,7 @@ function DatexDVV() {
                     console.error(textStatus);
                     console.error(errorThrown);
                     console.debug(jqXHR);
+                    console.debug(jqXHR.responseText);
                     console.debug(textStatus);
                     console.debug(errorThrown);
                 },
@@ -515,7 +516,7 @@ function DatexDVV() {
                                                 overviewFocus.attr('display', displayAttr[+displayFlag]);
                                                 tool_g.select("rect")
                                                     .attr("stroke-dasharray", displayFlag ? toolRect_dasharray : null);
-                                                tool_g.selectAll("#overviewToolbarButtons text").filter((d, i) => i === 0)
+                                                overviewToolbarController.selectAll('text').filter(d => d === OT_buttonText[0])
                                                     .text(displayFlag ? "‒" : "□");
 
                                                 if (displayFlag) {//放大時可能超出下邊界
@@ -537,50 +538,52 @@ function DatexDVV() {
                                                 break;
                                         }
                                     }
-                                    tool_g
-                                        .append('g')
-                                        .attr('id', 'overviewToolbarButtons')
-                                        .selectAll("g")
-                                        .data(OT_buttonText)
-                                        .join("g")
-                                        .call(buttons_g => buttons_g.each(function (text, i) {
+                                    let overviewToolbarController =
+                                        tool_g
+                                            .append('g')
+                                            // .attr('id', 'overviewToolbarButtons')
+                                            .selectAll("g")
+                                            .data(OT_buttonText)
+                                            .join("g")
+                                            .call(buttons_g => buttons_g.each(function (text, i) {
 
-                                            let bg = d3.select(this);
-                                            // console.debug(text, i)
+                                                let bg = d3.select(this);
+                                                // console.debug(text, i)
 
-                                            bg.attr("transform", `translate(${OV_width - (OT_buttonWidth + OT_buttonInterval) * (OT_buttonAmount - i)}, ${(OV_toolbar_height - OT_buttonWidth) * 0.5})`);
+                                                bg.attr("transform", `translate(${OV_width - (OT_buttonWidth + OT_buttonInterval) * (OT_buttonAmount - i)}, ${(OV_toolbar_height - OT_buttonWidth) * 0.5})`);
 
-                                            let button = bg.append('rect')
-                                                .style('opacity', .8)
-                                                .attr("fill", "#9D9D9D")
-                                                .attr("stroke", '#000000')
-                                                .attr("stroke-width", 1)
-                                                .attr("width", OT_buttonWidth)
-                                                .attr("height", OT_buttonWidth);
+                                                let button = bg.append('rect')
+                                                    .style('opacity', .8)
+                                                    .attr("fill", "#9D9D9D")
+                                                    .attr("stroke", '#000000')
+                                                    .attr("stroke-width", 1)
+                                                    .attr("width", OT_buttonWidth)
+                                                    .attr("height", OT_buttonWidth);
 
-                                            bg.append('text')
-                                                .attr("fill", "black")
-                                                .attr("font-weight", 900)
-                                                .attr("font-size", "12")
-                                                .style("text-anchor", "middle")
-                                                .attr("alignment-baseline", "middle")
-                                                .attr('x', OT_buttonWidth * 0.5)
-                                                .attr('y', OT_buttonWidth * 0.5)
-                                                .text(text);
+                                                bg.append('text')
+                                                    .attr("fill", "black")
+                                                    .attr("font-weight", 900)
+                                                    .attr("font-size", "12")
+                                                    .style("text-anchor", "middle")
+                                                    .attr("alignment-baseline", "middle")
+                                                    .attr('x', OT_buttonWidth * 0.5)
+                                                    .attr('y', OT_buttonWidth * 0.5)
+                                                    .text(text);
 
-                                            bg
-                                                .attr("cursor", 'pointer')
-                                                .on('click', function (e) {
-                                                    // console.debug(bg.attr("mode"));
-                                                    // console.debug(e);
-                                                    // if (selectionController.attr('display') != 'inline')
-                                                    //     return;
-                                                    OT_buttonAction(i);
-                                                })
-                                                .on('mouseover', () => button.attr('fill', '#E0E0E0'))
-                                                .on('mouseout', () => button.attr('fill', '#9D9D9D'));
+                                                bg
+                                                    .attr("cursor", 'pointer')
+                                                    .on('click', function (e) {
+                                                        // console.debug(bg.attr("mode"));
+                                                        // console.debug(e);
+                                                        // if (selectionController.attr('display') != 'inline')
+                                                        //     return;
+                                                        OT_buttonAction(i);
+                                                    })
+                                                    .on('mouseover', () => button.attr('fill', '#E0E0E0'))
+                                                    .on('mouseout', () => button.attr('fill', '#9D9D9D'))
+                                                    .on('mousedown', e => e.stopPropagation())//選取區取消drag事件
 
-                                        }))
+                                            }))
 
                                 })
 
@@ -1057,10 +1060,7 @@ function DatexDVV() {
                     };
                     const selectionController = selectionGroup.append('g').attr("display", 'none');
                     const SC_width = 150, SC_height = 50;
-
                     const SC_buttonText = ['Zoom', 'Delete'];
-                    const SC_buttonAmount = SC_buttonText.length;
-
                     //====================================for overview==================================================
                     const overviewSelectionGroup = overviewGroup.select('#overviewSelectionGroup');
                     var brushBehavior;
@@ -1395,7 +1395,7 @@ function DatexDVV() {
                     var selectionButtonEvent = () => {
 
                         const SC_buttonWidth = 65, SC_buttonHeight = 30;
-                        const buttonAction = (buttonIndex) => {
+                        const SC_buttonAction = (buttonIndex) => {
                             let text = SC_buttonText[buttonIndex];
                             let buttonGroup = d3.select('#SC_' + text);
                             let buttonText = buttonGroup.select('text');
@@ -1403,6 +1403,34 @@ function DatexDVV() {
 
                             switch (buttonIndex) {//0:zoom,1:remove
                                 case 0:
+                                    var zoomAreaDisplay = () => {
+                                        // editZoomAreaUse.raise();
+                                        editZoomArea.raise();
+                                        editZoomAreaController.raise();
+                                        // let displayAttr = ['none', 'inline'];
+                                        // let displayFlag = !displayAttr.indexOf(editZoomArea.attr('display'));
+                                        // console.debug(displayFlag)
+                                        // selectionController.attr('display', displayAttr[+!displayFlag]);
+                                        // selectionGroup.attr('display', 'none');
+                                        selectionController.attr('display', 'none');
+                                        editZoomArea.attr('display', 'inline');
+                                        editZoomAreaController.attr('display', 'inline');
+
+                                        editZoomArea
+                                            .select('#EZA_inner')
+                                            .attr('width', 0)
+                                            .attr('height', 0)
+                                            .attr('fill', '#D3D3D3')
+                                            .attr('opacity', .3)
+                                            .transition().duration(500)
+                                            .attr('width', EZA_width)
+                                            .attr('height', EZA_height)
+                                            .attr('fill', '#D3D3D3')
+                                            .attr('opacity', 1)
+
+                                        // selectionController.attr('display', displayAttr[+displayFlag]);
+                                    }
+                                    zoomAreaDisplay();
 
                                     break;
                                 case 1:
@@ -1446,38 +1474,48 @@ function DatexDVV() {
                             }
 
                         };
+                        const makeButtonGroup = (g, attrObj) => {
 
-                        selectionController
-                            .append('rect')
-                            .attr("width", SC_width)
-                            .attr("height", SC_height)
-                            .attr("fill", "#D3D3D3")
-                            .attr('rx', 5)
-                            .attr('ry', 5)
-                            .attr('stroke', '#000000')
-                            .attr("stroke-width", "1")
-                            .attr('fill', '#D3D3D3')
-                            .attr('opacity', .9);
+                            let outerWidth = attrObj.outerWidth;
+                            let outerHeight = attrObj.outerHeight;
+                            let buttonWidth = attrObj.buttonWidth;
+                            let buttonHeight = attrObj.buttonHeight;
+                            let buttonId = attrObj.buttonId ? attrObj.buttonId : 'Btn_';
+                            let buttonTextArr = attrObj.buttonTextArr;
+                            let buttonAction = attrObj.buttonAction;
+                            let buttonAmount = buttonTextArr.length;
 
-                        selectionController
-                            .selectAll('.buttonGroup')
-                            .data(d3.range(SC_buttonAmount))
-                            .join('g')
-                            .attr('class', 'buttonGroup')
-                            .attr('id', d => 'SC_' + SC_buttonText[d])
-                            .call(buttonGroupCollection =>
-                                buttonGroupCollection.each(function (i) {
+
+                            g.append('rect')
+                                .attr("width", outerWidth)
+                                .attr("height", outerHeight)
+                                .attr("fill", "#D3D3D3")
+                                .attr('rx', 5)
+                                .attr('ry', 5)
+                                .attr('stroke', '#000000')
+                                .attr("stroke-width", "1")
+                                .attr('fill', '#D3D3D3')
+                                .attr('opacity', .9);
+
+                            g.selectAll('.buttonGroup')
+                                .data(d3.range(buttonAmount))
+                                .join('g')
+                                .attr('class', 'buttonGroup')
+                                .attr('id', d => buttonId + buttonTextArr[d])
+                                .call(buttonGroupCollection => buttonGroupCollection.each(function (i) {
+                                    // console.debug(this);
+
                                     let bg = d3.select(this);
-                                    let translateX = SC_width / SC_buttonAmount * i + (SC_width / SC_buttonAmount - SC_buttonWidth) * 0.5
-                                    let translateY = (SC_height - SC_buttonHeight) * 0.5;
+                                    let translateX = outerWidth / buttonAmount * i + (outerWidth / buttonAmount - buttonWidth) * 0.5
+                                    let translateY = (outerHeight - buttonHeight) * 0.5;
 
                                     bg
                                         .attr("transform", `translate(${translateX}, ${translateY})`)
                                         .attr('act', 'none');
 
                                     let button = bg.append('rect')
-                                        .attr("width", SC_buttonWidth)
-                                        .attr("height", SC_buttonHeight)
+                                        .attr("width", buttonWidth)
+                                        .attr("height", buttonHeight)
                                         .attr('rx', 5)
                                         .attr('ry', 5)
                                         .attr('stroke', '#000000')
@@ -1485,49 +1523,124 @@ function DatexDVV() {
                                         .attr('fill', '#9D9D9D');
 
                                     bg.append('text')
-                                        .attr("class", "axis_name")
                                         .attr("fill", "black")
                                         .attr("font-weight", "bold")
                                         .attr("font-size", "12")
                                         .style("text-anchor", "middle")
                                         .attr("alignment-baseline", "middle")
-                                        .attr('x', SC_buttonWidth * 0.5)
-                                        .attr('y', SC_buttonHeight * 0.5)
-                                        .text(SC_buttonText[i] + '(' + SC_buttonText[i][0] + ')');
+                                        .attr('x', buttonWidth * 0.5)
+                                        .attr('y', buttonHeight * 0.5)
+                                        .text(buttonTextArr[i] + '(' + buttonTextArr[i][0] + ')');
 
 
                                     bg
                                         .attr("cursor", 'pointer')
                                         .on('click', function (e) {
-                                            // console.debug(bg.attr("mode"));
-                                            // console.debug(e);
-                                            if (selectionController.attr('display') != 'inline')
+                                            // console.debug(g.attr('display'));
+                                            if (g.attr('display') != 'inline')
                                                 return;
+
+                                            // console.debug('click');
                                             buttonAction(i);
                                         })
-                                        .on('mouseover', function () {
-                                            // console.debug(this)
+                                        .on('mouseenter', function (e) {
+                                            // console.debug(e.target);
+                                            // console.debug('mouseover');
                                             button.attr('fill', '#E0E0E0');
                                         })
-                                        .on('mouseout', function () {
-                                            // console.debug(this)
+                                        .on('mouseleave', function (e) {
+                                            // console.debug(this);
+                                            // console.debug('mouseout');
                                             button.attr('fill', '#9D9D9D');
                                         });
-                                })
-                            );
+                                }))
+
+                        }
+
+                        let SC_attrObj = {
+                            outerWidth: SC_width,
+                            outerHeight: SC_height,
+                            buttonWidth: SC_buttonWidth,
+                            buttonHeight: SC_buttonHeight,
+                            buttonId: 'SC_',
+                            buttonTextArr: SC_buttonText,
+                            buttonAction: SC_buttonAction,
+                        }
+                        selectionController.call(g => makeButtonGroup(g, SC_attrObj));
+
+                        const editZoomArea = svg.append('g').attr('id', 'editZoomArea');
+                        const editZoomAreaController = editZoomArea.append('g');
+
+                        const EZA_width = width * 0.8, EZA_height = height * 0.7;
+                        editZoomArea
+                            .attr('display', 'none')
+                            .call(editZoomArea => {
+                                //外框
+                                editZoomArea
+                                    .append('rect')
+                                    .attr('id', 'EZA_outer')
+                                    .attr('x', 0)
+                                    .attr('y', 0)
+                                    .attr('width', width)
+                                    .attr('height', height)
+                                    .attr('fill', '#D3D3D3')
+                                    .attr('opacity', .3);
+
+                                //內框
+                                editZoomArea
+                                    .append('rect')
+                                    .attr("transform", `translate(${(width - EZA_width) * 0.5}, ${(height - EZA_height) * 0.5})`)
+                                    .attr('id', 'EZA_inner')
+                                    .attr('width', EZA_width)
+                                    .attr('height', EZA_height)
+                                    .attr('fill', '#D3D3D3')
+                                // .attr('fill', 'black')
+                                // .attr('pointer-events', 'all');
 
 
-                        selectionGroup
-                            .append('g')
-                            .append('rect')
-                            .attr("id", "chartRenderRange")
-                            .attr('x', margin.right)
-                            .attr('y', margin.top)
-                            .attr('width', width - margin.right - margin.left)
-                            .attr('height', height - margin.top - margin.bottom)
-                            .attr('fill', 'grey')
-                            .attr('pointer-events', 'all');
 
+                                const EZA_buttonGroup_width = EZA_width * 0.4;
+                                const EZA_buttonGroup_height = 50;
+                                const EZA_buttonWidth = 65, EZA_buttonHeight = 30;
+                                const EZA_buttonText = ['Done', 'Cancel'];
+                                const EZA_buttonAction = (buttonIndex) => {
+                                    // console.debug('AAA')
+                                    switch (buttonIndex) {//0:zoom,1:remove
+                                        case 0:
+
+                                        // break;
+                                        case 1:
+                                            // selectionGroup.attr('display', 'inline');
+                                            selectionController.attr('display', 'inline');
+                                            editZoomArea.attr('display', 'none');
+                                            editZoomAreaController.attr('display', 'none');
+                                            break;
+                                    }
+                                }
+
+
+                                const EZA_attrObj = {
+                                    outerWidth: EZA_buttonGroup_width,
+                                    outerHeight: EZA_buttonGroup_height,
+                                    buttonWidth: EZA_buttonWidth,
+                                    buttonHeight: EZA_buttonHeight,
+                                    buttonId: 'EZA_',
+                                    buttonTextArr: EZA_buttonText,
+                                    buttonAction: EZA_buttonAction,
+                                }
+
+                                editZoomAreaController
+                                    .attr('display', 'inline')
+                                    .attr("transform", `translate(${(width - EZA_buttonGroup_width) * 0.5}, ${(height + EZA_height) * 0.5 + 10})`)
+                                    .call(g => makeButtonGroup(g, EZA_attrObj));
+                            })
+
+                        // const editZoomAreaUse = editZoomArea.append('cicrle');
+                        // const editZoomAreaUse =
+                        //     svg
+                        //         .append('use')
+                        //         .attr('xlink:href', "#editZoomArea")
+                        //         .attr('pointer-events', 'all');;
 
                     };
                     var overviewEvent = () => {
@@ -1673,6 +1786,13 @@ function DatexDVV() {
                                     break;
                                 case 'd'://press d
                                     d3.select("#SC_Delete").dispatch("click");
+                                    d3.select("#EZA_Done").dispatch("click");
+                                    break;
+                                case 'z'://press z
+                                    d3.select("#SC_Zoom").dispatch("click");
+                                    break;
+                                case 'c'://press c
+                                    d3.select("#EZA_Cancel").dispatch("click");
                                     break;
                                 case 'l'://press l
                                     let showLegend = d3.select("#showLegend");
@@ -1694,6 +1814,9 @@ function DatexDVV() {
                 chartEvent();
                 infoBoxDragEvent();
                 keyboardEvent();
+
+
+
             }
 
             svg.call(events);

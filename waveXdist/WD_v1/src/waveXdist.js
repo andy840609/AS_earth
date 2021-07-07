@@ -590,14 +590,14 @@ function waveXdist() {
                 //==get staAz fileData
                 const dataKey_staAz = [dataKey[0], dataKey[4]];
                 sta_az = readTextFile(staAz_paths, dataKey_staAz);
-                // console.log("sta_az = ");
-                // console.log(sta_az);
+                console.log("sta_az = ");
+                console.log(sta_az);
 
                 //==get staDist fileData
                 const dataKey_staDist = [dataKey[0], dataKey[3]];
                 sta_dist = readTextFile(staDist_paths, dataKey_staDist);
-                // console.log("sta_dist = ");
-                // console.log(sta_dist);
+                console.log("sta_dist = ");
+                console.log(sta_dist);
 
 
                 data.forEach(d => {

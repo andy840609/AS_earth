@@ -1,20 +1,265 @@
 function waveXdist() {
     var selector = 'body';
-    var dataPath = "../data/";
     var data;
 
     chart.selector = (value) => {
         selector = value;
         return chart;
     }
-    chart.data = (value) => {
-        dataPath = value;
+    chart.dataPath = (value) => {
+        //===get data,sta_az,sta_dist
+        let fileXY_paths = value.data;
+        let staAz_paths = value.az;
+        let staDist_paths = value.dist;
+
+        var readTextFile = (file, fileDataKey, callback = null) => {
+
+            var fileData = {};
+            var rawFile = new XMLHttpRequest();
+            // rawFile.open("GET", file, true);
+            rawFile.open("GET", file, false);
+            rawFile.onreadystatechange = function () {
+                if (rawFile.readyState === 4) {
+                    if (rawFile.status === 200 || rawFile.status == 0) {
+                        var rows = rawFile.responseText.split("\n");
+                        // console.debug(rows);
+                        var tmpData = [];
+                        rows.forEach(row => {
+                            if (row != '') {
+                                var col = row.trim().split(/\s+/);
+                                // console.debug(col);
+                                let obj = {};
+                                col.forEach((c, index) => obj[fileDataKey[index]] = (isNaN(c) ? c : parseFloat(c)));
+                                tmpData.push(obj);
+                            }
+
+                        })
+                        var startStr = '/';
+                        var startIndex = file.lastIndexOf(startStr) + startStr.length;
+                        var fileName = file.substring(startIndex);
+                        fileData = { fileName: fileName, data: tmpData };
+                        // console.debug(fileData);
+                        // callback(fileData);
+                    }
+                }
+            }
+            rawFile.send(null);
+            return fileData;
+        }
+
+        //===兩種同步資料方法            
+        //A.每個測站資料的時間點都要相同，如果其他測站少時間點就要補上時間點並給undefine值(event讀同個時間資料才不出錯)
+        var syncALLDataTiming = (fileData) => {
+            // console.debug(fileData);
+            let Datakey_time = fileData[0].column[0];
+            let Datakey_vaule = fileData[0].column[1];
+            // console.debug(Datakey_time);
+
+            let i = 0;
+            let min = undefined;
+            let indexArr = fileData.map(() => 0);
+            // console.debug(indexArr);
+            let dataArr = fileData.map(() => []);
+            let timeArr = [];
+            // console.debug(dataArr);
+            let done = false;
+            while (!done) {
+                for (let j = 0; j < fileData.length - 1; j++) {
+                    let A = (fileData[j].data[indexArr[j]] ? fileData[j].data[indexArr[j]][Datakey_time] : undefined),
+                        B = (fileData[j + 1].data[indexArr[j + 1]] ? fileData[j + 1].data[indexArr[j + 1]][Datakey_time] : undefined);
+                    if (A != B) {
+                        if (isNaN(min)) {
+                            // A & B
+                            if (!isNaN(A) && !isNaN(B))
+                                min = (A < B ? A : B);
+                            else if (!isNaN(A))
+                                min = A;
+                            else if (!isNaN(B))
+                                min = B;
+                        }
+                        else {
+                            if (B < min)
+                                min = B;
+                        }
+                    }
+                    if (j == fileData.length - 2) {
+                        if (min) {
+                            timeArr.push(min);
+                            dataArr.forEach((arr, index) => {
+                                if (fileData[index].data[indexArr[index]] && fileData[index].data[indexArr[index]][Datakey_time] == min) {
+                                    arr.push(fileData[index].data[indexArr[index]][Datakey_vaule]);
+                                    indexArr[index]++;
+                                }
+                                else
+                                    arr.push(undefined);
+                            });
+
+                        }
+                        else {
+                            timeArr.push(A);
+                            dataArr.forEach((arr, index) => {
+                                arr.push(fileData[index].data[indexArr[index]][Datakey_vaule]);
+                                indexArr[index]++;
+                            });
+                        }
+                    }
+                }
+                min = undefined;
+                for (let k = 0; k < indexArr.length; k++) {
+                    if (indexArr[k] < fileData[k].data.length) {
+                        done = false;
+                        break;
+                    }
+                    else if (k == indexArr.length - 1)
+                        done = true;
+                }
+            }
+
+            let chartData = fileData.map((d, i, arr) => {
+                let tmp = {};
+                tmp[arr.column[0]] = d[arr.column[0]];
+                tmp[arr.column[1]] = d[arr.column[1]];
+                tmp[arr.column[2]] = dataArr[i];
+                tmp.column = d.column.slice(1);
+                return tmp;
+            });
+            chartData.timeArr = timeArr;
+            chartData.yAxisName = fileData[0].column[0];
+            chartData.column = fileData.column;
+            // chartData.referenceTime = fileData.referenceTime;
+
+            return chartData;
+        }
+
+        //B.先找第一點時間漂亮的測站當標準來取時間陣列(沒有則選第一個讀取的檔案)，在用最少點的測站當標準資料點數
+        var sliceSamePoint = (fileData) => {
+            let Datakey_time = fileData[0].column[0];
+            let Datakey_vaule = fileData[0].column[1];
+            // console.debug(fileData);
+            //選標準規則（沒有才用下個條件）：尾數0整數>整數>第一個測站資料
+            let standardDataIndex = undefined;
+            for (let i = 0; i < fileData.length; i++) {
+                let firstTiming = fileData[i].data[0][Datakey_time];
+                if (firstTiming % 1 === 0)//判斷第一點時間爲整數
+                {
+                    if (isNaN(standardDataIndex)) {
+                        standardDataIndex = i;
+                        continue;
+                    }
+                    if (firstTiming % 10 === 0) {
+                        standardDataIndex = i;
+                        break;
+                    }
+                }
+                else if (i == fileData.length - 1 && isNaN(standardDataIndex))
+                    standardDataIndex = 0;
+            }
+            // console.debug(standardDataIndex);
+            let standardDataLength = Math.min(...fileData.map(d => d.data.length));
+            // console.debug(standardDataLength);
+
+            let chartData = fileData.map((d, i, arr) => {
+                // console.debug(d, i, arr);
+                let tmp = {};
+                tmp[arr.column[0]] = d[arr.column[0]];//station
+                tmp[arr.column[1]] = d[arr.column[1]];//channel
+                let dataArr = d.data.length > standardDataLength ? d.data.slice(0, standardDataLength) : d.data;
+                tmp[arr.column[2]] = dataArr.map(d => d[Datakey_vaule]);
+                // tmp[arr.column[1]] = d.data.slice(0, standardDataLength).map(d => d[Datakey_vaule]);
+                tmp.column = d.column.slice(1);
+                return tmp;
+            });
+            let dataArr = (fileData[standardDataIndex].data.length > standardDataLength ? fileData[standardDataIndex].data.slice(0, standardDataLength) : fileData[standardDataIndex].data);
+            chartData.timeArr = dataArr.map(d => d[Datakey_time]);
+            chartData.yAxisName = fileData[0].column[0];
+            chartData.column = fileData.column;
+            // chartData.referenceTime = fileData.referenceTime;
+            // console.debug(chartData);
+            return chartData;
+        }
+
+        //==get fileXY fileData
+        let originData = [];
+        const dataKey = ['station', 'channel', 'data', 'dist', 'az'];
+        const dataKey_xy = ['time', 'amplipude'];
+        let stationIndex = 7;
+        let channelIndex = 9;
+
+        var fileXY_callback = (fileData) => {
+            let tmp = {};
+            tmp[dataKey[0]] = fileData.fileName.split('.')[stationIndex];
+            tmp[dataKey[1]] = fileData.fileName.split('.')[channelIndex];
+            tmp[dataKey[2]] = fileData.data;
+            tmp.column = dataKey_xy;
+            originData.push(tmp);
+            // console.debug(originData);
+        };
+        fileXY_paths.forEach(path => {
+            // let d = readTextFile(path, dataKey_xy, fileXY_callback);
+            let d = readTextFile(path, dataKey_xy);
+            // console.debug(d);
+            let tmp = {};
+            tmp[dataKey[0]] = d.fileName.split('.')[stationIndex];
+            tmp[dataKey[1]] = d.fileName.split('.')[channelIndex];
+            tmp[dataKey[2]] = d.data;
+            tmp.column = dataKey_xy;
+            originData.push(tmp);
+        });
+
+        originData.column = dataKey;
+        // originData.referenceTime = referenceTime;
+        // console.log("originData = ");
+        // console.log(originData);
+        data = syncALLDataTiming(originData);
+        // data = sliceSamePoint(originData);
+        console.log("data = ");
+        console.log(data);
+        // data.forEach(d => console.debug(d.data.length))
+
+        //==get staAz fileData
+        const dataKey_staAz = [dataKey[0], dataKey[4]];
+        sta_az = readTextFile(staAz_paths, dataKey_staAz);
+        console.log("sta_az = ");
+        console.log(sta_az);
+
+        //==get staDist fileData
+        const dataKey_staDist = [dataKey[0], dataKey[3]];
+        sta_dist = readTextFile(staDist_paths, dataKey_staDist);
+        console.log("sta_dist = ");
+        console.log(sta_dist);
+
+
+        data.forEach(d => {
+            // console.log(d[dataKey[0]]);
+            let key = d[dataKey[0]];
+            let distData = sta_dist.data;
+            let azData = sta_az.data;
+            for (let i = 0; i < distData.length; i++)
+                if (distData[i][dataKey_staDist[0]] == key) {
+                    d[dataKey_staDist[1]] = distData[i][dataKey_staDist[1]];
+                    break;
+                }
+                else if (i == distData.length - 1)
+                    d[dataKey_staDist[1]] = undefined;
+
+            for (let i = 0; i < azData.length; i++)
+                if (azData[i][dataKey_staAz[0]] == key) {
+                    d[dataKey_staAz[1]] = azData[i][dataKey_staAz[1]];
+                    break;
+                }
+                else if (i == azData.length - 1)
+                    d[dataKey_staAz[1]] = undefined;
+
+        });
+
         return chart;
     }
-    // chart.title = (value) => {
-    //     title = value;
-    //     return chart;
-    // }
+    chart.string = (value) => {
+        data.title = value.title;
+        data.referenceTime = value.referenceTime;
+
+        return chart;
+    }
 
     function chart() {
         //===append chart options
@@ -25,7 +270,7 @@ function waveXdist() {
                 <div class="form-group" id="chartsOptions" style="display: inline;">
                 <div class="row">
                 
-                <!-- ... catalog ... -->
+                <!-- ... catalog 
                 <div class="form-group col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start">
                      <label for="catalog" class="col-form-label col-4" >Catalog</label>
                      <div class="form-group col-8">
@@ -34,6 +279,8 @@ function waveXdist() {
                          </select>
                 </div>
                 </div>
+                ... -->
+
 
                 <!-- ... channel selector ... -->    
                 <div class="form-group col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start">
@@ -317,334 +564,12 @@ function waveXdist() {
             });
 
         };
-        function getFileData() {
-            //===get floder name(catalog) to make option
-            var catalogArr;
-            const folderStr = 'xy_';
-            const staAz_fileName = 'sta_az.txt';
-            const staDist_fileName = 'sta_dist.txt';
-            const pathsKey = ['fileXY', 'staAz', 'staDist'];
-
-            // console.debug(dataPath, folderStr)
-            $.ajax({
-                url: "../src/php/getFile.php",
-                data: { path: dataPath, folderStr: folderStr },
-                method: 'POST',
-                dataType: 'json',
-                async: false,
-                success: function (result) {
-                    catalogArr = result;
-                    console.log("catalogArr = ");
-                    console.log(catalogArr);
-                    catalogArr.forEach((r, i) => {
-                        // let catalog = Object.keys(r)[0];
-                        let catalog = r.catalog;
-                        // console.debug(catalog);
-                        $("#catalog").append($("<option></option>").attr("value", i).text(catalog));
-                    });
-                },
-                error: function (jqXHR, textStatus, errorThrown) {
-                    // console.error(jqXHR, textStatus, errorThrown);
-                    console.error(jqXHR.responseText);
-
-                },
-            });
-
-            var getPaths = (optionValue) => {
-                let obj = catalogArr[optionValue];
-                let catalog = obj.catalog;
-
-                //===fileXY
-                let folder = obj.folder;
-                let fileXY = obj.fileXY;
-                let fileXY_paths = fileXY.map(file => dataPath + catalog + "/" + folder + "/" + file);
-                fileXY_paths.referenceTime = folder.substring(folder.indexOf(folderStr) + folderStr.length);
-                //===sta_az.txt
-                let staAz_paths = dataPath + catalog + "/" + staAz_fileName;
-
-                //===sta_dist.txt
-                let staDist_paths = dataPath + catalog + "/" + staDist_fileName;
-
-
-                //===paths obj
-                let paths = {};
-                paths[pathsKey[0]] = fileXY_paths;
-                paths[pathsKey[1]] = staAz_paths;
-                paths[pathsKey[2]] = staDist_paths;
-                // { fileXY: fileXY_paths, staAz: staAz_paths, staDist: staDist_paths };
-                // console.debug(paths);
-                return paths;
-            }
-
-            //===get data,sta_az,sta_dist
-            var readData = (paths) => {
-                let fileXY_paths = paths[pathsKey[0]];
-                let staAz_paths = paths[pathsKey[1]];
-                let staDist_paths = paths[pathsKey[2]];
-
-                var readTextFile = (file, fileDataKey, callback = null) => {
-
-                    var fileData = {};
-                    var rawFile = new XMLHttpRequest();
-                    // rawFile.open("GET", file, true);
-                    rawFile.open("GET", file, false);
-                    rawFile.onreadystatechange = function () {
-                        if (rawFile.readyState === 4) {
-                            if (rawFile.status === 200 || rawFile.status == 0) {
-                                var rows = rawFile.responseText.split("\n");
-                                // console.debug(rows);
-                                var tmpData = [];
-                                rows.forEach(row => {
-                                    if (row != '') {
-                                        var col = row.trim().split(/\s+/);
-                                        // console.debug(col);
-                                        let obj = {};
-                                        col.forEach((c, index) => obj[fileDataKey[index]] = (isNaN(c) ? c : parseFloat(c)));
-                                        tmpData.push(obj);
-                                    }
-
-                                })
-                                var startStr = '/';
-                                var startIndex = file.lastIndexOf(startStr) + startStr.length;
-                                var fileName = file.substring(startIndex);
-                                fileData = { fileName: fileName, data: tmpData };
-                                // console.debug(fileData);
-                                // callback(fileData);
-                            }
-                        }
-                    }
-                    rawFile.send(null);
-                    return fileData;
-                }
-
-                //===兩種同步資料方法            
-                //A.每個測站資料的時間點都要相同，如果其他測站少時間點就要補上時間點並給undefine值(event讀同個時間資料才不出錯)
-                var syncALLDataTiming = (fileData) => {
-                    // console.debug(fileData);
-                    let Datakey_time = fileData[0].column[0];
-                    let Datakey_vaule = fileData[0].column[1];
-                    // console.debug(Datakey_time);
-
-                    let i = 0;
-                    let min = undefined;
-                    let indexArr = fileData.map(() => 0);
-                    // console.debug(indexArr);
-                    let dataArr = fileData.map(() => []);
-                    let timeArr = [];
-                    // console.debug(dataArr);
-                    let done = false;
-                    while (!done) {
-                        for (let j = 0; j < fileData.length - 1; j++) {
-                            let A = (fileData[j].data[indexArr[j]] ? fileData[j].data[indexArr[j]][Datakey_time] : undefined),
-                                B = (fileData[j + 1].data[indexArr[j + 1]] ? fileData[j + 1].data[indexArr[j + 1]][Datakey_time] : undefined);
-                            if (A != B) {
-                                if (isNaN(min)) {
-                                    // A & B
-                                    if (!isNaN(A) && !isNaN(B))
-                                        min = (A < B ? A : B);
-                                    else if (!isNaN(A))
-                                        min = A;
-                                    else if (!isNaN(B))
-                                        min = B;
-                                }
-                                else {
-                                    if (B < min)
-                                        min = B;
-                                }
-                            }
-                            if (j == fileData.length - 2) {
-                                if (min) {
-                                    timeArr.push(min);
-                                    dataArr.forEach((arr, index) => {
-                                        if (fileData[index].data[indexArr[index]] && fileData[index].data[indexArr[index]][Datakey_time] == min) {
-                                            arr.push(fileData[index].data[indexArr[index]][Datakey_vaule]);
-                                            indexArr[index]++;
-                                        }
-                                        else
-                                            arr.push(undefined);
-                                    });
-
-                                }
-                                else {
-                                    timeArr.push(A);
-                                    dataArr.forEach((arr, index) => {
-                                        arr.push(fileData[index].data[indexArr[index]][Datakey_vaule]);
-                                        indexArr[index]++;
-                                    });
-                                }
-                            }
-                        }
-                        min = undefined;
-                        for (let k = 0; k < indexArr.length; k++) {
-                            if (indexArr[k] < fileData[k].data.length) {
-                                done = false;
-                                break;
-                            }
-                            else if (k == indexArr.length - 1)
-                                done = true;
-                        }
-                    }
-
-                    let chartData = fileData.map((d, i, arr) => {
-                        let tmp = {};
-                        tmp[arr.column[0]] = d[arr.column[0]];
-                        tmp[arr.column[1]] = d[arr.column[1]];
-                        tmp[arr.column[2]] = dataArr[i];
-                        tmp.column = d.column.slice(1);
-                        return tmp;
-                    });
-                    chartData.timeArr = timeArr;
-                    chartData.yAxisName = fileData[0].column[0];
-                    chartData.column = fileData.column;
-                    chartData.referenceTime = fileData.referenceTime;
-
-                    return chartData;
-                }
-
-                //B.先找第一點時間漂亮的測站當標準來取時間陣列(沒有則選第一個讀取的檔案)，在用最少點的測站當標準資料點數
-                var sliceSamePoint = (fileData) => {
-                    let Datakey_time = fileData[0].column[0];
-                    let Datakey_vaule = fileData[0].column[1];
-                    // console.debug(fileData);
-                    //選標準規則（沒有才用下個條件）：尾數0整數>整數>第一個測站資料
-                    let standardDataIndex = undefined;
-                    for (let i = 0; i < fileData.length; i++) {
-                        let firstTiming = fileData[i].data[0][Datakey_time];
-                        if (firstTiming % 1 === 0)//判斷第一點時間爲整數
-                        {
-                            if (isNaN(standardDataIndex)) {
-                                standardDataIndex = i;
-                                continue;
-                            }
-                            if (firstTiming % 10 === 0) {
-                                standardDataIndex = i;
-                                break;
-                            }
-                        }
-                        else if (i == fileData.length - 1 && isNaN(standardDataIndex))
-                            standardDataIndex = 0;
-                    }
-                    // console.debug(standardDataIndex);
-                    let standardDataLength = Math.min(...fileData.map(d => d.data.length));
-                    // console.debug(standardDataLength);
-
-                    let chartData = fileData.map((d, i, arr) => {
-                        // console.debug(d, i, arr);
-                        let tmp = {};
-                        tmp[arr.column[0]] = d[arr.column[0]];//station
-                        tmp[arr.column[1]] = d[arr.column[1]];//channel
-                        let dataArr = d.data.length > standardDataLength ? d.data.slice(0, standardDataLength) : d.data;
-                        tmp[arr.column[2]] = dataArr.map(d => d[Datakey_vaule]);
-                        // tmp[arr.column[1]] = d.data.slice(0, standardDataLength).map(d => d[Datakey_vaule]);
-                        tmp.column = d.column.slice(1);
-                        return tmp;
-                    });
-                    let dataArr = (fileData[standardDataIndex].data.length > standardDataLength ? fileData[standardDataIndex].data.slice(0, standardDataLength) : fileData[standardDataIndex].data);
-                    chartData.timeArr = dataArr.map(d => d[Datakey_time]);
-                    chartData.yAxisName = fileData[0].column[0];
-                    chartData.column = fileData.column;
-                    chartData.referenceTime = fileData.referenceTime;
-                    // console.debug(chartData);
-                    return chartData;
-                }
-
-                //==get fileXY fileData
-                let originData = [];
-                const dataKey = ['station', 'channel', 'data', 'dist', 'az'];
-                const dataKey_xy = ['time', 'amplipude'];
-                let stationIndex = 7;
-                let channelIndex = 9;
-
-                var fileXY_callback = (fileData) => {
-                    let tmp = {};
-                    tmp[dataKey[0]] = fileData.fileName.split('.')[stationIndex];
-                    tmp[dataKey[1]] = fileData.fileName.split('.')[channelIndex];
-                    tmp[dataKey[2]] = fileData.data;
-                    tmp.column = dataKey_xy;
-                    originData.push(tmp);
-                    // console.debug(originData);
-                };
-                fileXY_paths.forEach(path => {
-                    // let d = readTextFile(path, dataKey_xy, fileXY_callback);
-                    let d = readTextFile(path, dataKey_xy);
-                    // console.debug(d);
-                    let tmp = {};
-                    tmp[dataKey[0]] = d.fileName.split('.')[stationIndex];
-                    tmp[dataKey[1]] = d.fileName.split('.')[channelIndex];
-                    tmp[dataKey[2]] = d.data;
-                    tmp.column = dataKey_xy;
-                    originData.push(tmp);
-                });
-
-
-                originData.column = dataKey;
-                originData.referenceTime = fileXY_paths.referenceTime;
-                // console.log("originData = ");
-                // console.log(originData);
-                // data = syncALLDataTiming(originData);
-                data = sliceSamePoint(originData);
-                console.log("data = ");
-                console.log(data);
-                // data.forEach(d => console.debug(d.data.length))
-
-                //==get staAz fileData
-                const dataKey_staAz = [dataKey[0], dataKey[4]];
-                sta_az = readTextFile(staAz_paths, dataKey_staAz);
-                // console.log("sta_az = ");
-                // console.log(sta_az);
-
-                //==get staDist fileData
-                const dataKey_staDist = [dataKey[0], dataKey[3]];
-                sta_dist = readTextFile(staDist_paths, dataKey_staDist);
-                // console.log("sta_dist = ");
-                // console.log(sta_dist);
-
-
-                data.forEach(d => {
-                    // console.log(d[dataKey[0]]);
-                    let key = d[dataKey[0]];
-                    let distData = sta_dist.data;
-                    let azData = sta_az.data;
-                    for (let i = 0; i < distData.length; i++)
-                        if (distData[i][dataKey_staDist[0]] == key) {
-                            d[dataKey_staDist[1]] = distData[i][dataKey_staDist[1]];
-                            break;
-                        }
-                        else if (i == distData.length - 1)
-                            d[dataKey_staDist[1]] = undefined;
-
-                    for (let i = 0; i < azData.length; i++)
-                        if (azData[i][dataKey_staAz[0]] == key) {
-                            d[dataKey_staAz[1]] = azData[i][dataKey_staAz[1]];
-                            break;
-                        }
-                        else if (i == azData.length - 1)
-                            d[dataKey_staAz[1]] = undefined;
-
-                });
-            }
-
-            $('#catalog').change(e => {
-                // console.debug(e.target.value);
-                let paths = getPaths(e.target.value);
-                readData(paths);
-                printChart();
-            });
-            //===show first data charts when onload
-            // $(document).ready(() => $('#catalog').change());
-            let catalogSelectValue = 1;
-            $('#catalog').val(catalogSelectValue);
-            readData(getPaths(catalogSelectValue));
-
-        }
-
         function WD_Charts(xAxisScale = 'linear', xAxisName = 'dist') {
             console.debug(data);
             // console.debug(xAxisName)
             var colorPalette = {};//to fixed color for each station
             const dataKeys = data.column;//0:"station", 1: "channel", 2: "data", 3: "dist", 4:"az"
-            const referenceTime = data.referenceTime;
-
+            const referenceTime = data.referenceTime ? data.referenceTime : '2000-01-01T00:00:00';
 
             const getMargin = (yAxisDomain = null) => {
                 // console.debug(yAxisDomain);
@@ -904,8 +829,10 @@ function waveXdist() {
                 }
                 function init() {
                     let newData = newDataObj.newData;
-                    let title = (referenceTime.includes('.') ?
-                        referenceTime.substring(0, referenceTime.lastIndexOf('.')) : referenceTime) + " (UTC)";
+                    let title = data.title ?
+                        data.title :
+                        (referenceTime.includes('.') ?
+                            referenceTime.substring(0, referenceTime.lastIndexOf('.')) : referenceTime) + " (UTC)";
 
                     svg
                         .append("g")
@@ -1941,7 +1868,6 @@ function waveXdist() {
         //===init once
         if (!($('#form-chart').length >= 1)) {
             init();
-            getFileData();
         }
         printChart();
     }

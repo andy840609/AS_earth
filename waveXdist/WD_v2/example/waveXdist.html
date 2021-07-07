@@ -26,8 +26,22 @@
 
     <script src="../src/waveXdist.js"></script>
     <script>
-        // var path = '../data/';
+        const catlog = '../data/202104181414/';
+        const xy_floder = catlog + 'xy_2021-04-18T14:14:37/';
+        var paths = [
+            xy_floder + '2021.108.14.14.34.0000.TW.GWUB..BHZ.D.xy',
+            xy_floder + '2021.108.14.14.34.0000.TW.RLNB..BHZ.D.xy',
+        ];
+        var az = catlog + 'sta_az.txt';
+        var dist = catlog + 'sta_dist.txt';
+
+
         var chart = waveXdist()
+            .dataPath({ data: paths, az: az, dist: dist })
+            .string({
+                referenceTime: '2021-04-18T14:14:37',
+                // title: 'AAA',
+            })
             .selector('.container');
         chart();
     </script>

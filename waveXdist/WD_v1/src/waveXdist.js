@@ -581,8 +581,8 @@ function waveXdist() {
                 originData.referenceTime = fileXY_paths.referenceTime;
                 // console.log("originData = ");
                 // console.log(originData);
-                // data = syncALLDataTiming(originData);
-                data = sliceSamePoint(originData);
+                data = syncALLDataTiming(originData);
+                // data = sliceSamePoint(originData);
                 console.log("data = ");
                 console.log(data);
                 // data.forEach(d => console.debug(d.data.length))

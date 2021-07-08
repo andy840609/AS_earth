@@ -51,83 +51,107 @@ function waveXdist() {
         //A.每個測站資料的時間點都要相同，如果其他測站少時間點就要補上時間點並給undefine值(event讀同個時間資料才不出錯)
         var syncALLDataTiming = (fileData) => {
             // console.debug(fileData);
+            let chartData;
+
             let Datakey_time = fileData[0].column[0];
             let Datakey_vaule = fileData[0].column[1];
-            // console.debug(Datakey_time);
-
-            let i = 0;
-            let min = undefined;
-            let indexArr = fileData.map(() => 0);
-            // console.debug(indexArr);
             let dataArr = fileData.map(() => []);
             let timeArr = [];
-            // console.debug(dataArr);
-            let done = false;
-            while (!done) {
-                for (let j = 0; j < fileData.length - 1; j++) {
-                    let A = (fileData[j].data[indexArr[j]] ? fileData[j].data[indexArr[j]][Datakey_time] : undefined),
-                        B = (fileData[j + 1].data[indexArr[j + 1]] ? fileData[j + 1].data[indexArr[j + 1]][Datakey_time] : undefined);
-                    if (A != B) {
-                        if (isNaN(min)) {
-                            // A & B
-                            if (!isNaN(A) && !isNaN(B))
-                                min = (A < B ? A : B);
-                            else if (!isNaN(A))
-                                min = A;
-                            else if (!isNaN(B))
-                                min = B;
+
+            var syncALL = () => {
+
+
+                let i = 0;
+                let min = undefined;
+                let indexArr = fileData.map(() => 0);
+                // console.debug(indexArr);
+
+                // console.debug(dataArr);
+
+
+                let done = false;
+                while (!done) {
+                    for (let j = 0; j < fileData.length - 1; j++) {
+                        let A = (fileData[j].data[indexArr[j]] ? fileData[j].data[indexArr[j]][Datakey_time] : undefined),
+                            B = (fileData[j + 1].data[indexArr[j + 1]] ? fileData[j + 1].data[indexArr[j + 1]][Datakey_time] : undefined);
+                        if (A != B) {
+                            if (isNaN(min)) {
+                                // A & B
+                                if (!isNaN(A) && !isNaN(B))
+                                    min = (A < B ? A : B);
+                                else if (!isNaN(A))
+                                    min = A;
+                                else if (!isNaN(B))
+                                    min = B;
+                            }
+                            else {
+                                if (B < min)
+                                    min = B;
+                            }
                         }
-                        else {
-                            if (B < min)
-                                min = B;
-                        }
-                    }
-                    if (j == fileData.length - 2) {
-                        if (min) {
-                            timeArr.push(min);
-                            dataArr.forEach((arr, index) => {
-                                if (fileData[index].data[indexArr[index]] && fileData[index].data[indexArr[index]][Datakey_time] == min) {
+                        if (j == fileData.length - 2) {
+                            if (min) {
+                                timeArr.push(min);
+                                dataArr.forEach((arr, index) => {
+                                    if (fileData[index].data[indexArr[index]] && fileData[index].data[indexArr[index]][Datakey_time] == min) {
+                                        arr.push(fileData[index].data[indexArr[index]][Datakey_vaule]);
+                                        indexArr[index]++;
+                                    }
+                                    else
+                                        arr.push(undefined);
+                                });
+
+                            }
+                            else {
+                                timeArr.push(A);
+                                dataArr.forEach((arr, index) => {
                                     arr.push(fileData[index].data[indexArr[index]][Datakey_vaule]);
                                     indexArr[index]++;
-                                }
-                                else
-                                    arr.push(undefined);
-                            });
+                                });
+                            }
+                        }
+                    }
+                    min = undefined;
+                    for (let k = 0; k < indexArr.length; k++) {
+                        // console.debug(k, indexArr, fileData[k]);
+                        if (indexArr[k] < fileData[k].data.length) {
+                            done = false;
+                            break;
+                        }
+                        else if (k == indexArr.length - 1)
+                            done = true;
+                    }
+                }
 
-                        }
-                        else {
-                            timeArr.push(A);
-                            dataArr.forEach((arr, index) => {
-                                arr.push(fileData[index].data[indexArr[index]][Datakey_vaule]);
-                                indexArr[index]++;
-                            });
-                        }
-                    }
-                }
-                min = undefined;
-                for (let k = 0; k < indexArr.length; k++) {
-                    if (indexArr[k] < fileData[k].data.length) {
-                        done = false;
-                        break;
-                    }
-                    else if (k == indexArr.length - 1)
-                        done = true;
-                }
             }
 
-            let chartData = fileData.map((d, i, arr) => {
+            //只有一個測站會死迴圈,所以另外整理資料結構
+            if (fileData.length > 1)
+                syncALL();
+            else {
+                fileData[0].data.forEach((d, i) => {
+                    dataArr[0].push(d[Datakey_vaule]);
+                    timeArr.push(d[Datakey_time]);
+                })
+                // console.debug(dataArr);
+                // console.debug(timeArr);
+            }
+
+            chartData = fileData.map((d, i, arr) => {
                 let tmp = {};
                 tmp[arr.column[0]] = d[arr.column[0]];
                 tmp[arr.column[1]] = d[arr.column[1]];
                 tmp[arr.column[2]] = dataArr[i];
                 tmp.column = d.column.slice(1);
+                // console.debug(tmp);
                 return tmp;
             });
+
             chartData.timeArr = timeArr;
             chartData.yAxisName = fileData[0].column[0];
             chartData.column = fileData.column;
             // chartData.referenceTime = fileData.referenceTime;
-
+            // console.debug(chartData);
             return chartData;
         }
 
@@ -182,8 +206,8 @@ function waveXdist() {
         let originData = [];
         const dataKey = ['station', 'channel', 'data', 'dist', 'az'];
         const dataKey_xy = ['time', 'amplipude'];
-        let stationIndex = 7;
-        let channelIndex = 9;
+        const stationIndex = 0;
+        const channelIndex = 2;
 
         var fileXY_callback = (fileData) => {
             let tmp = {};
@@ -198,12 +222,29 @@ function waveXdist() {
             // let d = readTextFile(path, dataKey_xy, fileXY_callback);
             let d = readTextFile(path, dataKey_xy);
             // console.debug(d);
+
             let tmp = {};
             tmp[dataKey[0]] = d.fileName.split('.')[stationIndex];
             tmp[dataKey[1]] = d.fileName.split('.')[channelIndex];
             tmp[dataKey[2]] = d.data;
             tmp.column = dataKey_xy;
             originData.push(tmp);
+
+
+            // await Promise.all(promises).then(success => {
+            //     // console.debug(success);
+            //     success.forEach(data => {
+            //         // console.debug(data);
+            //         data.map(d => {
+            //             // console.debug(d);
+            //             //==========ISO+Z for UTC Time
+            //             var lastChar = d.timestamp.charAt(d.timestamp.length - 1);
+            //             if (lastChar != 'Z')
+            //                 d.timestamp += 'Z';
+            //             datas.push(d);
+            //         });
+            //     });
+            // });
         });
 
         originData.column = dataKey;
@@ -261,7 +302,7 @@ function waveXdist() {
         return chart;
     }
 
-    function chart() {
+    async function chart() {
         //===append chart options
         function init() {
 
@@ -1420,18 +1461,18 @@ function waveXdist() {
                             }
                         };
                         var dragBehavior = d3.drag()
-                            .on("start", () => {
+                            .on("start", (e) => {
                                 console.log("dragStart");
-                                const p = d3.pointer(event, event_rect.node());
+                                const p = d3.pointer(e, event_rect.node());
                                 selectionRect.init(margin.left, p[1]);
                                 // const xm = x.invert(p[0]);
                                 // console.debug(p);
                                 selectionRect.removePrevious();
                                 d3.select(window).dispatch("click");//關閉dropdown
                             })
-                            .on("drag", () => {
+                            .on("drag", (e) => {
                                 console.log("dragMove");
-                                const p = d3.pointer(event, event_rect.node());
+                                const p = d3.pointer(e, event_rect.node());
                                 // console.debug(p);
                                 if (p[1] < margin.top)
                                     p[1] = margin.top;
@@ -1441,7 +1482,7 @@ function waveXdist() {
                                 // const xm = x.invert(p[0]);
                                 selectionRect.update(width - margin.right, p[1]);
                             })
-                            .on("end", () => {
+                            .on("end", (e) => {
                                 console.log("dragEnd");
                                 // console.debug('end');
                                 const finalAttributes = selectionRect.getCurrentAttributes();
@@ -1860,7 +1901,7 @@ function waveXdist() {
             let xAxisName = document.querySelector('input[name ="xAxisName"]:checked').value;
             let xAxisScale = document.querySelector('input[name ="xAxisScale"]:checked').value;
 
-            // console.debug(xAxisName, xAxisScale)
+            console.debug(xAxisName, xAxisScale)
             getChartMenu();
             $('#chart' + i).append(WD_Charts(xAxisScale, xAxisName));
             MenuEvents();
@@ -1869,6 +1910,7 @@ function waveXdist() {
         if (!($('#form-chart').length >= 1)) {
             init();
         }
+        // await promise.then(sucess=> printChart())
         printChart();
     }
     return chart;

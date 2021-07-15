@@ -113,6 +113,8 @@ function DatexDVV() {
                         <img id="bigimg" style=" background-color: rgb(255, 255, 255);" src="" />
                     </div>
                 </div>
+
+                
             </form>
 
            

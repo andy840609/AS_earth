@@ -1,6 +1,7 @@
 function waveXdist() {
     var selector = 'body';
     var data;
+    var stringObj;
 
     chart.selector = (value) => {
         selector = value;
@@ -292,24 +293,26 @@ function waveXdist() {
         });
 
 
-        console.debug(data)
+        // console.debug(data)
         // data.then(s => console.debug(s))
 
 
         return chart;
     }
     chart.string = (value) => {
-        data.title = value.title;
-        data.referenceTime = value.referenceTime;
-
+        stringObj = value;
         return chart;
     }
 
     function chart() {
+
+        const chartContainerJQ = $(selector);
+        const chartContainerD3 = d3.select(selector);
+
         //===append chart options
         function init() {
 
-            $(selector).append(`
+            chartContainerJQ.append(`
                 <form id="form-chart">
                 <div class="form-group" id="chartsOptions" style="display: inline;">
                 <div class="row">
@@ -470,24 +473,36 @@ function waveXdist() {
                             </div>                                        
                     </div>
                    
-                </div>
-             
+                    </div>
+                    </div>
                 </div>
 
-                    <div class="form-group" id="charts"></div>          
+
+                <div class="form-group"  id="chartMain">
+
+                    <div id="charts"></div>          
                     <div id="outerdiv"
                         style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:999;width:100%;height:100%;display:none;">
                         <div id="innerdiv" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
                             <img id="bigimg" style=" background-color: rgb(255, 255, 255);" src="" />
                         </div>
                     </div>
+
+                    <div id='loading'>
+                        <div class="spinner-border"role="status">
+                            <span class="sr-only" >Loading...</span>
+                        </div>
+                        Loading...
+                    </div>
+
+                </div> 
                 </form>
 
                
                 `);
             //================dropdown-menu內元素被點擊不關閉menu
 
-            let All_dropdownMenu = $('.dropdown-menu');
+            let All_dropdownMenu = chartContainerJQ.find('.dropdown-menu');
 
             All_dropdownMenu.on("click.bs.dropdown", function (e) {
                 e.stopPropagation();
@@ -518,7 +533,7 @@ function waveXdist() {
             // });
             // console.debug($('#xAxisName_radioGroup>label>input'));
 
-            let xAxisName_dropdownMenu = $('#xAxisName_radioGroup .dropdown-menu');
+            let xAxisName_dropdownMenu = chartContainerJQ.find('#xAxisName_radioGroup .dropdown-menu');
             xAxisName_dropdownMenu
                 .on('mouseover', function (e) {
                     e.stopPropagation();
@@ -526,13 +541,13 @@ function waveXdist() {
                 });
 
 
-            $('input[name ="xAxisName"]')
+            chartContainerJQ.find('input[name ="xAxisName"]')
                 .on('click', function (e) {
                     // console.debug($(e.target).siblings().filter('.dropdown-menu'));
                     $(e.target).siblings().filter('.dropdown-menu').addClass('show');
                 })
 
-            $('#xAxisName_radioGroup>label')
+            chartContainerJQ.find('#xAxisName_radioGroup>label')
                 .on('mouseover', function (e) {
                     // console.debug('mouseover');
                     // if ($(e.target).hasClass('active'))//暫時只能條當前的xAsixName
@@ -544,54 +559,54 @@ function waveXdist() {
                 });
 
 
-            $('#distRange').on("change", function (e) {
+            chartContainerJQ.find('#distRange').on("change", function (e) {
                 // console.debug('distRange change');
                 // console.debug(e.target.value);
                 let range = e.target.getAttribute('value').split(',');
                 $(e.target.parentNode).find('#distRange_min').val(range[0]);
                 $(e.target.parentNode).find('#distRange_max').val(range[1]);
-                d3.select('#distRange_min').dispatch("input");
+                chartContainerD3.selectAll('#distRange_min').dispatch("input");
             });
 
-            $('#azRange').on("change", function (e) {
+            chartContainerJQ.find('#azRange').on("change", function (e) {
                 // console.debug(e.target.parentNode);
                 // console.debug(e.target.value);
                 let range = e.target.getAttribute('value').split(',');
                 $(e.target.parentNode).find('#azRange_min').val(range[0]);
                 $(e.target.parentNode).find('#azRange_max').val(range[1]);
-                d3.select('#azRange_min').dispatch("input");
+                chartContainerD3.selectAll('#azRange_min').dispatch("input");
             });
 
             //====================normalize
-            $('#normalize').on("change", function (e) {
+            chartContainerJQ.find('#normalize').on("change", function (e) {
                 // console.debug(e.target.checked);
                 if (e.target.checked)
-                    $('#normalizeScale').prop('disabled', false);
+                    chartContainerJQ.find('#normalizeScale').prop('disabled', false);
                 else
-                    $('#normalizeScale').prop('disabled', true);
+                    chartContainerJQ.find('#normalizeScale').prop('disabled', true);
             });
 
-            $('#normalizeScale').on("focus", function (e) {
-                $('#normalizeScaleMenu').addClass('show');
+            chartContainerJQ.find('#normalizeScale').on("focus", function (e) {
+                chartContainerJQ.find('#normalizeScaleMenu').addClass('show');
                 // e.preventDefault();
             });
             //====================normalize
             var normalizeScale = [1, 2, 5, 10];
 
-            $('#normalizeScale')
+            chartContainerJQ.find('#normalizeScale')
                 .val(normalizeScale[0])
                 .on('input', function (e) {
                     // console.debug('normalizeScale input');
                     // console.debug(e.target.value);
                     let inputVal = parseFloat(e.target.value);
                     if (normalizeScale.includes(inputVal))
-                        $('#NSRange').attr("value", normalizeScale.indexOf(inputVal));
+                        chartContainerJQ.find('#NSRange').attr("value", normalizeScale.indexOf(inputVal));
                     else
-                        $('#NSRange').attr("value", 0);
+                        chartContainerJQ.find('#NSRange').attr("value", 0);
                 });
 
             // let 
-            $('#NSRange')
+            chartContainerJQ.find('#NSRange')
                 .attr("min", 0)
                 .attr("max", normalizeScale.length - 1)
                 .attr("value", 0)
@@ -599,24 +614,29 @@ function waveXdist() {
                     // console.debug('NSRange change');
                     let NSIndex = e.target.value;
                     let scale = normalizeScale[NSIndex];
-                    $('#normalizeScale').val(scale);
-                    d3.select('#normalizeScale').dispatch("input");
+                    chartContainerJQ.find('#normalizeScale').val(scale);
+                    chartContainerD3.selectAll('#normalizeScale').dispatch("input");
                 });
 
             normalizeScale.forEach((d, i) => {
-                $('#NSList').append($("<option></option>").attr("value", i).text(d));
+                chartContainerJQ.find('#NSList').append($("<option></option>").attr("value", i).text(d));
             });
 
         };
-        async function WD_Charts(xAxisScale = 'linear', xAxisName = 'dist') {
-            data = await data;
-            console.debug(data);
-
-            // data.then(s => console.debug(s))
+        function WD_Charts(xAxisScale = 'linear', xAxisName = 'dist') {
+            // console.debug(data);
             // console.debug(xAxisName)
             var colorPalette = {};//to fixed color for each station
             const dataKeys = data.column;//0:"station", 1: "channel", 2: "data", 3: "dist", 4:"az"
-            const referenceTime = data.referenceTime ? data.referenceTime : '2000-01-01T00:00:00';
+
+            var referenceTime = '2000-01-01T00:00:00', title = referenceTime;
+            if (stringObj) {
+                referenceTime = stringObj.referenceTime ? stringObj.referenceTime : referenceTime;
+                title = stringObj.title ?
+                    stringObj.title :
+                    (referenceTime.includes('.') ?
+                        referenceTime.substring(0, referenceTime.lastIndexOf('.')) : referenceTime) + " (UTC)";
+            }
 
             const getMargin = (yAxisDomain = null) => {
                 // console.debug(yAxisDomain);
@@ -629,27 +649,6 @@ function waveXdist() {
                 }
                 return { top: top, right: right, bottom: bottom, left: left };
             }
-            // function getRandomColor(index) {
-            //     // console.debug(network, index);
-            //     let color;
-            //     color = colorPalette[index];
-            //     //===if color not in colorPalette, get a random color and put in
-            //     if (!color) {
-            //         var randomColor = () => {
-            //             let hex = Math.floor(Math.random() * 255).toString(16);
-            //             if (hex.length < 2)
-            //                 hex = '0' + hex;
-            //             return hex;
-            //         }
-            //         color = '#';
-            //         for (let i = 0; i < 3; i++)
-            //             color += randomColor();
-            //         colorPalette[index] = color;
-            //     }
-
-            //     return color;
-            // };
-
             const getColor = (key) => {
                 var color;
                 if (colorPalette[key])
@@ -723,6 +722,7 @@ function waveXdist() {
             const xAxis = svg.append("g").attr("class", "xAxis");
             const yAxis = svg.append("g").attr("class", "yAxis");
             const pathGroup = svg.append("g").attr('class', 'paths');
+            const loadingGroup = chartContainerD3.selectAll('#loading');
 
             var margin, x, y, path_x;
             var newDataObj;
@@ -871,16 +871,8 @@ function waveXdist() {
             }
             function updateChart(trans = false) {
 
-                var get_niceDomain = (domain) => {
-                    return d3.scaleLinear().domain(domain).nice().domain();
-                }
                 function init() {
                     let newData = newDataObj.newData;
-                    let title = data.title ?
-                        data.title :
-                        (referenceTime.includes('.') ?
-                            referenceTime.substring(0, referenceTime.lastIndexOf('.')) : referenceTime) + " (UTC)";
-
                     svg
                         .append("g")
                         .attr("class", "title")
@@ -909,8 +901,24 @@ function waveXdist() {
                         .attr("transform", "rotate(-90)")
                         .call(g => g.text(getString(data.yAxisName).keyName));
 
+                    //===loadingGroup
+
+                    // loadingGroup
+                    //     .call(g => {
+                    //         const loading_width = 100, loading_height = 100;
+                    //         g.append('rect')
+                    //             .attr("fill", "currentColor")
+                    //             // .attr('x', margin.left)
+                    //             // .attr('y', margin.top)
+                    //             .attr('width', loading_width)
+                    //             .attr('height', loading_height);
+                    //     })
+                    //     .attr('display', 'none');
+
+
+
                     //===create display dropdown option
-                    d3.select('#displayDropDownMenu')
+                    chartContainerD3.selectAll('#displayDropDownMenu')
                         .selectAll('div')
                         .data(newData)
                         .join('div')
@@ -943,29 +951,35 @@ function waveXdist() {
                         })
 
                     // console.debug(newData);
+                    var sliderInit = function () {
+                        var get_niceDomain = (domain) => {
+                            return d3.scaleLinear().domain(domain).nice().domain();
+                        }
+                        let dist_domain = get_niceDomain(d3.extent(newData, d => d[dataKeys[3]]));
+                        let az_domain = [0, 360];//方位角最大360
+                        // console.debug(dist_domain, az_domain)
 
-                    let dist_domain = get_niceDomain(d3.extent(newData, d => d[dataKeys[3]]));
-                    let az_domain = [0, 360];//方位角最大360
-                    // console.debug(dist_domain, az_domain)
+                        distRange_slider = new Slider('#distRange', {
+                            id: "distRange_slider",
+                            min: dist_domain[0],
+                            max: dist_domain[1],
+                            value: dist_domain,
+                            tooltip: 'hide',
+                        });
+                        azRange_slider = new Slider('#azRange', {
+                            id: "azRange_slider",
+                            min: az_domain[0],
+                            max: az_domain[1],
+                            value: az_domain,
+                            tooltip: 'hide',
+                        });
+                        chartContainerD3.selectAll('#distRange_min').property('value', dist_domain[0]);
+                        chartContainerD3.selectAll('#distRange_max').property('value', dist_domain[1]);
+                        chartContainerD3.selectAll('#azRange_min').property('value', az_domain[0])
+                        chartContainerD3.selectAll('#azRange_max').property('value', az_domain[1]);
+                    }();
 
-                    distRange_slider = new Slider('#distRange', {
-                        id: "distRange_slider",
-                        min: dist_domain[0],
-                        max: dist_domain[1],
-                        value: dist_domain,
-                        tooltip: 'hide',
-                    });
-                    azRange_slider = new Slider('#azRange', {
-                        id: "azRange_slider",
-                        min: az_domain[0],
-                        max: az_domain[1],
-                        value: az_domain,
-                        tooltip: 'hide',
-                    });
-                    d3.select('#distRange_min').property('value', dist_domain[0]);
-                    d3.select('#distRange_max').property('value', dist_domain[1]);
-                    d3.select('#azRange_min').property('value', az_domain[0])
-                    d3.select('#azRange_max').property('value', az_domain[1]);
+
                 }
                 function render() {
                     console.debug(newDataObj);
@@ -1075,7 +1089,7 @@ function waveXdist() {
                         var eachDataGap = xAxisLength / newData.length;
 
                         if (normalize) {
-                            let textBoxValue = d3.select('#normalizeScale').node().value;
+                            let textBoxValue = chartContainerD3.selectAll('#normalizeScale').node().value;
                             var normalizeScale = (textBoxValue == '') ? 1 : textBoxValue;
                         }
                         var dataRange = {
@@ -1197,7 +1211,39 @@ function waveXdist() {
                     init();
                 }
                 render();
+                loadingEffect('hide');
             };
+
+            let hideLoading_flag = true;
+            let hideLoading_timeOut = null;
+
+            function loadingEffect(action = 'hide') {
+                const transitionDuration = 200;
+
+                if (!hideLoading_flag)
+                    hideLoading_timeOut.stop();
+
+                switch (action) {
+                    case 'show':
+                        loadingGroup
+                            .style('opacity', 1)
+                            .style('display', 'inline');
+                        break;
+                    case 'hide':
+
+                        hideLoading_timeOut = d3.timeout(() => {
+                            loadingGroup
+                                .transition().duration(transitionDuration)
+                                .style('opacity', 0);
+                            d3.timeout(() => loadingGroup.style('display', 'none'), transitionDuration);
+                            hideLoading_flag = true;
+                        }, transitionDuration);
+
+                        hideLoading_flag = false;
+                        break;
+                }
+
+            }
             updateChart();
 
             function events() {
@@ -1467,7 +1513,7 @@ function waveXdist() {
                             }
                         };
                         var dragBehavior = d3.drag()
-                            .on("start", (e) => {
+                            .on("start", e => {
                                 console.log("dragStart");
                                 const p = d3.pointer(e, event_rect.node());
                                 selectionRect.init(margin.left, p[1]);
@@ -1476,7 +1522,7 @@ function waveXdist() {
                                 selectionRect.removePrevious();
                                 d3.select(window).dispatch("click");//關閉dropdown
                             })
-                            .on("drag", (e) => {
+                            .on("drag", e => {
                                 console.log("dragMove");
                                 const p = d3.pointer(e, event_rect.node());
                                 // console.debug(p);
@@ -1488,33 +1534,31 @@ function waveXdist() {
                                 // const xm = x.invert(p[0]);
                                 selectionRect.update(width - margin.right, p[1]);
                             })
-                            .on("end", (e) => {
+                            .on("end", e => {
+                                loadingEffect('show');
                                 console.log("dragEnd");
                                 // console.debug('end');
+
                                 const finalAttributes = selectionRect.getCurrentAttributes();
                                 // console.debug(finalAttributes);
 
                                 if (finalAttributes.y2 - finalAttributes.y1 > 1 && finalAttributes.y2 - finalAttributes.y1 > 1) {
                                     console.log("range selected");
                                     // range selected
-                                    event.preventDefault();
-
+                                    // e.preventDefault();
                                     yAxis_domain = [y.invert(finalAttributes.y2), y.invert(finalAttributes.y1)];
-                                    // console.debug(yAxis_domain);
-
-                                    newDataObj = getNewData(normalize, yAxis_domain);
-                                    // console.debug(newDataObj);
-                                    updateChart();
-
+                                    // console.debug(yAxis_domain);        
                                 }
                                 else {
                                     //-------- reset zoom
                                     console.log("single point");
                                     yAxis_domain = null;
-                                    newDataObj = getNewData(normalize, yAxis_domain);
-                                    updateChart();
                                 }
+
+                                newDataObj = getNewData(normalize, yAxis_domain);
+                                updateChart();
                                 selectionRect.remove();
+
                             })
                         event_rect.call(dragBehavior);
                     }
@@ -1525,9 +1569,9 @@ function waveXdist() {
                     var updateFlag = true;
 
                     //=====change channel
-                    let channel = d3.selectAll('input[name ="channel"]');
+                    let channel = chartContainerD3.selectAll('input[name ="channel"]');
                     channel
-                        .on('change', e => {
+                        .on('click', e => {
                             let tmp = [];
                             channel.each(function (d, i) {
                                 if (this.checked == true)
@@ -1540,21 +1584,29 @@ function waveXdist() {
                             // updateChart();
                         });
                     //=====change sortBy dist/az
-                    d3.selectAll('input[name ="xAxisName"]')
-                        .on('change', e => {
+
+                    // console.debug(chartContainerD3.selectAll('input[name ="xAxisName"]'))
+                    chartContainerD3.selectAll('input[name ="xAxisName"]')
+                        .on('click', e => {
+                            loadingEffect('show');
                             xAxisName = e.target.value;
                             updateChart();
+
                         });
-                    d3.selectAll('input[name ="xAxisScale"]')
-                        .on('change', e => {
+                    chartContainerD3.selectAll('input[name ="xAxisScale"]')
+                        .on('click', e => {
+                            loadingEffect('show');
                             xAxisScale = e.target.value;
                             updateChart();
+
                         });
 
 
                     //====change xAxisRange
-                    d3.selectAll('input[name ="xAxisRange"]')
+                    chartContainerD3.selectAll('input[name ="xAxisRange"]')
                         .on('input', e => {
+                            if (updateFlag)
+                                loadingEffect('show');
                             // console.debug(e.target);
                             //==========================target vaule check=================================
                             let dataMin = distRange_slider.getAttribute('min');
@@ -1577,7 +1629,6 @@ function waveXdist() {
                             let maxRange = parentNode.querySelector('#' + name + '_max').value;
                             // console.debug(minRange, maxRange);
 
-                            // console.debug('updateChart');
                             minRange = parseFloat(minRange);
                             maxRange = parseFloat(maxRange);
 
@@ -1612,19 +1663,23 @@ function waveXdist() {
                         });
 
                     //=====change normalize
-                    d3.select('#normalize')
+                    chartContainerD3.selectAll('#normalize')
                         .on('change', e => {
+                            loadingEffect('show');
                             // console.debug(e.target.checked);
                             normalize = e.target.checked;
                             newDataObj = getNewData(normalize, yAxis_domain);
                             // console.debug(newDataObj);
 
                             updateChart();
+
                         });
-                    d3.select('#normalizeScale')
+                    chartContainerD3.selectAll('#normalizeScale')
                         .on('input', e => {
+
                             // console.debug(e.target);
                             if (!isNaN(e.target.value) && updateFlag) {
+                                loadingEffect('show');
                                 normalizeScale = e.target.value;
                                 updateChart();
                                 updateFlag = false;
@@ -1632,10 +1687,12 @@ function waveXdist() {
                             }
                             else
                                 e.target.value = normalizeScale;
+
+
                         });
 
                     //=====select station
-                    let display = d3.selectAll('input[name ="display"]');
+                    let display = chartContainerD3.selectAll('input[name ="display"]');
                     display
                         .on('change', e => {
                             let tmp = [];
@@ -1651,9 +1708,8 @@ function waveXdist() {
                         });
 
 
-
-
                 }
+
 
                 chartOptionEvent();
                 pathEvent();
@@ -1669,16 +1725,15 @@ function waveXdist() {
             //     .style('padding', '20px 20px 20px 20px')
             //     .style("opacity", " .9")
             //     .style('display', 'none');
-
             return svg.node();
         }
-        function printChart() {
-            $('#distRange_slider').remove();
-            $('#azRange_slider').remove();
-            $('#displayDropDownMenu').children().remove();
-            $('#normalize').prop("checked", false);
-            $('#normalizeScale').prop('disabled', true);
-            $('#charts').children().remove();
+        async function printChart() {
+            chartContainerJQ.find('#distRange_slider').remove();
+            chartContainerJQ.find('#azRange_slider').remove();
+            chartContainerJQ.find('#displayDropDownMenu').children().remove();
+            chartContainerJQ.find('#normalize').prop("checked", false);
+            chartContainerJQ.find('#normalizeScale').prop('disabled', true);
+            chartContainerJQ.find('#charts').children().remove();
 
             var i = 1;
 
@@ -1760,8 +1815,8 @@ function waveXdist() {
                     }
                 }
 
-                $('.toggle-nav').off('click');
-                $('.toggle-nav').click(function (e) {
+                chartContainerJQ.find('.toggle-nav').off('click');
+                chartContainerJQ.find('.toggle-nav').click(function (e) {
                     // console.debug(e.target === this);//e.target===this
 
                     $(this).toggleClass('active');
@@ -1776,10 +1831,10 @@ function waveXdist() {
 
 
                 });
-                // console.debug($(".toggle-nav"));
+                // console.debug(chartContainerJQ.find(".toggle-nav"));
                 $('body').off('click');
                 $('body').click(function (e) {
-                    $(".toggle-nav").each((i, d) => {
+                    chartContainerJQ.find(".toggle-nav").each((i, d) => {
                         // console.debug(e.target == d);
                         // console.debug(e.target);
                         if (e.target != d && $(d).hasClass('active')) {
@@ -1847,10 +1902,10 @@ function waveXdist() {
                     document.body.removeChild(downloadLink);
                 }
                 function show(img) {
-                    $('#bigimg').attr("src", img);//设置#bigimg元素的src属性 
-                    $('#outerdiv').fadeIn("fast");//淡入显示#outerdiv及.pimg 
-                    $('#outerdiv').off('click');
-                    $('#outerdiv').click(function () {//再次点击淡出消失弹出层 
+                    chartContainerJQ.find('#bigimg').attr("src", img);//设置#bigimg元素的src属性 
+                    chartContainerJQ.find('#outerdiv').fadeIn("fast");//淡入显示#outerdiv及.pimg 
+                    chartContainerJQ.find('#outerdiv').off('click');
+                    chartContainerJQ.find('#outerdiv').click(function () {//再次点击淡出消失弹出层 
                         $(this).fadeOut("fast");
                     });
                 }
@@ -1907,16 +1962,17 @@ function waveXdist() {
             let xAxisName = document.querySelector('input[name ="xAxisName"]:checked').value;
             let xAxisScale = document.querySelector('input[name ="xAxisScale"]:checked').value;
 
-            console.debug(xAxisName, xAxisScale)
+            // console.debug(xAxisName, xAxisScale)
             getChartMenu();
-            $('#chart' + i).append(WD_Charts(xAxisScale, xAxisName));
+
+            data = await data;//等data處理完才能畫圖
+            chartContainerJQ.find('#chart' + i).append(WD_Charts(xAxisScale, xAxisName));
             MenuEvents();
         }
         //===init once
-        if (!($('#form-chart').length >= 1)) {
+        if (!(chartContainerJQ.find('#form-chart').length >= 1)) {
             init();
         }
-        // await promise.then(sucess=> printChart())
         printChart();
     }
     return chart;

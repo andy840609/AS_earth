@@ -594,7 +594,7 @@ function waveXdist() {
             var normalizeScale = [1, 2, 5, 10];
 
             chartContainerJQ.find('#normalizeScale')
-                .val(normalizeScale[0])
+                .val(normalizeScale[1])
                 .on('input', function (e) {
                     // console.debug('normalizeScale input');
                     // console.debug(e.target.value);
@@ -721,7 +721,7 @@ function waveXdist() {
                 .attr("viewBox", [0, 0, width, height]);
             const xAxis = svg.append("g").attr("class", "xAxis");
             const yAxis = svg.append("g").attr("class", "yAxis");
-            const pathGroup = svg.append("g").attr('class', 'paths');
+            const pathGroup = svg.append("g").attr('class', 'paths').attr("clip-path", "url(#clip)");
             const loadingGroup = chartContainerD3.selectAll('#loading');
 
             var margin, x, y, path_x;
@@ -731,108 +731,7 @@ function waveXdist() {
             function getNewData(normalize = false, yAxis_domain = null, xAxis_domainObj = {}, channel_selectArr = []) {
                 var newData, newTimeArr;
                 // console.debug(xAxis_domainObj);
-                var get_newData = (xAxis_domainObj) => {
-                    let newData = [];
-
-                    //深拷貝方法
-                    //1.JSON.parse(JSON.stringify(obj)) 除了function都能深拷貝
-                    //2.Object.assign({}, obj)  拷貝深度一層
-                    //3.{...obj}   同上
-
-                    //這裡拷貝一層就夠 data[i]={station:"A",data:[1,2,3],az:1,dist:2,}
-                    // if (unselected_band) {
-                    //     let totalItem = unselected_band.length;
-                    //     let item = 0;
-                    //     for (let i = 0; i < data.length; i++) {
-                    //         if (item == totalItem)
-                    //             break;
-                    //         if (unselected_band.includes(data[i][dataKeys[0]])) {
-                    //             newData.push({ ...data[i] });
-                    //             // newData.push(Object.assign({}, data[i]));
-                    //             item++;
-                    //         }
-                    //     }
-                    // }
-                    // else {//把沒有dist或az的data去除
-                    //     for (let i = 0; i < data.length; i++) {
-                    //         if (!isNaN(data[i][dataKeys[3]]) && !isNaN(data[i][dataKeys[4]]))
-                    //             newData.push({ ...data[i] });
-                    //         // newData.push(Object.assign({}, data[i]));
-                    //         // else
-                    //         //     console.debug('lost data :' + i);
-                    //     }
-                    // }
-
-
-                    if (!newDataObj) {
-                        // console.debug("A");
-                        for (let i = 0; i < data.length; i++) {
-                            if (!isNaN(data[i][dataKeys[3]]) && !isNaN(data[i][dataKeys[4]]))
-                                newData.push({ ...data[i] });
-                        }
-                    }
-                    else if (Object.keys(xAxis_domainObj).length !== 0) {
-                        // console.debug("B");
-                        let dist_key = dataKeys[3];
-                        let az_key = dataKeys[4];
-
-                        //用filter一定傳回同樣參考
-                        data.forEach(d => {
-                            let inDistRange = true, inAzRange = true;
-                            if (xAxis_domainObj[dist_key]) {
-                                let min = xAxis_domainObj[dist_key][0];
-                                let max = xAxis_domainObj[dist_key][1];
-                                // console.debug(min, max);                                
-                                inDistRange = (d[dist_key] >= min && d[dist_key] <= max);
-                                // console.debug(d[dist_key] >= min && d[dist_key] <= max);
-                            }
-                            if (xAxis_domainObj[az_key]) {
-                                let min = xAxis_domainObj[[az_key]][0];
-                                let max = xAxis_domainObj[[az_key]][1];
-                                inAzRange = (d[az_key] >= min && d[az_key] <= max);
-                            }
-
-                            if (inDistRange && inAzRange)
-                                newData.push({ ...d });
-                        });
-                    }
-                    else {
-                        // console.debug("C");
-                        // console.debug(newDataObj.newData);
-                        newData = newDataObj.newData;
-                    }
-
-                    if (channel_selectArr.length != 0) {
-                        let tmp = newData.filter(d => {
-                            let channel = d[dataKeys[1]];
-                            if (channel_selectArr.includes(channel[channel.length - 1]));
-                            return d;
-                        })
-                        newData = tmp;
-                    }
-
-                    return newData;
-                }
-                var get_newTimeArr_and_update_newData = (yAxis_domain) => {
-                    let newTimeArr;
-                    //3.根據y軸的時間選擇範圍重新選擇newData陣列裡各物件的data數值陣列
-                    if (yAxis_domain) {
-                        // console.debug(yAxis_domain);
-                        let i1 = d3.bisectCenter(newDataObj.newTimeArr, yAxis_domain[0]);
-                        let i2 = d3.bisectCenter(newDataObj.newTimeArr, yAxis_domain[1]) + 1;//包含最大範圍
-                        // console.debug(i1, i2);
-                        newData.forEach(d => d[dataKeys[2]] = d[dataKeys[2]].slice(i1, i2));
-                        newTimeArr = newDataObj.newTimeArr.slice(i1, i2);
-                        // console.debug(newTimeArr);
-                    }
-                    else {
-                        if (newDataObj && (newDataObj.newTimeArr.length < data.timeArr.length))
-                            newData.forEach(d => d[dataKeys[2]] = data.find(od => od[dataKeys[0]] == d[dataKeys[0]])[dataKeys[2]]);
-                        newTimeArr = data.timeArr;
-                    }
-                    return newTimeArr;
-                }
-                var newData_normalize = () => {
+                var newData_normalize = (newData) => {
                     newData.forEach(d => {
                         let normalize = d3.scaleLinear()
                             .domain(d3.extent(d.data))
@@ -853,12 +752,117 @@ function waveXdist() {
                     })
 
                 }
+                var channel_select = (data, channel_selectArr) => {
+
+                    newData = data.filter(d => {
+                        let channel = d[dataKeys[1]];
+                        console.debug(channel[channel.length - 1]);
+                        console.debug(channel_selectArr.includes(channel[channel.length - 1]));
+
+                        if (channel_selectArr.includes(channel[channel.length - 1]))
+                            return d;
+                    })
+
+                    console.debug(newData);
+
+                }
+
+
+
+                var get_newData = (xAxis_domainObj) => {
+                    let newData = [];
+
+                    if (!newDataObj) {
+                        console.debug("A for first time");
+                        for (let i = 0; i < data.length; i++) {
+                            if (!isNaN(data[i][dataKeys[3]]) && !isNaN(data[i][dataKeys[4]]))
+                                newData.push({ ...data[i] });
+                        }
+                    }
+                    else if (Object.keys(xAxis_domainObj).length !== 0 || (!normalize && newDataObj.normalize) || channel_selectArr.length != 0) {
+                        console.debug("B data reset");
+                        let dist_key = dataKeys[3];
+                        let az_key = dataKeys[4];
+                        // let data = newDataObj.newData;
+
+                        //用filter一定傳回同樣參考
+                        data.forEach(d => {
+                            let inDistRange = true, inAzRange = true;
+                            if (xAxis_domainObj[dist_key]) {
+                                let min = xAxis_domainObj[dist_key][0];
+                                let max = xAxis_domainObj[dist_key][1];
+                                // console.debug(min, max);                                
+                                inDistRange = (d[dist_key] >= min && d[dist_key] <= max);
+                                // console.debug(d[dist_key] >= min && d[dist_key] <= max);
+                            }
+                            if (xAxis_domainObj[az_key]) {
+                                let min = xAxis_domainObj[[az_key]][0];
+                                let max = xAxis_domainObj[[az_key]][1];
+                                inAzRange = (d[az_key] >= min && d[az_key] <= max);
+                            }
+
+                            if (inDistRange && inAzRange)
+                                newData.push({ ...d });
+                        });
+
+
+                        if (normalize)
+                            newData_normalize(newData);
+
+                    }
+                    else {
+                        console.debug("C");
+                        // console.debug(newDataObj.newData);
+                        newData = newDataObj.newData;
+
+                        // if (normalize && !newDataObj.normalize)
+                        //     newData_normalize(newData);
+                    }
+
+                    // console.debug(newData[0].data);
+                    return newData;
+                }
+                var get_newTimeArr_and_update_newData = (yAxis_domain) => {
+                    let newTimeArr;
+                    //3.根據y軸的時間選擇範圍重新選擇newData陣列裡各物件的data數值陣列
+                    if (yAxis_domain) {
+                        console.debug('1');
+                        // console.debug(yAxis_domain);
+                        let i1 = d3.bisectCenter(newDataObj.newTimeArr, yAxis_domain[0]);
+                        let i2 = d3.bisectCenter(newDataObj.newTimeArr, yAxis_domain[1]) + 1;//包含最大範圍
+                        // console.debug(i1, i2);
+                        newData.forEach(d => d[dataKeys[2]] = d[dataKeys[2]].slice(i1, i2));
+                        newTimeArr = newDataObj.newTimeArr.slice(i1, i2);
+                        // console.debug(newTimeArr);
+                    }
+                    else {
+                        console.debug('2 data reset');
+                        if (newDataObj && (newDataObj.newTimeArr.length < data.timeArr.length)) {
+                            console.debug('2-1');
+                            newData.forEach(d => d[dataKeys[2]] = data.find(od => od[dataKeys[0]] == d[dataKeys[0]])[dataKeys[2]]);
+
+                        }
+                        else {
+                            console.debug('2-2');
+                        }
+                        newTimeArr = data.timeArr;
+
+                        if (normalize) newData_normalize(newData);
+                    }
+                    return newTimeArr;
+                }
+
                 newData = get_newData(xAxis_domainObj);
                 newTimeArr = get_newTimeArr_and_update_newData(yAxis_domain);
                 // sort_newData(newData, xAxisName);
-                if (normalize)
-                    newData_normalize();
                 // console.debug(newData);
+
+                // if (normalize && !newDataObj.normalize)
+                //     newData_normalize(newData);
+
+                if (channel_selectArr.length > 0)
+                    channel_select(newData, channel_selectArr);
+                console.debug(newData);
 
                 return {
                     newData: newData,
@@ -870,7 +874,6 @@ function waveXdist() {
 
             }
             function updateChart(trans = false) {
-
                 function init() {
                     let newData = newDataObj.newData;
                     svg
@@ -1078,15 +1081,14 @@ function waveXdist() {
                     var updatePaths = () => {
 
                         var transitionDuration = 500;
-
                         var dataDomain = {
                             true: [-1, 1],
-                            false: d3.extent([].concat(...newData.map(d => d3.extent(d.data)))),
+                            false: d3.extent([].concat(...data.map(d => d3.extent(d.data)))),
                         }[normalize];
                         var dataDomainMean = (dataDomain[1] + dataDomain[0]) * 0.5;//linear時將第一點移至正中間
                         var xAxisLength = width - margin.left - margin.right;//or =x.range()[1] - x.range()[0];
 
-                        var eachDataGap = xAxisLength / newData.length;
+                        const eachDataGap = xAxisLength / data.length;
 
                         if (normalize) {
                             let textBoxValue = chartContainerD3.selectAll('#normalizeScale').node().value;
@@ -1097,8 +1099,10 @@ function waveXdist() {
                             false: [-0.5 * eachDataGap, 0.5 * eachDataGap],
                         }[normalize];
 
-
-
+                        // console.debug(eachDataGap);
+                        // console.debug(dataDomain);
+                        // console.debug(dataRange);
+                        // console.debug(newDataObj.newData[0].data);
 
                         var transLine = (data, translate_x, gapPath = false) => {
                             var pathAttr;
@@ -1109,7 +1113,6 @@ function waveXdist() {
                             let shiftMean = dataDomainMean - data[firstPointIndex];
                             // console.debug(data[firstPointIndex]);
                             // console.debug(shift);
-
 
                             path_x = d3.scaleLinear()
                                 .domain(dataDomain)
@@ -1156,7 +1159,8 @@ function waveXdist() {
                                     let color = isUnselected ? 'grey' : getColor(d[dataKeys[0]]);
                                     let opacity = isUnselected ? .3 : .8;
                                     let translate_x = {
-                                        band: (i + 0.5) * eachDataGap + margin.left,
+                                        // band: (i + 0.5) * eachDataGap + margin.left,
+                                        band: (i + 0.5) * (xAxisLength / newData.length) + margin.left,
                                         linear: x(newData[i][xAxisName])
                                     }[xAxisScale];
 
@@ -1169,7 +1173,7 @@ function waveXdist() {
                                     path
                                         .style("mix-blend-mode", "normal")
                                         .attr("fill", "none")
-                                        .attr("stroke-width", 1.5)
+                                        .attr("stroke-width", 0.5)
                                         .attr("stroke-linejoin", "round")
                                         .attr("stroke-linecap", "round")
                                         .attr("stroke-opacity", opacity)
@@ -1207,7 +1211,7 @@ function waveXdist() {
                 }
 
                 if (!newDataObj) {
-                    newDataObj = getNewData(false, null, {}, ['Z']);
+                    newDataObj = getNewData(true, null, {}, ['Z']);
                     init();
                 }
                 render();
@@ -1255,8 +1259,6 @@ function waveXdist() {
                 // yAxis_domain = [0, 60];
 
                 function pathEvent() {
-
-
                     //====================================mouse move==================================================
                     function mouseMove() {
                         // const datesArr = data.timeArr;
@@ -1572,16 +1574,16 @@ function waveXdist() {
                     let channel = chartContainerD3.selectAll('input[name ="channel"]');
                     channel
                         .on('click', e => {
-                            let tmp = [];
+                            let channelArr = [];
                             channel.each(function (d, i) {
                                 if (this.checked == true)
-                                    tmp.push(this.value);
+                                    channelArr.push(this.value);
                             });
 
-                            // console.debug(tmp);
-                            // newDataObj = getNewData(normalize, yAxis_domain);
+                            // console.debug(channelArr);
+                            newDataObj = getNewData(normalize, yAxis_domain, xAxis_domainObj, channelArr);
                             // newDataObj.unselected_band = unselected_band;
-                            // updateChart();
+                            updateChart();
                         });
                     //=====change sortBy dist/az
 
@@ -1668,8 +1670,8 @@ function waveXdist() {
                             loadingEffect('show');
                             // console.debug(e.target.checked);
                             normalize = e.target.checked;
-                            newDataObj = getNewData(normalize, yAxis_domain);
-                            // console.debug(newDataObj);
+                            newDataObj = getNewData(normalize, yAxis_domain, xAxis_domainObj);
+                            // console.debug(xAxis_domainObj);
 
                             updateChart();
 
@@ -1731,7 +1733,7 @@ function waveXdist() {
             chartContainerJQ.find('#distRange_slider').remove();
             chartContainerJQ.find('#azRange_slider').remove();
             chartContainerJQ.find('#displayDropDownMenu').children().remove();
-            chartContainerJQ.find('#normalize').prop("checked", false);
+            chartContainerJQ.find('#normalize').prop("checked", true);
             chartContainerJQ.find('#normalizeScale').prop('disabled', true);
             chartContainerJQ.find('#charts').children().remove();
 

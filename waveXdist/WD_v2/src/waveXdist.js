@@ -756,14 +756,14 @@ function waveXdist() {
 
                     newData = data.filter(d => {
                         let channel = d[dataKeys[1]];
-                        console.debug(channel[channel.length - 1]);
-                        console.debug(channel_selectArr.includes(channel[channel.length - 1]));
+                        // console.debug(channel[channel.length - 1]);
+                        // console.debug(channel_selectArr.includes(channel[channel.length - 1]));
 
                         if (channel_selectArr.includes(channel[channel.length - 1]))
                             return d;
                     })
 
-                    console.debug(newData);
+                    // console.debug(newData);
 
                 }
 
@@ -837,17 +837,19 @@ function waveXdist() {
                     }
                     else {
                         console.debug('2 data reset');
-                        if (newDataObj && (newDataObj.newTimeArr.length < data.timeArr.length)) {
+                        if (!newDataObj) {
                             console.debug('2-1');
-                            newData.forEach(d => d[dataKeys[2]] = data.find(od => od[dataKeys[0]] == d[dataKeys[0]])[dataKeys[2]]);
-
+                            if (normalize) newData_normalize(newData);
                         }
-                        else {
+                        else if (newDataObj && (newDataObj.newTimeArr.length < data.timeArr.length)) {
                             console.debug('2-2');
+                            newData.forEach(d => d[dataKeys[2]] = data.find(od => od[dataKeys[0]] == d[dataKeys[0]])[dataKeys[2]]);
+                            if (normalize) newData_normalize(newData);
                         }
+
                         newTimeArr = data.timeArr;
 
-                        if (normalize) newData_normalize(newData);
+
                     }
                     return newTimeArr;
                 }
@@ -862,7 +864,7 @@ function waveXdist() {
 
                 if (channel_selectArr.length > 0)
                     channel_select(newData, channel_selectArr);
-                console.debug(newData);
+                // console.debug(newData);
 
                 return {
                     newData: newData,
@@ -1251,9 +1253,12 @@ function waveXdist() {
             updateChart();
 
             function events() {
-                var yAxis_domain = null, normalize = false;
-                var normalizeScale = document.querySelector('#normalizeScale').value;
-                var xAxis_domainObj = {};
+                var yAxis_domain = null,
+                    normalize = chartContainerD3.selectAll('#normalize').property("checked"),
+                    normalizeScale = chartContainerD3.selectAll('#normalizeScale').property("value"),
+                    xAxis_domainObj = {};
+
+                // console.debug(normalizeScale)
                 // var unselected_band = null;
                 // unselected_band = ["GWUB", "TPUB"];
                 // yAxis_domain = [0, 60];
@@ -1734,7 +1739,7 @@ function waveXdist() {
             chartContainerJQ.find('#azRange_slider').remove();
             chartContainerJQ.find('#displayDropDownMenu').children().remove();
             chartContainerJQ.find('#normalize').prop("checked", true);
-            chartContainerJQ.find('#normalizeScale').prop('disabled', true);
+            chartContainerJQ.find('#normalizeScale').prop('disabled', false);
             chartContainerJQ.find('#charts').children().remove();
 
             var i = 1;

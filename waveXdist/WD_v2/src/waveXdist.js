@@ -288,7 +288,7 @@ function waveXdist() {
                         d[dataKey_staAz[1]] = undefined;
                 return d;
             });
-
+            // console.debug(xyData)
             return xyData;
         });
 
@@ -593,8 +593,10 @@ function waveXdist() {
             //====================normalize
             var normalizeScale = [1, 2, 5, 10];
 
+            var default_normalizeScaleIdx = 2;
+
             chartContainerJQ.find('#normalizeScale')
-                .val(normalizeScale[1])
+                .val(normalizeScale[default_normalizeScaleIdx])
                 .on('input', function (e) {
                     // console.debug('normalizeScale input');
                     // console.debug(e.target.value);
@@ -609,7 +611,7 @@ function waveXdist() {
             chartContainerJQ.find('#NSRange')
                 .attr("min", 0)
                 .attr("max", normalizeScale.length - 1)
-                .attr("value", 0)
+                .attr("value", default_normalizeScaleIdx)
                 .on("input propertychange", function (e) {
                     // console.debug('NSRange change');
                     let NSIndex = e.target.value;
@@ -728,10 +730,21 @@ function waveXdist() {
             var newDataObj;
             var distRange_slider, azRange_slider;//for event control slider
             var unselected_band = [];
-            function getNewData(normalize = false, yAxis_domain = null, xAxis_domainObj = {}, channel_selectArr = []) {
+            // channel_selectArr = ['Z'];
+            function getNewData(controlObj = {}) {
+                // console.debug(data);
+                let normalize = controlObj.normalize ? controlObj.normalize : false,
+                    yAxis_domain = controlObj.yAxis_domain ? controlObj.yAxis_domain : null,
+                    xAxis_domainObj = controlObj.xAxis_domainObj ? controlObj.xAxis_domainObj : {};
+
+                let channel_selectArr = controlObj.channel_selectArr ? controlObj.channel_selectArr : newDataObj.channel_selectArr;
+
+                // console.debug(normalize, yAxis_domain, xAxis_domainObj, channel_selectArr);
+
                 var newData, newTimeArr;
                 // console.debug(xAxis_domainObj);
                 var newData_normalize = (newData) => {
+                    // console.debug('normalize...');
                     newData.forEach(d => {
                         let normalize = d3.scaleLinear()
                             .domain(d3.extent(d.data))
@@ -752,19 +765,22 @@ function waveXdist() {
                     })
 
                 }
-                var channel_select = (data, channel_selectArr) => {
+                var getArr_of_channel_select = (data, channel_selectArr) => {
 
-                    newData = data.filter(d => {
+                    //用filter會傳回個物件的同樣參考,造成後續切割newData陣列也動到data
+                    //所以用forEach push物件展開
+                    let newData = [];
+                    data.forEach(d => {
                         let channel = d[dataKeys[1]];
                         // console.debug(channel[channel.length - 1]);
                         // console.debug(channel_selectArr.includes(channel[channel.length - 1]));
 
                         if (channel_selectArr.includes(channel[channel.length - 1]))
-                            return d;
+                            newData.push({ ...d });
                     })
 
                     // console.debug(newData);
-
+                    return newData;
                 }
 
 
@@ -774,19 +790,29 @@ function waveXdist() {
 
                     if (!newDataObj) {
                         console.debug("A for first time");
+                        //把沒有同時有az.dist的資料刪除
                         for (let i = 0; i < data.length; i++) {
-                            if (!isNaN(data[i][dataKeys[3]]) && !isNaN(data[i][dataKeys[4]]))
-                                newData.push({ ...data[i] });
+                            if (isNaN(data[i][dataKeys[3]]) && isNaN(data[i][dataKeys[4]]))
+                                // newData.push({ ...data[i] });
+                                data.splice(i, 1);
+
                         }
+                        // console.debug(data);
+                        newData = getArr_of_channel_select(data, channel_selectArr);
+                        // console.debug(newData);
                     }
-                    else if (Object.keys(xAxis_domainObj).length !== 0 || (!normalize && newDataObj.normalize) || channel_selectArr.length != 0) {
+                    else if (Object.keys(xAxis_domainObj).length !== 0 || (!normalize && newDataObj.normalize) || controlObj.channel_selectArr) {
                         console.debug("B data reset");
                         let dist_key = dataKeys[3];
                         let az_key = dataKeys[4];
                         // let data = newDataObj.newData;
 
-                        //用filter一定傳回同樣參考
-                        data.forEach(d => {
+
+                        //先選channel
+                        newData = getArr_of_channel_select(data, channel_selectArr);
+
+
+                        newData = newData.filter(d => {
                             let inDistRange = true, inAzRange = true;
                             if (xAxis_domainObj[dist_key]) {
                                 let min = xAxis_domainObj[dist_key][0];
@@ -802,9 +828,11 @@ function waveXdist() {
                             }
 
                             if (inDistRange && inAzRange)
-                                newData.push({ ...d });
+                                // newData.push({ ...d });
+                                return true;
                         });
 
+                        // console.debug(newData);
 
                         if (normalize)
                             newData_normalize(newData);
@@ -836,19 +864,21 @@ function waveXdist() {
                         // console.debug(newTimeArr);
                     }
                     else {
-                        console.debug('2 data reset');
+                        // console.debug('2 data reset');
                         if (!newDataObj) {
                             console.debug('2-1');
                             if (normalize) newData_normalize(newData);
                         }
                         else if (newDataObj && (newDataObj.newTimeArr.length < data.timeArr.length)) {
-                            console.debug('2-2');
+                            console.debug('2-2 data reset');
                             newData.forEach(d => d[dataKeys[2]] = data.find(od => od[dataKeys[0]] == d[dataKeys[0]])[dataKeys[2]]);
                             if (normalize) newData_normalize(newData);
                         }
-
+                        else {
+                            console.debug('2-3');
+                            if (normalize && !newDataObj.normalize) newData_normalize(newData);
+                        }
                         newTimeArr = data.timeArr;
-
 
                     }
                     return newTimeArr;
@@ -862,8 +892,9 @@ function waveXdist() {
                 // if (normalize && !newDataObj.normalize)
                 //     newData_normalize(newData);
 
-                if (channel_selectArr.length > 0)
-                    channel_select(newData, channel_selectArr);
+                // console.debug(channel_selectArr);
+                // if (channel_selectArr.length > 0)
+                //     channel_select(newData, channel_selectArr);
                 // console.debug(newData);
 
                 return {
@@ -872,10 +903,13 @@ function waveXdist() {
                     normalize: normalize,
                     yAxis_domain: yAxis_domain,
                     xAxis_domainObj: xAxis_domainObj,
+                    channel_selectArr: channel_selectArr,
                 };
 
             }
             function updateChart(trans = false) {
+                // console.debug(channel_selectArr)
+
                 function init() {
                     let newData = newDataObj.newData;
                     svg
@@ -1088,7 +1122,8 @@ function waveXdist() {
                             false: d3.extent([].concat(...data.map(d => d3.extent(d.data)))),
                         }[normalize];
                         var dataDomainMean = (dataDomain[1] + dataDomain[0]) * 0.5;//linear時將第一點移至正中間
-                        var xAxisLength = width - margin.left - margin.right;//or =x.range()[1] - x.range()[0];
+                        // var xAxisLength = width - margin.left - margin.right;//or =x.range()[1] - x.range()[0];
+                        var xAxisLength = x.range()[1] - x.range()[0];
 
                         const eachDataGap = xAxisLength / data.length;
 
@@ -1175,7 +1210,7 @@ function waveXdist() {
                                     path
                                         .style("mix-blend-mode", "normal")
                                         .attr("fill", "none")
-                                        .attr("stroke-width", 0.5)
+                                        .attr("stroke-width", 1)
                                         .attr("stroke-linejoin", "round")
                                         .attr("stroke-linecap", "round")
                                         .attr("stroke-opacity", opacity)
@@ -1213,7 +1248,7 @@ function waveXdist() {
                 }
 
                 if (!newDataObj) {
-                    newDataObj = getNewData(true, null, {}, ['Z']);
+                    newDataObj = getNewData({ normalize: true, yAxis_domain: null, xAxis_domainObj: {}, channel_selectArr: ['Z'] });
                     init();
                 }
                 render();
@@ -1256,7 +1291,12 @@ function waveXdist() {
                 var yAxis_domain = null,
                     normalize = chartContainerD3.selectAll('#normalize').property("checked"),
                     normalizeScale = chartContainerD3.selectAll('#normalizeScale').property("value"),
-                    xAxis_domainObj = {};
+                    xAxis_domainObj = {},
+                    channel_selectArr = newDataObj.channel_selectArr;
+
+                const updateDelay = 10;
+                var updateFlag = true;
+                var updateTimeOut = null;
 
                 // console.debug(normalizeScale)
                 // var unselected_band = null;
@@ -1330,106 +1370,136 @@ function waveXdist() {
                                 .attr('xlink:href', "#chartRenderRange")
                                 .on('mouseleave', function () { // on mouse out hide line, circles and text
                                     // console.log('mouseleave');
-                                    svg.select(".mouse-line")
-                                        .style("opacity", "0");
-                                    svg.selectAll(".mouse-per-line circle")
-                                        .style("opacity", "0");
-                                    svg.selectAll(".mouse-per-line text")
-                                        .style("opacity", "0");
-                                    // tooltip
-                                    //     // .transition().duration(500)
-                                    //     // .style("opacity", 0)
-                                    //     .style("display", "none");
+                                    var action = () => {
+                                        svg.select(".mouse-line")
+                                            .style("opacity", "0");
+                                        svg.selectAll(".mouse-per-line circle")
+                                            .style("opacity", "0");
+                                        svg.selectAll(".mouse-per-line text")
+                                            .style("opacity", "0");
+                                        // tooltip
+                                        //     // .transition().duration(500)
+                                        //     // .style("opacity", 0)
+                                        //     .style("display", "none");
 
-                                })
-                                .on('mousemove', function (event) { // update tooltip content, line, circles and text when mouse moves
-                                    // console.log(event.target);
-                                    event.preventDefault();
-                                    const pointer = d3.pointer(event, this);
-                                    const ym = y.invert(pointer[1]);
-
-                                    const idy = d3.bisectCenter(newTimeArr, ym);
-                                    const sortedIndex = d3.range(newData.length);
-                                    console.debug();
-
-                                    function getPointTranslateX(stationIdex, dataIndex) {
-                                        // let paths = svg.selectAll('.paths path');
-                                        // let transform = paths.nodes()[index].getAttribute('d');
-                                        // let pointArr = transform.split('L');
-
-
-
-                                        console.debug(aaa, bbb);
-                                        // let point = transform.substring(transform.indexOf('M') + 1, transform.indexOf('L'))
-                                        // console.debug();
-                                        // let translateX = transform.substring(transform.indexOf('(') + 1, transform.indexOf(','));
-                                        return aaa + 100 + "," + bbb;
                                     }
 
-                                    svg.select(".mouse-line")
-                                        .attr("d", function () {
-                                            let yPos = y(newTimeArr[idy]);
-                                            let p1 = (width - margin.right) + "," + yPos;
-                                            let p2 = margin.left + "," + yPos;
-                                            let d = "M" + p1 + " L" + p2;
-                                            return d;
-                                        })
-                                        .style("opacity", "0.7");
-                                    // svg.selectAll(".mouse-per-line circle")
-                                    //     .style("opacity", "1");
-                                    // svg.selectAll(".mouse-per-line")
-                                    //     .attr("transform", function (d, i) {
-                                    //         // let pos = getPointTranslateX(i, idy);
-                                    //         var translate = null;
-                                    //         if (isNaN(newData[i].data[idy]))
-                                    //             d3.select(this).selectAll('circle').style("opacity", "0");
-                                    //         else {
-                                    //             d3.select(this).selectAll('circle').style("opacity", "1");
-                                    //             let pathX = path_x(newData[i].data[idy]);
-                                    //             let pathY = y(newTimeArr[idy]);
-                                    //             let transX = {
-                                    //                 band: (i + 0.5) * ((width - margin.left - margin.right) / newData.length) + margin.left,
-                                    //                 linear: x(newXAxis_data[i][xAxisName])
-                                    //             }[xAxisScale];
-                                    //             translate = `translate(${pathX + transX},${pathY})`;
-                                    //         }
-                                    //         return translate;
-                                    //     });
+                                    if (!updateFlag)
+                                        updateTimeOut.stop();
 
-                                    // let timeStr = new Date(newTimeArr[idy]).toISOString();
-                                    // const divHtml = "Time : <br/><font size='5'>" + timeStr + "</font><br/>" + data.yName + " : <br/>";
-                                    // tooltip
-                                    //     // .transition().duration(200)
-                                    //     // .style("opacity", .9)
-                                    //     .style("display", "inline");
-                                    // tooltip.html(divHtml)
-                                    //     .style("left", (event.pageX + 20) + "px")
-                                    //     .style("top", (event.pageY - 20) + "px")
-                                    //     .selectAll()
-                                    //     .data(newData).enter()
-                                    //     .append('div')
-                                    //     .call(() => {
-                                    //         // console.debug('=============');
-                                    //         for (let i = 0; i < newData.length - 1; i++)
-                                    //             for (let j = 0; j < newData.length - 1 - i; j++)
-                                    //                 // console.debug(data[sortedIndex[j]].data[idy].y, data[sortedIndex[j + 1]].data[idy].y);
-                                    //                 if (newData[sortedIndex[j]].values[idy] < newData[sortedIndex[j + 1]].values[idy]) {
-                                    //                     let tmp = sortedIndex[j];
-                                    //                     sortedIndex[j] = sortedIndex[j + 1];
-                                    //                     sortedIndex[j + 1] = tmp;
-                                    //                 }
-                                    //         // console.debug(sortedIndex);
-                                    //     })
-                                    //     .style('color', (d, i) => getColor(sortedIndex[i]))
-                                    //     .style('font-size', 10)
-                                    //     .html((d, i) => {
-                                    //         // console.debug(d.data);
-                                    //         let y = newData[sortedIndex[i]].values[idy];
+                                    updateTimeOut = d3.timeout(() => {
+                                        action();
+                                        updateFlag = true;
+                                    }, updateDelay);
 
-                                    //         let html = "<font size='5'>" + (isNaN(y) ? 'no data' : y) + "</font>";
+                                    updateFlag = false;
 
-                                    //         return html;
-                                    //     });
+
+                                })
+                                .on('mousemove', function (e) { // update tooltip content, line, circles and text when mouse moves
+                                    // console.log(event.target);
+
+                                    var action = () => {
+                                        e.preventDefault();
+                                        const pointer = d3.pointer(e, this);
+                                        const ym = y.invert(pointer[1]);
+
+                                        const idy = d3.bisectCenter(newTimeArr, ym);
+                                        const sortedIndex = d3.range(newData.length);
+                                        console.debug();
+
+                                        function getPointTranslateX(stationIdex, dataIndex) {
+                                            // let paths = svg.selectAll('.paths path');
+                                            // let transform = paths.nodes()[index].getAttribute('d');
+                                            // let pointArr = transform.split('L');
+
+
+
+                                            console.debug(aaa, bbb);
+                                            // let point = transform.substring(transform.indexOf('M') + 1, transform.indexOf('L'))
+                                            // console.debug();
+                                            // let translateX = transform.substring(transform.indexOf('(') + 1, transform.indexOf(','));
+                                            return aaa + 100 + "," + bbb;
+                                        }
+
+                                        svg.select(".mouse-line")
+                                            .attr("d", function () {
+                                                let yPos = y(newTimeArr[idy]);
+                                                let p1 = (width - margin.right) + "," + yPos;
+                                                let p2 = margin.left + "," + yPos;
+                                                let d = "M" + p1 + " L" + p2;
+                                                return d;
+                                            })
+                                            .style("opacity", "0.7");
+                                        // svg.selectAll(".mouse-per-line circle")
+                                        //     .style("opacity", "1");
+                                        // svg.selectAll(".mouse-per-line")
+                                        //     .attr("transform", function (d, i) {
+                                        //         // let pos = getPointTranslateX(i, idy);
+                                        //         var translate = null;
+                                        //         if (isNaN(newData[i].data[idy]))
+                                        //             d3.select(this).selectAll('circle').style("opacity", "0");
+                                        //         else {
+                                        //             d3.select(this).selectAll('circle').style("opacity", "1");
+                                        //             let pathX = path_x(newData[i].data[idy]);
+                                        //             let pathY = y(newTimeArr[idy]);
+                                        //             let transX = {
+                                        //                 band: (i + 0.5) * ((width - margin.left - margin.right) / newData.length) + margin.left,
+                                        //                 linear: x(newXAxis_data[i][xAxisName])
+                                        //             }[xAxisScale];
+                                        //             translate = `translate(${pathX + transX},${pathY})`;
+                                        //         }
+                                        //         return translate;
+                                        //     });
+
+                                        // let timeStr = new Date(newTimeArr[idy]).toISOString();
+                                        // const divHtml = "Time : <br/><font size='5'>" + timeStr + "</font><br/>" + data.yName + " : <br/>";
+                                        // tooltip
+                                        //     // .transition().duration(200)
+                                        //     // .style("opacity", .9)
+                                        //     .style("display", "inline");
+                                        // tooltip.html(divHtml)
+                                        //     .style("left", (event.pageX + 20) + "px")
+                                        //     .style("top", (event.pageY - 20) + "px")
+                                        //     .selectAll()
+                                        //     .data(newData).enter()
+                                        //     .append('div')
+                                        //     .call(() => {
+                                        //         // console.debug('=============');
+                                        //         for (let i = 0; i < newData.length - 1; i++)
+                                        //             for (let j = 0; j < newData.length - 1 - i; j++)
+                                        //                 // console.debug(data[sortedIndex[j]].data[idy].y, data[sortedIndex[j + 1]].data[idy].y);
+                                        //                 if (newData[sortedIndex[j]].values[idy] < newData[sortedIndex[j + 1]].values[idy]) {
+                                        //                     let tmp = sortedIndex[j];
+                                        //                     sortedIndex[j] = sortedIndex[j + 1];
+                                        //                     sortedIndex[j + 1] = tmp;
+                                        //                 }
+                                        //         // console.debug(sortedIndex);
+                                        //     })
+                                        //     .style('color', (d, i) => getColor(sortedIndex[i]))
+                                        //     .style('font-size', 10)
+                                        //     .html((d, i) => {
+                                        //         // console.debug(d.data);
+                                        //         let y = newData[sortedIndex[i]].values[idy];
+
+                                        //         let html = "<font size='5'>" + (isNaN(y) ? 'no data' : y) + "</font>";
+
+                                        //         return html;
+                                        //     });
+                                    }
+
+                                    if (!updateFlag)
+                                        updateTimeOut.stop();
+
+                                    updateTimeOut = d3.timeout(() => {
+                                        action();
+                                        updateFlag = true;
+                                    }, updateDelay);
+
+                                    updateFlag = false;
+
+
+
                                 });
 
 
@@ -1562,7 +1632,7 @@ function waveXdist() {
                                     yAxis_domain = null;
                                 }
 
-                                newDataObj = getNewData(normalize, yAxis_domain);
+                                newDataObj = getNewData({ normalize: normalize, yAxis_domain: yAxis_domain });
                                 updateChart();
                                 selectionRect.remove();
 
@@ -1573,20 +1643,34 @@ function waveXdist() {
                     mouseMove();
                 }
                 function chartOptionEvent() {
-                    var updateFlag = true;
 
+                    // //====================channel
+                    // let channel_checkboxs = chartContainerJQ.find('input[name ="channel"]');
+                    // channel_checkboxs.on("change", function (e) {
+                    //     //只能單選所以取消其他的checked
+                    //     channel_checkboxs.filter((i, checkbox) => checkbox !== e.target).prop("checked", false);
+                    // });
                     //=====change channel
                     let channel = chartContainerD3.selectAll('input[name ="channel"]');
                     channel
                         .on('click', e => {
-                            let channelArr = [];
-                            channel.each(function (d, i) {
-                                if (this.checked == true)
-                                    channelArr.push(this.value);
-                            });
+                            loadingEffect('show');
+                            let tmp = [];
 
-                            // console.debug(channelArr);
-                            newDataObj = getNewData(normalize, yAxis_domain, xAxis_domainObj, channelArr);
+                            //＝＝＝多選                           
+                            // channel.each(function (d, i) {
+                            //     if (this.checked == true)
+                            //         tmp.push(this.value);
+                            // });
+
+                            //＝＝＝單選
+
+                            channel.nodes().filter(chkbox => chkbox !== e.target).forEach(chkbox => chkbox.checked = false);
+                            if (e.target.checked) tmp = [e.target.value];
+
+                            // channel_selectArr = tmp;
+                            newDataObj = getNewData({ normalize: normalize, xAxis_domainObj: xAxis_domainObj, channel_selectArr: tmp });
+                            // newDataObj = getNewData({ normalize: normalize, channel_selectArr: tmp });
                             // newDataObj.unselected_band = unselected_band;
                             updateChart();
                         });
@@ -1656,16 +1740,21 @@ function waveXdist() {
                                     break;
                             }
                             xAxis_domainObj[key] = domain;
-                            // console.debug(xAxis_domainObj);
 
-                            if (updateFlag) {//避免更新太頻繁LAG
-                                newDataObj = getNewData(normalize, yAxis_domain, xAxis_domainObj);
+
+
+                            //避免更新太頻繁LAG
+                            // console.log(updateFlag);
+                            if (!updateFlag)
+                                updateTimeOut.stop();
+
+                            updateTimeOut = d3.timeout(() => {
+                                newDataObj = getNewData({ normalize: normalize, yAxis_domain: yAxis_domain, xAxis_domainObj: xAxis_domainObj });
                                 updateChart();
-                                updateFlag = false;
-                                d3.timeout(() => updateFlag = true, 10)
-                            }
+                                updateFlag = true;
+                            }, updateDelay);
 
-
+                            updateFlag = false;
 
                         });
 
@@ -1675,7 +1764,7 @@ function waveXdist() {
                             loadingEffect('show');
                             // console.debug(e.target.checked);
                             normalize = e.target.checked;
-                            newDataObj = getNewData(normalize, yAxis_domain, xAxis_domainObj);
+                            newDataObj = getNewData({ normalize: normalize, yAxis_domain: yAxis_domain, xAxis_domainObj: xAxis_domainObj });
                             // console.debug(xAxis_domainObj);
 
                             updateChart();
@@ -1685,12 +1774,20 @@ function waveXdist() {
                         .on('input', e => {
 
                             // console.debug(e.target);
-                            if (!isNaN(e.target.value) && updateFlag) {
-                                loadingEffect('show');
-                                normalizeScale = e.target.value;
-                                updateChart();
+                            if (!isNaN(e.target.value)) {
+                                if (updateFlag)
+                                    loadingEffect('show');
+                                else
+                                    updateTimeOut.stop();
+
+                                updateTimeOut = d3.timeout(() => {
+                                    normalizeScale = e.target.value;
+                                    updateChart();
+                                    updateFlag = true;
+                                }, updateDelay);
+
                                 updateFlag = false;
-                                d3.timeout(() => updateFlag = true, 10);
+
                             }
                             else
                                 e.target.value = normalizeScale;

@@ -791,12 +791,13 @@ function waveXdist() {
                     if (!newDataObj) {
                         console.debug("A for first time");
                         //把沒有同時有az.dist的資料刪除
-                        for (let i = 0; i < data.length; i++) {
-                            if (isNaN(data[i][dataKeys[3]]) && isNaN(data[i][dataKeys[4]]))
-                                // newData.push({ ...data[i] });
-                                data.splice(i, 1);
 
-                        }
+                        for (let i = 0; i < data.length; i++)
+                            if (isNaN(data[i][dataKeys[3]]) || isNaN(data[i][dataKeys[4]])) {
+                                data.splice(i, 1);
+                                i--;
+                            }
+
                         // console.debug(data);
                         newData = getArr_of_channel_select(data, channel_selectArr);
                         // console.debug(newData);
@@ -1323,29 +1324,54 @@ function waveXdist() {
                             .style("opacity", "0");
 
                         // console.debug(data);
-                        const mousePerLine = mouseG.selectAll('.mouse-per-line')
+                        const mousePerLineCollection = mouseG.selectAll('.mouse-per-line')
                             .data(newData)
                             .join("g")
                             .attr("class", "mouse-per-line");
-                        // console.debug(mousePerLine);
-                        mousePerLine.append("circle")
-                            .attr("r", 3)
-                            .style("stroke", "white")
-                            .style("fill", "none")
-                            .style("stroke-width", lineStroke2)
-                            .style("opacity", "0");
-                        mousePerLine.append("circle")
-                            .attr("r", 4)
-                            .style("stroke", d => getColor(d[dataKeys[0]]))
-                            .style("fill", "none")
-                            .style("stroke-width", lineStroke)
-                            .style("opacity", "0");
-                        mousePerLine.append("circle")
-                            .attr("r", 5)
-                            .style("stroke", "white")
-                            .style("fill", "none")
-                            .style("stroke-width", lineStroke2)
-                            .style("opacity", "0");
+                        // console.debug(mousePerLineCollection);
+
+
+                        const circleAmount = 3;
+                        mousePerLineCollection
+                            .selectAll('circle')
+                            .data(d3.range(circleAmount))
+                            .join("circle")
+                            .call(() => {
+                                mouseG.selectAll("circle").each(function (d, i) {
+
+                                    let circle = d3.select(this);
+                                    let mainCircle = (d % 2 != 0);
+                                    let station = this.parentNode.__data__[dataKeys[0]];
+
+                                    circle
+                                        .attr("r", d + 3)
+                                        .style("stroke", mainCircle ? getColor(station) : "white")
+                                        .style("fill", "none")
+                                        .style("stroke-width", mainCircle ? lineStroke : lineStroke2)
+                                        .style("opacity", "0");
+
+                                });
+                            });
+
+
+                        // mousePerLineCollection.append("circle")
+                        //     .attr("r", 3)
+                        //     .style("stroke", "white")
+                        //     .style("fill", "none")
+                        //     .style("stroke-width", lineStroke2)
+                        //     .style("opacity", "0");
+                        // mousePerLineCollection.append("circle")
+                        //     .attr("r", 4)
+                        //     .style("stroke", d => getColor(d[dataKeys[0]]))
+                        //     .style("fill", "none")
+                        //     .style("stroke-width", lineStroke)
+                        //     .style("opacity", "0");
+                        // mousePerLineCollection.append("circle")
+                        //     .attr("r", 5)
+                        //     .style("stroke", "white")
+                        //     .style("fill", "none")
+                        //     .style("stroke-width", lineStroke2)
+                        //     .style("opacity", "0");
 
                         svg
                             .append("defs")
@@ -1431,8 +1457,8 @@ function waveXdist() {
                                                 return d;
                                             })
                                             .style("opacity", "0.7");
-                                        // svg.selectAll(".mouse-per-line circle")
-                                        //     .style("opacity", "1");
+                                        svg.selectAll(".mouse-per-line circle")
+                                            .style("opacity", "1");
                                         // svg.selectAll(".mouse-per-line")
                                         //     .attr("transform", function (d, i) {
                                         //         // let pos = getPointTranslateX(i, idy);

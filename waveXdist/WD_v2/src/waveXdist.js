@@ -328,36 +328,45 @@ function waveXdist() {
                 </div>
                 ... -->
 
+                                
+                <!-- ... display selector ... -->    
+                <div class="form-group col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start">
+                    <label for="displaySelectButton" class="col-form-label col-4" >Station</label>
+                    <div class="btn-group btn-group-toggle col-8" role="group">
+                        <button id="displaySelectButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            select
+                        </button>
+                        <div class="dropdown-menu" id="displayMenu" aria-labelledby="displaySelectButton">
+                            <div class="d-flex flex-row flex-wrap" id="displayDropDownMenu">
+
+                            </div>
+                        </div>
+                    </div>
+                </div>  
+
 
                 <!-- ... channel selector ... -->    
                 <div class="form-group col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start">
-                    <label for="channelSelectButton" class="col-form-label col-4" >Channel</label>
-                    <div class="btn-group btn-group-toggle col-8" role="group">
+                    <label for="channelSelectButton" class="col-form-label col-5" >Channel</label>
+                    <div class="btn-group btn-group-toggle col-7" role="group">
                         <button id="channelSelectButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            select
+                            Z
                         </button>
                         <div class="dropdown-menu" id="channelMenu" aria-labelledby="channelSelectButton">
                             <div class="d-flex flex-row flex-wrap" id="channelDropDownMenu">
                                 <div class="form-check col-4" style="text-align: center;">
-                                    <input class="form-check-input  col-4" type="checkbox" id="channel_Z" name="channel" value="Z" checked>
-                                    <label class="form-check  col-8" for="channel_Z" style="display: block; text-indent: -10px;">Z</label>
+                                    <input class="form-check-input col-3" type="checkbox" id="channel_Z" name="channel" value="Z" checked>
+                                    <label  for="channel_Z">Z</label>
                                 </div>
                                 <div class="form-check col-4" style="text-align: center;">
-                                    <input class="form-check-input  col-4" type="checkbox" id="channel_N" name="channel" value="N">
-                                    <label class="form-check  col-8" for="channel_N" style="display: block; text-indent: -10px;">N</label>
+                                    <input class="form-check-input col-3" type="checkbox" id="channel_N" name="channel" value="N/1">
+                                    <label for="channel_N">N/1</label>
                                 </div>
                                 <div class="form-check col-4" style="text-align: center;">
-                                    <input class="form-check-input  col-4" type="checkbox" id="channel_E" name="channel" value="E">
-                                    <label class="form-check  col-8" for="channel_E" style="display: block; text-indent: -10px;">E</label>
+                                    <input class="form-check-input col-3" type="checkbox" id="channel_E" name="channel" value="E/2">
+                                    <label  for="channel_E">E/2</label>
                                 </div>
-                                <div class="form-check col-4" style="text-align: center;">
-                                    <input class="form-check-input  col-4" type="checkbox" id="channel_1" name="channel" value="1">
-                                    <label class="form-check  col-8" for="channel_1" style="display: block; text-indent: -10px;">1</label>
-                                </div>
-                                <div class="form-check col-4" style="text-align: center;">
-                                    <input class="form-check-input  col-4" type="checkbox" id="channel_2" name="channel" value="2">
-                                    <label class="form-check  col-8" for="channel_2" style="display: block; text-indent: -10px;">2</label>
-                                </div>
+           
                             </div>
                         </div>
                     </div>
@@ -366,28 +375,30 @@ function waveXdist() {
 
                 <!-- ... xAxisScale ... -->                
                 <div class="form-group col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start">
-                <label for="xAxisScale" class="col-form-label col-4" >Scale</label>
+                <label for="xAxisScale" class="col-form-label col-4" >Order</label>
                 <div class="btn-group btn-group-toggle col-8" data-toggle="buttons">
                     <label class="btn btn-secondary">
-                        <input type="radio" name ="xAxisScale" id="linear" value="linear" checked> linear
+                        <input type="radio" name ="xAxisScale" id="linear" value="linear" checked> Linear
                     </label>
                     <label class="btn btn-secondary active">
-                        <input type="radio" name ="xAxisScale" id="band" value="band"> station
+                        <input type="radio" name ="xAxisScale" id="band" value="band"> Station
                     </label>
                 </div>
                 </div>   
 
                 <!-- ... xAxisName ... --> 
                 <div class="form-group col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start">
-                <label for="xAxisName" class="col-form-label col-4" >SortBy</label>
+                <label for="xAxisName" class="col-form-label col-4" >Range</label>
                     <div class="btn-group btn-group-toggle col-8" data-toggle="buttons"  id="xAxisName_radioGroup">
                         <label class="btn btn-secondary dropdown-toggle active" >
-                            <input  type="radio" name ="xAxisName" id="dist" value="dist" checked> dist
+                            <input  type="radio" name ="xAxisName" id="dist" value="dist" checked> Dist.
 
 
                             <div class="dropdown-menu dropdown-menu-right" id="distMenu" aria-labelledby="xAxisName">
-                                <div class="form-group col-12 d-flex flex-row flex-wrap align-items-start" >       
+                                <div class="form-group col-12 d-flex flex-row flex-wrap align-items-start justify-content-between" >       
                                 <label class="" for="distRange">distance range</label>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" name="rangeReset" value='dist'>reset</button>
+
                                     <div class="d-flex flex-column  align-items-center">
                                         <input class="" type="range" id="distRange" style="width: 200px;"/>                                       
                                         <datalist  class="d-flex flex-row flex-wrap" id="distList">
@@ -405,11 +416,13 @@ function waveXdist() {
 
                         </label>
                         <label class="btn btn-secondary dropdown-toggle">
-                            <input type="radio" name ="xAxisName" id="az" value="az"> azim
+                            <input type="radio" name ="xAxisName" id="az" value="az"> Az.
 
                             <div class="dropdown-menu dropdown-menu-right " id="azMenu" aria-labelledby="xAxisName">
-                            <div class="form-group col-12 d-flex flex-row flex-wrap align-items-start" >       
+                            <div class="form-group col-12 d-flex flex-row flex-wrap align-items-start justify-content-between" >       
                             <label class="" for="azRange">azimuth range</label>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" name="rangeReset" value='az'>reset</button>
+
                                 <div class="d-flex flex-column  align-items-center">
                                     <input class="form-range" type="range" id="azRange" list="distList" style="margin-bottom: 15px; width: 200px;" disabled>
                                     <datalist  class="d-flex flex-row flex-wrap" id="distList">
@@ -430,31 +443,13 @@ function waveXdist() {
                     </div>                    
                 </div>              
             
-
-                
-                <!-- ... display selector ... -->    
-                <div class="form-group col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start">
-                    <label for="displaySelectButton" class="col-form-label col-4" >Display</label>
-                    <div class="btn-group btn-group-toggle col-8" role="group">
-                        <button id="displaySelectButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            select
-                        </button>
-                        <div class="dropdown-menu" id="displayMenu" aria-labelledby="displaySelectButton">
-                            <div class="d-flex flex-row flex-wrap" id="displayDropDownMenu">
-
-                            </div>
-                        </div>
-                    </div>
-                </div>  
-
-                
                 <!-- ... normalize ...  --> 
                 <div
                 class="form-group col-lg-3 col-md-4 col-sm-6 d-flex justify-content-start  align-items-center flex-row flex-nowrap">               
                     <div id="normalize-group" class="form-check" >
                         <input class="form-check-input  col-4" type="checkbox" id="normalize" name="normalize">
                         <label class="form-check-label  col-8" for="normalize" data-lang="">
-                            normalize
+                            Normalization
                         </label>                        
                     </div>
                     <label for="normalizeScale" class="col-form-label" >x</label>            
@@ -462,7 +457,7 @@ function waveXdist() {
                             <input class="form-control" type="text" id="normalizeScale" name="normalize" disabled>    
                             <div class="dropdown-menu dropdown-menu-left" id="normalizeScaleMenu">
                                 <div class="d-flex flex-row flex-wrap justify-content-center" >       
-                                    <label for="NSRange">normalize scale</label>
+                                    <label for="NSRange">Normalization scale</label>
                                     <div >
                                         <input type="range" id="NSRange" list="NSList">
                                         <datalist  class="d-flex flex-row flex-wrap" id="NSList">
@@ -561,7 +556,7 @@ function waveXdist() {
 
             chartContainerJQ.find('#distRange').on("change", function (e) {
                 // console.debug('distRange change');
-                // console.debug(e.target.value);
+
                 let range = e.target.getAttribute('value').split(',');
                 $(e.target.parentNode).find('#distRange_min').val(range[0]);
                 $(e.target.parentNode).find('#distRange_max').val(range[1]);
@@ -738,7 +733,7 @@ function waveXdist() {
                     xAxis_domainObj = controlObj.xAxis_domainObj ? controlObj.xAxis_domainObj : {};
 
                 let channel_selectArr = controlObj.channel_selectArr ? controlObj.channel_selectArr : newDataObj.channel_selectArr;
-
+                // console.debug(channel_selectArr);
                 // console.debug(normalize, yAxis_domain, xAxis_domainObj, channel_selectArr);
 
                 var newData, newTimeArr;
@@ -773,6 +768,7 @@ function waveXdist() {
                     data.forEach(d => {
                         let channel = d[dataKeys[1]];
                         // console.debug(channel[channel.length - 1]);
+                        // console.debug(channel_selectArr);
                         // console.debug(channel_selectArr.includes(channel[channel.length - 1]));
 
                         if (channel_selectArr.includes(channel[channel.length - 1]))
@@ -991,7 +987,7 @@ function waveXdist() {
                         })
 
                     // console.debug(newData);
-                    var sliderInit = function () {
+                    var rangeInit = function () {
                         var get_niceDomain = (domain) => {
                             return d3.scaleLinear().domain(domain).nice().domain();
                         }
@@ -1267,9 +1263,11 @@ function waveXdist() {
 
                 switch (action) {
                     case 'show':
-                        loadingGroup
-                            .style('opacity', 1)
-                            .style('display', 'inline');
+                        d3.timeout(() => {
+                            loadingGroup
+                                .style('opacity', 1)
+                                .style('display', 'inline');
+                        }, 0);
                         break;
                     case 'hide':
 
@@ -1317,7 +1315,7 @@ function waveXdist() {
                         const mouseG = svg.append("g")
                             .attr("class", "mouse-over-effects");
 
-                        mouseG.append("path") // create vertical line to follow mouse
+                        const mouseLine = mouseG.append("path") // create vertical line to follow mouse
                             .attr("class", "mouse-line")
                             .style("stroke", "#A9A9A9")
                             .style("stroke-width", lineStroke)
@@ -1388,6 +1386,9 @@ function waveXdist() {
 
                         // append a rect to catch mouse movements on canvas
                         // console.debug(data);
+
+
+                        const chart_edge = [x.range()[0], x.range()[1]];
                         var event_rect =
                             mouseG
                                 .append("use")
@@ -1397,11 +1398,11 @@ function waveXdist() {
                                 .on('mouseleave', function () { // on mouse out hide line, circles and text
                                     // console.log('mouseleave');
                                     var action = () => {
-                                        svg.select(".mouse-line")
+                                        mouseLine
                                             .style("opacity", "0");
-                                        svg.selectAll(".mouse-per-line circle")
+                                        mousePerLineCollection.selectAll("circle")
                                             .style("opacity", "0");
-                                        svg.selectAll(".mouse-per-line text")
+                                        mousePerLineCollection.selectAll("text")
                                             .style("opacity", "0");
                                         // tooltip
                                         //     // .transition().duration(500)
@@ -1426,13 +1427,13 @@ function waveXdist() {
                                     // console.log(event.target);
 
                                     var action = () => {
-                                        e.preventDefault();
+                                        // e.preventDefault();
                                         const pointer = d3.pointer(e, this);
-                                        const ym = y.invert(pointer[1]);
+                                        // const ym = y.invert(pointer[1]);
 
-                                        const idy = d3.bisectCenter(newTimeArr, ym);
-                                        const sortedIndex = d3.range(newData.length);
-                                        console.debug();
+                                        // const idy = d3.bisectCenter(newTimeArr, ym);
+                                        // const sortedIndex = d3.range(newData.length);
+                                        // console.debug(pointer);
 
                                         function getPointTranslateX(stationIdex, dataIndex) {
                                             // let paths = svg.selectAll('.paths path');
@@ -1448,17 +1449,19 @@ function waveXdist() {
                                             return aaa + 100 + "," + bbb;
                                         }
 
-                                        svg.select(".mouse-line")
+                                        mouseLine
                                             .attr("d", function () {
-                                                let yPos = y(newTimeArr[idy]);
-                                                let p1 = (width - margin.right) + "," + yPos;
-                                                let p2 = margin.left + "," + yPos;
+                                                // let yPos = y(newTimeArr[idy]);
+
+                                                let yPos = pointer[1];
+                                                let p1 = chart_edge[1] + "," + yPos;
+                                                let p2 = chart_edge[0] + "," + yPos;
                                                 let d = "M" + p1 + " L" + p2;
                                                 return d;
                                             })
                                             .style("opacity", "0.7");
-                                        svg.selectAll(".mouse-per-line circle")
-                                            .style("opacity", "1");
+                                        // svg.selectAll(".mouse-per-line circle")
+                                        //     .style("opacity", "1");
                                         // svg.selectAll(".mouse-per-line")
                                         //     .attr("transform", function (d, i) {
                                         //         // let pos = getPointTranslateX(i, idy);
@@ -1516,6 +1519,7 @@ function waveXdist() {
 
                                     if (!updateFlag)
                                         updateTimeOut.stop();
+
 
                                     updateTimeOut = d3.timeout(() => {
                                         action();
@@ -1679,7 +1683,7 @@ function waveXdist() {
                     //=====change channel
                     let channel = chartContainerD3.selectAll('input[name ="channel"]');
                     channel
-                        .on('click', e => {
+                        .on('click', function (e) {
                             loadingEffect('show');
                             let tmp = [];
 
@@ -1690,15 +1694,23 @@ function waveXdist() {
                             // });
 
                             //＝＝＝單選
-
+                            let value = e.target.value;
                             channel.nodes().filter(chkbox => chkbox !== e.target).forEach(chkbox => chkbox.checked = false);
-                            if (e.target.checked) tmp = [e.target.value];
+                            if (e.target.checked)
+                                tmp = value.split('/');
+                            else
+                                value = 'Select';
+
+                            //===改變按鈕text
+                            chartContainerD3.selectAll('#channelSelectButton').text(value);
 
                             // channel_selectArr = tmp;
                             newDataObj = getNewData({ normalize: normalize, xAxis_domainObj: xAxis_domainObj, channel_selectArr: tmp });
                             // newDataObj = getNewData({ normalize: normalize, channel_selectArr: tmp });
                             // newDataObj.unselected_band = unselected_band;
                             updateChart();
+
+
                         });
                     //=====change sortBy dist/az
 
@@ -1720,69 +1732,96 @@ function waveXdist() {
 
 
                     //====change xAxisRange
-                    chartContainerD3.selectAll('input[name ="xAxisRange"]')
-                        .on('input', e => {
-                            if (updateFlag)
-                                loadingEffect('show');
-                            // console.debug(e.target);
-                            //==========================target vaule check=================================
-                            let dataMin = distRange_slider.getAttribute('min');
-                            let dataMax = distRange_slider.getAttribute('max');
-                            let eleID = (e.target.id).split('_');
-                            let name = eleID[0];
-                            let rangeIndex = eleID[1] == 'min' ? 0 : 1;
-                            let key = name.substring(0, name.indexOf('Range'));
+                    chartContainerD3.selectAll('#xAxisName_radioGroup')
+                        .call(xAxisName_radioGroup => {
+                            const dist_domain = [distRange_slider.getAttribute('min'), distRange_slider.getAttribute('max')];
+                            const az_domain = [azRange_slider.getAttribute('min'), azRange_slider.getAttribute('max')];
+                            const rangeObj = { 'dist': dist_domain, 'az': az_domain };
 
-                            // console.debug((e.target.value));
-                            if (isNaN(e.target.value) || e.target.value == '')
-                                e.target.value = xAxis_domainObj[key] ? xAxis_domainObj[key][rangeIndex] : [dataMin, dataMax][rangeIndex];
-                            // else if ([e.target.value < dataMin, e.target.value > dataMax][rangeIndex])
-                            else if (e.target.value < dataMin || e.target.value > dataMax)
-                                e.target.value = [dataMin, dataMax][rangeIndex];
+                            // console.debug(dist_domain, az_domain);
 
-                            //======================================================================
-                            let parentNode = e.target.parentNode;
-                            let minRange = parentNode.querySelector('#' + name + '_min').value;
-                            let maxRange = parentNode.querySelector('#' + name + '_max').value;
-                            // console.debug(minRange, maxRange);
+                            // range drag
+                            xAxisName_radioGroup.selectAll('input[name ="xAxisRange"]')
+                                .on('input', e => {
+                                    if (updateFlag)
+                                        loadingEffect('show');
+                                    // console.debug(e.target);
+                                    //==========================target vaule check=================================
+                                    let eleID = (e.target.id).split('_');
+                                    let name = eleID[0];
+                                    let rangeIndex = eleID[1] == 'min' ? 0 : 1;
+                                    let key = name.substring(0, name.indexOf('Range'));
+                                    let rangeData = rangeObj[key];
+                                    let rangeMin = rangeData[0];
+                                    let rangeMax = rangeData[1];
 
-                            minRange = parseFloat(minRange);
-                            maxRange = parseFloat(maxRange);
+                                    if (isNaN(e.target.value) || e.target.value == '')
+                                        e.target.value = xAxis_domainObj[key] ? xAxis_domainObj[key][rangeIndex] : [rangeMin, rangeMax][rangeIndex];
+                                    // else if ([e.target.value < rangeMin, e.target.value > rangeMax][rangeIndex])
+                                    else if (e.target.value < rangeMin || e.target.value > rangeMax)
+                                        e.target.value = [rangeMin, rangeMax][rangeIndex];
 
-                            if (minRange > maxRange) {
-                                let tmp = minRange;
-                                minRange = maxRange;
-                                maxRange = tmp;
-                            }
+                                    //======================================================================
+                                    let parentNode = e.target.parentNode;
+                                    let minRange = parentNode.querySelector('#' + name + '_min').value;
+                                    let maxRange = parentNode.querySelector('#' + name + '_max').value;
+                                    // console.debug(minRange, maxRange);
 
-                            //==========================同步slider=================================
-                            let domain = [minRange, maxRange];
-                            switch (name) {
-                                case 'distRange':
-                                    distRange_slider.setValue(domain);
-                                    break;
-                                case 'azRange':
-                                    azRange_slider.setValue(domain);
-                                    break;
-                            }
-                            xAxis_domainObj[key] = domain;
+                                    minRange = parseFloat(minRange);
+                                    maxRange = parseFloat(maxRange);
+
+                                    if (minRange > maxRange) {
+                                        let tmp = minRange;
+                                        minRange = maxRange;
+                                        maxRange = tmp;
+                                    }
+
+                                    //==========================同步slider=================================
+                                    let domain = [minRange, maxRange];
+                                    switch (name) {
+                                        case 'distRange':
+                                            distRange_slider.setValue(domain);
+                                            break;
+                                        case 'azRange':
+                                            azRange_slider.setValue(domain);
+                                            break;
+                                    }
+                                    xAxis_domainObj[key] = domain;
 
 
 
-                            //避免更新太頻繁LAG
-                            // console.log(updateFlag);
-                            if (!updateFlag)
-                                updateTimeOut.stop();
+                                    //避免更新太頻繁LAG
+                                    // console.log(updateFlag);
+                                    if (!updateFlag)
+                                        updateTimeOut.stop();
 
-                            updateTimeOut = d3.timeout(() => {
-                                newDataObj = getNewData({ normalize: normalize, yAxis_domain: yAxis_domain, xAxis_domainObj: xAxis_domainObj });
-                                updateChart();
-                                updateFlag = true;
-                            }, updateDelay);
+                                    updateTimeOut = d3.timeout(() => {
+                                        newDataObj = getNewData({ normalize: normalize, yAxis_domain: yAxis_domain, xAxis_domainObj: xAxis_domainObj });
+                                        updateChart();
+                                        updateFlag = true;
+                                    }, updateDelay);
 
-                            updateFlag = false;
+                                    updateFlag = false;
 
-                        });
+                                });
+                            // reset button
+                            xAxisName_radioGroup.selectAll('button[name ="rangeReset"]')
+                                .on('click', e => {
+                                    // console.debug(e.target.parentNode);
+                                    // distRange_slider.setValue([10, 100]);
+                                    let key = e.target.value;
+                                    let rangeData = rangeObj[key];
+                                    let parentNode = e.target.parentNode;
+
+                                    parentNode.querySelector('#' + key + 'Range_min').value = rangeData[0];
+                                    parentNode.querySelector('#' + key + 'Range_max').value = rangeData[1];
+                                    chartContainerD3.selectAll('#' + key + 'Range_min').dispatch("input");
+
+                                })
+                        })
+
+
+
 
                     //=====change normalize
                     chartContainerD3.selectAll('#normalize')

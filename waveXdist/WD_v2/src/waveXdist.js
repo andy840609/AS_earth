@@ -337,8 +337,26 @@ function waveXdist() {
                             select
                         </button>
                         <div class="dropdown-menu" id="displayMenu" aria-labelledby="displaySelectButton">
-                            <div class="d-flex flex-row flex-wrap" id="displayDropDownMenu">
+                            <div class="" id="displayDropDownMenu">
 
+                                <div class='controller d-flex'>
+                                    <div class='form-check col-6 d-flex align-items-center'>
+                                        <input type='checkbox' class='form-check-input  col-4' id='staionSelectMode'>
+                                        <label for='staionSelectMode' class='form-check-label  col-8' id='staionSelectMode' style='display:block;text-indent:-5px;white-space:nowrap;'>
+                                        select mode
+                                        </label>
+                                    </div>
+                                    <div class='form-check col-6'>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="staionReset">reset</button>
+                                    </div>
+                                </div>
+
+                                <hr style='border:1px solid;color:gray;opacity: 0.33;width:90%;'>
+
+                                <div class='stations d-flex flex-row flex-wrap'></div>
+                               
+                               
+                            
                             </div>
                         </div>
                     </div>
@@ -733,8 +751,62 @@ function waveXdist() {
             var distRange_slider, azRange_slider;//for event control slider
             var dist_domain, az_domain;//range選擇範圍
 
+
+            //===for station select
             var unselected_band = [];
-            // channel_selectArr = ['Z'];
+            const unselected_color = 'grey', unselected_opacity = .3;
+            const staionDropDownMenu = chartContainerD3.selectAll('#displayDropDownMenu');
+            var updateStaionDropDownMenu = () => {
+
+                // console.debug(xAxisName);
+                let sortingKey = xAxisName;
+                let data = newDataObj.newData.sort((a, b) => a[sortingKey] - b[sortingKey]);
+
+                staionDropDownMenu.select('.stations')
+                    .selectAll('div')
+                    .data(data)
+                    .join('div')
+                    .attr('class', 'form-check col-6')
+                    .style("text-align", "left")
+                    .call(menu => {
+                        // console.debug(div.nodes());
+                        menu.each(function (d, i) {
+                            // console.debug(d, i);
+                            let div = d3.select(this);
+                            let stationName = d[dataKeys[0]];
+
+                            // div.style("display", "none");
+
+                            div
+                                .selectAll("input")
+                                .data([d])
+                                .join("input")
+                                .attr('class', 'form-check-input  col-4')
+                                .attr('type', 'checkbox')
+                                .attr('id', 'display_' + stationName)
+                                .attr('name', 'display')
+                                .attr('value', stationName)
+                                .property('checked', !unselected_band.includes(stationName));
+
+                            div
+                                .selectAll("label")
+                                .data([d])
+                                .join("label")
+                                .attr('class', '  col-8')
+                                .attr('for', 'display_' + stationName)
+                                .style("display", "block")
+                                .style("text-indent", "-10px")
+                                .text(stationName);
+
+
+
+                        });
+
+
+                    });
+            }
+            //==================
+
             function getNewData(controlObj = {}) {
                 // console.debug(data);
                 let normalize = controlObj.normalize ? controlObj.normalize : false,
@@ -748,7 +820,7 @@ function waveXdist() {
                 var newData, newTimeArr;
                 // console.debug(xAxis_domainObj);
                 var newData_normalize = (newData) => {
-                    // console.debug('normalize...');
+                    // console.debug('***normalize...***');
                     newData.forEach(d => {
                         let normalize = d3.scaleLinear()
                             .domain(d3.extent(d.data))
@@ -877,7 +949,15 @@ function waveXdist() {
                         }
                         else if (newDataObj && (newDataObj.newTimeArr.length < data.timeArr.length)) {
                             console.debug('2-2 data reset');
-                            newData.forEach(d => d[dataKeys[2]] = data.find(od => od[dataKeys[0]] == d[dataKeys[0]])[dataKeys[2]]);
+                            newData.forEach(d => {
+                                //==之前指比較sta拿到錯的cha
+                                // d[dataKeys[2]] = data.find(od => od[dataKeys[0]] == d[dataKeys[0]])[dataKeys[2]]
+
+                                //===原data裡找sta跟cha都一樣的資料來複製amp陣列
+                                let od = data.find(od => od[dataKeys[0]] == d[dataKeys[0]] && od[dataKeys[1]] == d[dataKeys[1]])
+                                d[dataKeys[2]] = od[dataKeys[2]];
+
+                            });
                             if (normalize) newData_normalize(newData);
                         }
                         else {
@@ -892,16 +972,6 @@ function waveXdist() {
 
                 newData = get_newData(xAxis_domainObj);
                 newTimeArr = get_newTimeArr_and_update_newData(yAxis_domain);
-                // sort_newData(newData, xAxisName);
-                // console.debug(newData);
-
-                // if (normalize && !newDataObj.normalize)
-                //     newData_normalize(newData);
-
-                // console.debug(channel_selectArr);
-                // if (channel_selectArr.length > 0)
-                //     channel_select(newData, channel_selectArr);
-                // console.debug(newData);
 
                 return {
                     newData: newData,
@@ -914,9 +984,6 @@ function waveXdist() {
 
             }
             function updateChart(trans = false) {
-                // console.debug(channel_selectArr)
-
-
 
                 function init() {
                     let newData = newDataObj.newData;
@@ -948,54 +1015,10 @@ function waveXdist() {
                         .attr("transform", "rotate(-90)")
                         .call(g => g.text(getString(data.yAxisName).keyName));
 
-                    //===loadingGroup
-
-                    // loadingGroup
-                    //     .call(g => {
-                    //         const loading_width = 100, loading_height = 100;
-                    //         g.append('rect')
-                    //             .attr("fill", "currentColor")
-                    //             // .attr('x', margin.left)
-                    //             // .attr('y', margin.top)
-                    //             .attr('width', loading_width)
-                    //             .attr('height', loading_height);
-                    //     })
-                    //     .attr('display', 'none');
-
-
-
-                    //===create display dropdown option
-                    chartContainerD3.selectAll('#displayDropDownMenu')
-                        .selectAll('div')
-                        .data(newData)
-                        .join('div')
-                        .attr('class', 'form-check col-6')
-                        .style("text-align", "left")
-                        .call(menu => {
-                            // console.debug(div.nodes());
-                            menu.each(function (d, i) {
-                                // console.debug(d);
-                                let div = d3.select(this);
-                                let stationName = d[dataKeys[0]];
-                                div
-                                    .append('input')
-                                    .attr('class', 'form-check-input  col-4')
-                                    .attr('type', 'checkbox')
-                                    .attr('id', 'display_' + stationName)
-                                    .attr('name', 'display')
-                                    .attr('value', stationName)
-                                    .property('checked', true);
-                                div
-                                    .append('label')
-                                    .attr('class', '  col-8')
-                                    .attr('for', 'display_' + stationName)
-                                    .style("display", "block")
-                                    .style("text-indent", "-10px")
-                                    .text(stationName);
-                            });
-
-
-                        })
+                    //===create StaionDropDownMenu
+                    // staionDropDownMenu
+                    //     .call(div => );
+                    updateStaionDropDownMenu();
 
                     // console.debug(newData);
                     var rangeInit = function () {
@@ -1120,7 +1143,7 @@ function waveXdist() {
                     }
                     var updatePaths = () => {
 
-                        var transitionDuration = 500;
+                        // var transitionDuration = 500;
                         var dataDomain = {
                             true: [-1, 1],
                             false: d3.extent([].concat(...data.map(d => d3.extent(d.data)))),
@@ -1140,28 +1163,19 @@ function waveXdist() {
                             false: [-0.5 * eachDataGap, 0.5 * eachDataGap],
                         }[normalize];
 
-                        // console.debug(eachDataGap);
-                        // console.debug(dataDomain);
-                        // console.debug(dataRange);
-                        // console.debug(newDataObj.newData[0].data);
 
-                        var transLine = (data, translate_x, gapPath = false) => {
+                        path_x = d3.scaleLinear()
+                            .domain(dataDomain)
+                            .range(dataRange);
+
+
+
+                        var line = (data, gapPath = false) => {
                             var pathAttr;
-
-                            let firstPointIndex = 0;
-                            while (isNaN(data[firstPointIndex]))
-                                firstPointIndex++;
-                            let shiftMean = dataDomainMean - data[firstPointIndex];
-                            // console.debug(data[firstPointIndex]);
-                            // console.debug(shift);
-
-                            path_x = d3.scaleLinear()
-                                .domain(dataDomain)
-                                .range(dataRange);
 
                             let segmentLine = d3.line()
                                 .defined(d => !isNaN(d))
-                                .x(d => path_x(d + shiftMean) + translate_x)
+                                .x(d => path_x(d))
                                 .y((d, i) => y(newTimeArr[i]));
 
                             if (gapPath) {
@@ -1173,7 +1187,7 @@ function waveXdist() {
                                     }
                                 });
                                 let gapLine = d3.line()
-                                    .x((d, i) => path_x(d + shiftMean) + translate_x)
+                                    .x((d, i) => path_x(d))
                                     .y((d, i) => y(newTimeArr[livingTimeIndex[i]]));
 
                                 // console.debug(livingTimeIndex);
@@ -1193,25 +1207,42 @@ function waveXdist() {
                             .call(() =>
                                 pathGroup.selectAll("g").each(function (d, i) {
                                     // console.debug(this, d, i);
-                                    // console.debug(d[dataKeys[0]]);                       
+                                    // console.debug(d[dataKeys[0]]);
                                     let isUnselected = unselected_band.includes(d[dataKeys[0]]);
 
                                     let g = d3.select(this);
-                                    let color = isUnselected ? 'grey' : getColor(d[dataKeys[0]]);
-                                    let opacity = isUnselected ? .3 : .8;
-                                    let translate_x = {
-                                        // band: (i + 0.5) * eachDataGap + margin.left,
-                                        band: (i + 0.5) * (xAxisLength / newData.length) + margin.left,
-                                        linear: x(newData[i][xAxisName])
-                                    }[xAxisScale];
+                                    let color = isUnselected ? unselected_color : getColor(d[dataKeys[0]]);
+                                    let opacity = isUnselected ? unselected_opacity : .8;
 
-                                    let path = g
+                                    //波形移到x軸位置(1.dist/az 2.波形第一點離中心點偏移位置修正)
+                                    var getTransX = () => {
+                                        let getDataFirstPointIndex = () => {
+                                            let firstPointIndex = 0;
+                                            while (isNaN(d.data[firstPointIndex]))
+                                                firstPointIndex++;
+                                            return firstPointIndex;
+                                        }
+
+                                        //===1.
+                                        let translate_x = {
+                                            // band: (i + 0.5) * eachDataGap + margin.left,
+                                            band: (i + 0.5) * (xAxisLength / newData.length) + margin.left,
+                                            linear: x(newData[i][xAxisName])
+                                        }[xAxisScale];
+
+                                        //===2.
+                                        let shiftMean = path_x(dataDomainMean) - path_x(d.data[getDataFirstPointIndex()]);
+                                        // console.debug(shiftMean);
+
+                                        return translate_x + shiftMean;
+                                    }
+
+                                    g.attr("transform", `translate(${getTransX()},${0})`);
+
+                                    g
                                         .selectAll("path")
                                         .data([d])
-                                        .join("path");
-                                    if (trans)
-                                        path.transition().duration(transitionDuration);
-                                    path
+                                        .join("path")
                                         .style("mix-blend-mode", "normal")
                                         .attr("fill", "none")
                                         .attr("stroke-width", 1)
@@ -1219,27 +1250,26 @@ function waveXdist() {
                                         .attr("stroke-linecap", "round")
                                         .attr("stroke-opacity", opacity)
                                         .attr("stroke", color)
-                                        .attr("d", transLine(d.data, translate_x))
+                                        .attr("d", line(d.data))
                                     // .attr("transform", `translate(${translate_x},0)`);
 
-                                    let text = g
+                                    g
                                         .selectAll("text")
                                         .data([d])
-                                        .join("text");
-                                    if (trans)
-                                        text.transition().duration(transitionDuration);
-                                    text
+                                        .join("text")
                                         .attr("text-anchor", "start")
                                         .attr('alignment-baseline', 'after-edge')
                                         .attr("fill", color)
                                         .attr("fill-opacity", opacity)
                                         .attr("font-size", "10")
-                                        .attr("transform", `translate(${translate_x},${margin.top}) rotate(90)`)
+                                        .attr("transform", `translate(${path_x(d.data[d.data.length - 1])},${margin.top}) rotate(90)`)
                                         .text({
-                                            band: newData[i][xAxisName] + (xAxisName == 'az' ? '' : ' ') + getString(xAxisName).keyUnit,
+                                            band: parseFloat(newData[i][xAxisName].toFixed(2)) + (xAxisName == 'az' ? '' : ' ') + getString(xAxisName).keyUnit,
                                             linear: newData[i][dataKeys[0]]
                                         }[xAxisScale]
                                         );
+
+
 
                                 })
                             );
@@ -1257,6 +1287,8 @@ function waveXdist() {
                 }
                 render();
                 loadingEffect('hide');
+
+                return render;
             };
 
             let hideLoading_flag = true;
@@ -1326,14 +1358,15 @@ function waveXdist() {
                     .style("opacity", " .9")
                     .style('display', 'none');
 
-                //===太多站了要分頁
                 //===tooltip分頁控制
-                var eventRect;
+                var eventRect, mouseG, circleGroupCollection;//d3 selector
                 const NumOfEachPage = 5;//一頁顯示筆數
                 var totalPages, currentPage = 0;//當前頁數
                 var startIndex, endIndex, pageData;//當前頁的i1,i2和資料(用來畫mousemove的圈圈)
                 var mouseOnIdx = 0;//資料陣列的索引(滑鼠移動控制)
+                const chart_edge = [x.range()[0], x.range()[1]];
 
+                //===更新tooltip和圓圈
                 var updateTooltip = () => {
                     var newTimeArr = newDataObj.newTimeArr;
                     var newData = newDataObj.newData;
@@ -1354,7 +1387,7 @@ function waveXdist() {
                     }();
 
                     let timeStr = newTimeArr[mouseOnIdx];
-                    const divHtml = "Time : <br/><font size='5'>" + timeStr + " s</font><br/>Station / Dist. / Az. / Amp. : <br/>";
+                    const divHtml = "Time : <br /><font size='5'>" + timeStr + " s</font><br />Station / Dist. / Az. / Amp. : <br />";
 
                     tooltip
                         .html(divHtml)
@@ -1407,6 +1440,62 @@ function waveXdist() {
                                 .text(d => text[d])
 
                         })
+
+                    //===更新圓圈
+
+                    const lineStroke = "2px";
+                    const lineStroke2 = "0.5px";
+
+                    //==用來取得dist/az和第一點偏差的位移值
+                    var pathGCollection = pathGroup.selectAll('g').nodes();
+                    // console.debug(pathGCollection)
+
+                    circleGroupCollection =
+                        mouseG.selectAll('.mouse-per-line')
+                            .data(pageData)
+                            .join("g")
+                            .attr("transform", (d, i) => {
+                                let indexOf_newData = startIndex + i;
+                                //==取得該條path_g的transform x
+                                let transX = pathGCollection[indexOf_newData].transform.baseVal[0].matrix.e;
+                                let transY = y(newTimeArr[mouseOnIdx]);
+                                return `translate(${transX},${transY})`;
+                            })
+                            .attr("class", "mouse-per-line")
+                            .call(gCollection => {
+                                gCollection.each(function (d, i) {
+                                    // console.debug(this);
+
+                                    const circleAmount = 3;
+                                    let g = d3.select(this);
+                                    let station = d[dataKeys[0]];
+
+                                    let circleTransX = path_x(d.data[mouseOnIdx]);
+                                    // console.debug(d.data[mouseOnIdx]);
+                                    // console.debug(path_x.domain(), path_x.range());
+                                    g
+                                        .selectAll('circle')
+                                        .data(d3.range(circleAmount))
+                                        .join("circle")
+                                        .attr("transform", `translate(${circleTransX},0)`)
+                                        .call(circlesCollection =>
+                                            circlesCollection.each(function (d) {
+                                                let circle = d3.select(this);
+                                                let mainCircle = (d % 2 != 0);
+
+                                                circle
+                                                    .attr("r", d + 3)
+                                                    .style("stroke", mainCircle ? getColor(station) : "white")
+                                                    .style("fill", "none")
+                                                    .style("stroke-width", mainCircle ? lineStroke : lineStroke2)
+                                                    .style("opacity", "1");
+                                            })
+                                        );
+                                })
+
+
+                            })
+
                 }
 
 
@@ -1425,47 +1514,14 @@ function waveXdist() {
                         // var newTimeArr = newDataObj.newTimeArr;
                         // var newData = newDataObj.newData;
 
-                        const lineStroke = "2px";
-                        const lineStroke2 = "0.5px";
-
-                        const mouseG = svg.append("g")
+                        mouseG = svg.append("g")
                             .attr("class", "mouse-over-effects");
 
                         const mouseLine = mouseG.append("path") // create vertical line to follow mouse
                             .attr("class", "mouse-line")
                             .style("stroke", "#A9A9A9")
-                            .style("stroke-width", lineStroke)
+                            .style("stroke-width", "2px")
                             .style("opacity", "0");
-
-
-                        const mousePerLineCollection = mouseG.selectAll('.mouse-per-line')
-                            .data(data)
-                            .join("g")
-                            .attr("class", "mouse-per-line")
-                            .call(gCollection => {
-                                const circleAmount = 3;
-                                gCollection
-                                    .selectAll('circle')
-                                    .data(d3.range(circleAmount))
-                                    .join("circle")
-                                    .call(() => {
-                                        mouseG.selectAll("circle").each(function (d, i) {
-
-                                            let circle = d3.select(this);
-                                            let mainCircle = (d % 2 != 0);
-                                            let station = this.parentNode.__data__[dataKeys[0]];
-
-                                            circle
-                                                .attr("r", d + 3)
-                                                .style("stroke", mainCircle ? getColor(station) : "white")
-                                                .style("fill", "none")
-                                                .style("stroke-width", mainCircle ? lineStroke : lineStroke2)
-                                                .style("opacity", "0");
-
-                                        });
-                                    });
-
-                            })
 
                         svg
                             .append("defs")
@@ -1483,9 +1539,6 @@ function waveXdist() {
                         // append a rect to catch mouse movements on canvas
                         // console.debug(data);
 
-
-                        const chart_edge = [x.range()[0], x.range()[1]];
-
                         eventRect =
                             mouseG
                                 .append("use")
@@ -1495,16 +1548,9 @@ function waveXdist() {
                                 .on('mouseleave', function () { // on mouse out hide line, circles and text
                                     // console.log('mouseleave');
                                     var action = () => {
-                                        mouseLine
-                                            .style("opacity", "0");
-                                        mousePerLineCollection.selectAll("circle")
-                                            .style("opacity", "0");
-                                        mousePerLineCollection.selectAll("text")
-                                            .style("opacity", "0");
-                                        tooltip
-                                        // .transition().duration(500)
-                                        // .style("opacity", 0)
-                                        // .style("display", "none");
+                                        mouseLine.style("opacity", "0");
+                                        circleGroupCollection.style("display", "none");
+                                        tooltip.style("display", "none");
 
                                     }
                                     updateHandler(action);
@@ -1523,21 +1569,7 @@ function waveXdist() {
                                         const ym = y.invert(pointer[1]);
                                         mouseOnIdx = d3.bisectCenter(newTimeArr, ym);
                                         // const sortedIndex = d3.range(newData.length);
-                                        // console.debug(sortedIndex);
-
-                                        function getPointTranslateX(stationIdex, dataIndex) {
-                                            // let paths = svg.selectAll('.paths path');
-                                            // let transform = paths.nodes()[index].getAttribute('d');
-                                            // let pointArr = transform.split('L');
-
-
-
-                                            console.debug(aaa, bbb);
-                                            // let point = transform.substring(transform.indexOf('M') + 1, transform.indexOf('L'))
-                                            // console.debug();
-                                            // let translateX = transform.substring(transform.indexOf('(') + 1, transform.indexOf(','));
-                                            return aaa + 100 + "," + bbb;
-                                        }
+                                        // console.debug(pointer);
 
                                         mouseLine
                                             .attr("d", function () {
@@ -1550,56 +1582,15 @@ function waveXdist() {
                                                 return d;
                                             })
                                             .style("opacity", "0.7");
-                                        svg.selectAll(".mouse-per-line circle")
-                                            .style("opacity", "1");
-                                        // svg.selectAll(".mouse-per-line")
-                                        //     .attr("transform", function (d, i) {
-                                        //         // let pos = getPointTranslateX(i, mouseOnIdx);
-                                        //         var translate = null;
-                                        //         if (isNaN(newData[i].data[mouseOnIdx]))
-                                        //             d3.select(this).selectAll('circle').style("opacity", "0");
-                                        //         else {
-                                        //             d3.select(this).selectAll('circle').style("opacity", "1");
-                                        //             let pathX = path_x(newData[i].data[mouseOnIdx]);
-                                        //             let pathY = y(newTimeArr[mouseOnIdx]);
-                                        //             let transX = {
-                                        //                 band: (i + 0.5) * ((width - margin.left - margin.right) / newData.length) + margin.left,
-                                        //                 linear: x(newXAxis_data[i][xAxisName])
-                                        //             }[xAxisScale];
-                                        //             translate = `translate(${pathX + transX},${pathY})`;
-                                        //         }
-                                        //         return translate;
-                                        //     });
-                                        // console.debug(referenceTime)
-                                        svg.selectAll(".mouse-per-line")
-                                            .attr("transform", function (d, i) {
-                                                // let pos = getPointTranslateX(i, mouseOnIdx);
-                                                var translate = null;
-                                                if (isNaN(newData[i].data[mouseOnIdx]))
-                                                    d3.select(this).selectAll('circle').style("opacity", "0");
-                                                else {
-                                                    d3.select(this).selectAll('circle').style("opacity", "1");
-                                                    let pathX = path_x(newData[i].data[mouseOnIdx]);
-                                                    let pathY = y(newTimeArr[mouseOnIdx]);
-                                                    let transX = {
-                                                        band: (i + 0.5) * ((width - margin.left - margin.right) / newData.length) + margin.left,
-                                                        linear: x(newXAxis_data[i][xAxisName])
-                                                    }[xAxisScale];
-                                                    translate = `translate(${pathX + transX},${pathY})`;
-                                                }
-                                                return translate;
-                                            });
 
                                         tooltip
                                             .style("display", "inline")
-                                            // .style("left", (e.pageX + 20) + "px")
-                                            // .style("top", (e.pageY - 20) + "px")
-                                            .style("left", "0px")
+                                            .style("left", (e.offsetX + 50) + 'px')
                                             .style("top", "0px");
 
                                         updateTooltip();
 
-
+                                        circleGroupCollection.style("display", "inline");
 
                                     }
 
@@ -1737,7 +1728,7 @@ function waveXdist() {
                                     // range selected
                                     // e.preventDefault();
                                     yAxis_domain = [y.invert(finalAttributes.y2), y.invert(finalAttributes.y1)];
-                                    // console.debug(yAxis_domain);        
+                                    // console.debug(yAxis_domain);
                                 }
                                 else {
                                     //-------- reset zoom
@@ -1745,7 +1736,7 @@ function waveXdist() {
                                     yAxis_domain = null;
                                 }
 
-                                newDataObj = getNewData({ normalize: normalize, yAxis_domain: yAxis_domain });
+                                newDataObj = getNewData({ normalize: normalize, xAxis_domainObj: xAxis_domainObj, yAxis_domain: yAxis_domain });
                                 updateChart();
                                 selectionRect.remove();
 
@@ -1770,7 +1761,7 @@ function waveXdist() {
                             loadingEffect('show');
                             let tmp = [];
 
-                            //＝＝＝多選                           
+                            //＝＝＝多選
                             // channel.each(function (d, i) {
                             //     if (this.checked == true)
                             //         tmp.push(this.value);
@@ -1789,10 +1780,8 @@ function waveXdist() {
 
                             // channel_selectArr = tmp;
                             newDataObj = getNewData({ normalize: normalize, xAxis_domainObj: xAxis_domainObj, channel_selectArr: tmp });
-                            // newDataObj = getNewData({ normalize: normalize, channel_selectArr: tmp });
-                            // newDataObj.unselected_band = unselected_band;
                             updateChart();
-
+                            updateStaionDropDownMenu();
 
                         });
                     //=====change sortBy dist/az
@@ -1803,7 +1792,7 @@ function waveXdist() {
                             loadingEffect('show');
                             xAxisName = e.target.value;
                             updateChart();
-
+                            updateStaionDropDownMenu();
                         });
                     chartContainerD3.selectAll('input[name ="xAxisScale"]')
                         .on('click', e => {
@@ -1932,20 +1921,50 @@ function waveXdist() {
                         });
 
                     //=====select station
-                    let display = chartContainerD3.selectAll('input[name ="display"]');
-                    display
-                        .on('change', e => {
-                            let tmp = [];
-                            display.each(function (d, i) {
-                                if (this.checked == false)
-                                    tmp.push(this.value);
-                            });
-                            unselected_band = tmp;
-                            // console.debug(unselected_band);
-                            // newDataObj = getNewData(normalize, yAxis_domain);
-                            // newDataObj.unselected_band = unselected_band;
-                            updateChart();
-                        });
+
+                    //==1.在點select按鈕時更新input collection
+                    chartContainerD3.selectAll('#displaySelectButton')
+                        .on('click', e => {
+                            //==2.所有input註冊事件
+                            let display = chartContainerD3.selectAll('input[name ="display"]');
+                            display
+                                .on('change', e => {
+                                    let check = e.target.checked;
+                                    let check_station = e.target.value;
+
+                                    if (check) unselected_band = unselected_band.filter(d => d != check_station);
+                                    else unselected_band.push(check_station);
+
+                                    // console.debug(unselected_band);
+
+                                    let pathGCollection = pathGroup.selectAll('g').nodes();
+                                    pathGCollection.forEach(pathG => {
+                                        let path_station = pathG.__data__[dataKeys[0]];
+                                        if (path_station == check_station) {
+
+                                            let color = !check ? unselected_color : getColor(path_station);
+                                            let opacity = !check ? unselected_opacity : .8;
+
+                                            let g = d3.select(pathG);
+                                            g.select('path')
+                                                .attr("stroke-opacity", opacity)
+                                                .attr("stroke", color);
+
+                                            g.select('text')
+                                                .attr("fill", color)
+                                                .attr("fill-opacity", opacity);
+
+                                        }
+                                    });
+
+                                });
+
+                        })
+                    chartContainerD3.selectAll('#staionReset')
+                        .on('click', e => {
+                            console.debug(staionDropDownMenu)
+                        })
+
 
 
                 }
@@ -1989,7 +2008,7 @@ function waveXdist() {
         async function printChart() {
             chartContainerJQ.find('#distRange_slider').remove();
             chartContainerJQ.find('#azRange_slider').remove();
-            chartContainerJQ.find('#displayDropDownMenu').children().remove();
+            chartContainerJQ.find('#displayDropDownMenu>.stations').children().remove();
             chartContainerJQ.find('#normalize').prop("checked", true);
             chartContainerJQ.find('#normalizeScale').prop('disabled', false);
             chartContainerJQ.find('#charts').children().remove();
@@ -2123,8 +2142,8 @@ function waveXdist() {
                     var canvasWidth, canvasHeight;
                     //檢視時縮放,下載時放大
                     if (resize) {
-                        var windowW = $(window).width();//获取当前窗口宽度 
-                        var windowH = $(window).height();//获取当前窗口高度 
+                        var windowW = $(window).width();//获取当前窗口宽度
+                        var windowH = $(window).height();//获取当前窗口高度
                         // console.debug(windowW, windowH);
                         // console.debug(svgW, svgH);
                         var width, height;
@@ -2161,8 +2180,8 @@ function waveXdist() {
                     document.body.removeChild(downloadLink);
                 }
                 function show(img) {
-                    chartContainerJQ.find('#bigimg').attr("src", img);//设置#bigimg元素的src属性 
-                    chartContainerJQ.find('#outerdiv').fadeIn("fast");//淡入显示#outerdiv及.pimg 
+                    chartContainerJQ.find('#bigimg').attr("src", img);//设置#bigimg元素的src属性
+                    chartContainerJQ.find('#outerdiv').fadeIn("fast");//淡入显示#outerdiv及.pimg
                     chartContainerJQ.find('#outerdiv').off('click');
                     chartContainerJQ.find('#outerdiv').click(function () {//再次点击淡出消失弹出层 
                         $(this).fadeOut("fast");

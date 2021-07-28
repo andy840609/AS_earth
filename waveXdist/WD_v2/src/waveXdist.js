@@ -343,10 +343,10 @@ function waveXdist() {
                                     <div class='form-check col-6 d-flex align-items-center'>
                                         <input type='checkbox' class='form-check-input  col-4' id='staionSelectMode'>
                                         <label for='staionSelectMode' class='form-check-label  col-8' id='staionSelectMode' style='display:block;text-indent:-5px;white-space:nowrap;'>
-                                        select mode
+                                        select mode(S)
                                         </label>
                                     </div>
-                                    <div class='form-check col-6'>
+                                    <div class='form-check col-6  d-flex justify-content-end'>
                                         <button type="button" class="btn btn-outline-secondary btn-sm" id="staionReset">reset</button>
                                     </div>
                                 </div>
@@ -355,7 +355,19 @@ function waveXdist() {
 
                                 <div class='stations d-flex flex-row flex-wrap'></div>
                                
-                               
+                                <div class='pageController'>
+                                    <div class='d-flex flex-row justify-content-center'>
+                                        <label> page </label>
+                                    </div>
+                                    <div class='d-flex flex-row flex-nowrap justify-content-around'>
+                                        <button type="button" class="prePage col-2 btn btn-outline-secondary btn-sm"><</button>
+                                        <div class='col-6 d-flex flex-row flex-nowrap  align-items-center'>                            
+                                            <input class="currentPage form-control col-8" type="text">
+                                            <label class="totalPage col-form-label col-4" style='white-space:nowrap;padding:0 0px;'>/ 0</label>
+                                        </div>
+                                        <button type="button" class="nextPage col-2 btn btn-outline-secondary btn-sm">></button>
+                                    </div>
+                                </div>
                             
                             </div>
                         </div>
@@ -517,19 +529,14 @@ function waveXdist() {
 
             let All_dropdownMenu = chartContainerJQ.find('.dropdown-menu');
 
-            All_dropdownMenu.on("click.bs.dropdown", function (e) {
-                e.stopPropagation();
-                if (this.getAttribute('aria-labelledby') == 'xAxisName')//防止改變範圍也同時改變radio按鈕選擇
-                    e.preventDefault();
-                // console.debug(e.target);
-            });
-            // All_dropdownMenu.on("mousemove", function (e) {
-            //     // e.stopPropagation();
-            //     // e.preventDefault();
-            //     // console.debug("blur");
+            All_dropdownMenu
+                .on("click.bs.dropdown", function (e) {
+                    e.stopPropagation();
+                    if (this.getAttribute('aria-labelledby') == 'xAxisName')//防止改變範圍也同時改變radio按鈕選擇
+                        e.preventDefault();
+                });
 
-            // });
-
+            //================
             var mousedownFlag = false;
             $(window)
                 //==用來關閉dropdown menu
@@ -541,6 +548,24 @@ function waveXdist() {
                 //==用來判斷range是否拖曳中(不要關dropdown)
                 .on('mousedown', e => mousedownFlag = true)
                 .on('mouseup', e => mousedownFlag = false);
+            //================
+            var pageController = chartContainerJQ.find('.pageController');
+
+            pageController.on('focus', e => { console.debug(e.target); })
+            pageController.find('button')
+                .on('focus', e => {
+                    // console.debug(e.target);
+                    // e.stopPropagation();
+                    // e.preventDefault();
+                    // $(e.target).trigger('blur');
+                });
+            pageController.find('input')
+                .on('focus', e => {
+                    // console.debug(e.target);
+                    // e.stopPropagation();
+                    // e.preventDefault();
+                    // $(e.target).trigger('blur');
+                });
 
             //====================xAxisName
             let xAxisName_radioGroup = chartContainerJQ.find('#xAxisName_radioGroup');
@@ -569,9 +594,6 @@ function waveXdist() {
                     $(e.target.childNodes).filter('.dropdown-menu').addClass('show');
                 })
                 .on('mouseleave', function (e) {
-                    // console.debug('mouseleave');
-                    let aaa = $(e.target).find('input[name ="xAxisRange"]');
-                    // console.debug(aaa);
                     if (!mousedownFlag && !rangeTextBoxFocus)
                         xAxisName_dropdownMenu.removeClass('show');
                 });
@@ -756,11 +778,31 @@ function waveXdist() {
             var unselected_band = [];
             const unselected_color = 'grey', unselected_opacity = .3;
             const staionDropDownMenu = chartContainerD3.selectAll('#displayDropDownMenu');
+
+            var staionSelectPage = 0;//當前頁數
             var updateStaionDropDownMenu = () => {
 
                 // console.debug(xAxisName);
                 let sortingKey = xAxisName;
                 let data = newDataObj.newData.sort((a, b) => a[sortingKey] - b[sortingKey]);
+
+
+
+                //===分頁
+                const NumOfEachPage = 10;//一頁顯示筆數
+                var totalPages = Math.ceil(data.length / NumOfEachPage) - 1;
+
+                // //頁數超出範圍要修正
+                if (staionSelectPage > totalPages) staionSelectPage = totalPages;
+                else if (staionSelectPage < 0 && totalPages >= 0) staionSelectPage = 0;
+
+                var startIndex = staionSelectPage * NumOfEachPage;
+                var endIndex = startIndex + NumOfEachPage - 1;
+                // console.debug(startIndex, endIndex);
+                //===分頁
+                // console.debug(staionSelectPage + '/' + totalPages);
+
+
 
                 staionDropDownMenu.select('.stations')
                     .selectAll('div')
@@ -773,10 +815,12 @@ function waveXdist() {
                         menu.each(function (d, i) {
                             // console.debug(d, i);
                             let div = d3.select(this);
+                            //==分頁顯示
+                            let display = (i >= startIndex && i <= endIndex);
+                            div.style("display", display ? 'inline' : 'none');
+                            // if (!display) return;
+
                             let stationName = d[dataKeys[0]];
-
-                            // div.style("display", "none");
-
                             div
                                 .selectAll("input")
                                 .data([d])
@@ -795,15 +839,23 @@ function waveXdist() {
                                 .attr('class', '  col-8')
                                 .attr('for', 'display_' + stationName)
                                 .style("display", "block")
-                                .style("text-indent", "-10px")
+                                .style("text-indent", "-5px")
                                 .text(stationName);
-
-
 
                         });
 
 
                     });
+
+                staionDropDownMenu.select('.pageController')
+                    .call(div => {
+                        div.select('.currentPage')
+                            .property('value', staionSelectPage + 1);
+                        div.select('.totalPage')
+                            .text('/ ' + (totalPages + 1))
+                            .attr('value', totalPages + 1);
+                    });
+
             }
             //==================
 
@@ -866,7 +918,7 @@ function waveXdist() {
                     let newData = [];
 
                     if (!newDataObj) {
-                        console.debug("A for first time");
+                        // console.debug("A for first time");
                         //把沒有同時有az.dist的資料刪除
 
                         for (let i = 0; i < data.length; i++)
@@ -880,7 +932,7 @@ function waveXdist() {
                         // console.debug(newData);
                     }
                     else if (Object.keys(xAxis_domainObj).length !== 0 || (!normalize && newDataObj.normalize) || controlObj.channel_selectArr) {
-                        console.debug("B data reset");
+                        // console.debug("B data reset");
                         let dist_key = dataKeys[3];
                         let az_key = dataKeys[4];
                         // let data = newDataObj.newData;
@@ -917,7 +969,7 @@ function waveXdist() {
 
                     }
                     else {
-                        console.debug("C");
+                        // console.debug("C");
                         // console.debug(newDataObj.newData);
                         newData = newDataObj.newData;
 
@@ -932,7 +984,7 @@ function waveXdist() {
                     let newTimeArr;
                     //3.根據y軸的時間選擇範圍重新選擇newData陣列裡各物件的data數值陣列
                     if (yAxis_domain) {
-                        console.debug('1');
+                        // console.debug('1');
                         // console.debug(yAxis_domain);
                         let i1 = d3.bisectCenter(newDataObj.newTimeArr, yAxis_domain[0]);
                         let i2 = d3.bisectCenter(newDataObj.newTimeArr, yAxis_domain[1]) + 1;//包含最大範圍
@@ -944,11 +996,11 @@ function waveXdist() {
                     else {
                         // console.debug('2 data reset');
                         if (!newDataObj) {
-                            console.debug('2-1');
+                            // console.debug('2-1');
                             if (normalize) newData_normalize(newData);
                         }
                         else if (newDataObj && (newDataObj.newTimeArr.length < data.timeArr.length)) {
-                            console.debug('2-2 data reset');
+                            // console.debug('2-2 data reset');
                             newData.forEach(d => {
                                 //==之前指比較sta拿到錯的cha
                                 // d[dataKeys[2]] = data.find(od => od[dataKeys[0]] == d[dataKeys[0]])[dataKeys[2]]
@@ -961,7 +1013,7 @@ function waveXdist() {
                             if (normalize) newData_normalize(newData);
                         }
                         else {
-                            console.debug('2-3');
+                            // console.debug('2-3');
                             if (normalize && !newDataObj.normalize) newData_normalize(newData);
                         }
                         newTimeArr = data.timeArr;
@@ -1365,25 +1417,30 @@ function waveXdist() {
                 var startIndex, endIndex, pageData;//當前頁的i1,i2和資料(用來畫mousemove的圈圈)
                 var mouseOnIdx = 0;//資料陣列的索引(滑鼠移動控制)
                 const chart_edge = [x.range()[0], x.range()[1]];
+                const chart_center = (chart_edge[1] - chart_edge[0]) / 2;//判斷tooltip在滑鼠左右邊
+                const tooltipMouseGap = 50;//與滑鼠距離
 
                 //===更新tooltip和圓圈
                 var updateTooltip = () => {
                     var newTimeArr = newDataObj.newTimeArr;
                     var newData = newDataObj.newData;
-
+                    //==沒選中的挑掉不顯示資料
+                    var selectedData = newData.filter(d => !unselected_band.includes(d[dataKeys[0]]));
+                    // console.debug(selectedData);
+                    // console.debug(newData);
                     var floatShorter = (val, digit) => parseFloat(val.toFixed(digit));//小數後幾位四捨五入
 
                     var getCurrentPageData = function () {
 
-                        totalPages = Math.ceil(newData.length / NumOfEachPage) - 1;
-
-                        //頁數超出範圍要修正
-                        if (currentPage < 0) currentPage = 0;
+                        totalPages = Math.ceil(selectedData.length / NumOfEachPage) - 1;
+                        // console.debug(currentPage + '/' + totalPages)
+                        // //頁數超出範圍要修正
+                        if (currentPage < 0 && currentPage != totalPages) currentPage = 0;
                         else if (currentPage > totalPages) currentPage = totalPages;
 
                         startIndex = currentPage * NumOfEachPage;
                         endIndex = startIndex + NumOfEachPage;
-                        pageData = newData.slice(startIndex, endIndex);
+                        pageData = selectedData.slice(startIndex, endIndex);
                     }();
 
                     let timeStr = newTimeArr[mouseOnIdx];
@@ -1415,7 +1472,7 @@ function waveXdist() {
                         .call(div => {
 
                             let textAlign = ['text-left', 'text-center', 'text-right'];
-                            let text = ['↼ 🄰', currentPage + ' / ' + totalPages, '🄳 ⇀'];
+                            let text = ['↼ 🄰', (currentPage + 1) + ' / ' + (totalPages + 1), '🄳 ⇀'];
 
                             div
                                 .append('div')
@@ -1446,8 +1503,9 @@ function waveXdist() {
                     const lineStroke = "2px";
                     const lineStroke2 = "0.5px";
 
-                    //==用來取得dist/az和第一點偏差的位移值
-                    var pathGCollection = pathGroup.selectAll('g').nodes();
+                    //==用來取得dist/az和第一點偏差的位移值,挑掉未選的
+                    var pathGCollection = pathGroup.selectAll('g').nodes().filter(g =>
+                        !unselected_band.includes(g.__data__[dataKeys[0]]));
                     // console.debug(pathGCollection)
 
                     circleGroupCollection =
@@ -1497,10 +1555,6 @@ function waveXdist() {
                             })
 
                 }
-
-
-
-
 
                 //===tooltip分頁控制
 
@@ -1571,6 +1625,7 @@ function waveXdist() {
                                         // const sortedIndex = d3.range(newData.length);
                                         // console.debug(pointer);
 
+
                                         mouseLine
                                             .attr("d", function () {
                                                 // let yPos = y(newTimeArr[mouseOnIdx]);
@@ -1583,10 +1638,30 @@ function waveXdist() {
                                             })
                                             .style("opacity", "0.7");
 
+                                        // console.debug(tooltip.property('clientHeight'));
+                                        // let top = ((svg.property('clientHeight') - tooltip.property('clientHeight')) * 0.5) + 'px';
+                                        let top = margin.top + 'px'
+
                                         tooltip
                                             .style("display", "inline")
-                                            .style("left", (e.offsetX + 50) + 'px')
-                                            .style("top", "0px");
+                                            .style("top", top)
+                                            .call(tooltip => {
+                                                //tooltip換邊
+                                                let left, right;
+
+                                                if (pointer[0] < chart_center) {//滑鼠未過半,tooltip在右
+                                                    left = (e.offsetX + tooltipMouseGap) + 'px';
+                                                    right = null;
+                                                } else {//tooltip在左
+                                                    left = null;
+                                                    right = (svg.property('clientWidth') - e.offsetX + tooltipMouseGap) + 'px';
+                                                }
+
+                                                tooltip
+                                                    .style("left", left)
+                                                    .style("right", right);
+                                            });
+
 
                                         updateTooltip();
 
@@ -1921,13 +1996,13 @@ function waveXdist() {
                         });
 
                     //=====select station
-
-                    //==1.在點select按鈕時更新input collection
+                    let stationCheckboxs;
+                    //==A-1.在點select按鈕時更新input collection
                     chartContainerD3.selectAll('#displaySelectButton')
                         .on('click', e => {
                             //==2.所有input註冊事件
-                            let display = chartContainerD3.selectAll('input[name ="display"]');
-                            display
+                            stationCheckboxs = chartContainerD3.selectAll('input[name ="display"]');
+                            stationCheckboxs
                                 .on('change', e => {
                                     let check = e.target.checked;
                                     let check_station = e.target.value;
@@ -1962,33 +2037,104 @@ function waveXdist() {
                         })
                     chartContainerD3.selectAll('#staionReset')
                         .on('click', e => {
-                            console.debug(staionDropDownMenu)
+                            // console.debug(stationCheckboxs)
+                            stationCheckboxs.property('checked', true);
+                            stationCheckboxs.dispatch('change');
                         })
+                    //==B.分頁控制
+                    staionDropDownMenu.select('.pageController')
+                        .call(pageController => {
+                            // console.debug(pageController)
+                            let pageInput = pageController.select('.currentPage')
+                                .on('input', e => {
+                                    let inputVal = e.target.value;
+                                    let totalPage = pageController.select('.totalPage').attr('value');
+                                    // console.debug(inputVal)
+                                    //======textBox空值或超過限制範圍處理
+                                    if (inputVal < 1 || isNaN(inputVal) || inputVal == '')
+                                        e.target.value = 1;
+                                    else if (inputVal > parseInt(totalPage))
+                                        e.target.value = totalPage;
+
+                                    staionSelectPage = e.target.value - 1;
+                                    updateStaionDropDownMenu();
 
 
+                                });
+
+                            pageController.select('.prePage')
+                                .on('click', e => {
+                                    let inputVal = parseInt(pageInput.property('value'));
+                                    // console.debug(inputVal)
+                                    pageInput.property('value', inputVal - 1);
+                                    pageInput.dispatch('input');
+                                });
+
+                            pageController.select('.nextPage')
+                                .on('click', e => {
+                                    let inputVal = parseInt(pageInput.property('value'));
+                                    // console.debug(inputVal)
+                                    pageInput.property('value', inputVal + 1);
+                                    pageInput.dispatch('input');
+                                });
+                        });
 
                 }
                 function keyboardEvent() {
                     let hotkeyPressFlag = true;//avoid from trigger event too often
 
+                    let staionMenu = chartContainerD3.selectAll('#displayMenu');//for check display
+
                     d3.select(window)
                         .on("keydown", (e) => {
                             if (!hotkeyPressFlag) return;
+                            // console.debug()
 
-                            switch (e.key) {
-                                case 'a'://press a
-                                    // console.debug('a');
-                                    currentPage--;
-                                    break;
-                                case 'd'://press d
-                                    currentPage++;
-                                    break;
+                            //==翻頁快捷鍵
+                            if (e.key == 'a' || e.key == 'd') {
+                                let tooltipIsShow = tooltip.style('display') == 'inline';
+                                let staionMenuIsShow = staionMenu.classed('show');
+                                // console.debug(staionMenuIsShow)
+
+                                let updatePage;
+                                if (tooltipIsShow) {
+                                    updatePage = (nextPage) => {
+                                        //頁數超出範圍要修正,否則刷新tooltip
+                                        currentPage = nextPage ? currentPage + 1 : currentPage - 1;
+                                        if (currentPage < 0) currentPage = 0;
+                                        else if (currentPage > totalPages) currentPage = totalPages;
+                                        else updateTooltip();
+                                    }
+                                }
+                                else if (staionMenuIsShow) {
+                                    let pageController = staionDropDownMenu.select('.pageController');
+                                    updatePage = (nextPage) => {
+                                        let button = nextPage ? '.nextPage' : '.prePage';
+                                        pageController.select(button).dispatch('click');
+
+                                    }
+                                }
+                                else return;//都沒顯示不作分頁控制
+
+                                switch (e.key) {
+                                    case 'a'://press a
+                                        updatePage(false);
+                                        break;
+                                    case 'd'://press d
+                                        updatePage(true);
+                                        break;
+                                }
+
+
+                            }
+                            //== selectMode 開關
+                            else if (e.key == 's') {
+                                let selectMode_ckb = chartContainerD3.selectAll("#staionSelectMode");
+                                let selectMode_checked = selectMode_ckb.property('checked');
+                                selectMode_ckb.property('checked', !selectMode_checked);
+                                selectMode_ckb.dispatch("change");
                             }
 
-                            //頁數超出範圍要修正,否則刷新tooltip
-                            if (currentPage < 0) currentPage = 0;
-                            else if (currentPage > totalPages) currentPage = totalPages;
-                            else updateTooltip();
 
                             hotkeyPressFlag = false;
                             d3.timeout(() => hotkeyPressFlag = true, 10);

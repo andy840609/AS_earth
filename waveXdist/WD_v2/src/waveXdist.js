@@ -371,7 +371,7 @@ function waveXdist() {
                             
                             </div>
                         </div>
-                    </div>
+                    </div>           
                 </div>  
 
 
@@ -441,9 +441,10 @@ function waveXdist() {
                                         </div>           
                                     </div>
                                 </div>
-                            </div>               
+                            </div>
 
-
+                            <sub class='dist' style="position:absolute; left:50%; bottom:5px; transform: translate(-50%, -50%);"></sub>
+                    
                         </label>
                         <label class="btn btn-secondary dropdown-toggle">
                             <input type="radio" name ="xAxisName" id="az" value="az"> Az.
@@ -466,6 +467,8 @@ function waveXdist() {
                                 </div>
                             </div>
                         </div>       
+
+                        <sub class='az' style="position:absolute; left:50%; bottom:5px; transform: translate(-50%, -50%);"></sub>
                         </label>
                         
                
@@ -506,11 +509,10 @@ function waveXdist() {
                 <div class="form-group"  id="chartMain">
 
                     <div id="charts"></div>          
+                 
                     <div id="outerdiv"
-                        style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:999;width:100%;height:100%;display:none;">
-                        <div id="innerdiv" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
-                            <img id="bigimg" style=" background-color: rgb(255, 255, 255);" src="" />
-                        </div>
+                        style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:10;width:100%;height:100%;display:none;">
+                        <div id="innerdiv" style=" background-color: rgb(255, 255, 255);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
                     </div>
 
                     <div id='loading'>
@@ -531,10 +533,14 @@ function waveXdist() {
 
             All_dropdownMenu
                 .on("click.bs.dropdown", function (e) {
+                    // console.debug(e.target);
                     e.stopPropagation();
                     if (this.getAttribute('aria-labelledby') == 'xAxisName')//防止改變範圍也同時改變radio按鈕選擇
                         e.preventDefault();
-                });
+                })
+            // .on("shown.bs.dropdown", function (e) {
+            //     console.debug(e.target);
+            // })
 
             //================
             var mousedownFlag = false;
@@ -590,8 +596,9 @@ function waveXdist() {
 
             xAxisName_radioGroup.children('label')
                 .on('mouseover', function (e) {
+                    // console.debug(this);
                     xAxisName_dropdownMenu.removeClass('show');//先全關避免兩個dropdown同時出現
-                    $(e.target.childNodes).filter('.dropdown-menu').addClass('show');
+                    $(this.childNodes).filter('.dropdown-menu').addClass('show');
                 })
                 .on('mouseleave', function (e) {
                     if (!mousedownFlag && !rangeTextBoxFocus)
@@ -670,7 +677,7 @@ function waveXdist() {
             // console.debug(xAxisName)
             var colorPalette = {};//to fixed color for each station
             const dataKeys = data.column;//0:"station", 1: "channel", 2: "data", 3: "dist", 4:"az"
-            console.debug(dataKeys);
+            // console.debug(dataKeys);
             var referenceTime = '2000-01-01T00:00:00', title = referenceTime;
             if (stringObj) {
                 referenceTime = stringObj.referenceTime ? stringObj.referenceTime : referenceTime;
@@ -766,6 +773,7 @@ function waveXdist() {
             const pathGroup = svg.append("g").attr('class', 'paths').attr("clip-path", "url(#clip)");
             const loadingGroup = chartContainerD3.selectAll('#loading');
 
+
             var margin, x, y, path_x;
             var newDataObj;
 
@@ -786,8 +794,6 @@ function waveXdist() {
                 let sortingKey = xAxisName;
                 let data = newDataObj.newData.sort((a, b) => a[sortingKey] - b[sortingKey]);
 
-
-
                 //===分頁
                 const NumOfEachPage = 10;//一頁顯示筆數
                 var totalPages = Math.ceil(data.length / NumOfEachPage) - 1;
@@ -802,9 +808,7 @@ function waveXdist() {
                 //===分頁
                 // console.debug(staionSelectPage + '/' + totalPages);
 
-
-
-                staionDropDownMenu.select('.stations')
+                var stationsDiv = staionDropDownMenu.select('.stations')
                     .selectAll('div')
                     .data(data)
                     .join('div')
@@ -856,6 +860,39 @@ function waveXdist() {
                             .attr('value', totalPages + 1);
                     });
 
+
+                //===所有checkbox監聽點擊事件
+                stationsDiv.selectAll('input[name ="display"]')
+                    .on('change', e => {
+                        let check = e.target.checked;
+                        let check_station = e.target.value;
+
+                        if (check) unselected_band = unselected_band.filter(d => d != check_station);
+                        else unselected_band.push(check_station);
+
+                        // console.debug(unselected_band);
+
+                        let pathGCollection = pathGroup.selectAll('g').nodes();
+                        pathGCollection.forEach(pathG => {
+                            let path_station = pathG.__data__[dataKeys[0]];
+                            if (path_station == check_station) {
+
+                                let color = !check ? unselected_color : getColor(path_station);
+                                let opacity = !check ? unselected_opacity : 1;
+
+                                let g = d3.select(pathG);
+                                g.select('path')
+                                    .attr("stroke-opacity", opacity)
+                                    .attr("stroke", color);
+
+                                g.select('text')
+                                    .attr("fill", color)
+                                    .attr("fill-opacity", opacity);
+
+                            }
+                        });
+
+                    });
             }
             //==================
 
@@ -1055,7 +1092,8 @@ function waveXdist() {
                         .append('text')
                         .attr("class", "axis_name")
                         .attr("fill", "black")
-                        .attr("font-weight", "bold");
+                        .attr("font-weight", "bold")
+                        .attr('x', width / 2);
                     yAxis
                         .append('text')
                         .attr("class", "axis_name")
@@ -1063,13 +1101,12 @@ function waveXdist() {
                         .attr("font-weight", "bold")
                         .attr("font-size", "10")
                         .style("text-anchor", "start")
-                        // .attr("alignment-baseline", "text-before-edge")
+                        .attr("alignment-baseline", "text-before-edge")
                         .attr("transform", "rotate(-90)")
+                        .attr('x', -height / 2)
                         .call(g => g.text(getString(data.yAxisName).keyName));
 
                     //===create StaionDropDownMenu
-                    // staionDropDownMenu
-                    //     .call(div => );
                     updateStaionDropDownMenu();
 
                     // console.debug(newData);
@@ -1106,7 +1143,7 @@ function waveXdist() {
 
                 }
                 function render() {
-                    console.debug(newDataObj);
+                    // console.debug(newDataObj);
                     //==物件依照xAxisName的值由小排到大
                     const sort_newData = (data, sortingKey) => {
                         // console.debug(data, sortingKey)
@@ -1147,14 +1184,16 @@ function waveXdist() {
                     var refreshText = () => {
                         xAxis
                             .select('.axis_name')
-                            .attr('x', width / 2)
                             .attr("y", margin.bottom - 20)
                             .text({ band: getString(dataKeys[0]), linear: getString(xAxisName) }[xAxisScale].keyName);
 
                         yAxis
                             .select('.axis_name')
-                            .attr('x', -height / 2)
-                            .attr("y", -margin.left + 8);
+                            .attr("y", -margin.left + 8)
+                            .attr("opacity", function (d, i) {
+                                let tickLength = d3.select(this.parentNode).select(".tick>text").text().length;
+                                return tickLength > 3 ? 0.3 : 1;
+                            });
 
                         //==title
                         svg
@@ -1264,7 +1303,7 @@ function waveXdist() {
 
                                     let g = d3.select(this);
                                     let color = isUnselected ? unselected_color : getColor(d[dataKeys[0]]);
-                                    let opacity = isUnselected ? unselected_opacity : .8;
+                                    let opacity = isUnselected ? unselected_opacity : 1;
 
                                     //波形移到x軸位置(1.dist/az 2.波形第一點離中心點偏移位置修正)
                                     var getTransX = () => {
@@ -1304,6 +1343,7 @@ function waveXdist() {
                                         .attr("stroke", color)
                                         .attr("d", line(d.data))
                                     // .attr("transform", `translate(${translate_x},0)`);
+                                    // .attr("stroke-linecap", 'round')
 
                                     g
                                         .selectAll("text")
@@ -1335,6 +1375,7 @@ function waveXdist() {
 
                 if (!newDataObj) {
                     newDataObj = getNewData({ normalize: true, yAxis_domain: null, xAxis_domainObj: {}, channel_selectArr: ['Z'] });
+
                     init();
                 }
                 render();
@@ -1381,37 +1422,41 @@ function waveXdist() {
                 var yAxis_domain = null,
                     normalize = chartContainerD3.selectAll('#normalize').property("checked"),
                     normalizeScale = chartContainerD3.selectAll('#normalizeScale').property("value"),
-                    xAxis_domainObj = {},
-                    channel_selectArr = newDataObj.channel_selectArr;
+                    xAxis_domainObj = {};
 
                 const updateDelay = 10;
                 var updateFlag = true;
                 var updateTimeOut = null;
-                var updateHandler = (action) => {
+                var updateHandler = (action, parameter = null) => {
+                    // console.debug(action)
+
                     if (!updateFlag)
                         updateTimeOut.stop();
 
                     updateTimeOut = d3.timeout(() => {
-                        action();
+                        parameter ? action(parameter) : action();
                         updateFlag = true;
                     }, updateDelay);
 
                     updateFlag = false;
                 }
 
+                //===event eles
+                const eventRect = svg.append("g").attr("class", "eventRect");
+                const defs = svg.append("defs");
                 //====================================tooltip==================================================
                 const tooltip = chartContainerD3.selectAll("#charts")
                     .append("div")
                     .attr("id", "tooltip")
                     .style('position', 'absolute')
-                    .style('z-index', '1')
+                    .style('z-index', '999')
                     .style("background-color", "#D3D3D3")
                     .style('padding', '20px 20px 20px 20px')
                     .style("opacity", " .9")
                     .style('display', 'none');
 
+
                 //===tooltip分頁控制
-                var eventRect, mouseG, circleGroupCollection;//d3 selector
                 const NumOfEachPage = 5;//一頁顯示筆數
                 var totalPages, currentPage = 0;//當前頁數
                 var startIndex, endIndex, pageData;//當前頁的i1,i2和資料(用來畫mousemove的圈圈)
@@ -1508,173 +1553,162 @@ function waveXdist() {
                         !unselected_band.includes(g.__data__[dataKeys[0]]));
                     // console.debug(pathGCollection)
 
-                    circleGroupCollection =
-                        mouseG.selectAll('.mouse-per-line')
-                            .data(pageData)
-                            .join("g")
-                            .attr("transform", (d, i) => {
-                                let indexOf_newData = startIndex + i;
-                                //==取得該條path_g的transform x
-                                let transX = pathGCollection[indexOf_newData].transform.baseVal[0].matrix.e;
-                                let transY = y(newTimeArr[mouseOnIdx]);
-                                return `translate(${transX},${transY})`;
+                    eventRect.select('.mouse-over-effects')
+                        .selectAll('.mouse-per-line')
+                        .data(pageData)
+                        .join("g")
+                        .attr("transform", d => {
+
+                            //( let indexOf_newData = startIndex + i;)不能用index判斷了
+
+                            //==select mode造成pathGCollection順序沒規則,所以比對站名資料
+                            //===如果不只一個比對cha
+                            let pathG = pathGCollection.filter(g => d[dataKeys[0]] == g.__data__[dataKeys[0]]);
+                            pathG = pathG.length > 1 ? pathG.filter(g => d[dataKeys[1]] == g.__data__[dataKeys[1]]) : pathG[0];
+                            // console.debug(pathG)
+                            //==取得該條path_g的transform x
+                            let transX = pathG.transform.baseVal[0].matrix.e;
+                            let transY = y(newTimeArr[mouseOnIdx]);
+                            return `translate(${transX},${transY})`;
+                        })
+                        .attr("class", "mouse-per-line")
+                        .call(gCollection => {
+                            gCollection.each(function (d, i) {
+                                // console.debug(this);
+
+                                const circleAmount = 3;
+                                let g = d3.select(this);
+                                let station = d[dataKeys[0]];
+
+                                let circleTransX = path_x(d.data[mouseOnIdx]);
+                                // console.debug(d.data[mouseOnIdx]);
+                                // console.debug(path_x.domain(), path_x.range());
+                                g
+                                    .selectAll('circle')
+                                    .data(d3.range(circleAmount))
+                                    .join("circle")
+                                    .attr("transform", `translate(${circleTransX},0)`)
+                                    .call(circlesCollection =>
+                                        circlesCollection.each(function (d) {
+                                            let circle = d3.select(this);
+                                            let mainCircle = (d % 2 != 0);
+
+                                            circle
+                                                .attr("r", d + 3)
+                                                .style("stroke", mainCircle ? getColor(station) : "white")
+                                                .style("fill", "none")
+                                                .style("stroke-width", mainCircle ? lineStroke : lineStroke2)
+                                                .style("opacity", "1");
+                                        })
+                                    );
                             })
-                            .attr("class", "mouse-per-line")
-                            .call(gCollection => {
-                                gCollection.each(function (d, i) {
-                                    // console.debug(this);
-
-                                    const circleAmount = 3;
-                                    let g = d3.select(this);
-                                    let station = d[dataKeys[0]];
-
-                                    let circleTransX = path_x(d.data[mouseOnIdx]);
-                                    // console.debug(d.data[mouseOnIdx]);
-                                    // console.debug(path_x.domain(), path_x.range());
-                                    g
-                                        .selectAll('circle')
-                                        .data(d3.range(circleAmount))
-                                        .join("circle")
-                                        .attr("transform", `translate(${circleTransX},0)`)
-                                        .call(circlesCollection =>
-                                            circlesCollection.each(function (d) {
-                                                let circle = d3.select(this);
-                                                let mainCircle = (d % 2 != 0);
-
-                                                circle
-                                                    .attr("r", d + 3)
-                                                    .style("stroke", mainCircle ? getColor(station) : "white")
-                                                    .style("fill", "none")
-                                                    .style("stroke-width", mainCircle ? lineStroke : lineStroke2)
-                                                    .style("opacity", "1");
-                                            })
-                                        );
-                                })
 
 
-                            })
+                        })
 
                 }
 
-                //===tooltip分頁控制
+                //===select Mode controll
+                var dragBehavior, mouseMoveBehavior;
 
 
                 function pathEvent() {
 
+                    //===遮罩讓path和事件不超出邊界
+                    defs
+                        .append("clipPath")
+                        .attr("id", "clip")
+                        .append("rect")
+                        .attr("id", "chartRenderRange")
+                        .attr('x', margin.left)
+                        .attr('y', margin.top)
+                        .attr('width', width - margin.right - margin.left)
+                        .attr('height', height - margin.top - margin.bottom)
+                        .attr('fill', 'none')
+                        .attr('pointer-events', 'all');
+
+                    eventRect.append("use").attr('xlink:href', "#chartRenderRange");
 
                     //====================================mouse move==================================================
                     function mouseMove() {
-                        // const datesArr = data.timeArr;
-                        // var newTimeArr = newDataObj.newTimeArr;
-                        // var newData = newDataObj.newData;
 
-                        mouseG = svg.append("g")
-                            .attr("class", "mouse-over-effects");
+                        const mouseG = eventRect.append("g").attr("class", "mouse-over-effects");
 
                         const mouseLine = mouseG.append("path") // create vertical line to follow mouse
                             .attr("class", "mouse-line")
                             .style("stroke", "#A9A9A9")
                             .style("stroke-width", "2px")
-                            .style("opacity", "0");
+                            .style("opacity", "0.7");
 
-                        svg
-                            .append("defs")
-                            .append("clipPath")
-                            .attr("id", "clip")
-                            .append("rect")
-                            .attr("id", "chartRenderRange")
-                            .attr('x', margin.left)
-                            .attr('y', margin.top)
-                            .attr('width', width - margin.right - margin.left)
-                            .attr('height', height - margin.top - margin.bottom)
-                            .attr('fill', 'none')
-                            .attr('pointer-events', 'all');
+                        mouseMoveBehavior = use => use
+                            .on('mouseleave', function () { // on mouse out hide line, circles and text
+                                // console.log('mouseleave');
+                                var action = () => {
+                                    mouseG.style("display", "none");
+                                    tooltip.style("display", "none");
+                                }
+                                updateHandler(action);
 
-                        // append a rect to catch mouse movements on canvas
-                        // console.debug(data);
+                            })
+                            .on('mousemove', function (e) { // update tooltip content, line, circles and text when mouse moves
+                                // console.debug(event.target);
 
-                        eventRect =
-                            mouseG
-                                .append("use")
-                                .attr('class', "eventRect")
-                                // .attr('id', "er_" + data.yName)
-                                .attr('xlink:href', "#chartRenderRange")
-                                .on('mouseleave', function () { // on mouse out hide line, circles and text
-                                    // console.log('mouseleave');
-                                    var action = () => {
-                                        mouseLine.style("opacity", "0");
-                                        circleGroupCollection.style("display", "none");
-                                        tooltip.style("display", "none");
+                                var action = () => {
+                                    // e.preventDefault();
 
-                                    }
-                                    updateHandler(action);
+                                    var newTimeArr = newDataObj.newTimeArr;
+                                    // var newData = newDataObj.newData;
 
-                                })
-                                .on('mousemove', function (e) { // update tooltip content, line, circles and text when mouse moves
-                                    // console.log(event.target);
+                                    const pointer = d3.pointer(e, this);
+                                    const ym = y.invert(pointer[1]);
+                                    mouseOnIdx = d3.bisectCenter(newTimeArr, ym);
+                                    // const sortedIndex = d3.range(newData.length);
+                                    // console.debug(pointer);
 
-                                    var action = () => {
-                                        // e.preventDefault();
-
-                                        var newTimeArr = newDataObj.newTimeArr;
-                                        // var newData = newDataObj.newData;
-
-                                        const pointer = d3.pointer(e, this);
-                                        const ym = y.invert(pointer[1]);
-                                        mouseOnIdx = d3.bisectCenter(newTimeArr, ym);
-                                        // const sortedIndex = d3.range(newData.length);
-                                        // console.debug(pointer);
+                                    mouseLine
+                                        .attr("d", function () {
+                                            // let yPos = y(newTimeArr[mouseOnIdx]);
+                                            let yPos = pointer[1];
+                                            let p1 = chart_edge[1] + "," + yPos;
+                                            let p2 = chart_edge[0] + "," + yPos;
+                                            let d = "M" + p1 + " L" + p2;
+                                            return d;
+                                        });
 
 
-                                        mouseLine
-                                            .attr("d", function () {
-                                                // let yPos = y(newTimeArr[mouseOnIdx]);
+                                    // console.debug(tooltip.property('clientHeight'));
+                                    // let top = ((svg.property('clientHeight') - tooltip.property('clientHeight')) * 0.5) + 'px';
+                                    let top = margin.top + 'px';
 
-                                                let yPos = pointer[1];
-                                                let p1 = chart_edge[1] + "," + yPos;
-                                                let p2 = chart_edge[0] + "," + yPos;
-                                                let d = "M" + p1 + " L" + p2;
-                                                return d;
-                                            })
-                                            .style("opacity", "0.7");
+                                    tooltip
+                                        .style("display", "inline")
+                                        .style("top", top)
+                                        .call(tooltip => {
+                                            //tooltip換邊
+                                            let left, right;
 
-                                        // console.debug(tooltip.property('clientHeight'));
-                                        // let top = ((svg.property('clientHeight') - tooltip.property('clientHeight')) * 0.5) + 'px';
-                                        let top = margin.top + 'px'
+                                            if (pointer[0] < chart_center) {//滑鼠未過半,tooltip在右
+                                                left = (e.offsetX + tooltipMouseGap) + 'px';
+                                                right = null;
+                                            } else {//tooltip在左
+                                                left = null;
+                                                right = (svg.property('clientWidth') - e.offsetX + tooltipMouseGap) + 'px';
+                                            }
 
-                                        tooltip
-                                            .style("display", "inline")
-                                            .style("top", top)
-                                            .call(tooltip => {
-                                                //tooltip換邊
-                                                let left, right;
+                                            tooltip
+                                                .style("left", left)
+                                                .style("right", right);
+                                        });
 
-                                                if (pointer[0] < chart_center) {//滑鼠未過半,tooltip在右
-                                                    left = (e.offsetX + tooltipMouseGap) + 'px';
-                                                    right = null;
-                                                } else {//tooltip在左
-                                                    left = null;
-                                                    right = (svg.property('clientWidth') - e.offsetX + tooltipMouseGap) + 'px';
-                                                }
+                                    updateTooltip();
+                                    mouseG.style("display", "inline");
+                                }
 
-                                                tooltip
-                                                    .style("left", left)
-                                                    .style("right", right);
-                                            });
+                                updateHandler(action);
 
 
-                                        updateTooltip();
-
-                                        circleGroupCollection.style("display", "inline");
-
-                                    }
-
-                                    updateHandler(action);
-
-
-                                });
-
-
+                            });
+                        eventRect.call(mouseMoveBehavior);
 
                     }
                     // //====================================zoom==================================================
@@ -1764,7 +1798,7 @@ function waveXdist() {
                                 }
                             }
                         };
-                        var dragBehavior = d3.drag()
+                        dragBehavior = d3.drag()
                             .on("start", e => {
                                 // console.log("dragStart");
                                 const p = d3.pointer(e, eventRect.node());
@@ -1823,12 +1857,224 @@ function waveXdist() {
                 }
                 function chartOptionEvent() {
 
-                    // //====================channel
-                    // let channel_checkboxs = chartContainerJQ.find('input[name ="channel"]');
-                    // channel_checkboxs.on("change", function (e) {
-                    //     //只能單選所以取消其他的checked
-                    //     channel_checkboxs.filter((i, checkbox) => checkbox !== e.target).prop("checked", false);
-                    // });
+                    //===製造path的陰影
+                    defs
+                        .append("filter")
+                        .attr("id", "pathShadow")
+                        .attr("x", "0")
+                        .attr("y", "0")
+                        .call(filter => {
+                            filter
+                                .append("feOffset")
+                                .attr("result", "offOut")
+                                .attr("in", "SourceAlpha")
+                                .attr("dx", "0")
+                                .attr("dy", "0");
+
+                            filter
+                                .append("feGaussianBlur")
+                                .attr("result", "blurOut")
+                                .attr("in", "offOut")
+                                .attr("stdDeviation", "2")
+
+                            filter
+                                .append("feBlend")
+                                .attr("in", "SourceGraphic")
+                                .attr("in2", "blurOut")
+                                .attr("mode", "normal");
+
+                        });
+
+                    //=====select station
+                    staionDropDownMenu
+                        .select('.controller')
+                        .call(controllerDiv => {
+                            //==A-1.select mode
+                            controllerDiv.select('#staionSelectMode')
+                                .on('change', e => {
+                                    let check = e.target.checked;
+                                    // console.debug(check);
+                                    let mousemoveEventOff = (g) => {
+                                        g
+                                            .on('mousemove', null)
+                                            .on('mouseleave', null);
+                                    };
+                                    let buttonText;
+                                    //勾選時取消mousedrag和mouseMove
+                                    if (check) {
+                                        buttonText = 'select mode on';
+
+                                        //===tooltip圓圈都消失
+                                        eventRect.dispatch('mouseleave') //有時被hander取消會bug
+
+                                        eventRect
+                                            .on('mousedown.drag', null)
+                                            .call(mousemoveEventOff);
+
+                                        // eventRect.select('.mouse-over-effects').style("display", "none");
+                                        // tooltip.style("display", "none");
+
+                                        //selcet mode事件
+                                        pathGroup.raise();
+                                        pathGroup
+                                            .on('mousemove', e => {
+                                                updateHandler(hover, e.target);
+                                            })
+                                            .on('mouseleave', e => {
+                                                updateHandler(leave);
+                                            })
+                                            .on('click', e => {
+
+                                                var action = () => {
+                                                    let thisG = e.target.parentNode;
+                                                    let thisStation = thisG.__data__[dataKeys[0]];
+
+                                                    let show;
+                                                    //===不在未選名單中則隱藏波形並列入名單
+                                                    if (!unselected_band.includes(thisStation)) {
+                                                        show = false;
+                                                        unselected_band.push(thisStation);
+                                                        leave();
+                                                    }
+                                                    else {
+                                                        show = true;
+                                                        unselected_band = unselected_band.filter(d => d != thisStation);
+                                                        hover(e.target);
+                                                    };
+
+
+                                                    d3.select(thisG).call(thisG => {
+
+                                                        let color = !show ? unselected_color : getColor(thisStation);
+                                                        let opacity = !show ? unselected_opacity : 1;
+
+                                                        thisG.select('path')
+                                                            .attr("stroke-opacity", opacity)
+                                                            .attr("stroke", color);
+
+                                                        thisG.select('text')
+                                                            .attr("fill", color)
+                                                            .attr("fill-opacity", opacity);
+                                                    })
+
+                                                    //===同步ckb
+                                                    let stationCheckbox = staionDropDownMenu.selectAll(`input[value =${thisStation}]`);
+                                                    stationCheckbox.property('checked', show);
+                                                }
+                                                updateHandler(action);
+                                            });
+
+
+                                        var hover = (target) => {
+                                            let thisG = target.parentNode;
+                                            let thisStation = thisG.__data__[dataKeys[0]];
+                                            if (unselected_band.includes(thisStation)) return;//未選的不用處理
+
+                                            //==改變其他path透明度
+                                            pathGroup.selectAll('g')
+                                                //==未選的濾掉
+                                                .filter(d => !unselected_band.includes(d[dataKeys[0]]))
+                                                .call(g =>
+                                                    g.each(function (d, i) {
+                                                        let g = d3.select(this);
+                                                        let station = d[dataKeys[0]];
+                                                        let hover = (station == thisStation);
+                                                        let opacity = hover ? 1 : .5;
+
+                                                        g.select('path').attr("stroke-opacity", opacity);
+                                                        g.select('text').attr("fill-opacity", opacity);
+
+                                                        //===加陰影和上移圖層
+                                                        if (hover)
+                                                            g.attr("filter", "url(#pathShadow)").raise();
+                                                    })
+                                                );
+                                        }
+
+                                        var leave = () => {
+                                            //==恢復所有除了未選中path透明度
+                                            pathGroup.selectAll('g')
+
+                                                .attr("filter", null)//所有包含隱藏的path陰影都取消
+                                                //==未選的濾掉不條透明度
+                                                .filter(d => !unselected_band.includes(d[dataKeys[0]]))
+                                                .call(g => {
+                                                    g.select('path').attr("stroke-opacity", 1);
+                                                    g.select('text').attr("fill-opacity", 1);
+
+                                                });
+                                        }
+
+                                    }
+                                    else {
+                                        buttonText = 'select';
+
+                                        pathGroup.dispatch('mouseleave');//path恢復透明度
+                                        pathGroup
+                                            .on('click', null)
+                                            .call(mousemoveEventOff);
+
+                                        eventRect.raise();
+                                        eventRect
+                                            .call(dragBehavior)
+                                            .call(mouseMoveBehavior);
+                                    }
+
+                                    //===改變按鈕text
+                                    chartContainerD3.selectAll('#displaySelectButton').text(buttonText);
+
+                                });
+
+
+                            //==A-2.reset
+                            controllerDiv.select('#staionReset')
+                                .on('click', e => {
+                                    let stationCheckboxs = staionDropDownMenu.selectAll('input[name ="display"]');
+                                    stationCheckboxs.property('checked', true);
+                                    stationCheckboxs.dispatch('change');
+                                    unselected_band = [];//==沒在圖表上的站也要reset
+                                });
+
+                        })
+
+                    //==B.分頁控制
+                    staionDropDownMenu.select('.pageController')
+                        .call(pageController => {
+                            // console.debug(pageController)
+                            let pageInput = pageController.select('.currentPage')
+                                .on('input', e => {
+                                    let inputVal = e.target.value;
+                                    let totalPage = pageController.select('.totalPage').attr('value');
+                                    // console.debug(inputVal)
+                                    //======textBox空值或超過限制範圍處理
+                                    if (inputVal < 1 || isNaN(inputVal) || inputVal == '')
+                                        e.target.value = 1;
+                                    else if (inputVal > parseInt(totalPage))
+                                        e.target.value = totalPage;
+
+                                    staionSelectPage = e.target.value - 1;
+                                    updateStaionDropDownMenu();
+
+
+                                });
+
+                            pageController.select('.prePage')
+                                .on('click', e => {
+                                    let inputVal = parseInt(pageInput.property('value'));
+                                    // console.debug(inputVal)
+                                    pageInput.property('value', inputVal - 1);
+                                    pageInput.dispatch('input');
+                                });
+
+                            pageController.select('.nextPage')
+                                .on('click', e => {
+                                    let inputVal = parseInt(pageInput.property('value'));
+                                    // console.debug(inputVal)
+                                    pageInput.property('value', inputVal + 1);
+                                    pageInput.dispatch('input');
+                                });
+                        });
+
                     //=====change channel
                     let channel = chartContainerD3.selectAll('input[name ="channel"]');
                     channel
@@ -1934,6 +2180,12 @@ function waveXdist() {
                                     }
                                     xAxis_domainObj[key] = domain;
 
+                                    //==========================更新按鈕文字=================================                             
+                                    let sub = xAxisName_radioGroup.select(`sub[class =${key}]`);
+                                    //在最大範圍時不顯示文字
+                                    let text = (rangeMin == minRange && maxRange == rangeMax) ?
+                                        '' : `( ${minRange} - ${maxRange} )`;
+                                    sub.text(text);
 
 
                                     //避免更新太頻繁LAG
@@ -1941,6 +2193,7 @@ function waveXdist() {
                                     var action = () => {
                                         newDataObj = getNewData({ normalize: normalize, yAxis_domain: yAxis_domain, xAxis_domainObj: xAxis_domainObj });
                                         updateChart();
+                                        updateStaionDropDownMenu();
                                     }
                                     updateHandler(action);
 
@@ -1960,8 +2213,6 @@ function waveXdist() {
 
                                 })
                         })
-
-
 
 
                     //=====change normalize
@@ -1995,89 +2246,7 @@ function waveXdist() {
 
                         });
 
-                    //=====select station
-                    let stationCheckboxs;
-                    //==A-1.在點select按鈕時更新input collection
-                    chartContainerD3.selectAll('#displaySelectButton')
-                        .on('click', e => {
-                            //==2.所有input註冊事件
-                            stationCheckboxs = chartContainerD3.selectAll('input[name ="display"]');
-                            stationCheckboxs
-                                .on('change', e => {
-                                    let check = e.target.checked;
-                                    let check_station = e.target.value;
 
-                                    if (check) unselected_band = unselected_band.filter(d => d != check_station);
-                                    else unselected_band.push(check_station);
-
-                                    // console.debug(unselected_band);
-
-                                    let pathGCollection = pathGroup.selectAll('g').nodes();
-                                    pathGCollection.forEach(pathG => {
-                                        let path_station = pathG.__data__[dataKeys[0]];
-                                        if (path_station == check_station) {
-
-                                            let color = !check ? unselected_color : getColor(path_station);
-                                            let opacity = !check ? unselected_opacity : .8;
-
-                                            let g = d3.select(pathG);
-                                            g.select('path')
-                                                .attr("stroke-opacity", opacity)
-                                                .attr("stroke", color);
-
-                                            g.select('text')
-                                                .attr("fill", color)
-                                                .attr("fill-opacity", opacity);
-
-                                        }
-                                    });
-
-                                });
-
-                        })
-                    chartContainerD3.selectAll('#staionReset')
-                        .on('click', e => {
-                            // console.debug(stationCheckboxs)
-                            stationCheckboxs.property('checked', true);
-                            stationCheckboxs.dispatch('change');
-                        })
-                    //==B.分頁控制
-                    staionDropDownMenu.select('.pageController')
-                        .call(pageController => {
-                            // console.debug(pageController)
-                            let pageInput = pageController.select('.currentPage')
-                                .on('input', e => {
-                                    let inputVal = e.target.value;
-                                    let totalPage = pageController.select('.totalPage').attr('value');
-                                    // console.debug(inputVal)
-                                    //======textBox空值或超過限制範圍處理
-                                    if (inputVal < 1 || isNaN(inputVal) || inputVal == '')
-                                        e.target.value = 1;
-                                    else if (inputVal > parseInt(totalPage))
-                                        e.target.value = totalPage;
-
-                                    staionSelectPage = e.target.value - 1;
-                                    updateStaionDropDownMenu();
-
-
-                                });
-
-                            pageController.select('.prePage')
-                                .on('click', e => {
-                                    let inputVal = parseInt(pageInput.property('value'));
-                                    // console.debug(inputVal)
-                                    pageInput.property('value', inputVal - 1);
-                                    pageInput.dispatch('input');
-                                });
-
-                            pageController.select('.nextPage')
-                                .on('click', e => {
-                                    let inputVal = parseInt(pageInput.property('value'));
-                                    // console.debug(inputVal)
-                                    pageInput.property('value', inputVal + 1);
-                                    pageInput.dispatch('input');
-                                });
-                        });
 
                 }
                 function keyboardEvent() {
@@ -2196,21 +2365,15 @@ function waveXdist() {
                         item.innerHTML = "檢視圖片";
 
                     item.addEventListener("click", (e, a) => {
-                        let chartIDArr = [];
-
-                        // if (zoomAll)
-                        //     for (let i = 1; i <= chartsCount; i++)
-                        //         chartIDArr.push("#chart" + i + " svg");
-                        // else
-                        chartIDArr.push("#" + $(e.target).parents('.chart')[0].id + " svg");
-                        // console.log(chartIDArr);
-
+                        let svgArr = [];
+                        let svg = chartContainerJQ.find("#" + $(e.target).parents('.chart')[0].id).children('svg')[0];
+                        // console.debug(svg);
+                        svgArr.push(svg);
                         let xAxisName = document.querySelector('input[name ="xAxisName"]:checked').value;
                         let xAxisScale = document.querySelector('input[name ="xAxisScale"]:checked').value;
                         let referenceTime = data.referenceTime;
                         let fileName = 'WF_by_' + xAxisName + (xAxisScale == 'band' ? '-sta' : '') + '_' + referenceTime + 'Z';
-                        // console.debug(fileName);
-                        downloadSvg(chartIDArr, fileName, option);
+                        downloadSvg(svgArr, fileName, option);
                     });
 
                     li.append(item);
@@ -2270,7 +2433,7 @@ function waveXdist() {
                     });
                 });
             }
-            var downloadSvg = (chartQueryStrs, fileName, option) => {
+            var downloadSvg = (svgArr, fileName, option) => {
 
                 function getSvgUrl(svgNode) {
                     var svgData = (new XMLSerializer()).serializeToString(svgNode);
@@ -2283,15 +2446,14 @@ function waveXdist() {
                     let canvas = document.createElement('canvas');
                     let context = canvas.getContext('2d');
 
-                    var svgWidth = $(chartQueryStrs[0])[0].viewBox.baseVal.width;
-                    var svgHeight = $(chartQueryStrs[0])[0].viewBox.baseVal.height * chartQueryStrs.length;
+                    var svgWidth = svgArr[0].viewBox.baseVal.width;
+                    var svgHeight = svgArr[0].viewBox.baseVal.height * svgArr.length;
                     var canvasWidth, canvasHeight;
                     //檢視時縮放,下載時放大
                     if (resize) {
-                        var windowW = $(window).width();//获取当前窗口宽度
-                        var windowH = $(window).height();//获取当前窗口高度
-                        // console.debug(windowW, windowH);
-                        // console.debug(svgW, svgH);
+                        var windowW = window.innerWidth;//获取当前窗口宽度 
+                        var windowH = window.innerHeight;//获取当前窗口高度 
+
                         var width, height;
                         var scale = 0.9;//缩放尺寸
                         height = windowH * scale;
@@ -2325,21 +2487,43 @@ function waveXdist() {
                     downloadLink.click();
                     document.body.removeChild(downloadLink);
                 }
-                function show(img) {
-                    chartContainerJQ.find('#bigimg').attr("src", img);//设置#bigimg元素的src属性
-                    chartContainerJQ.find('#outerdiv').fadeIn("fast");//淡入显示#outerdiv及.pimg
-                    chartContainerJQ.find('#outerdiv').off('click');
-                    chartContainerJQ.find('#outerdiv').click(function () {//再次点击淡出消失弹出层 
+                function show(width, height) {
+                    // $('#bigimg').attr("src", img);//设置#bigimg元素的src属性 
+                    // $('#outerdiv').fadeIn("fast");//淡入显示#outerdiv及.pimg 
+                    // $('#outerdiv').off('click');
+                    // $('#outerdiv').click(function () {//再次点击淡出消失弹出层 
+                    //     $(this).fadeOut("fast");
+                    // });
+                    let outerdiv = $('#outerdiv');
+
+                    outerdiv.fadeIn("fast");//淡入显示#outerdiv及.pimg 
+                    outerdiv.off('click');
+                    outerdiv.click(function (e) {//再次点击淡出消失弹出层 
+                        if (e.target.id != 'outerdiv') return;
                         $(this).fadeOut("fast");
+                        $(originParent).children('svg').remove();
+                        originSvg.removeAttribute('width');
+                        originSvg.removeAttribute('height');
+                        originParent.append(originSvg);
                     });
+
+                    let originSvg = svgArr[0];
+                    let originParent = originSvg.parentNode;
+                    let cloneSvg = originSvg.cloneNode(true);
+                    originSvg.setAttribute('width', width);
+                    originSvg.setAttribute('height', height);
+                    document.querySelector('#innerdiv').append(originSvg);
+                    originParent.append(cloneSvg);
+
                 }
+
 
                 if (option == 'svg') {
                     //==============merge svg
                     var newSvg = document.createElement('svg');
 
 
-                    chartQueryStrs.forEach(queryStr => {
+                    svgArr.forEach(queryStr => {
                         var svgjQobj = $(queryStr);
                         svgjQobj.clone().appendTo(newSvg);
                     });
@@ -2354,10 +2538,10 @@ function waveXdist() {
                     var canvas = CanvasObjArr[0];
                     var context = CanvasObjArr[1];
                     var imageWidth = canvas.width;
-                    var imageHeight = canvas.height / chartQueryStrs.length;
+                    var imageHeight = canvas.height / svgArr.length;
 
 
-                    chartQueryStrs.forEach((queryStr, index) => {
+                    svgArr.forEach((queryStr, index) => {
                         var svgNode = $(queryStr)[0];
                         var svgUrl = getSvgUrl(svgNode);
                         var image = new Image();
@@ -2366,11 +2550,10 @@ function waveXdist() {
                             context.drawImage(image, 0, index * imageHeight, imageWidth, imageHeight);
 
                             //done drawing and output
-                            if (index == chartQueryStrs.length - 1) {
+                            if (index == svgArr.length - 1) {
                                 var imgUrl;
                                 if (option == 'bigimg') {
-                                    imgUrl = canvas.toDataURL();// default png
-                                    show(imgUrl);
+                                    show(imageWidth, imageHeight);
                                 }
                                 else {
                                     imgUrl = canvas.toDataURL('image/' + option);
@@ -2382,7 +2565,6 @@ function waveXdist() {
                 }
 
             }
-
             let xAxisName = document.querySelector('input[name ="xAxisName"]:checked').value;
             let xAxisScale = document.querySelector('input[name ="xAxisScale"]:checked').value;
 

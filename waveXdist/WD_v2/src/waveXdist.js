@@ -11,6 +11,7 @@ function waveXdist() {
         let fileXY_paths = value.data;
         let staAz_paths = value.az;
         let staDist_paths = value.dist;
+        let Taxis_paths = value.Taxis;
 
         const dataKey = ['station', 'channel', 'data', 'dist', 'az'];
         const stationIndex = 0;
@@ -18,6 +19,24 @@ function waveXdist() {
 
         //==異步讀檔,回傳一個promise而非結果
         var readTextFile = (file, fileDataKey) => {
+            // console.debug(fileDataKey);
+            var tmpData = [];
+
+            var pushData;
+            if (fileDataKey.length > 1) {//一行有兩列以上的資料則作物件陣列
+                pushData = (row) => {
+                    var col = row.trim().split(/\s+/);
+                    // console.debug(col);
+                    let obj = {};
+                    col.forEach((c, index) => obj[fileDataKey[index]] = (isNaN(c) ? c : parseFloat(c)));
+                    tmpData.push(obj);
+                }
+            }
+            else {//一行有一列直接作數值陣列
+                pushData = (row) => {
+                    tmpData.push(isNaN(row) ? row : parseFloat(row));
+                }
+            }
 
             return new Promise((resolve, reject) => {
                 var rawFile = new XMLHttpRequest();
@@ -27,17 +46,10 @@ function waveXdist() {
                     if (rawFile.readyState === 4) {
                         if (rawFile.status === 200 || rawFile.status == 0) {
                             var rows = rawFile.responseText.split("\n");
-                            // console.debug(rows);
-                            var tmpData = [];
                             rows.forEach(row => {
                                 if (row != '') {
-                                    var col = row.trim().split(/\s+/);
-                                    // console.debug(col);
-                                    let obj = {};
-                                    col.forEach((c, index) => obj[fileDataKey[index]] = (isNaN(c) ? c : parseFloat(c)));
-                                    tmpData.push(obj);
+                                    pushData(row);
                                 }
-
                             })
                             var startStr = '/';
                             var startIndex = file.lastIndexOf(startStr) + startStr.length;
@@ -56,10 +68,11 @@ function waveXdist() {
 
         }
 
-        //==需要以下3種檔案
-        //==1.xy檔案可能有多個,異步讀取完後還要將陣列長度拉成一樣
+        //==需要以下4種檔案
+        //==1.振幅y 檔案可能有多個
         async function getXYData() {
-            const dataKey_xy = ['time', 'amplipude'];
+            // const dataKey_xy = ['time', 'amplipude'];
+            const dataKey_xy = ['amplipude'];//新檔案只給振幅
 
             //===兩種同步資料方法            
             //A.每個測站資料的時間點都要相同，如果其他測站少時間點就要補上時間點並給undefine值(event讀同個時間資料才不出錯)
@@ -243,7 +256,8 @@ function waveXdist() {
             // console.log("originData = ");
             // console.log(originData);
             //return syncALLDataTiming(originData);
-            return sliceSamePoint(originData);
+            // return sliceSamePoint(originData);
+            return originData;
         }
 
         //==2.az、3.dist 都是單個檔案
@@ -252,18 +266,26 @@ function waveXdist() {
         var azPromise = readTextFile(staAz_paths, dataKey_staAz);
         var distPromise = readTextFile(staDist_paths, dataKey_staDist);
 
-        //3種檔案都讀取完才能整理成圖表要的完整資料
-        data = Promise.all([getXYData(), azPromise, distPromise]).then(success => {
+        //==4.時間x
+        //4種檔案都讀取完才能整理成圖表要的完整資料
+        const dataKey_Taxis = ['time'];
+        var TaxisPromise = readTextFile(Taxis_paths, dataKey_Taxis);
+
+        data = Promise.all([getXYData(), azPromise, distPromise, TaxisPromise]).then(success => {
             // console.debug(success);
             var xyData = success[0];
             var sta_az = success[1];
             var sta_dist = success[2];
+            var Taxis = success[3];
+
             console.log("xyData = ");
             console.log(xyData);
             console.log("sta_az = ");
             console.log(sta_az);
             console.log("sta_dist = ");
             console.log(sta_dist);
+            console.log("Taxis = ");
+            console.log(Taxis);
 
             //將每個測站資料加上az、dist
             xyData.forEach(d => {
@@ -288,7 +310,9 @@ function waveXdist() {
                         d[dataKey_staAz[1]] = undefined;
                 return d;
             });
-            // console.debug(xyData)
+            // console.debug(xyData);
+            xyData.timeArr = Taxis.data;
+            xyData.yAxisName = dataKey_Taxis[0];
             return xyData;
         });
 
@@ -512,7 +536,7 @@ function waveXdist() {
                  
                     <div id="outerdiv"
                         style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:10;width:100%;height:100%;display:none;">
-                        <div id="innerdiv" style=" background-color: rgb(255, 255, 255);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
+                        <div id="innerdiv" style=" background-color: rgb(255, 255, 255);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div>                      
                     </div>
 
                     <div id='loading'>
@@ -673,7 +697,7 @@ function waveXdist() {
 
         };
         function WD_Charts(xAxisScale = 'linear', xAxisName = 'dist') {
-            // console.debug(data);
+            console.debug(data);
             // console.debug(xAxisName)
             var colorPalette = {};//to fixed color for each station
             const dataKeys = data.column;//0:"station", 1: "channel", 2: "data", 3: "dist", 4:"az"
@@ -772,7 +796,7 @@ function waveXdist() {
             const yAxis = svg.append("g").attr("class", "yAxis");
             const pathGroup = svg.append("g").attr('class', 'paths').attr("clip-path", "url(#clip)");
             const loadingGroup = chartContainerD3.selectAll('#loading');
-
+            // console.debug(loadingGroup);
 
             var margin, x, y, path_x;
             var newDataObj;
@@ -1074,8 +1098,10 @@ function waveXdist() {
             }
             function updateChart(trans = false) {
 
+
+
                 function init() {
-                    let newData = newDataObj.newData;
+
                     svg
                         .append("g")
                         .attr("class", "title")
@@ -1113,11 +1139,11 @@ function waveXdist() {
                     var rangeInit = function () {
                         var get_niceDomain = (domain) => {
                             return d3.scaleLinear().domain(domain).nice().domain();
-                        }
-                        // let dist_domain = get_niceDomain(d3.extent(newData, d => d[dataKeys[3]]));
-                        dist_domain = get_niceDomain([0, d3.max(newData, d => d[dataKeys[3]])]);
+                        };
+                        dist_domain = get_niceDomain([0, d3.max(data, d => d[dataKeys[3]])]);
                         az_domain = [0, 360];//方位角最大360
 
+                        // console.debug(newData)
                         // console.debug(dist_domain, az_domain)
 
                         distRange_slider = new Slider('#distRange', {
@@ -1157,6 +1183,7 @@ function waveXdist() {
                     const newTimeArr = newDataObj.newTimeArr;
                     const xAxis_domainObj = newDataObj.xAxis_domainObj;
                     const normalize = newDataObj.normalize;
+
 
                     const xAxisDomain = xAxis_domainObj[xAxisName] ?
                         xAxis_domainObj[xAxisName] :
@@ -1266,8 +1293,14 @@ function waveXdist() {
 
                             let segmentLine = d3.line()
                                 .defined(d => !isNaN(d))
-                                .x(d => path_x(d))
+                                .x(d => {
+                                    let aaa = path_x(d);
+                                    if (isNaN(aaa))
+                                        console.debug(d)
+                                    return aaa;
+                                })
                                 .y((d, i) => y(newTimeArr[i]));
+
 
                             if (gapPath) {
                                 let livingTimeIndex = [];
@@ -1448,7 +1481,8 @@ function waveXdist() {
                 const tooltip = chartContainerD3.selectAll("#charts")
                     .append("div")
                     .attr("id", "tooltip")
-                    .style('position', 'absolute')
+                    .style('position', 'fixed')
+                    .style("top", '100px')
                     .style('z-index', '999')
                     .style("background-color", "#D3D3D3")
                     .style('padding', '20px 20px 20px 20px')
@@ -1675,24 +1709,20 @@ function waveXdist() {
                                             return d;
                                         });
 
-
-                                    // console.debug(tooltip.property('clientHeight'));
-                                    // let top = ((svg.property('clientHeight') - tooltip.property('clientHeight')) * 0.5) + 'px';
-                                    let top = margin.top + 'px';
+                                    let mouseX = e.clientX;
 
                                     tooltip
                                         .style("display", "inline")
-                                        .style("top", top)
                                         .call(tooltip => {
                                             //tooltip換邊
                                             let left, right;
 
                                             if (pointer[0] < chart_center) {//滑鼠未過半,tooltip在右
-                                                left = (e.offsetX + tooltipMouseGap) + 'px';
+                                                left = (mouseX + tooltipMouseGap) + 'px';
                                                 right = null;
                                             } else {//tooltip在左
                                                 left = null;
-                                                right = (svg.property('clientWidth') - e.offsetX + tooltipMouseGap) + 'px';
+                                                right = (d3.select('body').property('clientWidth') - mouseX + tooltipMouseGap) + 'px';
                                             }
 
                                             tooltip
@@ -2104,6 +2134,7 @@ function waveXdist() {
                             updateChart();
                             updateStaionDropDownMenu();
 
+
                         });
                     //=====change sortBy dist/az
 
@@ -2257,10 +2288,10 @@ function waveXdist() {
                     d3.select(window)
                         .on("keydown", (e) => {
                             if (!hotkeyPressFlag) return;
-                            // console.debug()
+                            // console.debug(e.code)
 
                             //==翻頁快捷鍵
-                            if (e.key == 'a' || e.key == 'd') {
+                            if (e.code == 'KeyA' || e.code == 'KeyD') {
                                 let tooltipIsShow = tooltip.style('display') == 'inline';
                                 let staionMenuIsShow = staionMenu.classed('show');
                                 // console.debug(staionMenuIsShow)
@@ -2285,11 +2316,11 @@ function waveXdist() {
                                 }
                                 else return;//都沒顯示不作分頁控制
 
-                                switch (e.key) {
-                                    case 'a'://press a
+                                switch (e.code) {
+                                    case 'KeyA'://press a
                                         updatePage(false);
                                         break;
-                                    case 'd'://press d
+                                    case 'KeyD'://press d
                                         updatePage(true);
                                         break;
                                 }
@@ -2297,7 +2328,7 @@ function waveXdist() {
 
                             }
                             //== selectMode 開關
-                            else if (e.key == 's') {
+                            else if (e.code == 'KeyS') {
                                 let selectMode_ckb = chartContainerD3.selectAll("#staionSelectMode");
                                 let selectMode_checked = selectMode_ckb.property('checked');
                                 selectMode_ckb.property('checked', !selectMode_checked);
@@ -2367,11 +2398,10 @@ function waveXdist() {
                     item.addEventListener("click", (e, a) => {
                         let svgArr = [];
                         let svg = chartContainerJQ.find("#" + $(e.target).parents('.chart')[0].id).children('svg')[0];
-                        // console.debug(svg);
                         svgArr.push(svg);
                         let xAxisName = document.querySelector('input[name ="xAxisName"]:checked').value;
                         let xAxisScale = document.querySelector('input[name ="xAxisScale"]:checked').value;
-                        let referenceTime = data.referenceTime;
+                        let referenceTime = stringObj.referenceTime;
                         let fileName = 'WF_by_' + xAxisName + (xAxisScale == 'band' ? '-sta' : '') + '_' + referenceTime + 'Z';
                         downloadSvg(svgArr, fileName, option);
                     });

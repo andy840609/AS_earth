@@ -178,7 +178,7 @@ a {
     height: var(--loading-height);
     left: calc(50% - var(--loading-width) * 0.5);
     top: calc(50% - var(--loading-height));
-    z-index: 1;
+    z-index: 50;
     padding: 10px 10px;
     background: #3C3C3C;
     color: #fff;

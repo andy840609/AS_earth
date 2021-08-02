@@ -316,11 +316,8 @@ function waveXdist() {
             return xyData;
         });
 
-
         // console.debug(data)
         // data.then(s => console.debug(s))
-
-
         return chart;
     }
     chart.string = (value) => {
@@ -1340,6 +1337,7 @@ function waveXdist() {
 
                                     //波形移到x軸位置(1.dist/az 2.波形第一點離中心點偏移位置修正)
                                     var getTransX = () => {
+                                        // console.debug('getTransX');
                                         let getDataFirstPointIndex = () => {
                                             let firstPointIndex = 0;
                                             while (isNaN(d.data[firstPointIndex]))
@@ -1461,13 +1459,13 @@ function waveXdist() {
                 var updateFlag = true;
                 var updateTimeOut = null;
                 var updateHandler = (action, parameter = null) => {
-                    // console.debug(action)
+                    // console.debug(parameter)
 
                     if (!updateFlag)
                         updateTimeOut.stop();
 
                     updateTimeOut = d3.timeout(() => {
-                        parameter ? action(parameter) : action();
+                        parameter ? action(...parameter) : action();
                         updateFlag = true;
                     }, updateDelay);
 
@@ -1497,7 +1495,7 @@ function waveXdist() {
                 var mouseOnIdx = 0;//資料陣列的索引(滑鼠移動控制)
                 const chart_edge = [x.range()[0], x.range()[1]];
                 const chart_center = (chart_edge[1] - chart_edge[0]) / 2;//判斷tooltip在滑鼠左右邊
-                const tooltipMouseGap = 50;//與滑鼠距離
+                const tooltipMouseGap = 50;//tooltip與滑鼠距離
 
                 //===更新tooltip和圓圈
                 var updateTooltip = () => {
@@ -1925,30 +1923,30 @@ function waveXdist() {
                                     let check = e.target.checked;
                                     // console.debug(check);
                                     let mousemoveEventOff = (g) => {
+                                        g.on('mousemove', null);
                                         g
-                                            .on('mousemove', null)
+                                            .dispatch('mouseleave')//恢復上個模式mousemove造成的改變
                                             .on('mouseleave', null);
+
+                                        //==dispatch('mouseleave')的timeout可能被下個模式的mousemove取消
+                                        //造成上個模式的東西留在畫面上(tooltip.圓圈.mouseline.path陰影淡出等)
+                                        //所以 updateFlag = true保證dispatch('mouseleave')的timeout不取消
+                                        updateFlag = true;
                                     };
                                     let buttonText;
                                     //勾選時取消mousedrag和mouseMove
                                     if (check) {
                                         buttonText = 'select mode on';
 
-                                        //===tooltip圓圈都消失
-                                        eventRect.dispatch('mouseleave') //有時被hander取消會bug
-
                                         eventRect
                                             .on('mousedown.drag', null)
                                             .call(mousemoveEventOff);
-
-                                        // eventRect.select('.mouse-over-effects').style("display", "none");
-                                        // tooltip.style("display", "none");
 
                                         //selcet mode事件
                                         pathGroup.raise();
                                         pathGroup
                                             .on('mousemove', e => {
-                                                updateHandler(hover, e.target);
+                                                updateHandler(hover, [e.target]);
                                             })
                                             .on('mouseleave', e => {
                                                 updateHandler(leave);
@@ -2039,7 +2037,6 @@ function waveXdist() {
                                     else {
                                         buttonText = 'select';
 
-                                        pathGroup.dispatch('mouseleave');//path恢復透明度
                                         pathGroup
                                             .on('click', null)
                                             .call(mousemoveEventOff);

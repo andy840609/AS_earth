@@ -1868,7 +1868,7 @@ function DatexDVV() {
                     item.addEventListener("click", (e, a) => {
                         let chartIDArr = [];
                         chartIDArr.push("#" + $(e.target).parents('.chart')[0].id + " svg");
-                        // console.log(chartIDArr);
+                        console.log(chartIDArr);
                         downloadSvg(chartIDArr, title, option);
                     });
 

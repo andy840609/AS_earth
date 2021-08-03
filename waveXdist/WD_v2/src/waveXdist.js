@@ -999,13 +999,13 @@ function waveXdist() {
                         //先選channel
                         newData = getArr_of_channel_select(data, channel_selectArr);
 
-
                         newData = newData.filter(d => {
                             let inDistRange = true, inAzRange = true;
+
                             if (xAxis_domainObj[dist_key]) {
                                 let min = xAxis_domainObj[dist_key][0];
                                 let max = xAxis_domainObj[dist_key][1];
-                                // console.debug(min, max);                                
+                                // console.debug(min, max);
                                 inDistRange = (d[dist_key] >= min && d[dist_key] <= max);
                                 // console.debug(d[dist_key] >= min && d[dist_key] <= max);
                             }
@@ -1014,6 +1014,8 @@ function waveXdist() {
                                 let max = xAxis_domainObj[[az_key]][1];
                                 inAzRange = (d[az_key] >= min && d[az_key] <= max);
                             }
+
+                            // console.debug(inDistRange, inAzRange);
 
                             if (inDistRange && inAzRange)
                                 // newData.push({ ...d });
@@ -1040,16 +1042,24 @@ function waveXdist() {
                 }
                 var get_newTimeArr_and_update_newData = (yAxis_domain) => {
                     let newTimeArr;
+
+                    // console.debug(Object.keys(xAxis_domainObj).length !== 0);
+
                     //3.根據y軸的時間選擇範圍重新選擇newData陣列裡各物件的data數值陣列
                     if (yAxis_domain) {
                         // console.debug('1');
                         // console.debug(yAxis_domain);
-                        let i1 = d3.bisectCenter(newDataObj.newTimeArr, yAxis_domain[0]);
-                        let i2 = d3.bisectCenter(newDataObj.newTimeArr, yAxis_domain[1]) + 1;//包含最大範圍
-                        // console.debug(i1, i2);
-                        newData.forEach(d => d[dataKeys[2]] = d[dataKeys[2]].slice(i1, i2));
-                        newTimeArr = newDataObj.newTimeArr.slice(i1, i2);
-                        // console.debug(newTimeArr);
+
+                        var slice_newData = (newData_hadBeenReset) => {
+                            let timeArr = newData_hadBeenReset ? data.timeArr : newDataObj.newTimeArr;
+                            let i1 = d3.bisectCenter(timeArr, yAxis_domain[0]);
+                            let i2 = d3.bisectCenter(timeArr, yAxis_domain[1]) + 1;//包含最大範圍
+
+                            newData.forEach(d => d[dataKeys[2]] = d[dataKeys[2]].slice(i1, i2));
+                            newTimeArr = timeArr.slice(i1, i2);
+                        }
+
+                        slice_newData(Object.keys(xAxis_domainObj).length !== 0);
                     }
                     else {
                         // console.debug('2 data reset');
@@ -1083,6 +1093,7 @@ function waveXdist() {
                 newData = get_newData(xAxis_domainObj);
                 newTimeArr = get_newTimeArr_and_update_newData(yAxis_domain);
 
+                // console.debug(xAxis_domainObj);
                 return {
                     newData: newData,
                     newTimeArr: newTimeArr,
@@ -1094,8 +1105,6 @@ function waveXdist() {
 
             }
             function updateChart(trans = false) {
-
-
 
                 function init() {
 
@@ -1167,6 +1176,7 @@ function waveXdist() {
                 }
                 function render() {
                     // console.debug(newDataObj);
+                    // console.debug(newDataObj.newData[0]);
                     //==物件依照xAxisName的值由小排到大
                     const sort_newData = (data, sortingKey) => {
                         // console.debug(data, sortingKey)
@@ -1290,12 +1300,7 @@ function waveXdist() {
 
                             let segmentLine = d3.line()
                                 .defined(d => !isNaN(d))
-                                .x(d => {
-                                    let aaa = path_x(d);
-                                    if (isNaN(aaa))
-                                        console.debug(d)
-                                    return aaa;
-                                })
+                                .x(d => path_x(d))
                                 .y((d, i) => y(newTimeArr[i]));
 
 
@@ -1478,6 +1483,7 @@ function waveXdist() {
                 //====================================tooltip==================================================
                 const tooltip = chartContainerD3.selectAll("#charts")
                     .append("div")
+                    // .attr("class", "container-sm")
                     .attr("id", "tooltip")
                     .style('position', 'fixed')
                     .style("top", '100px')
@@ -1485,17 +1491,69 @@ function waveXdist() {
                     .style("background-color", "#D3D3D3")
                     .style('padding', '20px 20px 20px 20px')
                     .style("opacity", " .9")
+                    // .style("width", "300px")
                     .style('display', 'none');
 
+                //== tooltip init 分區好控制css
+                tooltip.call(div => {
+                    div
+                        .append('div')
+                        .attr("class", "timeArea")
+                        .html("Time : <br /><font size='5'></font> s<br />");
+
+                    div
+                        .append('div')
+                        .attr("class", "stationArea d-flex");
+
+                    //===page hint col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start
+                    div
+                        .append('div')
+                        .attr("class", "pageArea")
+                        .style('color', 'black')
+                        .call(div => {
+                            let textAlign = ['text-left', 'text-center', 'text-right'];
+                            let text = ['↼ 🄰', '', '🄳 ⇀'];
+
+                            div
+                                .append('div')
+                                .attr('class', 'd-flex flex-nowrap')
+                                .append('text')
+                                .style('font-size', '18px')
+                                .attr('class', 'col-12 text-center')
+                                .text('Page');
+
+                            div
+                                .append('div')
+                                .attr('class', 'd-flex flex-nowrap')
+                                // .style('display', 'inline-block')
+                                .selectAll('text')
+                                .data(d3.range(3))
+                                .join('text')
+                                .style('white-space', 'nowrap')
+                                .style('font-size', '20px')
+                                .style('padding', '0 0px')
+                                .attr('class', d => 'col-4 align-bottom ' + textAlign[d])
+                                // .style("text-anchor", "middle")
+                                .text(d => text[d]);
+
+                        });
+
+                })
 
                 //===tooltip分頁控制
-                const NumOfEachPage = 5;//一頁顯示筆數
+                const NumOfEachPage = 4;//一頁顯示筆數
                 var totalPages, currentPage = 0;//當前頁數
                 var startIndex, endIndex, pageData;//當前頁的i1,i2和資料(用來畫mousemove的圈圈)
                 var mouseOnIdx = 0;//資料陣列的索引(滑鼠移動控制)
                 const chart_edge = [x.range()[0], x.range()[1]];
                 const chart_center = (chart_edge[1] - chart_edge[0]) / 2;//判斷tooltip在滑鼠左右邊
                 const tooltipMouseGap = 50;//tooltip與滑鼠距離
+
+
+                // //===tooltip分區
+                // const tooltip_timeArea = tooltip.select('.timeArea>font');
+                // const tooltip_stationArea = tooltip.select('.stationArea');
+                // const tooltip_pageArea = tooltip.select('.pageArea text:nth-child(2)');
 
                 //===更新tooltip和圓圈
                 var updateTooltip = () => {
@@ -1521,59 +1579,115 @@ function waveXdist() {
                     }();
 
                     let timeStr = newTimeArr[mouseOnIdx];
-                    const divHtml = "Time : <br /><font size='5'>" + timeStr + " s</font><br />Station / Dist. / Az. / Amp. : <br />";
 
-                    tooltip
-                        .html(divHtml)
-                        .call(tooltip => {
-                            //===當前頁的資料顯示
-                            tooltip
-                                .selectAll()
-                                .data(pageData).enter()
-                                .append('div')
-                                .style('color', (d, i) => getColor(d[dataKeys[0]]))//getColor(sortedIndex[i])
-                                .style('font-size', 10)
-                                .html((d, i) => {
-                                    let sta = d[dataKeys[0]];
-                                    let dist = floatShorter(d[dataKeys[3]], 2);
-                                    let az = floatShorter(d[dataKeys[4]], 2);
-                                    let amp = floatShorter(d.data[mouseOnIdx], 5);
+                    tooltip.call(tooltip => {
 
-                                    let html = "<font size='5'>" + sta + "</font> : <font size='4'>" + dist + " <font size='3'>km</font> / " + az + "°</font><br><font size='5'>" + (isNaN(amp) ? 'no data' : amp) + "</font>";
-                                    return html;
-                                });
-                        })
-                        //===page hint col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start
-                        .append('div')
-                        .style('color', 'black')
-                        .call(div => {
+                        tooltip.select('.timeArea>font')
+                            .text(timeStr);
 
-                            let textAlign = ['text-left', 'text-center', 'text-right'];
-                            let text = ['↼ 🄰', (currentPage + 1) + ' / ' + (totalPages + 1), '🄳 ⇀'];
+                        tooltip.select('.pageArea text:nth-child(2)')
+                            .text((currentPage + 1) + ' / ' + (totalPages + 1));
 
-                            div
-                                .append('div')
-                                .attr('class', 'd-flex')
-                                .append('text')
-                                .style('font-size', '18px')
-                                .attr('class', 'col-12 text-center')
-                                .text('Page')
+                        // console.debug(pageData);
+                        tooltip.select('.stationArea')
+                            .selectAll('div')
+                            .data(pageData)
+                            .join('div')
+                            .style('margin-left', '5px')
+                            .style('padding', '5px')
+                            .style('color', 'white')
+                            .style('background-color', (d, i) => getColor(d[dataKeys[0]]))//getColor(sortedIndex[i])
+                            .style('font-size', 10)
+                            .html((d, i) => {
+                                let sta = d[dataKeys[0]];
+                                let dist = floatShorter(d[dataKeys[3]], 2);
+                                let az = floatShorter(d[dataKeys[4]], 2);
+                                // let amp = floatShorter(d.data[mouseOnIdx], 5);
 
-                            div
-                                .append('div')
-                                .attr('class', 'd-flex flex-nowrap')
-                                // .style('display', 'inline-block')
-                                .selectAll()
-                                .data(d3.range(3))
-                                .join('text')
-                                .style('white-space', 'nowrap')
-                                .style('font-size', '20px')
-                                .style('padding', '0 0px')
-                                .attr('class', d => 'col-4 align-bottom ' + textAlign[d])
-                                // .style("text-anchor", "middle")
-                                .text(d => text[d])
+                                //====振幅改顯示原值(要從原data裡找資料)
+                                let cha = d[dataKeys[1]];
+                                let originData = data.find(d => d[dataKeys[0]] == sta && d[dataKeys[1]] == cha);
+                                // console.debug(originData);
+                                let amp = floatShorter(originData.data[mouseOnIdx], 5);
 
-                        })
+                                let html =
+                                    `<text style="font-size:30px;">${sta}</text><br>
+                                    <text style='font-size:12px;white-space:nowrap;'>${dist} km / ${az}°</text><br>
+                                    <text style='font-size:30px;'> ${(isNaN(amp) ? 'no data' : amp)}</text>`;
+
+                                return html;
+                            });
+
+
+                    });
+
+                    // const divHtml = "Time : <br /><font size='5'>" + timeStr + " s</font><br />Station / Dist. / Az. / Amp. : <br />";
+
+                    // tooltip
+                    //     .html(divHtml)
+                    //     .call(tooltip => {
+                    //         //===當前頁的資料顯示
+                    //         tooltip
+                    //             .selectAll()
+                    //             .data(pageData).enter()
+                    //             .append('div')
+                    //             .attr('class', 'col-6')
+                    //             .style('color', (d, i) => getColor(d[dataKeys[0]]))//getColor(sortedIndex[i])
+                    //             .style('background-color', (d, i) => getColor(d[dataKeys[0]]))//getColor(sortedIndex[i])
+                    //             .style('font-size', 10)
+                    //             .html((d, i) => {
+                    //                 let sta = d[dataKeys[0]];
+                    //                 let dist = floatShorter(d[dataKeys[3]], 2);
+                    //                 let az = floatShorter(d[dataKeys[4]], 2);
+                    //                 // let amp = floatShorter(d.data[mouseOnIdx], 5);
+
+                    //                 //====振幅改顯示原值(要從原data裡找資料)
+                    //                 let cha = d[dataKeys[1]];
+                    //                 let originData = data.find(d => d[dataKeys[0]] == sta && d[dataKeys[1]] == cha);
+                    //                 // console.debug(originData);
+                    //                 let amp = floatShorter(originData.data[mouseOnIdx], 5);
+
+
+                    //                 let html = "<font size='5'>" + sta + "</font> : <font size='4'>" + dist + " <font size='3'>km</font> / " + az + "°</font><br><font size='5'>" + (isNaN(amp) ? 'no data' : amp) + "</font>";
+
+
+                    //                 return html;
+                    //             });
+                    //     })
+                    //     //===page hint col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start
+                    //     .append('div')
+                    //     .style('color', 'black')
+                    //     .call(div => {
+
+                    //         let textAlign = ['text-left', 'text-center', 'text-right'];
+                    //         let text = ['↼ 🄰', (currentPage + 1) + ' / ' + (totalPages + 1), '🄳 ⇀'];
+
+                    //         div
+                    //             .append('div')
+                    //             .attr('class', 'd-flex')
+                    //             .append('text')
+                    //             .style('font-size', '18px')
+                    //             .attr('class', 'col-12 text-center')
+                    //             .text('Page')
+
+                    //         div
+                    //             .append('div')
+                    //             .attr('class', 'd-flex flex-nowrap')
+                    //             // .style('display', 'inline-block')
+                    //             .selectAll()
+                    //             .data(d3.range(3))
+                    //             .join('text')
+                    //             .style('white-space', 'nowrap')
+                    //             .style('font-size', '20px')
+                    //             .style('padding', '0 0px')
+                    //             .attr('class', d => 'col-4 align-bottom ' + textAlign[d])
+                    //             // .style("text-anchor", "middle")
+                    //             .text(d => text[d])
+
+                    //     })
+
+
+
 
                     //===更新圓圈
 
@@ -1876,7 +1990,6 @@ function waveXdist() {
                                 newDataObj = getNewData({ normalize: normalize, xAxis_domainObj: xAxis_domainObj, yAxis_domain: yAxis_domain });
                                 updateChart();
                                 selectionRect.remove();
-
                             })
                         eventRect.call(dragBehavior);
                     }
@@ -2198,6 +2311,8 @@ function waveXdist() {
 
                                     //==========================同步slider=================================
                                     let domain = [minRange, maxRange];
+
+
                                     switch (name) {
                                         case 'distRange':
                                             distRange_slider.setValue(domain);
@@ -2206,12 +2321,17 @@ function waveXdist() {
                                             azRange_slider.setValue(domain);
                                             break;
                                     }
+
                                     xAxis_domainObj[key] = domain;
+
 
                                     //==========================更新按鈕文字=================================                             
                                     let sub = xAxisName_radioGroup.select(`sub[class =${key}]`);
                                     //在最大範圍時不顯示文字
-                                    let text = (rangeMin == minRange && maxRange == rangeMax) ?
+                                    let inRangeMin = (minRange == rangeMin);
+                                    let inRangeMax = (maxRange == rangeMax);
+
+                                    let text = (inRangeMin && inRangeMax) ?
                                         '' : `( ${minRange} - ${maxRange} )`;
                                     sub.text(text);
 

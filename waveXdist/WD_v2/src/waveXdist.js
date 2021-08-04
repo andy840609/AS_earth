@@ -928,7 +928,7 @@ function waveXdist() {
                 // console.debug(normalize, yAxis_domain, xAxis_domainObj, channel_selectArr);
 
                 var newData, newTimeArr;
-                // console.debug(xAxis_domainObj);
+
                 var newData_normalize = (newData) => {
                     // console.debug('***normalize...***');
                     newData.forEach(d => {
@@ -949,7 +949,9 @@ function waveXdist() {
                         });
                         d.data = tmpArr;
                     })
-
+                    // console.debug(newData[0]);
+                    // console.debug(newData[0][dataKeys[0]]);
+                    // console.debug(newData[0].data[1]);
                 }
                 var getArr_of_channel_select = (data, channel_selectArr) => {
 
@@ -971,7 +973,6 @@ function waveXdist() {
                 }
 
 
-
                 var get_newData = (xAxis_domainObj) => {
                     let newData = [];
 
@@ -985,16 +986,12 @@ function waveXdist() {
                                 i--;
                             }
 
-                        // console.debug(data);
                         newData = getArr_of_channel_select(data, channel_selectArr);
-                        // console.debug(newData);
                     }
-                    else if (Object.keys(xAxis_domainObj).length !== 0 || (!normalize && newDataObj.normalize) || controlObj.channel_selectArr) {
+                    else {
                         // console.debug("B data reset");
                         let dist_key = dataKeys[3];
                         let az_key = dataKeys[4];
-                        // let data = newDataObj.newData;
-
 
                         //先選channel
                         newData = getArr_of_channel_select(data, channel_selectArr);
@@ -1022,22 +1019,7 @@ function waveXdist() {
                                 return true;
                         });
 
-                        // console.debug(newData);
-
-                        if (normalize)
-                            newData_normalize(newData);
-
                     }
-                    else {
-                        // console.debug("C");
-                        // console.debug(newDataObj.newData);
-                        newData = newDataObj.newData;
-
-                        // if (normalize && !newDataObj.normalize)
-                        //     newData_normalize(newData);
-                    }
-
-                    // console.debug(newData[0].data);
                     return newData;
                 }
                 var get_newTimeArr_and_update_newData = (yAxis_domain) => {
@@ -1047,28 +1029,20 @@ function waveXdist() {
 
                     //3.根據y軸的時間選擇範圍重新選擇newData陣列裡各物件的data數值陣列
                     if (yAxis_domain) {
-                        // console.debug('1');
                         // console.debug(yAxis_domain);
 
-                        var slice_newData = (newData_hadBeenReset) => {
-                            let timeArr = newData_hadBeenReset ? data.timeArr : newDataObj.newTimeArr;
-                            let i1 = d3.bisectCenter(timeArr, yAxis_domain[0]);
-                            let i2 = d3.bisectCenter(timeArr, yAxis_domain[1]) + 1;//包含最大範圍
+                        let timeArr = data.timeArr;
+                        let i1 = d3.bisectCenter(timeArr, yAxis_domain[0]);
+                        let i2 = d3.bisectCenter(timeArr, yAxis_domain[1]) + 1;//包含最大範圍
 
-                            newData.forEach(d => d[dataKeys[2]] = d[dataKeys[2]].slice(i1, i2));
-                            newTimeArr = timeArr.slice(i1, i2);
-                        }
+                        newData.forEach(d => d[dataKeys[2]] = d[dataKeys[2]].slice(i1, i2));
+                        newTimeArr = timeArr.slice(i1, i2);
 
-                        slice_newData(Object.keys(xAxis_domainObj).length !== 0);
                     }
                     else {
-                        // console.debug('2 data reset');
-                        if (!newDataObj) {
-                            // console.debug('2-1');
-                            if (normalize) newData_normalize(newData);
-                        }
-                        else if (newDataObj && (newDataObj.newTimeArr.length < data.timeArr.length)) {
-                            // console.debug('2-2 data reset');
+
+                        if (newDataObj && (newDataObj.newTimeArr.length < data.timeArr.length)) {
+                            // console.debug('2 data reset');
                             newData.forEach(d => {
                                 //==之前指比較sta拿到錯的cha
                                 // d[dataKeys[2]] = data.find(od => od[dataKeys[0]] == d[dataKeys[0]])[dataKeys[2]]
@@ -1078,11 +1052,7 @@ function waveXdist() {
                                 d[dataKeys[2]] = od[dataKeys[2]];
 
                             });
-                            if (normalize) newData_normalize(newData);
-                        }
-                        else {
-                            // console.debug('2-3');
-                            if (normalize && !newDataObj.normalize) newData_normalize(newData);
+
                         }
                         newTimeArr = data.timeArr;
 
@@ -1093,7 +1063,8 @@ function waveXdist() {
                 newData = get_newData(xAxis_domainObj);
                 newTimeArr = get_newTimeArr_and_update_newData(yAxis_domain);
 
-                // console.debug(xAxis_domainObj);
+                if (normalize) newData_normalize(newData);
+
                 return {
                     newData: newData,
                     newTimeArr: newTimeArr,
@@ -1175,7 +1146,7 @@ function waveXdist() {
 
                 }
                 function render() {
-                    // console.debug(newDataObj);
+                    console.debug(newDataObj);
                     // console.debug(newDataObj.newData[0]);
                     //==物件依照xAxisName的值由小排到大
                     const sort_newData = (data, sortingKey) => {
@@ -1485,8 +1456,8 @@ function waveXdist() {
                     .append("div")
                     // .attr("class", "container-sm")
                     .attr("id", "tooltip")
-                    .style('position', 'fixed')
-                    .style("top", '100px')
+                    .style('position', 'absolute')
+                    // .style("top", '100px')
                     .style('z-index', '999')
                     .style("background-color", "#D3D3D3")
                     .style('padding', '20px 20px 20px 20px')
@@ -1499,17 +1470,18 @@ function waveXdist() {
                     div
                         .append('div')
                         .attr("class", "timeArea")
-                        .html("Time : <br /><font size='5'></font> s<br />");
+                        .html("Time : <font size='5'></font> s<br />");
 
                     div
                         .append('div')
-                        .attr("class", "stationArea d-flex");
+                        .attr("class", "stationArea d-flex flex-row justify-content-around");
 
                     //===page hint col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start
                     div
                         .append('div')
                         .attr("class", "pageArea")
                         .style('color', 'black')
+                        .style('min-width', '150px')
                         .call(div => {
                             let textAlign = ['text-left', 'text-center', 'text-right'];
                             let text = ['↼ 🄰', '', '🄳 ⇀'];
@@ -1530,7 +1502,7 @@ function waveXdist() {
                                 .data(d3.range(3))
                                 .join('text')
                                 .style('white-space', 'nowrap')
-                                .style('font-size', '20px')
+                                .style('font-size', '18px')
                                 .style('padding', '0 0px')
                                 .attr('class', d => 'col-4 align-bottom ' + textAlign[d])
                                 // .style("text-anchor", "middle")
@@ -1545,10 +1517,13 @@ function waveXdist() {
                 var totalPages, currentPage = 0;//當前頁數
                 var startIndex, endIndex, pageData;//當前頁的i1,i2和資料(用來畫mousemove的圈圈)
                 var mouseOnIdx = 0;//資料陣列的索引(滑鼠移動控制)
-                const chart_edge = [x.range()[0], x.range()[1]];
-                const chart_center = (chart_edge[1] - chart_edge[0]) / 2;//判斷tooltip在滑鼠左右邊
+                const chart_edgeV = [x.range()[0], x.range()[1]];
+                const chart_edgeH = [y.range()[1], y.range()[0]];
+                const chart_center = [//用來判斷tooltip應該在滑鼠哪邊
+                    (chart_edgeV[1] - chart_edgeV[0]) * 0.5,
+                    (chart_edgeH[1] - chart_edgeH[0]) * 0.5];
                 const tooltipMouseGap = 50;//tooltip與滑鼠距離
-
+                // console.debug(chart_edgeV, chart_edgeH);
 
                 // //===tooltip分區
                 // const tooltip_timeArea = tooltip.select('.timeArea>font');
@@ -1593,8 +1568,8 @@ function waveXdist() {
                             .selectAll('div')
                             .data(pageData)
                             .join('div')
-                            .style('margin-left', '5px')
-                            .style('padding', '5px')
+                            .style('margin-left', (d, i) => (i == 0) ? '0px' : '5px')
+                            .style('padding', '10px')
                             .style('color', 'white')
                             .style('background-color', (d, i) => getColor(d[dataKeys[0]]))//getColor(sortedIndex[i])
                             .style('font-size', 10)
@@ -1611,82 +1586,15 @@ function waveXdist() {
                                 let amp = floatShorter(originData.data[mouseOnIdx], 5);
 
                                 let html =
-                                    `<text style="font-size:30px;">${sta}</text><br>
-                                    <text style='font-size:12px;white-space:nowrap;'>${dist} km / ${az}°</text><br>
-                                    <text style='font-size:30px;'> ${(isNaN(amp) ? 'no data' : amp)}</text>`;
+                                    `<text style="font-size:23px;">${sta}</text><br>
+                                    <text style='font-size:13px;white-space:nowrap;'>${dist} km / ${az}°</text><br>
+                                    <text style='font-size:25px;'> ${(isNaN(amp) ? 'no data' : amp)}</text>`;
 
                                 return html;
                             });
 
 
                     });
-
-                    // const divHtml = "Time : <br /><font size='5'>" + timeStr + " s</font><br />Station / Dist. / Az. / Amp. : <br />";
-
-                    // tooltip
-                    //     .html(divHtml)
-                    //     .call(tooltip => {
-                    //         //===當前頁的資料顯示
-                    //         tooltip
-                    //             .selectAll()
-                    //             .data(pageData).enter()
-                    //             .append('div')
-                    //             .attr('class', 'col-6')
-                    //             .style('color', (d, i) => getColor(d[dataKeys[0]]))//getColor(sortedIndex[i])
-                    //             .style('background-color', (d, i) => getColor(d[dataKeys[0]]))//getColor(sortedIndex[i])
-                    //             .style('font-size', 10)
-                    //             .html((d, i) => {
-                    //                 let sta = d[dataKeys[0]];
-                    //                 let dist = floatShorter(d[dataKeys[3]], 2);
-                    //                 let az = floatShorter(d[dataKeys[4]], 2);
-                    //                 // let amp = floatShorter(d.data[mouseOnIdx], 5);
-
-                    //                 //====振幅改顯示原值(要從原data裡找資料)
-                    //                 let cha = d[dataKeys[1]];
-                    //                 let originData = data.find(d => d[dataKeys[0]] == sta && d[dataKeys[1]] == cha);
-                    //                 // console.debug(originData);
-                    //                 let amp = floatShorter(originData.data[mouseOnIdx], 5);
-
-
-                    //                 let html = "<font size='5'>" + sta + "</font> : <font size='4'>" + dist + " <font size='3'>km</font> / " + az + "°</font><br><font size='5'>" + (isNaN(amp) ? 'no data' : amp) + "</font>";
-
-
-                    //                 return html;
-                    //             });
-                    //     })
-                    //     //===page hint col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start
-                    //     .append('div')
-                    //     .style('color', 'black')
-                    //     .call(div => {
-
-                    //         let textAlign = ['text-left', 'text-center', 'text-right'];
-                    //         let text = ['↼ 🄰', (currentPage + 1) + ' / ' + (totalPages + 1), '🄳 ⇀'];
-
-                    //         div
-                    //             .append('div')
-                    //             .attr('class', 'd-flex')
-                    //             .append('text')
-                    //             .style('font-size', '18px')
-                    //             .attr('class', 'col-12 text-center')
-                    //             .text('Page')
-
-                    //         div
-                    //             .append('div')
-                    //             .attr('class', 'd-flex flex-nowrap')
-                    //             // .style('display', 'inline-block')
-                    //             .selectAll()
-                    //             .data(d3.range(3))
-                    //             .join('text')
-                    //             .style('white-space', 'nowrap')
-                    //             .style('font-size', '20px')
-                    //             .style('padding', '0 0px')
-                    //             .attr('class', d => 'col-4 align-bottom ' + textAlign[d])
-                    //             // .style("text-anchor", "middle")
-                    //             .text(d => text[d])
-
-                    //     })
-
-
 
 
                     //===更新圓圈
@@ -1815,29 +1723,42 @@ function waveXdist() {
                                         .attr("d", function () {
                                             // let yPos = y(newTimeArr[mouseOnIdx]);
                                             let yPos = pointer[1];
-                                            let p1 = chart_edge[1] + "," + yPos;
-                                            let p2 = chart_edge[0] + "," + yPos;
+                                            let p1 = chart_edgeV[1] + "," + yPos;
+                                            let p2 = chart_edgeV[0] + "," + yPos;
                                             let d = "M" + p1 + " L" + p2;
                                             return d;
                                         });
 
-                                    let mouseX = e.clientX;
+                                    // let mouseX = e.clientX;
+                                    // let top = e.clientY + 'px';
+                                    // let fullWidth=(d3.select('body').property('clientWidth');
+
+                                    // console.debug(tooltip.property('clientHeight'));
+
+                                    let mouseX = e.offsetX, mouseY = e.offsetY;
+                                    let fullWidth = svg.property('clientWidth');
 
                                     tooltip
                                         .style("display", "inline")
                                         .call(tooltip => {
                                             //tooltip換邊
-                                            let left, right;
+                                            let left, right, top;
 
-                                            if (pointer[0] < chart_center) {//滑鼠未過半,tooltip在右
+                                            if (pointer[0] < chart_center[0]) {//滑鼠未過半,tooltip在右
                                                 left = (mouseX + tooltipMouseGap) + 'px';
                                                 right = null;
                                             } else {//tooltip在左
                                                 left = null;
-                                                right = (d3.select('body').property('clientWidth') - mouseX + tooltipMouseGap) + 'px';
+                                                right = (fullWidth - mouseX + tooltipMouseGap) + 'px';
                                             }
 
+                                            if (pointer[1] < chart_center[1]) //tooltip在下
+                                                top = (mouseY + tooltipMouseGap) + 'px';
+                                            else //tooltip在上
+                                                top = (mouseY - tooltip.property('clientHeight') - tooltipMouseGap) + 'px';
+
                                             tooltip
+                                                .style("top", top)
                                                 .style("left", left)
                                                 .style("right", right);
                                         });

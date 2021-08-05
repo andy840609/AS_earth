@@ -694,7 +694,7 @@ function waveXdist() {
 
         };
         function WD_Charts(xAxisScale = 'linear', xAxisName = 'dist') {
-            console.debug(data);
+            // console.debug(data);
             // console.debug(xAxisName)
             var colorPalette = {};//to fixed color for each station
             const dataKeys = data.column;//0:"station", 1: "channel", 2: "data", 3: "dist", 4:"az"
@@ -925,33 +925,26 @@ function waveXdist() {
 
                 let channel_selectArr = controlObj.channel_selectArr ? controlObj.channel_selectArr : newDataObj.channel_selectArr;
                 // console.debug(channel_selectArr);
-                // console.debug(normalize, yAxis_domain, xAxis_domainObj, channel_selectArr);
 
                 var newData, newTimeArr;
+                // console.debug(xAxis_domainObj);
 
                 var newData_normalize = (newData) => {
                     // console.debug('***normalize...***');
                     newData.forEach(d => {
-                        let normalize = d3.scaleLinear()
-                            .domain(d3.extent(d.data))
-                            .range([-1, 1])
 
-                        let firstPointValue = undefined;
-                        let tmpArr = d.data.map(amp => {
-                            let tmp = amp;
-                            if (tmp) {
-                                tmp = normalize(tmp);
-                                if (isNaN(firstPointValue))
-                                    firstPointValue = tmp;
-                                tmp -= firstPointValue;//make firstPointValue = 0;
-                            };
-                            return tmp;
-                        });
+                        let originData = data.find(od => od[dataKeys[0]] == d[dataKeys[0]] && od[dataKeys[1]] == d[dataKeys[1]]);
+                        let domain = d3.extent(originData.data);
+                        // console.debug(domain);
+                        let normalize = d3.scaleLinear()
+                            .domain(domain)
+                            .range([-1, 1]);
+
+                        let tmpArr = d.data.map(amp => !isNaN(amp) ? normalize(amp) : amp);
                         d.data = tmpArr;
+
                     })
-                    // console.debug(newData[0]);
-                    // console.debug(newData[0][dataKeys[0]]);
-                    // console.debug(newData[0].data[1]);
+
                 }
                 var getArr_of_channel_select = (data, channel_selectArr) => {
 
@@ -972,7 +965,7 @@ function waveXdist() {
                     return newData;
                 }
 
-
+                var dataBeenReset = false;
                 var get_newData = (xAxis_domainObj) => {
                     let newData = [];
 
@@ -985,13 +978,15 @@ function waveXdist() {
                                 data.splice(i, 1);
                                 i--;
                             }
-
                         newData = getArr_of_channel_select(data, channel_selectArr);
+                        dataBeenReset = true;
                     }
                     else {
                         // console.debug("B data reset");
                         let dist_key = dataKeys[3];
                         let az_key = dataKeys[4];
+                        // let data = newDataObj.newData;
+
 
                         //先選channel
                         newData = getArr_of_channel_select(data, channel_selectArr);
@@ -1015,44 +1010,44 @@ function waveXdist() {
                             // console.debug(inDistRange, inAzRange);
 
                             if (inDistRange && inAzRange)
-                                // newData.push({ ...d });
                                 return true;
                         });
+                        dataBeenReset = true;
 
                     }
+
                     return newData;
                 }
                 var get_newTimeArr_and_update_newData = (yAxis_domain) => {
                     let newTimeArr;
 
-                    // console.debug(Object.keys(xAxis_domainObj).length !== 0);
 
                     //3.根據y軸的時間選擇範圍重新選擇newData陣列裡各物件的data數值陣列
                     if (yAxis_domain) {
+                        // console.debug('1');
                         // console.debug(yAxis_domain);
 
                         let timeArr = data.timeArr;
                         let i1 = d3.bisectCenter(timeArr, yAxis_domain[0]);
                         let i2 = d3.bisectCenter(timeArr, yAxis_domain[1]) + 1;//包含最大範圍
-
                         newData.forEach(d => d[dataKeys[2]] = d[dataKeys[2]].slice(i1, i2));
                         newTimeArr = timeArr.slice(i1, i2);
 
+
                     }
                     else {
-
                         if (newDataObj && (newDataObj.newTimeArr.length < data.timeArr.length)) {
-                            // console.debug('2 data reset');
+                            // console.debug('2-2 data reset');
                             newData.forEach(d => {
                                 //==之前指比較sta拿到錯的cha
                                 // d[dataKeys[2]] = data.find(od => od[dataKeys[0]] == d[dataKeys[0]])[dataKeys[2]]
 
                                 //===原data裡找sta跟cha都一樣的資料來複製amp陣列
-                                let od = data.find(od => od[dataKeys[0]] == d[dataKeys[0]] && od[dataKeys[1]] == d[dataKeys[1]])
+                                let od = data.find(od => od[dataKeys[0]] == d[dataKeys[0]] && od[dataKeys[1]] == d[dataKeys[1]]);
                                 d[dataKeys[2]] = od[dataKeys[2]];
 
                             });
-
+                            dataBeenReset = true;
                         }
                         newTimeArr = data.timeArr;
 
@@ -1063,7 +1058,9 @@ function waveXdist() {
                 newData = get_newData(xAxis_domainObj);
                 newTimeArr = get_newTimeArr_and_update_newData(yAxis_domain);
 
-                if (normalize) newData_normalize(newData);
+                //＝＝資料從data重新取得時或者開關normalize時
+                if ((dataBeenReset && normalize) || (normalize && !newDataObj.normalize))
+                    newData_normalize(newData);
 
                 return {
                     newData: newData,
@@ -1146,8 +1143,7 @@ function waveXdist() {
 
                 }
                 function render() {
-                    console.debug(newDataObj);
-                    // console.debug(newDataObj.newData[0]);
+                    // console.debug(newDataObj);
                     //==物件依照xAxisName的值由小排到大
                     const sort_newData = (data, sortingKey) => {
                         // console.debug(data, sortingKey)
@@ -1432,20 +1428,27 @@ function waveXdist() {
                     xAxis_domainObj = {};
 
                 const updateDelay = 10;
-                var updateFlag = true;
-                var updateTimeOut = null;
-                var updateHandler = (action, parameter = null) => {
+                // var updateFlag = true;
+                // var updateTimeOut = null;
+
+
+                //===分開updateObj讓圖表更新不受到mousemove...事件影響
+                var chartUpdateObj = { updateFlag: true, updateTimeOut: null };
+
+                var updateHandler = (action, parameter = null, updateObj = chartUpdateObj, mustDone = false) => {
                     // console.debug(parameter)
+                    // console.debug(chartUpdateObj.updateFlag);
 
-                    if (!updateFlag)
-                        updateTimeOut.stop();
+                    if (!updateObj.updateFlag)
+                        updateObj.updateTimeOut.stop();
 
-                    updateTimeOut = d3.timeout(() => {
+                    updateObj.updateTimeOut = d3.timeout(() => {
                         parameter ? action(...parameter) : action();
-                        updateFlag = true;
+                        updateObj.updateFlag = true;
                     }, updateDelay);
 
-                    updateFlag = false;
+                    updateObj.updateFlag = mustDone;
+
                 }
 
                 //===event eles
@@ -1523,12 +1526,8 @@ function waveXdist() {
                     (chart_edgeV[1] - chart_edgeV[0]) * 0.5,
                     (chart_edgeH[1] - chart_edgeH[0]) * 0.5];
                 const tooltipMouseGap = 50;//tooltip與滑鼠距離
-                // console.debug(chart_edgeV, chart_edgeH);
 
-                // //===tooltip分區
-                // const tooltip_timeArea = tooltip.select('.timeArea>font');
-                // const tooltip_stationArea = tooltip.select('.stationArea');
-                // const tooltip_pageArea = tooltip.select('.pageArea text:nth-child(2)');
+                // console.debug(chart_edgeV, chart_edgeH)
 
                 //===更新tooltip和圓圈
                 var updateTooltip = () => {
@@ -1553,12 +1552,12 @@ function waveXdist() {
                         pageData = selectedData.slice(startIndex, endIndex);
                     }();
 
-                    let timeStr = newTimeArr[mouseOnIdx];
+                    let timming = newTimeArr[mouseOnIdx];
 
                     tooltip.call(tooltip => {
 
                         tooltip.select('.timeArea>font')
-                            .text(timeStr);
+                            .text(timming);
 
                         tooltip.select('.pageArea text:nth-child(2)')
                             .text((currentPage + 1) + ' / ' + (totalPages + 1));
@@ -1577,13 +1576,14 @@ function waveXdist() {
                                 let sta = d[dataKeys[0]];
                                 let dist = floatShorter(d[dataKeys[3]], 2);
                                 let az = floatShorter(d[dataKeys[4]], 2);
-                                // let amp = floatShorter(d.data[mouseOnIdx], 5);
+                                // let ampN = floatShorter(d.data[mouseOnIdx], 5);
 
-                                //====振幅改顯示原值(要從原data裡找資料)
+                                //====振幅改顯示原值(要從原data裡找資料,由時間點找到原資料的索引值)
                                 let cha = d[dataKeys[1]];
                                 let originData = data.find(d => d[dataKeys[0]] == sta && d[dataKeys[1]] == cha);
                                 // console.debug(originData);
-                                let amp = floatShorter(originData.data[mouseOnIdx], 5);
+                                let indexOf_originData = d3.bisectCenter(data.timeArr, timming);
+                                let amp = floatShorter(originData.data[indexOf_originData], 5);
 
                                 let html =
                                     `<text style="font-size:23px;">${sta}</text><br>
@@ -1694,9 +1694,11 @@ function waveXdist() {
                             .style("stroke-width", "2px")
                             .style("opacity", "0.7");
 
+                        var tooltipUpdateObj = { updateFlag: true, updateTimeOut: null };
                         mouseMoveBehavior = use => use
-                            .on('mouseleave', function () { // on mouse out hide line, circles and text
+                            .on('mouseleave', e => { // on mouse out hide line, circles and text
                                 // console.log('mouseleave');
+                                // console.debug(e);
                                 var action = () => {
                                     mouseG.style("display", "none");
                                     tooltip.style("display", "none");
@@ -1720,7 +1722,7 @@ function waveXdist() {
                                     // console.debug(pointer);
 
                                     mouseLine
-                                        .attr("d", function () {
+                                        .attr("d", () => {
                                             // let yPos = y(newTimeArr[mouseOnIdx]);
                                             let yPos = pointer[1];
                                             let p1 = chart_edgeV[1] + "," + yPos;
@@ -1870,6 +1872,8 @@ function waveXdist() {
                                 // console.debug(p);
                                 selectionRect.removePrevious();
                                 d3.select(window).dispatch("click");//關閉dropdown
+                                eventRect.dispatch('mouseleave');
+                                updateFlag = true;
                             })
                             .on("drag", e => {
                                 // console.log("dragMove");
@@ -2196,7 +2200,7 @@ function waveXdist() {
                             // range drag
                             xAxisName_radioGroup.selectAll('input[name ="xAxisRange"]')
                                 .on('input', e => {
-                                    if (updateFlag)
+                                    if (chartUpdateObj.updateFlag)
                                         loadingEffect('show');
                                     // console.debug(e.target);
                                     //==========================target vaule check=================================
@@ -2243,15 +2247,19 @@ function waveXdist() {
                                             break;
                                     }
 
+                                    let inRangeMin = (minRange == rangeMin);
+                                    let inRangeMax = (maxRange == rangeMax);
+
+
+                                    // if (inRangeMin && inRangeMax)
+                                    //     delete xAxis_domainObj[key];
+                                    // else
                                     xAxis_domainObj[key] = domain;
 
 
                                     //==========================更新按鈕文字=================================                             
                                     let sub = xAxisName_radioGroup.select(`sub[class =${key}]`);
                                     //在最大範圍時不顯示文字
-                                    let inRangeMin = (minRange == rangeMin);
-                                    let inRangeMax = (maxRange == rangeMax);
-
                                     let text = (inRangeMin && inRangeMax) ?
                                         '' : `( ${minRange} - ${maxRange} )`;
                                     sub.text(text);

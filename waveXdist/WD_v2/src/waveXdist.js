@@ -73,8 +73,14 @@ function waveXdist() {
         async function getXYData() {
             // const dataKey_xy = ['time', 'amplipude'];
             const dataKey_xy = ['amplipude'];//新檔案只給振幅
+            //===ex:  ./event/2021/20210804215628/xyFiles/TSMIP/F036.10.HLE.y
+            const getNetwork = (path) => {
+                let lastIndex = path.lastIndexOf('/');
+                return path.substring(path.lastIndexOf('/', lastIndex - 1) + 1, lastIndex);
+            };
 
-            //===兩種同步資料方法            
+            //===(不用了)
+            //===兩種同步資料方法
             //A.每個測站資料的時間點都要相同，如果其他測站少時間點就要補上時間點並給undefine值(event讀同個時間資料才不出錯)
             var syncALLDataTiming = (fileData) => {
                 // console.debug(fileData);
@@ -181,7 +187,6 @@ function waveXdist() {
                 // console.debug(chartData);
                 return chartData;
             }
-
             //B.先找第一點時間漂亮的測站當標準來取時間陣列(沒有則選第一個讀取的檔案)，在用最少點的測站當標準資料點數
             var sliceSamePoint = (fileData) => {
                 let Datakey_time = fileData[0].column[0];
@@ -228,15 +233,17 @@ function waveXdist() {
                 // console.debug(chartData);
                 return chartData;
             }
+            //===(不用了) 
 
-            //==所有測站檔案讀取完畢才同步各測站資料陣列長度
-            let originData = await Promise.all(
-                fileXY_paths.map(async path => {
+            //==由路徑中的network來分開資料陣列（{TSMIP:[...],CWSN:[...]}）
+            let originData = {};
+            await Promise.all(
+                fileXY_paths.map(async (path, i) => {
                     // let d = readTextFile(path, dataKey_xy, fileXY_callback);
+                    // console.debug(getNetwork(path));
                     let tmp = {};
                     try {
                         const success = await readTextFile(path, dataKey_xy);
-                        // console.debug(success);
                         let d = success;
                         tmp[dataKey[0]] = d.fileName.split('.')[stationIndex];
                         tmp[dataKey[1]] = d.fileName.split('.')[channelIndex];
@@ -247,16 +254,15 @@ function waveXdist() {
                         console.debug('read xy file error');
                         console.debug(fail);
                     }
+
+                    let network = getNetwork(path);
+                    if (!originData[network]) originData[network] = new Array();
+                    originData[network].push(tmp);
                     return tmp;
                 })
             );
             // console.debug(originData);
-            // originData.column = dataKey;
-            // originData.referenceTime = referenceTime;
-            // console.log("originData = ");
-            // console.log(originData);
-            //return syncALLDataTiming(originData);
-            // return sliceSamePoint(originData);
+
             return originData;
         }
 
@@ -288,43 +294,50 @@ function waveXdist() {
             console.log(Taxis);
 
             //將每個測站資料加上az、dist,並push到各cha分組
-            let distData = sta_dist.data;
-            let azData = sta_az.data;
-            let channelData = {};
-            xyData.forEach(d => {
-                // console.log(d[dataKey[0]]);
-                let sta = d[dataKey[0]];
-                let channel = d[dataKey[1]];
+            const distData = sta_dist.data;
+            const azData = sta_az.data;
+            const networkKey = Object.keys(xyData);
 
-                let obj = { ...d };
-                let cha = channel[channel.length - 1];
-                if (!channelData[cha])
-                    channelData[cha] = new Array();
 
-                for (let i = 0; i < distData.length; i++)
-                    if (distData[i][dataKey_staDist[0]] == sta) {
-                        obj[dataKey_staDist[1]] = distData[i][dataKey_staDist[1]];
-                        break;
-                    }
-                    else if (i == distData.length - 1)
-                        obj[dataKey_staDist[1]] = undefined;
+            let dataNet = {};
+            networkKey.forEach(net => {
+                let channelData = {};
+                xyData[net].forEach(d => {
+                    // console.log(d[dataKey[0]]);
+                    let sta = d[dataKey[0]];
+                    let channel = d[dataKey[1]];
 
-                for (let i = 0; i < azData.length; i++)
-                    if (azData[i][dataKey_staAz[0]] == sta) {
-                        obj[dataKey_staAz[1]] = azData[i][dataKey_staAz[1]];
-                        break;
-                    }
-                    else if (i == azData.length - 1)
-                        obj[dataKey_staAz[1]] = undefined;
+                    let obj = { ...d };
+                    let cha = channel[channel.length - 1];
+                    if (!channelData[cha])
+                        channelData[cha] = new Array();
 
-                //==沒有同時有az.dist的資料不要放入
-                if (!isNaN(obj[dataKey_staDist[1]]) && !isNaN(obj[dataKey_staAz[1]]))
-                    channelData[cha].push(obj);
+                    for (let i = 0; i < distData.length; i++)
+                        if (distData[i][dataKey_staDist[0]] == sta) {
+                            obj[dataKey_staDist[1]] = distData[i][dataKey_staDist[1]];
+                            break;
+                        }
+                        else if (i == distData.length - 1)
+                            obj[dataKey_staDist[1]] = undefined;
+
+                    for (let i = 0; i < azData.length; i++)
+                        if (azData[i][dataKey_staAz[0]] == sta) {
+                            obj[dataKey_staAz[1]] = azData[i][dataKey_staAz[1]];
+                            break;
+                        }
+                        else if (i == azData.length - 1)
+                            obj[dataKey_staAz[1]] = undefined;
+
+                    //==沒有同時有az.dist的資料不要放入
+                    if (!isNaN(obj[dataKey_staDist[1]]) && !isNaN(obj[dataKey_staAz[1]]))
+                        channelData[cha].push(obj);
+                });
+                dataNet[net] = channelData;
             });
-
+            dataNet.column = networkKey;
 
             let compositeData = {};
-            compositeData.channelData = channelData;
+            compositeData.dataNet = dataNet;
             compositeData.timeArr = Taxis.data;
             compositeData.yAxisName = dataKey_Taxis[0];
             compositeData.column = dataKey;
@@ -736,12 +749,21 @@ function waveXdist() {
             const dataKeys = data.column;//0:"station", 1: "channel", 2: "data", 3: "dist", 4:"az"
             // console.debug(dataKeys);
 
-            //＝＝按channel select組別分好資料
-            const groupData = channelGroups.map(string =>
-                [].concat(...string.split('/').map(cha => data.channelData[cha] ? data.channelData[cha] : [])));
+            //＝＝按channel select組別分好資料(要分開network)
+            const networkKey = data.dataNet.column;
+            const groupData = {};
+            networkKey.forEach(net => {
+                let tmp = channelGroups.map(string =>
+                    [].concat(...string.split('/').map(cha => data.dataNet[net][cha] ? data.dataNet[net][cha] : [])));
+                groupData[net] = tmp;
+            });
+            // channelGroups.map(string =>
+            //     [].concat(...string.split('/').map(cha => data.channelData[cha] ? data.channelData[cha] : [])));
             //== timeArr
             const timeArr = data.timeArr;
             console.debug(groupData);
+            const testNet = networkKey[0];
+
             // console.debug(timeArr);
             var referenceTime = '2000-01-01T00:00:00', title = referenceTime;
             if (stringObj) {
@@ -1064,6 +1086,7 @@ function waveXdist() {
                     normalize: normalize,
                     yAxis_domain: yAxis_domain,
                     xAxis_domainObj: xAxis_domainObj,
+                    network_select: testNet,
                     channel_selectGroup: channel_selectGroup,
                 };
 

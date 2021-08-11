@@ -13,7 +13,7 @@ function waveXdist() {
         let staDist_paths = value.dist;
         let Taxis_paths = value.Taxis;
 
-        const dataKey = ['station', 'channel', 'data', 'dist', 'az'];
+        const dataKey = ['network', 'station', 'channel', 'data', 'dist', 'az'];
         const stationIndex = 0;
         const channelIndex = 2;
 
@@ -241,13 +241,15 @@ function waveXdist() {
                 fileXY_paths.map(async (path, i) => {
                     // let d = readTextFile(path, dataKey_xy, fileXY_callback);
                     // console.debug(getNetwork(path));
+                    let network = getNetwork(path);
                     let tmp = {};
                     try {
                         const success = await readTextFile(path, dataKey_xy);
                         let d = success;
-                        tmp[dataKey[0]] = d.fileName.split('.')[stationIndex];
-                        tmp[dataKey[1]] = d.fileName.split('.')[channelIndex];
-                        tmp[dataKey[2]] = d.data;
+                        tmp[dataKey[0]] = network;
+                        tmp[dataKey[1]] = d.fileName.split('.')[stationIndex];
+                        tmp[dataKey[2]] = d.fileName.split('.')[channelIndex];
+                        tmp[dataKey[3]] = d.data;
                         tmp.column = dataKey_xy;
                     }
                     catch (fail) {
@@ -255,7 +257,6 @@ function waveXdist() {
                         console.debug(fail);
                     }
 
-                    let network = getNetwork(path);
                     if (!originData[network]) originData[network] = new Array();
                     originData[network].push(tmp);
                     return tmp;
@@ -267,8 +268,8 @@ function waveXdist() {
         }
 
         //==2.az、3.dist 都是單個檔案
-        const dataKey_staAz = [dataKey[0], dataKey[4]];
-        const dataKey_staDist = [dataKey[0], dataKey[3]];
+        const dataKey_staAz = [dataKey[1], dataKey[5]];
+        const dataKey_staDist = [dataKey[1], dataKey[4]];
         var azPromise = readTextFile(staAz_paths, dataKey_staAz);
         var distPromise = readTextFile(staDist_paths, dataKey_staDist);
 
@@ -304,8 +305,8 @@ function waveXdist() {
                 let channelData = {};
                 xyData[net].forEach(d => {
                     // console.log(d[dataKey[0]]);
-                    let sta = d[dataKey[0]];
-                    let channel = d[dataKey[1]];
+                    let sta = d[dataKey[1]];
+                    let channel = d[dataKey[2]];
 
                     let obj = { ...d };
                     let cha = channel[channel.length - 1];
@@ -361,7 +362,6 @@ function waveXdist() {
 
         const chartContainerJQ = $(selector);
         const chartContainerD3 = d3.select(selector);
-        const channelGroups = ['Z', 'N/1', 'E/2'];//用來1.init()時產生cha選擇框 2.getNewData()原始資料分類
 
         //===append chart options
         function init() {
@@ -371,16 +371,20 @@ function waveXdist() {
                 <div class="form-group" id="chartsOptions" style="display: inline;">
                 <div class="row">
                 
-                <!-- ... catalog 
+                <!-- ... network selector ... -->    
                 <div class="form-group col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start">
-                     <label for="catalog" class="col-form-label col-4" >Catalog</label>
-                     <div class="form-group col-8">
-                         <select class="form-control" id="catalog">
-                     
-                         </select>
-                </div>
-                </div>
-                ... -->
+                    <label for="networkSelectButton" class="col-form-label col-5" >Network</label>
+                    <div class="btn-group btn-group-toggle col-7" role="group">
+                        <button id="networkSelectButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            select
+                        </button>
+                        <div class="dropdown-menu" id="networkMenu" aria-labelledby="networkSelectButton">
+                            <div class="d-flex flex-row flex-wrap" id="networkDropDownMenu">
+                            </div>
+                        </div>
+                    </div>
+                </div>  
+
 
                                 
                 <!-- ... display selector ... -->    
@@ -434,7 +438,7 @@ function waveXdist() {
                     <label for="channelSelectButton" class="col-form-label col-5" >Channel</label>
                     <div class="btn-group btn-group-toggle col-7" role="group">
                         <button id="channelSelectButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            Z
+                            select
                         </button>
                         <div class="dropdown-menu" id="channelMenu" aria-labelledby="channelSelectButton">
                             <div class="d-flex flex-row flex-wrap" id="channelDropDownMenu">
@@ -459,19 +463,6 @@ function waveXdist() {
                     </div>
                 </div>  
 
-
-                <!-- ... xAxisScale ... -->                
-                <div class="form-group col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start">
-                <label for="xAxisScale" class="col-form-label col-4" >Order</label>
-                <div class="btn-group btn-group-toggle col-8" data-toggle="buttons">
-                    <label class="btn btn-secondary">
-                        <input type="radio" name ="xAxisScale" id="linear" value="linear" checked> Linear
-                    </label>
-                    <label class="btn btn-secondary active">
-                        <input type="radio" name ="xAxisScale" id="band" value="band"> Station
-                    </label>
-                </div>
-                </div>   
 
                 <!-- ... xAxisName ... --> 
                 <div class="form-group col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start">
@@ -533,12 +524,27 @@ function waveXdist() {
                     </div>                    
                 </div>              
             
+
+                <!-- ... xAxisScale ... -->                
+                <div class="form-group col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start">
+                <label for="xAxisScale" class="col-form-label col-4" >Order</label>
+                <div class="btn-group btn-group-toggle col-8" data-toggle="buttons">
+                    <label class="btn btn-secondary">
+                        <input type="radio" name ="xAxisScale" id="linear" value="linear" checked> Linear
+                    </label>
+                    <label class="btn btn-secondary active">
+                        <input type="radio" name ="xAxisScale" id="band" value="band"> Station
+                    </label>
+                </div>
+                </div>   
+
+
                 <!-- ... normalize ...  --> 
                 <div
                 class="form-group col-lg-3 col-md-4 col-sm-6 d-flex justify-content-start  align-items-center flex-row flex-nowrap">               
                     <div id="normalize-group" class="form-check" >
                         <input class="form-check-input  col-4" type="checkbox" id="normalize" name="normalize">
-                        <label class="form-check-label  col-8" for="normalize" data-lang="">
+                        <label class="form-check-label  col-8" for="normalize">
                             Normalization
                         </label>                        
                     </div>
@@ -633,15 +639,15 @@ function waveXdist() {
             //     });
 
 
-            //====================channel 產生各組選項
+            // //====================channel 產生各組選項
 
-            let channelCKB_html = channelGroups.map((d, i) =>
-                `<div class="form-check col-4" style="text-align: center;">
-                    <input class="form-check-input col-3" type="checkbox" id="channel_group${i}" name="channel" value="${i}" ${i == 0 ? 'checked' : ''}>
-                    <label  for="channel_group${i}">${d}</label>
-                </div>`).join('');
+            // let channelCKB_html = channelGroups.map((d, i) =>
+            //     `<div class="form-check col-4" style="text-align: center;">
+            //         <input class="form-check-input col-3" type="checkbox" id="channel_group${i}" name="channel" value="${i}" ${i == 0 ? 'checked' : ''}>
+            //         <label  for="channel_group${i}">${d}</label>
+            //     </div>`).join('');
 
-            chartContainerJQ.find('#channelDropDownMenu').append(channelCKB_html);
+            // chartContainerJQ.find('#channelDropDownMenu').append(channelCKB_html);
 
             //====================xAxisName
             let xAxisName_radioGroup = chartContainerJQ.find('#xAxisName_radioGroup');
@@ -746,10 +752,11 @@ function waveXdist() {
             console.debug(data);
             // console.debug(xAxisName)
             var colorPalette = {};//to fixed color for each station
-            const dataKeys = data.column;//0:"station", 1: "channel", 2: "data", 3: "dist", 4:"az"
+            const dataKeys = data.column;//0: "network", 1: "station", 2: "channel", 3: "data", 4: "dist", 5:"az"
             // console.debug(dataKeys);
 
-            //＝＝按channel select組別分好資料(要分開network)
+            //＝＝按channelGroups組別分好資料(要分開network)
+            const channelGroups = ['Z', 'N/1', 'E/2'];//用來 1.getNewData()原始資料分類 2.init()時產生cha選擇框
             const networkKey = data.dataNet.column;
             const groupData = {};
             networkKey.forEach(net => {
@@ -757,12 +764,8 @@ function waveXdist() {
                     [].concat(...string.split('/').map(cha => data.dataNet[net][cha] ? data.dataNet[net][cha] : [])));
                 groupData[net] = tmp;
             });
-            // channelGroups.map(string =>
-            //     [].concat(...string.split('/').map(cha => data.channelData[cha] ? data.channelData[cha] : [])));
-            //== timeArr
             const timeArr = data.timeArr;
             console.debug(groupData);
-            const testNet = networkKey[0];
 
             // console.debug(timeArr);
             var referenceTime = '2000-01-01T00:00:00', title = referenceTime;
@@ -793,7 +796,7 @@ function waveXdist() {
                     let data = newDataObj.newData;
                     let index = undefined;
                     for (i = 0; i < data.length; i++)
-                        if (data[i][dataKeys[0]] == key) {
+                        if (data[i][dataKeys[1]] == key) {
                             index = i;
                             break;
                         }
@@ -911,7 +914,7 @@ function waveXdist() {
                             div.style("display", display ? 'inline' : 'none');
                             // if (!display) return;
 
-                            let stationName = d[dataKeys[0]];
+                            let stationName = d[dataKeys[1]];
                             div
                                 .selectAll("input")
                                 .data([d])
@@ -961,7 +964,7 @@ function waveXdist() {
 
                         let pathGCollection = pathGroup.selectAll('g').nodes();
                         pathGCollection.forEach(pathG => {
-                            let path_station = pathG.__data__[dataKeys[0]];
+                            let path_station = pathG.__data__[dataKeys[1]];
                             if (path_station == check_station) {
 
                                 let color = !check ? unselected_color : getColor(path_station);
@@ -988,6 +991,7 @@ function waveXdist() {
                 let normalize = controlObj.hasOwnProperty('normalize') ? controlObj.normalize : false,
                     yAxis_domain = controlObj.hasOwnProperty('yAxis_domain') ? controlObj.yAxis_domain : null,
                     xAxis_domainObj = controlObj.hasOwnProperty('xAxis_domainObj') ? controlObj.xAxis_domainObj : {},
+                    network_selectArr = controlObj.hasOwnProperty('network_selectArr') ? controlObj.network_selectArr : newDataObj.network_selectArr,
                     channel_selectGroup = controlObj.hasOwnProperty('channel_selectGroup') ? controlObj.channel_selectGroup : newDataObj.channel_selectGroup;
 
                 var newData, newTimeArr;
@@ -996,7 +1000,7 @@ function waveXdist() {
                 var newData_normalize = (newData) => {
                     // console.debug('***normalize...***');
                     newData.forEach(d => {
-                        let originData = groupData[channel_selectGroup].find(od => od[dataKeys[0]] == d[dataKeys[0]]);
+                        let originData = groupData[d[dataKeys[0]]][channel_selectGroup].find(od => od[dataKeys[1]] == d[dataKeys[1]]);
                         let domain = d3.extent(originData.data);
                         let normalize = d3.scaleLinear()
                             .domain(domain)
@@ -1005,10 +1009,10 @@ function waveXdist() {
                         d.data = tmpArr;
                     })
 
-                }
+                };
                 var getArr_of_channel_select = (channel_selectGroup) => {
                     return isNaN(channel_selectGroup) ?
-                        [] : groupData[channel_selectGroup].map(d => ({ ...d }));
+                        [] : [].concat(...network_selectArr.map(net => groupData[net][channel_selectGroup].map(d => ({ ...d }))));
                 };
 
                 var dataBeenReset = false;
@@ -1017,8 +1021,8 @@ function waveXdist() {
                     let newData = getArr_of_channel_select(channel_selectGroup);
 
                     if (Object.keys(xAxis_domainObj).length !== 0) {
-                        let dist_key = dataKeys[3];
-                        let az_key = dataKeys[4];
+                        let dist_key = dataKeys[4];
+                        let az_key = dataKeys[5];
 
                         newData = newData.filter(d => {
                             let inDistRange = true, inAzRange = true;
@@ -1053,7 +1057,7 @@ function waveXdist() {
                     if (yAxis_domain) {
                         let i1 = d3.bisectCenter(timeArr, yAxis_domain[0]);
                         let i2 = d3.bisectCenter(timeArr, yAxis_domain[1]) + 1;//包含最大範圍
-                        newData.forEach(d => d[dataKeys[2]] = d[dataKeys[2]].slice(i1, i2));
+                        newData.forEach(d => d[dataKeys[3]] = d[dataKeys[3]].slice(i1, i2));
                         newTimeArr = timeArr.slice(i1, i2);
                     }
                     else {
@@ -1061,8 +1065,8 @@ function waveXdist() {
                             // console.debug('2-2 data reset');
                             newData.forEach(d => {
                                 //===原data裡找sta跟cha都一樣的資料來複製amp陣列
-                                let originData = groupData[channel_selectGroup].find(od => od[dataKeys[0]] == d[dataKeys[0]]);
-                                d[dataKeys[2]] = originData[dataKeys[2]];
+                                let originData = groupData[d[dataKeys[0]]][channel_selectGroup].find(od => od[dataKeys[1]] == d[dataKeys[1]]);
+                                d[dataKeys[3]] = originData[dataKeys[3]];
                             });
                             dataBeenReset = true;
                         }
@@ -1086,7 +1090,7 @@ function waveXdist() {
                     normalize: normalize,
                     yAxis_domain: yAxis_domain,
                     xAxis_domainObj: xAxis_domainObj,
-                    network_select: testNet,
+                    network_selectArr: network_selectArr,
                     channel_selectGroup: channel_selectGroup,
                 };
 
@@ -1125,6 +1129,67 @@ function waveXdist() {
                         .attr('x', -height / 2)
                         .call(g => g.text(getString(data.yAxisName).keyName));
 
+
+                    //===create networkDropDownMenu   
+                    let network_selectArr = newDataObj.network_selectArr;
+                    chartContainerD3.selectAll('#networkDropDownMenu')
+                        .selectAll('div')
+                        .data(networkKey)
+                        .join('div')
+                        .attr('class', 'form-check col-12')
+                        .style("text-align", "center")
+                        .call(menu => menu.each(function (d, i) {
+                            let div = d3.select(this);
+
+                            div
+                                .append("input")
+                                .attr('class', 'form-check-input  col-4')
+                                .attr('type', 'checkbox')
+                                .attr('id', 'network_' + d)
+                                .attr('name', 'network')
+                                .attr('value', d)
+                                .property('checked', network_selectArr.includes(d));
+
+                            div
+                                .append("label")
+                                .attr('class', 'col-8')
+                                .attr('for', 'network_' + d)
+                                .text(d);
+                        }));
+
+                    chartContainerD3.selectAll('#networkSelectButton').text(
+                        network_selectArr.length == networkKey.length ?
+                            'All' : network_selectArr.join(' '));
+
+                    //====================channel 產生各組選項
+
+                    let channel_selectGroup = newDataObj.channel_selectGroup;
+                    chartContainerD3.selectAll('#channelDropDownMenu')
+                        .selectAll('div')
+                        .data(channelGroups)
+                        .join('div')
+                        .attr('class', 'form-check col-4')
+                        .style("text-align", "center")
+                        .call(menu => menu.each(function (d, i) {
+                            let div = d3.select(this);
+
+                            div
+                                .append("input")
+                                .attr('class', 'form-check-input col-3')
+                                .attr('type', 'checkbox')
+                                .attr('id', 'channel_group' + i)
+                                .attr('name', 'channel')
+                                .attr('value', i)
+                                .property('checked', i == channel_selectGroup);
+
+                            div
+                                .append("label")
+                                .attr('for', 'channel_group' + i)
+                                .text(d);
+                        }));
+
+                    chartContainerD3.selectAll('#channelSelectButton').text(channelGroups[channel_selectGroup]);
+
                     //===create StaionDropDownMenu
                     updateStaionDropDownMenu();
 
@@ -1135,7 +1200,9 @@ function waveXdist() {
                         };
 
                         //===dist是所有分量裡最大的
-                        dist_domain = get_niceDomain([0, d3.max([].concat(...groupData.map(d => d)), d => d[dataKeys[3]])]);
+                        dist_domain = get_niceDomain([0,
+                            d3.max([].concat(...networkKey.map(net => [].concat(...groupData[net].map(d => d)))
+                            ), d => d[dataKeys[4]])]);
                         az_domain = [0, 360];//方位角最大360
 
                         // console.debug(newData)
@@ -1178,6 +1245,7 @@ function waveXdist() {
                     const newTimeArr = newDataObj.newTimeArr;
                     const xAxis_domainObj = newDataObj.xAxis_domainObj;
                     const normalize = newDataObj.normalize;
+                    const network_selectArr = newDataObj.network_selectArr;
                     const channel_selectGroup = newDataObj.channel_selectGroup;
 
                     const xAxisDomain = xAxis_domainObj[xAxisName] ?
@@ -1187,12 +1255,13 @@ function waveXdist() {
                     const yAxisDomain = d3.extent(newTimeArr, d => d);
                     margin = getMargin(yAxisDomain); //== 由y軸tick字串長度來決定左邊預留空間
 
-                    let data = isNaN(channel_selectGroup) ? [] : groupData[channel_selectGroup];
+                    // let data = isNaN(channel_selectGroup) ? [] : [].concat(...network_selectArr.map(net => groupData[net][channel_selectGroup]));
+                    let data = isNaN(channel_selectGroup) ? [] : [].concat(...networkKey.map(net => groupData[net][channel_selectGroup]));
 
                     const xScale = { band: 'scaleBand', linear: 'scaleLinear' }[xAxisScale];
                     x = d3[xScale]()
                         .domain({
-                            band: newData.map(d => (d[dataKeys[0]])),
+                            band: newData.map(d => (d[dataKeys[1]])),
                             linear: xAxisDomain,
                         }[xAxisScale])
                         .range([margin.left, width - margin.right]);
@@ -1208,7 +1277,7 @@ function waveXdist() {
                         xAxis
                             .select('.axis_name')
                             .attr("y", margin.bottom - 20)
-                            .text({ band: getString(dataKeys[0]), linear: getString(xAxisName) }[xAxisScale].keyName);
+                            .text({ band: getString(dataKeys[1]), linear: getString(xAxisName) }[xAxisScale].keyName);
 
                         yAxis
                             .select('.axis_name')
@@ -1316,11 +1385,11 @@ function waveXdist() {
                             .call(() =>
                                 pathGroup.selectAll("g").each(function (d, i) {
                                     // console.debug(this, d, i);
-                                    // console.debug(d[dataKeys[0]]);
-                                    let isUnselected = unselected_band.includes(d[dataKeys[0]]);
+                                    // console.debug(d[dataKeys[1]]);
+                                    let isUnselected = unselected_band.includes(d[dataKeys[1]]);
 
                                     let g = d3.select(this);
-                                    let color = isUnselected ? unselected_color : getColor(d[dataKeys[0]]);
+                                    let color = isUnselected ? unselected_color : getColor(d[dataKeys[1]]);
                                     let opacity = isUnselected ? unselected_opacity : 1;
 
                                     //波形移到x軸位置(1.dist/az 2.波形第一點離中心點偏移位置修正)
@@ -1376,7 +1445,7 @@ function waveXdist() {
                                         .attr("transform", `translate(${path_x(d.data[d.data.length - 1])},${margin.top}) rotate(90)`)
                                         .text({
                                             band: parseFloat(newData[i][xAxisName].toFixed(2)) + (xAxisName == 'az' ? '' : ' ') + getString(xAxisName).keyUnit,
-                                            linear: newData[i][dataKeys[0]]
+                                            linear: newData[i][dataKeys[1]]
                                         }[xAxisScale]
                                         );
 
@@ -1396,7 +1465,11 @@ function waveXdist() {
 
                     //===預設選項
                     newDataObj = getNewData({
-                        normalize: true, yAxis_domain: null, xAxis_domainObj: {}, channel_selectGroup: 0,
+                        normalize: true,
+                        yAxis_domain: null,
+                        xAxis_domainObj: {},
+                        network_selectArr: [networkKey[0]],
+                        channel_selectGroup: 0,
                     });
                     init();
                 };
@@ -1548,10 +1621,11 @@ function waveXdist() {
                 var updateTooltip = () => {
                     var newTimeArr = newDataObj.newTimeArr;
                     var newData = newDataObj.newData;
+                    var network_selectArr = newDataObj.network_selectArr;
                     var channel_selectGroup = newDataObj.channel_selectGroup;
 
                     //==沒選中的挑掉不顯示資料
-                    var selectedData = newData.filter(d => !unselected_band.includes(d[dataKeys[0]]));
+                    var selectedData = newData.filter(d => !unselected_band.includes(d[dataKeys[1]]));
                     // console.debug(selectedData);
                     // console.debug(newData);
                     var floatShorter = (val, digit) => parseFloat(val.toFixed(digit));//小數後幾位四捨五入
@@ -1587,17 +1661,17 @@ function waveXdist() {
                             .style('margin-left', (d, i) => (i == 0) ? '0px' : '5px')
                             .style('padding', '10px')
                             .style('color', 'white')
-                            .style('background-color', (d, i) => getColor(d[dataKeys[0]]))//getColor(sortedIndex[i])
+                            .style('background-color', (d, i) => getColor(d[dataKeys[1]]))//getColor(sortedIndex[i])
                             .style('font-size', 10)
                             .html((d, i) => {
-                                let sta = d[dataKeys[0]];
-                                let dist = floatShorter(d[dataKeys[3]], 2);
-                                let az = floatShorter(d[dataKeys[4]], 2);
+                                let sta = d[dataKeys[1]];
+                                let dist = floatShorter(d[dataKeys[4]], 2);
+                                let az = floatShorter(d[dataKeys[5]], 2);
                                 // let ampN = floatShorter(d.data[mouseOnIdx], 5);
 
                                 //====振幅改顯示原值(要從原data裡找資料,由時間點找到原資料的索引值)
-                                let cha = d[dataKeys[1]];
-                                let originData = groupData[channel_selectGroup].find(od => od[dataKeys[0]] == d[dataKeys[0]]);
+                                let cha = d[dataKeys[2]];
+                                let originData = groupData[d[dataKeys[0]]][channel_selectGroup].find(od => od[dataKeys[1]] == d[dataKeys[1]]);
                                 // console.debug(originData);
                                 let indexOf_originData = d3.bisectCenter(timeArr, timming);
                                 let amp = floatShorter(originData.data[indexOf_originData], 1);
@@ -1621,7 +1695,7 @@ function waveXdist() {
 
                     //==用來取得dist/az和第一點偏差的位移值,挑掉未選的
                     var pathGCollection = pathGroup.selectAll('g').nodes().filter(g =>
-                        !unselected_band.includes(g.__data__[dataKeys[0]]));
+                        !unselected_band.includes(g.__data__[dataKeys[1]]));
                     // console.debug(pathGCollection)
 
                     eventRect.select('.mouse-over-effects')
@@ -1634,8 +1708,8 @@ function waveXdist() {
 
                             //==select mode造成pathGCollection順序沒規則,所以比對站名資料
                             //===如果不只一個比對cha
-                            let pathG = pathGCollection.filter(g => d[dataKeys[0]] == g.__data__[dataKeys[0]]);
-                            pathG = pathG.length > 1 ? pathG.filter(g => d[dataKeys[1]] == g.__data__[dataKeys[1]]) : pathG[0];
+                            let pathG = pathGCollection.filter(g => d[dataKeys[1]] == g.__data__[dataKeys[1]]);
+                            pathG = pathG.length > 1 ? pathG.filter(g => d[dataKeys[2]] == g.__data__[dataKeys[2]]) : pathG[0];
                             // console.debug(pathG)
                             //==取得該條path_g的transform x
                             let transX = pathG.transform.baseVal[0].matrix.e;
@@ -1649,7 +1723,7 @@ function waveXdist() {
 
                                 const circleAmount = 3;
                                 let g = d3.select(this);
-                                let station = d[dataKeys[0]];
+                                let station = d[dataKeys[1]];
 
                                 let circleTransX = path_x(d.data[mouseOnIdx]);
                                 // console.debug(d.data[mouseOnIdx]);
@@ -1957,7 +2031,40 @@ function waveXdist() {
 
                         });
 
+
+                    //=====select network
+                    let network = chartContainerD3.selectAll('input[name ="network"]');
+                    let networkText = chartContainerD3.selectAll('#networkSelectButton');
+                    network
+                        .on('click', function (e) {
+                            loadingEffect('show');
+
+                            let network_selectArr = [];
+
+                            // 多選,所有選中network放入陣列中
+                            network.nodes().forEach(chkbox =>
+                                chkbox.checked ? network_selectArr.push(chkbox.value) : false);
+
+                            // ===改變按鈕text
+                            let text = network_selectArr.length == networkKey.length ?
+                                'All' : network_selectArr == 0 ? 'select' : network_selectArr.join(' ');
+                            networkText.text(text);
+
+                            // console.debug(network_selectArr);
+                            newDataObj = getNewData({
+                                normalize: normalize,
+                                xAxis_domainObj: xAxis_domainObj,
+                                network_selectArr: network_selectArr
+                            });
+                            updateChart();
+                            updateStaionDropDownMenu();
+
+
+                        });
+
+
                     //=====select station
+                    let displayText = chartContainerD3.selectAll('#displaySelectButton');
                     staionDropDownMenu
                         .select('.controller')
                         .call(controllerDiv => {
@@ -2001,7 +2108,7 @@ function waveXdist() {
 
                                                 var action = () => {
                                                     let thisG = e.target.parentNode;
-                                                    let thisStation = thisG.__data__[dataKeys[0]];
+                                                    let thisStation = thisG.__data__[dataKeys[1]];
 
                                                     let show;
                                                     //===不在未選名單中則隱藏波形並列入名單
@@ -2041,17 +2148,17 @@ function waveXdist() {
 
                                         var hover = (target) => {
                                             let thisG = target.parentNode;
-                                            let thisStation = thisG.__data__[dataKeys[0]];
+                                            let thisStation = thisG.__data__[dataKeys[1]];
                                             if (unselected_band.includes(thisStation)) return;//未選的不用處理
 
                                             //==改變其他path透明度
                                             pathGroup.selectAll('g')
                                                 //==未選的濾掉
-                                                .filter(d => !unselected_band.includes(d[dataKeys[0]]))
+                                                .filter(d => !unselected_band.includes(d[dataKeys[1]]))
                                                 .call(g =>
                                                     g.each(function (d, i) {
                                                         let g = d3.select(this);
-                                                        let station = d[dataKeys[0]];
+                                                        let station = d[dataKeys[1]];
                                                         let hover = (station == thisStation);
                                                         let opacity = hover ? 1 : .5;
 
@@ -2071,7 +2178,7 @@ function waveXdist() {
 
                                                 .attr("filter", null)//所有包含隱藏的path陰影都取消
                                                 //==未選的濾掉不條透明度
-                                                .filter(d => !unselected_band.includes(d[dataKeys[0]]))
+                                                .filter(d => !unselected_band.includes(d[dataKeys[1]]))
                                                 .call(g => {
                                                     g.select('path').attr("stroke-opacity", 1);
                                                     g.select('text').attr("fill-opacity", 1);
@@ -2094,7 +2201,7 @@ function waveXdist() {
                                     }
 
                                     //===改變按鈕text
-                                    chartContainerD3.selectAll('#displaySelectButton').text(buttonText);
+                                    displayText.text(buttonText);
 
                                 });
 
@@ -2150,6 +2257,7 @@ function waveXdist() {
 
                     //=====change channel
                     let channel = chartContainerD3.selectAll('input[name ="channel"]');
+                    let channelText = chartContainerD3.selectAll('#channelSelectButton');
                     channel
                         .on('click', function (e) {
                             loadingEffect('show');
@@ -2159,13 +2267,16 @@ function waveXdist() {
                             //＝＝＝單選,其他勾拿掉
                             channel.nodes().filter(chkbox => chkbox !== e.target).forEach(chkbox => chkbox.checked = false);
 
-                            let text = checked ? channelGroups[value] : 'Select';
+                            let text = checked ? channelGroups[value] : 'select';
 
                             //===改變按鈕text
-                            chartContainerD3.selectAll('#channelSelectButton').text(text);
+                            channelText.text(text);
 
-                            // channel_selectGroup = tmp;
-                            newDataObj = getNewData({ normalize: normalize, xAxis_domainObj: xAxis_domainObj, channel_selectGroup: checked ? value : undefined });
+                            newDataObj = getNewData({
+                                normalize: normalize,
+                                xAxis_domainObj: xAxis_domainObj,
+                                channel_selectGroup: checked ? value : undefined
+                            });
                             updateChart();
                             updateStaionDropDownMenu();
 

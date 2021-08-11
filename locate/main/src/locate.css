@@ -1,0 +1,194 @@
+.error {
+    color: red;
+}
+
+.toggle-menu {
+    position: relative;
+    display: inline-block;
+
+}
+
+.toggle-menu ul.active {
+    display: none;
+}
+
+.toggle-menu ul {
+    width: 200px;
+    height: 200px;
+    position: absolute;
+    top: 100%;
+    right: 0px;
+    padding: 0px 0px 0px 0px;
+    box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.15);
+    border: rgb(197, 197, 197) 1px solid;
+    border-radius: 3px;
+    background-color: #fff;
+}
+
+.toggle-menu li {
+    float: none;
+    display: block;
+}
+
+.toggle-menu li a {
+    text-decoration: none;
+    color: #777;
+    text-align: center;
+    font-size: 16px;
+}
+
+.toggle-menu li a:hover {
+    background: #1ABC9C;
+    color: #fff;
+}
+
+.toggle-menu a {
+    display: block;
+}
+
+.toggle-nav {
+    padding: 5px 9px 5px 10px;
+    display: inline-block;
+    box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.15);
+    border: rgb(197, 197, 197) 1px solid;
+    border-radius: 3px;
+    text-shadow: 0px 1px 0px rgba(0, 0, 0, 0.5);
+    color: #777;
+    font-size: 20px;
+}
+
+.toggle-nav:hover,
+.toggle-nav.active {
+    text-decoration: none;
+    color: rgba(0, 0, 0, 0.658);
+}
+
+/* div.tooltip {
+    position: absolute;
+    text-align: center;
+    width: 150px;
+    height: 115px;
+    padding: 40px;
+    font: 16px sans-serif;
+    color: white;
+    font-weight: 500;
+    background: black;
+    border: 0px;
+    border-radius: 4px;
+    pointer-events: none;
+} */
+
+.grid .tick {
+    stroke: lightgrey;
+    opacity: 0.7;
+}
+
+
+.brush .selection {
+    /* fill: #9D9D9D; */
+    /* --width: 100%; */
+    /* opacity: .7; */
+    /* stroke: #6C6C6C; */
+    stroke-width: 0px;
+    /* stroke-dasharray: 0 720 35 0 */
+}
+
+.context_xAxis {
+    opacity: .7;
+}
+
+text,
+label,
+a {
+    user-select: none;
+}
+
+:root {
+    --w: 150px;
+    --sidePadding: 2px;
+    --list-length: 4;
+}
+
+#NSRange {
+    width: var(--w);
+}
+
+#NSList {
+    display: block;
+    margin-top: -10px;
+}
+
+#NSList option {
+    display: inline-block;
+    width: calc((var(--w) - var(--sidePadding)) /((var(--list-length) - 1)));
+    text-align: center;
+    text-anchor: middle;
+    /* alignment-baseline: text-before-edge; */
+    /* font-weight: bold; */
+    /* font-size: 100; */
+}
+
+#NSList option:first-child {
+    width: calc((var(--w) - var(--sidePadding)) /((var(--list-length) - 1) * 2));
+    text-align: left;
+    padding-left: 3px;
+}
+
+#NSList option:last-child {
+    width: calc((var(--w) - var(--sidePadding)) /((var(--list-length) - 1) * 2));
+    text-align: right;
+    padding-left: 12px;
+}
+
+.slider-handle {
+    --slider-handle-width: 16px;
+    width: var(--slider-handle-width);
+    height: var(--slider-handle-width);
+    margin-top: calc(10px - var(--slider-handle-width) * 0.5);
+}
+
+.slider-selection {
+    background: #0480BE;
+}
+
+.slider-track {
+    border-color: #afafafb9;
+    border-style: solid;
+    border-width: 1px;
+}
+
+#displayMenu {
+    max-width: 220px;
+}
+
+#channelMenu {
+    max-width: 180px;
+}
+
+#chartMain {
+    position: relative;
+}
+
+#loading {
+    --loading-width: 150px;
+    --loading-height: 60px;
+
+    position: absolute;
+    width: var(--loading-width);
+    height: var(--loading-height);
+    left: calc(50% - var(--loading-width) * 0.5);
+    top: calc(50% - var(--loading-height));
+    z-index: 50;
+    padding: 10px 10px;
+    background: #3C3C3C;
+    color: #fff;
+    text-align: center;
+    box-shadow: 2px 2px 10px;
+    border-radius: 5px;
+}
+
+#mapid {
+    height: 480px;
+    width: 500px;
+    margin: 0px auto;
+}

@@ -376,10 +376,8 @@ function locate() {
 
                 <div class="form-group"  id="chartMain">
 
-
-
-                    <div class="row justify-content-center align-items-center col-md-6 col-sm-12">
-                        <div id="mapid"></div>
+                    <div class="row">
+                        <div id="mapid" class="col-12"></div>
                     </div>   
                  
 
@@ -2437,7 +2435,8 @@ function locate() {
             MenuEvents();
         };
 
-        function Map() {
+        var mapObj;
+        function updateMap() {
             //Append to the object constructor function so you can only make static calls
             Object.merge2 = function (obj1, obj2) {
                 for (var attrname in obj2) {
@@ -2447,10 +2446,7 @@ function locate() {
                 return obj1;
             };
 
-            const mapObj = L.map('mapid', {
-                center: [23.58, 120.58],
-                zoom: 7,
-            });
+
 
             function init() {
                 const esriMap = {
@@ -2473,44 +2469,179 @@ function locate() {
                             : 'Hover over a city or county');
                     }
                 });
+                mapObj = L.map('mapid', {
+                    center: [23.58, 120.58],
+                    zoom: 8,
+                    minZoom: 7,
+                    maxZoom: 10,
+                    maxBounds: [[25.100523, 116.257324], [22.024546, 125.793457]],
+                    // maxBounds: L.latLngBounds(L.latLng(26.598351, 112.093506), L.latLng(20.858812, 129.385986)),
+                });
 
 
                 esriObj.addTo(mapObj);
                 infoObj.addTo(mapObj);
+                async function addCounty() {
 
+                    const geoJSON = await $.ajax({
+                        url: "../data/json/twCounty.json",
+                        dataType: "json",
+                        async: true,
+                        // success: function (d) { console.debug(d); },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            console.error(jqXHR, textStatus, errorThrown);
+                        },
+                    });
+                    const countyObj = L.geoJSON(geoJSON, {
+                        fillColor: '#006000',
+                        weight: 1,
+                        opacity: 10,
+                        color: 'white',
+                        dashArray: '3',
+                        fillOpacity: 0.3,
+                        // onEachFeature: onEachFeature,
+                        pane: 'overlayPane',
+                    })
+                    countyObj.addTo(mapObj);
+
+                    // console.debug(geoJSON);
+
+
+                };
+                async function addStation() {
+                    const stationData = await $.ajax({
+                        url: "../src/php/getStation.php",
+                        data: { whereStr: 1 },
+                        method: 'POST',
+                        dataType: 'json',
+                        async: true,
+                        success: function (d) {
+                            console.debug(d);
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            console.error(jqXHR, textStatus, errorThrown);
+                        },
+                    });
+
+                    updateMarker(stationData);
+                }
+
+
+
+                // addCounty();
+                addStation();
+                // let northEast = L.latLng(40.774, -74.125)
+                // console.debug(northEast)
 
                 // console.debug(infoObj);
-            }
-            async function addCounty() {
+            };
+            function updateMarker(data) {
 
-                const geoJSON = await $.ajax({
-                    url: "../data/twCounty.json",
-                    dataType: "json",
-                    async: false,
-                    // success: function (d) { },
-                    error: function (jqXHR, textStatus, errorThrown) {
-                        console.error(jqXHR, textStatus, errorThrown);
-                    },
+                const IconClass = L.Icon.extend({
+                    options: {
+                        iconSize: [60, 60], // size of the icon
+                        iconAnchor: [30, 30], // point of the icon which will correspond to marker's location
+                        tooltipAnchor: [0, -25],
+                    }
                 });
-                const countyObj = L.geoJSON(geoJSON, {
-                    fillColor: '#006000',
-                    weight: 1,
-                    opacity: 10,
-                    color: 'white',
-                    dashArray: '3',
-                    fillOpacity: 0.3,
-                    // onEachFeature: onEachFeature,
-                    pane: 'overlayPane',
+                var foeIcon = new IconClass({ iconUrl: '../data/pic/foeIcon.png' });
+                var playerIcon = new IconClass({ iconUrl: '../data/pic/playerIcon.png' });
+
+                let markersArray = [];
+                data.forEach((d, i) => {
+                    let marker = L.marker(d['coordinate'], {
+                        icon: foeIcon,
+                        pane: 'markerPane',
+                        data: d,
+                    }).on('click', function (e) {
+
+                        this.setIcon(playerIcon);
+                        let C = L.circle(d['coordinate'], {
+                            className: 'station-range',
+                        }).addTo(mapObj);
+
+                        rangeAnime(C, 30000 * (i + 1));
+                        // console.debug(C);
+                        // d3.select('.station-range')
+                        //     .attr('ccc', 100);
+                        // console.debug(d3.select('.station-range').node().getBBox());
+                        // element.getBBox()
+                    });
+
+
+                    var rangeAnime = (circleObj, maxRadius, duration = 300) => {
+                        console.debug(circleObj);
+                        const delay = 10;
+                        const animePart = 3;//3個步驟：變大>變小>原來大小
+                        const eachPartStep = parseInt((duration / animePart) / delay);
+                        const radiusChange = maxRadius / eachPartStep;
+
+                        let radius = 0, step = 0;
+                        let interval = setInterval(() => {
+
+                            let part = parseInt(step / eachPartStep);
+
+                            switch (part) {
+                                case 0:
+                                    radius += radiusChange;
+                                    break;
+                                case 1:
+                                    radius -= (radiusChange * 0.5);
+                                    break;
+                                case 2:
+                                    radius += (radiusChange * 1);
+                                    break;
+                                case 3://＝＝＝停止
+                                    circleObj.setRadius(maxRadius);
+
+                                    break;
+                            }
+                            circleObj.setRadius(radius);
+                            step++;
+
+                        }, delay);
+
+                    }
+
+                    // setInterval(() => {
+                    //     var elem = document.getElementById("myAnimation");
+                    //     var pos = 0;
+                    //     pos++;
+                    //     elem.style.top = pos + 'px';
+                    //     elem.style.left = pos + 'px';
+                    // }, 10);
+
+
+
+                    markersArray.push(marker);
+                    let markerHint = "<b><font size='5'>" + d['station'] + "</font><br>";
+                    marker.bindTooltip(markerHint, {
+                        direction: 'top',
+                        // permanent: true,
+                        className: 'station-tooltip',
+                    });
                 })
-
-                countyObj.addTo(mapObj);
-
-                // console.debug(geoJSON);
-
+                var markerlayerGroup = new L.layerGroup(markersArray);
+                mapObj.addLayer(markerlayerGroup);
 
             };
             init();
-            // addCounty();
+
+            // console.debug('AAA');
+            // mapObj
+            //     .on('click', e => {
+            //         L.popup()
+            //             .setLatLng(e.latlng)
+            //             .setContent("<b><font size='3'>" + String(e.latlng) + "</b></font>")
+            //             .openOn(mapObj);
+            //     })
+            //     // .on('mousemove', e => {
+            //     //     console.debug('AAA')
+            //     // })
+            //     ;
+
+
+
 
         }
         //===init once
@@ -2518,7 +2649,8 @@ function locate() {
             init();
         };
         // printChart();
-        Map();
+        updateMap();
+        // updateMap();
     }
     return chart;
 }

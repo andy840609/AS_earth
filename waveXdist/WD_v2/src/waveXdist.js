@@ -1967,6 +1967,7 @@ function waveXdist() {
                                     // console.debug(p);
                                     // const xm = x.invert(p[0]);
                                     selectionRect.update(width - margin.right, p[1]);
+                                    // console.debug(selectionRect.getNewAttributes());
                                 }
                                 updateHandler(action, tooltipUpdateObj);
 
@@ -1995,6 +1996,10 @@ function waveXdist() {
                                 newDataObj = getNewData({ normalize: normalize, xAxis_domainObj: xAxis_domainObj, yAxis_domain: yAxis_domain });
                                 updateChart();
                                 selectionRect.remove();
+
+                                //==drag end時處理draging行爲的timeout還沒到,而selectionRect被刪除了
+                                //導至計時器回播函式執行selectionRect.update()出錯,所以要停止計時器
+                                tooltipUpdateObj.updateTimeOut.stop();
                             })
                         eventRect.call(dragBehavior);
                     }

@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>locate</title>
+    <title>locatingGame</title>
     <link rel="stylesheet" href="../src/bootstrap-4.5.3-dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" />
-    <link href="../src/locate.css" rel="stylesheet">
+    <link href="../src/locatingGame.css" rel="stylesheet">
 </head>
 
 <body>
@@ -16,17 +16,18 @@
     <script src="../src/d3/d3.min.js"></script>
     <script src="../src/bootstrap-4.5.3-dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
-    <script src="../src/locate.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.js"></script>
+    <script src="../src/locatingGame.js"></script>
     <script>
 
-        var chart = locate()
+        var game = locatingGame()
             // .dataPath({ data: paths, az: az, dist: dist, Taxis: Taxis })
             // .string({
             //     referenceTime: '2021-04-18T14:14:37',
             //     // title: 'AAA',
             // })
             .selector('.container');
-        chart();
+        game();
 
 
     </script>

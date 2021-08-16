@@ -6,17 +6,17 @@ function locatingGame() {
     game.selector = (value) => {
         selector = value;
         return game;
-    }
+    };
     game.dataPath = (value) => {
 
 
 
         return game;
-    }
+    };
     game.string = (value) => {
         stringObj = value;
         return game;
-    }
+    };
 
     function game() {
 
@@ -2090,7 +2090,7 @@ function locatingGame() {
                 chartContainerJQ.find('#chart' + i).append(WD_Charts(xAxisScale, xAxisName));
                 MenuEvents();
             };
-        }
+        };
 
         var mapObj;
         var stationDataArr, geoJSON;//==data
@@ -2329,14 +2329,18 @@ function locatingGame() {
             // console.debug(gameMode, stationMarker);
             const gameOuterDiv = document.querySelector('#gameOuter');
             const gameDiv = gameOuterDiv.querySelector('#gameMain');
+
             var gameDisplay = (display) => {
                 let value = display ? 'inline' : 'none';
                 gameOuterDiv.style.display = value;
-            }
+            };
+
+
             gameDisplay(true);
 
             const gameBox = gameDiv.getBoundingClientRect();
-            const stationData = stationMarker.options.data;
+            // const stationData = stationMarker.options.data;
+
             switch (gameMode) {
                 case 'defend':
 
@@ -2362,7 +2366,7 @@ function locatingGame() {
                                 preload: preload,
                                 create: create,
                                 update: update
-                            }
+                            },
                         };
 
                         var game = new Phaser.Game(config);
@@ -2392,11 +2396,9 @@ function locatingGame() {
 
                         function create() {
                             var initEnvironment = () => {
-
+                                // console.debug(this)
                                 let bgImg = this.add.image(width * 0.5, height * 0.5, 'sky');
                                 bgImg.setScale(width / bgImg.width, height / bgImg.height);
-
-
 
                                 platforms = this.physics.add.staticGroup();
 
@@ -2449,11 +2451,76 @@ function locatingGame() {
                             };
                             var initTimer = () => {
                                 timerText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#000' });
-                            }
+                            };
+                            var initPauseMenu = () => {
+                                console.debug(game);
+                                console.debug(this);
+                                console.debug(Phaser);
+
+                                // Create a label to use as a button
+                                pause_label = this.add.text(width - 100, 20, 'Pause', { font: '24px Arial', fill: '#fff' });
+
+                                pause_label.setInteractive()
+                                    .on('pointerdown', (pointer) => {
+                                        // When the paus button is pressed, we pause the game
+                                        // console.debug(this);
+                                        // console.debug(pointer);
+                                        // this.physics.pause();
+                                        this.scene.sleep();
+                                        // this.paused = true;
+
+                                        // Then add the menu
+                                        // menu = this.add.image(width / 2, height / 2, 'bomb');
+                                        let bgImg = this.add.image(width * 0.5, height * 0.5, 'bomb');
+                                        // menu.anchor.setTo(0.5, 0.5);
+
+                                        // And a label to illustrate which menu item was chosen. (This is not necessary)
+                                        choiseLabel = this.add.text(width / 2, height - 150, 'Click outside menu to continue', { font: '30px Arial', fill: '#fff' });
+                                        // choiseLabel.anchor.setTo(0.5, 0.5);
+                                    });
+
+                                // Add a input listener that can help us return from being paused
+                                // this.input.onDown.add(unpause, self);
+
+                            };
                             initEnvironment();
                             initPlayer();
                             initStars();
                             initTimer();
+                            initPauseMenu();
+
+                            function unpause(event) {
+                                // Only act if paused
+                                if (game.paused) {
+                                    // Calculate the corners of the menu
+                                    var x1 = w / 2 - 270 / 2, x2 = w / 2 + 270 / 2,
+                                        y1 = h / 2 - 180 / 2, y2 = h / 2 + 180 / 2;
+
+                                    // Check if the click was inside the menu
+                                    if (event.x > x1 && event.x < x2 && event.y > y1 && event.y < y2) {
+                                        // The choicemap is an array that will help us see which item was clicked
+                                        var choisemap = ['one', 'two', 'three', 'four', 'five', 'six'];
+
+                                        // Get menu local coordinates for the click
+                                        var x = event.x - x1,
+                                            y = event.y - y1;
+
+                                        // Calculate the choice 
+                                        var choise = Math.floor(x / 90) + 3 * Math.floor(y / 90);
+
+                                        // Display the choice
+                                        choiseLabel.text = 'You chose menu item: ' + choisemap[choise];
+                                    }
+                                    else {
+                                        // Remove the menu and the label
+                                        menu.destroy();
+                                        choiseLabel.destroy();
+
+                                        // Unpause the game
+                                        game.paused = false;
+                                    }
+                                }
+                            };
 
                             var collectStar = (player, star) => {
                                 star.disableBody(true, true);
@@ -2527,7 +2594,7 @@ function locatingGame() {
                     }
 
                     let gameResult = await new Promise((resolve, reject) => {
-                        defendGame(stationMarker, 5000, resolve);
+                        defendGame(stationMarker, 500000, resolve);
                     });
 
                     console.debug(gameResult);
@@ -2553,8 +2620,7 @@ function locatingGame() {
 
 
 
-        }
-
+        };
 
 
         //===init once
@@ -2563,7 +2629,7 @@ function locatingGame() {
             initForm();
         };
         initMap();
-        // gameStart('defend');
-    }
+        gameStart('defend');
+    };
     return game;
-}
+};

@@ -612,19 +612,18 @@ function DSBC() {
                         .range(subjectScaleRange)
                         .padding(0.1);
 
-                    let seriesScale = logScale ? 'scaleLog' : 'scaleLinear';
-
-                    //test
-                    console.debug(series1ScaleRange)
-                    series1Domain[0] = 1
-                    series2Domain[0] = 1
+                    //==================================test
+                    // console.debug(series1ScaleRange)
+                    // series1Domain[0] = 1
+                    // series2Domain[0] = 1
                     // series1ScaleRange.reverse();
                     // series2ScaleRange.reverse();
 
                     // var logScale = d3.scaleLog()
                     //     .domain([0, 100000])
                     //     .range([0, 700]);
-                    //test
+                    //==================================test
+                    let seriesScale = logScale ? 'scaleLog' : 'scaleLinear';
 
                     series1Scale = d3[seriesScale]()
                         .domain(series1Domain)

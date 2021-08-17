@@ -2186,7 +2186,7 @@ function locatingGame() {
 
                 stationDataArr.forEach((d, i) => {
 
-                    d['liberate'] = false;//==用來判斷是否已經贏過
+                    d['gameData'] = { liberate: false };//==遊戲資料：liberate用來判斷是否已經贏過
 
                     let marker = L.marker(d['coordinate'], {
                         pane: 'markerPane',
@@ -2194,7 +2194,7 @@ function locatingGame() {
                         // bubblingMouseEvents: true,
                     }).on('click', function (e) {
                         // console.debug(d['liberate']);
-                        if (d['liberate']) return;//==已經贏過,不能在玩一次
+                        // if (d['liberate']) return;//==已經贏過,不能在玩一次
                         gameStart('defend', marker);
                     });
 
@@ -2234,8 +2234,8 @@ function locatingGame() {
                     className: 'station-icon',
                 }
             });
-            var foeIconUrl = '../data/pic/foeIcon.png';
-            var playerIconUrl = '../data/pic/playerIcon.png';
+            var foeIconUrl = '../data/assets/icon/foeIcon.png';
+            var playerIconUrl = '../data/assets/icon/playerIcon.png';
             var circleAnime = (circleObj, originalRadius, duration = 500) => {
                 // console.debug(circleObj, originalRadius);
                 const delay = 10;
@@ -2339,18 +2339,241 @@ function locatingGame() {
             gameDisplay(true);
 
             const gameBox = gameDiv.getBoundingClientRect();
-            // const stationData = stationMarker.options.data;
+
 
             switch (gameMode) {
                 case 'defend':
 
-                    function defendGame(station, timeRemain = 5000, resolve) {
+                    function defendGame(stationData, timeRemain = 5000, resolve) {
                         // console.debug(station)
                         const assetsDir = '../data/assets/';
                         const width = gameBox.width, height = gameBox.height;
                         // const center = [width];
 
-                        var config = {
+                        var player, stars, cursors;
+                        var playerStats = {
+                            movementSpeed: 500,
+                            jumpingPower: 400,
+                        };
+                        var platforms;
+                        var gameOver = false, gameResult = {},
+                            gameTimer = null, timerText = null;
+
+                        class DefendScene extends Phaser.Scene {
+                            constructor() {
+                                super({ key: 'defend' });
+                            }
+                            preload() {
+                                const gameObjDir = assetsDir + 'gameObj/';
+
+                                this.load.image('sky', gameObjDir + 'sky.png');
+                                this.load.image('ground', gameObjDir + 'platform.png');
+                                this.load.image('star', gameObjDir + 'star.png');
+                                this.load.image('bomb', gameObjDir + 'bomb.png');
+                                this.load.spritesheet('dude',
+                                    gameObjDir + 'dude.png',
+                                    { frameWidth: 32, frameHeight: 48 }
+                                );
+
+                            };
+                            create() {
+                                var initEnvironment = () => {
+                                    // console.debug(this)
+                                    let bgImg = this.add.image(width * 0.5, height * 0.5, 'sky');
+                                    bgImg.setScale(width / bgImg.width, height / bgImg.height);
+
+                                    platforms = this.physics.add.staticGroup();
+
+                                    platforms.create(width * 0.5, height * 0.95, 'ground').setScale(3).refreshBody();
+
+                                    // platforms.create(width * 0.5, 400, 'ground');
+                                    // platforms.create(50, 250, 'ground');
+                                    // platforms.create(750, 220, 'ground');
+                                };
+                                var initPlayer = () => {
+                                    player = this.physics.add.sprite(100, 450, 'dude');
+
+                                    // player.setBounce(0.2);
+                                    player.setCollideWorldBounds(true);
+                                    player.body.setGravityY(500);
+
+                                    this.anims.create({
+                                        key: 'left',
+                                        frames: this.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
+                                        frameRate: 10,
+                                        repeat: -1
+                                    });
+
+                                    this.anims.create({
+                                        key: 'turn',
+                                        frames: [{ key: 'dude', frame: 4 }],
+                                        frameRate: 20
+                                    });
+
+                                    this.anims.create({
+                                        key: 'right',
+                                        frames: this.anims.generateFrameNumbers('dude', { start: 5, end: 8 }),
+                                        frameRate: 10,
+                                        repeat: -1
+                                    });
+                                };
+                                var initStars = () => {
+                                    stars = this.physics.add.group({
+                                        key: 'star',
+                                        repeat: 0,
+                                        setXY: { x: width * 0.9, y: 0, stepX: 70 }
+                                    });
+
+                                    stars.children.iterate(function (child) {
+                                        //  Give each star a slightly different bounce
+                                        child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.5));
+                                    });
+
+                                    // console.debug(stars);
+                                };
+                                var initTimer = () => {
+                                    timerText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#000' });
+                                };
+                                var initPauseMenu = () => {
+
+                                    // Create a label to use as a button
+                                    let pause_label = this.add.text(width - 100, 20, 'Pause', { font: '24px Arial', fill: '#fff' });
+
+                                    // let pauseMenu = new UIScene('pauseMenu');
+                                    pause_label.setInteractive()
+                                        .on('pointerdown', (pointer) => {
+                                            // =When the paus button is pressed, we pause the game
+                                            this.scene.pause();
+                                            //==create pause menu
+                                            this.scene.add(null, new UIScene('pauseMenu'), true);
+                                            // console.debug(this.scene.manager);
+
+                                        });
+
+                                };
+
+                                initEnvironment();
+                                initPlayer();
+                                initStars();
+                                initTimer();
+                                initPauseMenu();
+
+                                var collectStar = (player, star) => {
+                                    star.disableBody(true, true);
+
+                                    //==勝利,清除計時
+                                    gameOver = true;
+                                    gameTimer.remove();
+                                    gameResult.liberate = true;
+                                };
+                                //collider
+                                this.physics.add.collider(player, platforms);
+                                this.physics.add.collider(stars, platforms);
+                                this.physics.add.overlap(player, stars, collectStar, null, this);
+
+
+                                // cursors = this.input.keyboard.createCursorKeys();
+                                cursors = this.input.keyboard.addKeys('w,s,a,d');
+
+                                //==計時,時間到則失敗
+                                gameTimer = this.time.delayedCall(timeRemain, () => {
+                                    gameOver = true;
+                                    gameResult.liberate = false;
+                                }, [], this);
+                            };
+                            update() {
+
+                                var updatePlayer = () => {
+                                    let speed = playerStats.movementSpeed;
+                                    let jump = playerStats.jumpingPower;
+
+                                    if (cursors.a.isDown) {
+                                        player.setVelocityX(-speed);
+
+                                        player.anims.play('left', true);
+                                    }
+                                    else if (cursors.d.isDown) {
+                                        player.setVelocityX(speed);
+
+                                        player.anims.play('right', true);
+                                    }
+                                    else {
+                                        player.setVelocityX(0);
+
+                                        player.anims.play('turn');
+                                    }
+
+                                    if (cursors.w.isDown && player.body.touching.down) {
+                                        player.setVelocityY(-jump);
+                                    }
+                                };
+                                var updateTimer = () => {
+                                    let text = 'TimeLeft : ' +
+                                        ((timeRemain - gameTimer.getElapsed()) / 1000).toFixed(2) + ' s';
+                                    timerText.setText(text);
+                                };
+                                updatePlayer();
+                                updateTimer();
+                                // console.debug(gameTimer.getOverallProgress());
+
+
+                                if (gameOver) {
+                                    game.destroy(true, false);
+                                    // gameDisplay(false);
+                                    resolve(gameResult);
+                                }
+                            };
+
+                        };
+                        class UIScene extends Phaser.Scene {
+
+                            constructor(key) {
+                                super({ key: key });
+                                // console.debug(this);
+                            }
+
+                            preload() {
+                                const uiDir = assetsDir + 'ui/';
+                                this.load.image('menuButton', uiDir + 'menuButton.png');
+                            };
+                            create() {
+                                // =Then add the menu
+                                let buttons = ['resume', 'a', 'b'];
+                                buttons.forEach((button, i) => {
+                                    let x = width * 0.5;
+                                    let y = height / (buttons.length + 1) * (i + 1);
+                                    let menuButton = this.add.image(x, y, 'menuButton');
+                                    let buttonText = this.add.text(x, y, button,
+                                        {
+                                            font: '50px Arial',
+                                            fill: '#fff',
+                                            align: 'center',
+                                            boundsAlignH: 'middle',
+                                            boundsAlignV: 'middle',
+                                        });
+                                    menuButton
+                                        .setScale(width / 4 / menuButton.width)
+                                        .setInteractive()
+                                        .on('pointerdown', (pointer) => {
+                                            this.scene.resume('defend');
+                                            this.scene.remove();
+                                            // console.debug(this);
+                                        });
+
+                                });
+
+                                //= And a label to illustrate which menu item was chosen. (This is not necessary)
+                                // let choiseLabel = this.add.text(width / 2, height - 150, 'Click outside menu to continue', { font: '30px Arial', fill: '#fff' });
+
+                            };
+
+                        };
+
+
+
+
+
+                        const config = {
                             parent: 'gameMain',
                             type: Phaser.AUTO,
                             width: width,
@@ -2362,246 +2585,24 @@ function locatingGame() {
                                     debug: false
                                 }
                             },
-                            scene: {
-                                preload: preload,
-                                create: create,
-                                update: update
-                            },
+                            scene: [DefendScene],
                         };
-
-                        var game = new Phaser.Game(config);
-                        var player, stars, cursors;
-                        var playerStats = {
-                            movementSpeed: 500,
-                            jumpingPower: 400,
-                        };
-
-                        var platforms;
-                        var gameOver = false, gameResult = {},
-                            gameTimer = null, timerText = null;
-
-
-
-                        function preload() {
-                            this.load.image('sky', assetsDir + 'sky.png');
-                            this.load.image('ground', assetsDir + 'platform.png');
-                            this.load.image('star', assetsDir + 'star.png');
-                            this.load.image('bomb', assetsDir + 'bomb.png');
-                            this.load.spritesheet('dude',
-                                assetsDir + 'dude.png',
-                                { frameWidth: 32, frameHeight: 48 }
-                            );
-
-                        };
-
-                        function create() {
-                            var initEnvironment = () => {
-                                // console.debug(this)
-                                let bgImg = this.add.image(width * 0.5, height * 0.5, 'sky');
-                                bgImg.setScale(width / bgImg.width, height / bgImg.height);
-
-                                platforms = this.physics.add.staticGroup();
-
-                                platforms.create(width * 0.5, height * 0.95, 'ground').setScale(3).refreshBody();
-
-                                // platforms.create(width * 0.5, 400, 'ground');
-                                // platforms.create(50, 250, 'ground');
-                                // platforms.create(750, 220, 'ground');
-                            };
-                            var initPlayer = () => {
-                                player = this.physics.add.sprite(100, 450, 'dude');
-
-                                // player.setBounce(0.2);
-                                player.setCollideWorldBounds(true);
-                                player.body.setGravityY(500);
-
-                                this.anims.create({
-                                    key: 'left',
-                                    frames: this.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
-                                    frameRate: 10,
-                                    repeat: -1
-                                });
-
-                                this.anims.create({
-                                    key: 'turn',
-                                    frames: [{ key: 'dude', frame: 4 }],
-                                    frameRate: 20
-                                });
-
-                                this.anims.create({
-                                    key: 'right',
-                                    frames: this.anims.generateFrameNumbers('dude', { start: 5, end: 8 }),
-                                    frameRate: 10,
-                                    repeat: -1
-                                });
-                            };
-                            var initStars = () => {
-                                stars = this.physics.add.group({
-                                    key: 'star',
-                                    repeat: 0,
-                                    setXY: { x: width * 0.9, y: 0, stepX: 70 }
-                                });
-
-                                stars.children.iterate(function (child) {
-                                    //  Give each star a slightly different bounce
-                                    child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.5));
-                                });
-
-                                // console.debug(stars);
-                            };
-                            var initTimer = () => {
-                                timerText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#000' });
-                            };
-                            var initPauseMenu = () => {
-                                console.debug(game);
-                                console.debug(this);
-                                console.debug(Phaser);
-
-                                // Create a label to use as a button
-                                pause_label = this.add.text(width - 100, 20, 'Pause', { font: '24px Arial', fill: '#fff' });
-
-                                pause_label.setInteractive()
-                                    .on('pointerdown', (pointer) => {
-                                        // When the paus button is pressed, we pause the game
-                                        // console.debug(this);
-                                        // console.debug(pointer);
-                                        // this.physics.pause();
-                                        this.scene.sleep();
-                                        // this.paused = true;
-
-                                        // Then add the menu
-                                        // menu = this.add.image(width / 2, height / 2, 'bomb');
-                                        let bgImg = this.add.image(width * 0.5, height * 0.5, 'bomb');
-                                        // menu.anchor.setTo(0.5, 0.5);
-
-                                        // And a label to illustrate which menu item was chosen. (This is not necessary)
-                                        choiseLabel = this.add.text(width / 2, height - 150, 'Click outside menu to continue', { font: '30px Arial', fill: '#fff' });
-                                        // choiseLabel.anchor.setTo(0.5, 0.5);
-                                    });
-
-                                // Add a input listener that can help us return from being paused
-                                // this.input.onDown.add(unpause, self);
-
-                            };
-                            initEnvironment();
-                            initPlayer();
-                            initStars();
-                            initTimer();
-                            initPauseMenu();
-
-                            function unpause(event) {
-                                // Only act if paused
-                                if (game.paused) {
-                                    // Calculate the corners of the menu
-                                    var x1 = w / 2 - 270 / 2, x2 = w / 2 + 270 / 2,
-                                        y1 = h / 2 - 180 / 2, y2 = h / 2 + 180 / 2;
-
-                                    // Check if the click was inside the menu
-                                    if (event.x > x1 && event.x < x2 && event.y > y1 && event.y < y2) {
-                                        // The choicemap is an array that will help us see which item was clicked
-                                        var choisemap = ['one', 'two', 'three', 'four', 'five', 'six'];
-
-                                        // Get menu local coordinates for the click
-                                        var x = event.x - x1,
-                                            y = event.y - y1;
-
-                                        // Calculate the choice 
-                                        var choise = Math.floor(x / 90) + 3 * Math.floor(y / 90);
-
-                                        // Display the choice
-                                        choiseLabel.text = 'You chose menu item: ' + choisemap[choise];
-                                    }
-                                    else {
-                                        // Remove the menu and the label
-                                        menu.destroy();
-                                        choiseLabel.destroy();
-
-                                        // Unpause the game
-                                        game.paused = false;
-                                    }
-                                }
-                            };
-
-                            var collectStar = (player, star) => {
-                                star.disableBody(true, true);
-
-                                //==勝利,清除計時
-                                gameOver = true;
-                                gameTimer.remove();
-                                gameResult.liberate = true;
-                            };
-                            //collider
-                            this.physics.add.collider(player, platforms);
-                            this.physics.add.collider(stars, platforms);
-                            this.physics.add.overlap(player, stars, collectStar, null, this);
-
-
-                            // cursors = this.input.keyboard.createCursorKeys();
-                            cursors = this.input.keyboard.addKeys('w,s,a,d');
-
-                            //==計時,時間到則失敗
-                            gameTimer = this.time.delayedCall(timeRemain, () => {
-                                gameOver = true;
-                                gameResult.liberate = false;
-                            }, [], this);
-                        };
-
-                        function update() {
-
-
-                            var updatePlayer = () => {
-                                let speed = playerStats.movementSpeed;
-                                let jump = playerStats.jumpingPower;
-
-                                if (cursors.a.isDown) {
-                                    player.setVelocityX(-speed);
-
-                                    player.anims.play('left', true);
-                                }
-                                else if (cursors.d.isDown) {
-                                    player.setVelocityX(speed);
-
-                                    player.anims.play('right', true);
-                                }
-                                else {
-                                    player.setVelocityX(0);
-
-                                    player.anims.play('turn');
-                                }
-
-                                if (cursors.w.isDown && player.body.touching.down) {
-                                    player.setVelocityY(-jump);
-                                }
-                            };
-                            var updateTimer = () => {
-                                let text = 'TimeLeft : ' +
-                                    ((timeRemain - gameTimer.getElapsed()) / 1000).toFixed(2) + ' s';
-                                timerText.setText(text);
-                            };
-                            updatePlayer();
-                            updateTimer();
-                            // console.debug(gameTimer.getOverallProgress());
-
-
-                            if (gameOver) {
-                                game.destroy(true, false);
-                                gameDisplay(false);
-                                resolve(gameResult);
-                            }
-                        };
-
-
+                        const game = new Phaser.Game(config);
                     }
 
-                    let gameResult = await new Promise((resolve, reject) => {
-                        defendGame(stationMarker, 500000, resolve);
-                    });
 
+
+                    let gameResult = await new Promise((resolve, reject) => {
+                        defendGame(null, 500000, resolve);
+                    });
+                    gameDisplay(false);
                     console.debug(gameResult);
 
                     // let gameResult = false;
                     if (gameResult.liberate) {
-                        stationData['liberate'] = true;
+                        const stationData = stationMarker.options.data;
+                        console.debug(stationData);
+                        stationData.gameData.liberate = true;
                         radius = (stationDataArr.indexOf(stationData) + 1) * 30000;
                         updateStation(stationMarker, true, radius);
                     }

@@ -3,6 +3,15 @@ function locatingGame() {
     var data;
     var stringObj;
 
+    //Append to the object constructor function so you can only make static calls
+    Object.merge2 = function (obj1, obj2) {
+        for (var attrname in obj2) {
+            obj1[attrname] = obj2[attrname];
+        }
+        //Returning obj1 is optional and certainly up to your implementation
+        return obj1;
+    };
+
     game.selector = (value) => {
         selector = value;
         return game;
@@ -28,9 +37,9 @@ function locatingGame() {
 
             chartContainerJQ.append(`
                 <form id="form-game">
-                <div class="form-group" id="gameOptions" style="display: inline;">
-                    <div class="row">
-                    </div> 
+                <div class="form-group" id="gameUI" style="display: inline;">
+                    TimeLeft : <font size="5" class='timer'>0</font> ms
+                </div> 
                
                 <div class="form-group row" id="gameGroup">
 
@@ -74,9 +83,74 @@ function locatingGame() {
 
 
         };
-
         //==之後作
-        function chart() {
+        function getWavePng() {
+            const samplePath = '../data/wave/sample.xy';
+            //==異步讀檔,回傳一個promise而非結果
+            // var readTextFile = (file, fileDataKey) => {
+            //     // console.debug(fileDataKey);
+            //     var tmpData = [];
+
+            //     var pushData;
+            //     if (fileDataKey.length > 1) {//一行有兩列以上的資料則作物件陣列
+            //         pushData = (row) => {
+            //             var col = row.trim().split(/\s+/);
+            //             // console.debug(col);
+            //             let obj = {};
+            //             col.forEach((c, index) => obj[fileDataKey[index]] = (isNaN(c) ? c : parseFloat(c)));
+            //             tmpData.push(obj);
+            //         }
+            //     }
+            //     else {//一行有一列直接作數值陣列
+            //         pushData = (row) => {
+            //             tmpData.push(isNaN(row) ? row : parseFloat(row));
+            //         }
+            //     }
+
+            //     return new Promise((resolve, reject) => {
+            //         var rawFile = new XMLHttpRequest();
+            //         rawFile.open("GET", file, true);
+            //         // rawFile.open("GET", file, false);
+            //         rawFile.onreadystatechange = function () {
+            //             if (rawFile.readyState === 4) {
+            //                 if (rawFile.status === 200 || rawFile.status == 0) {
+            //                     var rows = rawFile.responseText.split("\n");
+            //                     rows.forEach(row => {
+            //                         if (row != '') {
+            //                             pushData(row);
+            //                         }
+            //                     })
+            //                     var startStr = '/';
+            //                     var startIndex = file.lastIndexOf(startStr) + startStr.length;
+            //                     var fileName = file.substring(startIndex);
+            //                     var fileData = { fileName: fileName, data: tmpData };
+            //                     // console.debug(fileData);
+            //                     resolve(fileData);
+            //                 }
+            //                 else {
+            //                     reject(new Error(req))
+            //                 }
+            //             }
+            //         }
+            //         rawFile.send(null);
+            //     });
+
+            // };
+
+            var readTextFile = (file, fileDataKey) => $.ajax({
+                url: file,
+                dataType: "text",
+                async: true,
+                success: function (d) { console.debug(d); },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.error(jqXHR, textStatus, errorThrown);
+                },
+            });
+            let sampleData = readTextFile(samplePath, ['x', 'y']);
+            data = Promise.all([sampleData]).then(success => {
+                console.debug(success);
+
+            });
             function WD_Charts() {
                 console.debug(data);
                 // console.debug(xAxisName)
@@ -1007,8 +1081,8 @@ function locatingGame() {
 
                                     let html =
                                         `<text style="font-size:23px;">${sta}</text><br>
-                                        <text style='font-size:13px;white-space:nowrap;'>${dist} km / ${az}°</text><br>
-                                        <text style='font-size:25px;'> ${(isNaN(amp) ? 'no data' : amp)}</text>`;
+                                <text style='font-size:13px;white-space:nowrap;'>${dist} km / ${az}°</text><br>
+                                <text style='font-size:25px;'> ${(isNaN(amp) ? 'no data' : amp)}</text>`;
 
                                     return html;
                                 });
@@ -2090,547 +2164,626 @@ function locatingGame() {
                 chartContainerJQ.find('#chart' + i).append(WD_Charts(xAxisScale, xAxisName));
                 MenuEvents();
             };
-        };
-
-        var mapObj;
-        var stationDataArr, geoJSON;//==data
-
-        function initMap() {
-            //Append to the object constructor function so you can only make static calls
-            Object.merge2 = function (obj1, obj2) {
-                for (var attrname in obj2) {
-                    obj1[attrname] = obj2[attrname];
-                }
-                //Returning obj1 is optional and certainly up to your implementation
-                return obj1;
-            };
-
-
-            const esriMap = {
-                attr: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012',
-                url: "http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-            };
-            const esriObj = L.tileLayer(esriMap.url, {
-                maxZoom: 15,
-                attribution: esriMap.attr,
-            });
-
-            // control that shows state info on hover
-            const infoObj = Object.merge2(L.control(), {
-                onAdd: function (mapObj) {
-                    this._div = L.DomUtil.create('div', 'info');
-                    this._div.id = 'cityName';
-                    this.update();
-                    return this._div;
-                },
-                update: function (props) {
-                    this._div.innerHTML = (props ?
-                        '<b>' + props.name + '</b><br />'
-                        : 'Hover over a city or county');
-                }
-            });
-            mapObj = L.map('bigMap', {
-                center: [23.58, 120.58],
-                zoom: 8,
-                minZoom: 7,
-                maxZoom: 10,
-                maxBounds: [[25.100523, 116.257324], [22.024546, 125.793457]],
-                zoomControl: false,
-                attributionControl: false,
-            });
-
-            // console.debug(L.control['layers']());
-            esriObj.addTo(mapObj);
-            infoObj.addTo(mapObj);
-            async function addCounty() {
-
-                geoJSON = await $.ajax({
-                    url: "../data/json/twCounty.json",
-                    dataType: "json",
-                    async: true,
-                    // success: function (d) { console.debug(d); },
-                    error: function (jqXHR, textStatus, errorThrown) {
-                        console.error(jqXHR, textStatus, errorThrown);
-                    },
-                });
-                const countyObj = L.geoJSON(geoJSON, {
-                    fillColor: '#006000',
-                    weight: 1,
-                    opacity: 10,
-                    color: 'white',
-                    dashArray: '3',
-                    fillOpacity: 0.3,
-                    // onEachFeature: onEachFeature,
-                    pane: 'overlayPane',
-                })
-                countyObj.addTo(mapObj);
-
-                // console.debug(geoJSON);
-
-
-            };
-            async function addStation() {
-                stationDataArr = await $.ajax({
-                    url: "../src/php/getStation.php",
-                    data: { whereStr: 1 },
-                    method: 'POST',
-                    dataType: 'json',
-                    async: true,
-                    success: function (d) {
-                        console.debug(d);
-                    },
-                    error: function (jqXHR, textStatus, errorThrown) {
-                        console.error(jqXHR, textStatus, errorThrown);
-                    },
-                });
-
-                stationDataArr.forEach((d, i) => {
-
-                    d['gameData'] = { liberate: false };//==遊戲資料：liberate用來判斷是否已經贏過
-
-                    let marker = L.marker(d['coordinate'], {
-                        pane: 'markerPane',
-                        data: d,
-                        // bubblingMouseEvents: true,
-                    }).on('click', function (e) {
-                        // console.debug(d['liberate']);
-                        // if (d['liberate']) return;//==已經贏過,不能在玩一次
-                        gameStart('defend', marker);
-                    });
-
-                    let markerHint = "<b><font size='5'>" + d['station'] + "</font><br>";
-                    marker.bindTooltip(markerHint, {
-                        direction: 'top',
-                        // permanent: true,
-                        className: 'station-tooltip',
-                    });
-
-                    updateStation(marker);
-                    marker.addTo(mapObj);
-                });
-
-            }
-
-            addStation();
-            // addCounty();
-
-
-            mapObj.on('click', function (e) {
-                // console.debug('BBB');
-                // console.debug(this);
-                // L.popup()
-                //     .setLatLng(e.latlng)
-                //     .setContent("<b><font size='3'>" + String(e.latlng) + "</b></font>")
-                //     .openOn(mapObj);
-            });
 
         };
 
-        function updateStation(stationMarker, liberate = false, radius = 0) {
-
-            const IconClass = L.Icon.extend({
-                options: {
-                    tooltipAnchor: [0, -25],
-                    className: 'station-icon',
-                }
-            });
-            var foeIconUrl = '../data/assets/icon/foeIcon.png';
-            var playerIconUrl = '../data/assets/icon/playerIcon.png';
-            var circleAnime = (circleObj, originalRadius, duration = 500) => {
-                // console.debug(circleObj, originalRadius);
-                const delay = 10;
-                const animePart = 3;//3個步驟：變大>變小>原來大小
-                const eachPartStep = parseInt((duration / animePart) / delay);
-                const radiusChange = originalRadius / eachPartStep;
-
-                let radius = 0, step = 0;
-                let interval = setInterval(() => {
-
-                    let part = parseInt(step / eachPartStep);
-
-                    switch (part) {
-                        case 0:
-                            radius += radiusChange;
-                            break;
-                        case 1:
-                            radius -= (radiusChange * 0.5);
-                            break;
-                        case 2:
-                            radius += (radiusChange * 0.5);
-                            break;
-                        case 3://＝＝＝回復原來大小並停止
-                            radius = originalRadius;
-                            clearInterval(interval);
-                            break;
-                    }
-                    circleObj.setRadius(radius);
-                    step++;
-
-                }, delay);
-
-            };
-            var iconAnime = (marker, iconUrl, duration = 600) => {
-                const delay = 10;
-                const originalIconSize = 60;
-                const animePart = 2;//2個步驟：變大>原來大小
-                const eachPartStep = parseInt((duration / animePart) / delay);
-                const sizeChange = originalIconSize / eachPartStep * animePart;
-
-                let size = 0, step = 0;
-                let interval = setInterval(() => {
-
-                    let part = parseInt(step / eachPartStep);
-
-                    switch (part) {
-                        case 0:
-                            size += sizeChange;
-                            break;
-                        case 1:
-                            size -= (sizeChange * 0.5);
-                            break;
-                        case 2://＝＝＝回復原來大小並停止
-                            size = originalIconSize;
-                            clearInterval(interval);
-                            break;
-                    };
-
-                    marker.setIcon(new IconClass({
-                        iconUrl: iconUrl,
-                        iconSize: [size, size],
-                        iconAnchor: [size / 2, size / 2],
-                    }));
-                    step++;
-
-                }, delay);
-
-            };
-            // console.debug(stationMarker.options.data);
-
-            if (liberate) {
-                let data = stationMarker.options.data;
-                let circleObj = L.circle(data['coordinate'], {
-                    className: 'station-circle',
-                }).addTo(mapObj);
-
-                iconAnime(stationMarker, playerIconUrl);
-                circleAnime(circleObj, radius);
-            }
-            else
-                iconAnime(stationMarker, foeIconUrl);
-
-
-
-        };
-
-
-
-        //===when  map clicked 
-        async function gameStart(gameMode, stationMarker = null) {
-            // console.debug(gameMode, stationMarker);
+        function gameBehavior() {
             const gameOuterDiv = document.querySelector('#gameOuter');
             const gameDiv = gameOuterDiv.querySelector('#gameMain');
+            const gameUI = document.querySelector('#gameUI');
 
-            var gameDisplay = (display) => {
-                let value = display ? 'inline' : 'none';
-                gameOuterDiv.style.display = value;
-            };
+            var mapObj;
+            var stationDataArr, geoJSON;//===location data
+            var timeRemain, playerStats;//===game data
 
-
-            gameDisplay(true);
-
-            const gameBox = gameDiv.getBoundingClientRect();
+            function initMap() {
 
 
-            switch (gameMode) {
-                case 'defend':
+                const esriMap = {
+                    attr: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012',
+                    url: "http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+                };
+                const esriObj = L.tileLayer(esriMap.url, {
+                    maxZoom: 15,
+                    attribution: esriMap.attr,
+                });
 
-                    function defendGame(stationData, timeRemain = 5000, resolve) {
-                        // console.debug(station)
-                        const assetsDir = '../data/assets/';
-                        const width = gameBox.width, height = gameBox.height;
-                        // const center = [width];
-
-                        var player, stars, cursors;
-                        var playerStats = {
-                            movementSpeed: 500,
-                            jumpingPower: 400,
-                        };
-                        var platforms;
-                        var gameOver = false, gameResult = {},
-                            gameTimer = null, timerText = null;
-
-                        class DefendScene extends Phaser.Scene {
-                            constructor() {
-                                super({ key: 'defend' });
-                            }
-                            preload() {
-                                const gameObjDir = assetsDir + 'gameObj/';
-
-                                this.load.image('sky', gameObjDir + 'sky.png');
-                                this.load.image('ground', gameObjDir + 'platform.png');
-                                this.load.image('star', gameObjDir + 'star.png');
-                                this.load.image('bomb', gameObjDir + 'bomb.png');
-                                this.load.spritesheet('dude',
-                                    gameObjDir + 'dude.png',
-                                    { frameWidth: 32, frameHeight: 48 }
-                                );
-
-                            };
-                            create() {
-                                var initEnvironment = () => {
-                                    // console.debug(this)
-                                    let bgImg = this.add.image(width * 0.5, height * 0.5, 'sky');
-                                    bgImg.setScale(width / bgImg.width, height / bgImg.height);
-
-                                    platforms = this.physics.add.staticGroup();
-
-                                    platforms.create(width * 0.5, height * 0.95, 'ground').setScale(3).refreshBody();
-
-                                    // platforms.create(width * 0.5, 400, 'ground');
-                                    // platforms.create(50, 250, 'ground');
-                                    // platforms.create(750, 220, 'ground');
-                                };
-                                var initPlayer = () => {
-                                    player = this.physics.add.sprite(100, 450, 'dude');
-
-                                    // player.setBounce(0.2);
-                                    player.setCollideWorldBounds(true);
-                                    player.body.setGravityY(500);
-
-                                    this.anims.create({
-                                        key: 'left',
-                                        frames: this.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
-                                        frameRate: 10,
-                                        repeat: -1
-                                    });
-
-                                    this.anims.create({
-                                        key: 'turn',
-                                        frames: [{ key: 'dude', frame: 4 }],
-                                        frameRate: 20
-                                    });
-
-                                    this.anims.create({
-                                        key: 'right',
-                                        frames: this.anims.generateFrameNumbers('dude', { start: 5, end: 8 }),
-                                        frameRate: 10,
-                                        repeat: -1
-                                    });
-                                };
-                                var initStars = () => {
-                                    stars = this.physics.add.group({
-                                        key: 'star',
-                                        repeat: 0,
-                                        setXY: { x: width * 0.9, y: 0, stepX: 70 }
-                                    });
-
-                                    stars.children.iterate(function (child) {
-                                        //  Give each star a slightly different bounce
-                                        child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.5));
-                                    });
-
-                                    // console.debug(stars);
-                                };
-                                var initTimer = () => {
-                                    timerText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#000' });
-                                };
-                                var initPauseMenu = () => {
-
-                                    // Create a label to use as a button
-                                    let pause_label = this.add.text(width - 100, 20, 'Pause', { font: '24px Arial', fill: '#fff' });
-
-                                    // let pauseMenu = new UIScene('pauseMenu');
-                                    pause_label.setInteractive()
-                                        .on('pointerdown', (pointer) => {
-                                            // =When the paus button is pressed, we pause the game
-                                            this.scene.pause();
-                                            //==create pause menu
-                                            this.scene.add(null, new UIScene('pauseMenu'), true);
-                                            // console.debug(this.scene.manager);
-
-                                        });
-
-                                };
-
-                                initEnvironment();
-                                initPlayer();
-                                initStars();
-                                initTimer();
-                                initPauseMenu();
-
-                                var collectStar = (player, star) => {
-                                    star.disableBody(true, true);
-
-                                    //==勝利,清除計時
-                                    gameOver = true;
-                                    gameTimer.remove();
-                                    gameResult.liberate = true;
-                                };
-                                //collider
-                                this.physics.add.collider(player, platforms);
-                                this.physics.add.collider(stars, platforms);
-                                this.physics.add.overlap(player, stars, collectStar, null, this);
-
-
-                                // cursors = this.input.keyboard.createCursorKeys();
-                                cursors = this.input.keyboard.addKeys('w,s,a,d');
-
-                                //==計時,時間到則失敗
-                                gameTimer = this.time.delayedCall(timeRemain, () => {
-                                    gameOver = true;
-                                    gameResult.liberate = false;
-                                }, [], this);
-                            };
-                            update() {
-
-                                var updatePlayer = () => {
-                                    let speed = playerStats.movementSpeed;
-                                    let jump = playerStats.jumpingPower;
-
-                                    if (cursors.a.isDown) {
-                                        player.setVelocityX(-speed);
-
-                                        player.anims.play('left', true);
-                                    }
-                                    else if (cursors.d.isDown) {
-                                        player.setVelocityX(speed);
-
-                                        player.anims.play('right', true);
-                                    }
-                                    else {
-                                        player.setVelocityX(0);
-
-                                        player.anims.play('turn');
-                                    }
-
-                                    if (cursors.w.isDown && player.body.touching.down) {
-                                        player.setVelocityY(-jump);
-                                    }
-                                };
-                                var updateTimer = () => {
-                                    let text = 'TimeLeft : ' +
-                                        ((timeRemain - gameTimer.getElapsed()) / 1000).toFixed(2) + ' s';
-                                    timerText.setText(text);
-                                };
-                                updatePlayer();
-                                updateTimer();
-                                // console.debug(gameTimer.getOverallProgress());
-
-
-                                if (gameOver) {
-                                    game.destroy(true, false);
-                                    // gameDisplay(false);
-                                    resolve(gameResult);
-                                }
-                            };
-
-                        };
-                        class UIScene extends Phaser.Scene {
-
-                            constructor(key) {
-                                super({ key: key });
-                                // console.debug(this);
-                            }
-
-                            preload() {
-                                const uiDir = assetsDir + 'ui/';
-                                this.load.image('menuButton', uiDir + 'menuButton.png');
-                            };
-                            create() {
-                                // =Then add the menu
-                                let buttons = ['resume', 'a', 'b'];
-                                buttons.forEach((button, i) => {
-                                    let x = width * 0.5;
-                                    let y = height / (buttons.length + 1) * (i + 1);
-                                    let menuButton = this.add.image(x, y, 'menuButton');
-                                    let buttonText = this.add.text(x, y, button,
-                                        {
-                                            font: '50px Arial',
-                                            fill: '#fff',
-                                            align: 'center',
-                                            boundsAlignH: 'middle',
-                                            boundsAlignV: 'middle',
-                                        });
-                                    menuButton
-                                        .setScale(width / 4 / menuButton.width)
-                                        .setInteractive()
-                                        .on('pointerdown', (pointer) => {
-                                            this.scene.resume('defend');
-                                            this.scene.remove();
-                                            // console.debug(this);
-                                        });
-
-                                });
-
-                                //= And a label to illustrate which menu item was chosen. (This is not necessary)
-                                // let choiseLabel = this.add.text(width / 2, height - 150, 'Click outside menu to continue', { font: '30px Arial', fill: '#fff' });
-
-                            };
-
-                        };
-
-
-
-
-
-                        const config = {
-                            parent: 'gameMain',
-                            type: Phaser.AUTO,
-                            width: width,
-                            height: height,
-                            physics: {
-                                default: 'arcade',
-                                arcade: {
-                                    gravity: { y: 300 },
-                                    debug: false
-                                }
-                            },
-                            scene: [DefendScene],
-                        };
-                        const game = new Phaser.Game(config);
+                // control that shows state info on hover
+                const infoObj = Object.merge2(L.control(), {
+                    onAdd: function (mapObj) {
+                        this._div = L.DomUtil.create('div', 'info');
+                        this._div.id = 'cityName';
+                        this.update();
+                        return this._div;
+                    },
+                    update: function (props) {
+                        this._div.innerHTML = (props ?
+                            '<b>' + props.name + '</b><br />'
+                            : 'Hover over a city or county');
                     }
+                });
+                mapObj = L.map('bigMap', {
+                    center: [23.58, 120.58],
+                    zoom: 8,
+                    minZoom: 7,
+                    maxZoom: 10,
+                    maxBounds: [[25.100523, 116.257324], [22.024546, 125.793457]],
+                    zoomControl: false,
+                    attributionControl: false,
+                });
 
+                // console.debug(L.control['layers']());
+                esriObj.addTo(mapObj);
+                infoObj.addTo(mapObj);
+                async function addCounty() {
 
-
-                    let gameResult = await new Promise((resolve, reject) => {
-                        defendGame(null, 500000, resolve);
+                    geoJSON = await $.ajax({
+                        url: "../data/json/twCounty.json",
+                        dataType: "json",
+                        async: true,
+                        // success: function (d) { console.debug(d); },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            console.error(jqXHR, textStatus, errorThrown);
+                        },
                     });
-                    gameDisplay(false);
-                    console.debug(gameResult);
+                    const countyObj = L.geoJSON(geoJSON, {
+                        fillColor: '#006000',
+                        weight: 1,
+                        opacity: 10,
+                        color: 'white',
+                        dashArray: '3',
+                        fillOpacity: 0.3,
+                        // onEachFeature: onEachFeature,
+                        pane: 'overlayPane',
+                    })
+                    countyObj.addTo(mapObj);
 
-                    // let gameResult = false;
-                    if (gameResult.liberate) {
-                        const stationData = stationMarker.options.data;
-                        console.debug(stationData);
-                        stationData.gameData.liberate = true;
-                        radius = (stationDataArr.indexOf(stationData) + 1) * 30000;
-                        updateStation(stationMarker, true, radius);
+                    // console.debug(geoJSON);
+
+
+                };
+                async function addStation() {
+                    stationDataArr = await $.ajax({
+                        url: "../src/php/getStation.php",
+                        data: { whereStr: 1 },
+                        method: 'POST',
+                        dataType: 'json',
+                        async: true,
+                        success: function (d) {
+                            // console.debug(d);
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            console.error(jqXHR, textStatus, errorThrown);
+                        },
+                    });
+
+                    stationDataArr.forEach((d, i) => {
+
+                        d['gameData'] = { liberate: false };//==遊戲資料：liberate用來判斷是否已經贏過
+
+                        //===station icon
+                        let marker = L.marker(d['coordinate'], {
+                            pane: 'markerPane',
+                            data: d,
+                            // bubblingMouseEvents: true,
+                        }).on('click', function (e) {
+                            // console.debug(d['liberate']);
+                            // if (d['liberate']) return;//==已經贏過,不能在玩一次
+                            gameStart('defend', marker);
+                        });
+
+                        let markerHint = "<b><font size='5'>" + d['station'] + "</font><br>";
+                        marker.bindTooltip(markerHint, {
+                            direction: 'top',
+                            // permanent: true,
+                            className: 'station-tooltip',
+                        });
+
+                        updateStation(marker, { icon: 'foe' });
+
+                        //===station circle
+                        let circle = L.circle(d['coordinate'], {
+                            className: 'station-circle',
+                        });
+
+                        d['circleObj'] = circle;
+
+                        // console.debug(d);
+                        marker.addTo(mapObj);
+                        circle.addTo(mapObj);
+                    });
+
+                };
+                async function addUI() {
+
+                    updateGameState({ timeRemain: 500000 }, 800);
+
+                }
+                addStation();
+                // addCounty();
+                addUI();
+
+                mapObj.on('click', function (e) {
+                    // console.debug('BBB');
+                    // console.debug(this);
+                    // L.popup()
+                    //     .setLatLng(e.latlng)
+                    //     .setContent("<b><font size='3'>" + String(e.latlng) + "</b></font>")
+                    //     .openOn(mapObj);
+                });
+
+            };
+
+            function updateStation(stationMarker, updateObj = {}) {
+
+                const IconClass = L.Icon.extend({
+                    options: {
+                        tooltipAnchor: [0, -25],
+                        className: 'station-icon',
                     }
-                    else {
-                        updateStation(stationMarker);
-                    }
+                });
+                const foeIconUrl = '../data/assets/icon/foeIcon.png';
+                const playerIconUrl = '../data/assets/icon/playerIcon.png';
+                var circleAnime = (circleObj, originalRadius, duration = 500) => {
+                    // console.debug(circleObj, originalRadius);
+                    const delay = 10;
+                    const animePart = 3;//3個步驟：變大>變小>原來大小
+                    const eachPartStep = parseInt((duration / animePart) / delay);
+                    const radiusChange = originalRadius / eachPartStep;
 
+                    let radius = 0, step = 0;
+                    let interval = setInterval(() => {
 
+                        let part = parseInt(step / eachPartStep);
 
-                    break;
-                case 'dig':
+                        switch (part) {
+                            case 0:
+                                radius += radiusChange;
+                                break;
+                            case 1:
+                                radius -= (radiusChange * 0.5);
+                                break;
+                            case 2:
+                                radius += (radiusChange * 0.5);
+                                break;
+                            case 3://＝＝＝回復原來大小並停止
+                                radius = originalRadius;
+                                clearInterval(interval);
+                                break;
+                        }
+                        circleObj.setRadius(radius);
+                        step++;
 
-                    break;
+                    }, delay);
+
+                };
+                var iconAnime = (marker, iconUrl, duration = 600) => {
+                    const delay = 10;
+                    const originalIconSize = 60;
+                    const animePart = 2;//2個步驟：變大>原來大小
+                    const eachPartStep = parseInt((duration / animePart) / delay);
+                    const sizeChange = originalIconSize / eachPartStep * animePart;
+
+                    let size = 0, step = 0;
+                    let interval = setInterval(() => {
+
+                        let part = parseInt(step / eachPartStep);
+
+                        switch (part) {
+                            case 0:
+                                size += sizeChange;
+                                break;
+                            case 1:
+                                size -= (sizeChange * 0.5);
+                                break;
+                            case 2://＝＝＝回復原來大小並停止
+                                size = originalIconSize;
+                                clearInterval(interval);
+                                break;
+                        };
+
+                        marker.setIcon(new IconClass({
+                            iconUrl: iconUrl,
+                            iconSize: [size, size],
+                            iconAnchor: [size / 2, size / 2],
+                        }));
+                        step++;
+
+                    }, delay);
+
+                };
+
+                liberate = false, radius = 0
+
+                if (stationMarker) {
+                    if (updateObj.icon) {
+                        let icon;
+                        switch (updateObj.icon) {
+                            case 'foe':
+                                icon = foeIconUrl;
+                                break;
+                            case 'player':
+                                icon = playerIconUrl;
+                                break;
+                        };
+                        iconAnime(stationMarker, icon);
+
+                    };
+                    if (!isNaN(updateObj.circleRadius)) {
+                        let data = stationMarker.options.data;
+                        let circleObj = data.circleObj;
+                        circleAnime(circleObj, updateObj.circleRadius);
+                    };
+
+                };
+
+            };
+            function updateGameState(gameResult, duration = 600) {
+                timeRemain = gameResult.timeRemain;
+                const timer = gameUI.querySelector('.timer');
+
+                const start = parseInt(timer.innerHTML),
+                    end = parseInt(timeRemain);
+                const increase = start > end ? false : true;
+
+                var timerAnime = (increase) => {
+                    const delay = 10;
+                    const sign = increase ? 1 : -1;
+                    const step = sign * Math.abs(start - end) / (duration / delay);
+
+                    // console.debug(step);
+
+                    var now = start;
+                    let interval = setInterval(() => {
+                        if ((now - end) * sign > 0) {
+                            now = end;
+                            clearInterval(interval);
+                        }
+                        timer.innerHTML = parseInt(now);
+                        now += step;
+                    }, delay);
+
+                };
+                timerAnime(increase);
             };
 
 
+            //===when  map clicked 
+            async function gameStart(gameMode, stationMarker = null) {
+                // console.debug(gameMode, stationMarker);
 
 
+                var gameDisplay = (display) => {
+                    let value = display ? 'inline' : 'none';
+                    gameOuterDiv.style.display = value;
+                };
+
+
+                gameDisplay(true);
+
+                const gameBox = gameDiv.getBoundingClientRect();
+                const stationData = stationMarker ? stationMarker.options.data : { gameData: {} };
+
+                let gameResult;
+                switch (gameMode) {
+                    case 'defend':
+
+                        function defendGame(stationData, timeRemain, resolve) {
+                            const data = stationData.gameData;
+                            console.debug();
+                            const assetsDir = '../data/assets/';
+                            const width = gameBox.width, height = gameBox.height;
+                            // const center = [width];
+
+                            var player, enemy, cursors;
+                            var playerStats = {
+                                movementSpeed: 500,
+                                jumpingPower: 400,
+                            };
+                            var platforms;
+                            var gameTimer = null, timeVal, timerText = null;
+                            var gameOver = false,
+                                gameResult = null;
+
+
+                            class DefendScene extends Phaser.Scene {
+                                constructor() {
+                                    super({ key: 'defend' });
+                                }
+                                preload() {
+                                    const gameObjDir = assetsDir + 'gameObj/';
+
+                                    this.load.image('sky', gameObjDir + 'sky.png');
+                                    this.load.image('ground', gameObjDir + 'platform.png');
+                                    this.load.image('star', gameObjDir + 'star.png');
+                                    this.load.image('bomb', gameObjDir + 'bomb.png');
+                                    this.load.spritesheet('dude',
+                                        gameObjDir + 'dude.png',
+                                        { frameWidth: 32, frameHeight: 48 }
+                                    );
+
+                                };
+                                create() {
+                                    var initEnvironment = () => {
+                                        // console.debug(this)
+                                        let bgImg = this.add.image(width * 0.5, height * 0.5, 'sky');
+                                        bgImg.setScale(width / bgImg.width, height / bgImg.height);
+
+                                        platforms = this.physics.add.staticGroup();
+
+                                        platforms.create(width * 0.5, height * 0.95, 'ground').setScale(3).refreshBody();
+
+                                        // platforms.create(width * 0.5, 400, 'ground');
+                                        // platforms.create(50, 250, 'ground');
+                                        // platforms.create(750, 220, 'ground');
+                                    };
+                                    var initPlayer = () => {
+                                        player = this.physics.add.sprite(100, 450, 'dude');
+
+                                        // player.setBounce(0.2);
+                                        player.setCollideWorldBounds(true);
+                                        player.body.setGravityY(500);
+
+                                        this.anims.create({
+                                            key: 'left',
+                                            frames: this.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
+                                            frameRate: 10,
+                                            repeat: -1
+                                        });
+
+                                        this.anims.create({
+                                            key: 'turn',
+                                            frames: [{ key: 'dude', frame: 4 }],
+                                            frameRate: 20
+                                        });
+
+                                        this.anims.create({
+                                            key: 'right',
+                                            frames: this.anims.generateFrameNumbers('dude', { start: 5, end: 8 }),
+                                            frameRate: 10,
+                                            repeat: -1
+                                        });
+
+                                        this.physics.add.collider(player, platforms);
+                                        // cursors = this.input.keyboard.createCursorKeys();
+                                        cursors = this.input.keyboard.addKeys('w,s,a,d');
+                                    };
+                                    var initEnemy = () => {
+                                        if (data.liberate) return;
+                                        var collectStar = (player, star) => {
+                                            star.disableBody(true, true);
+                                            enemy = null;
+                                            //==勝利,清除計時
+                                            gameOver = true;
+
+                                        };
+
+                                        enemy = this.physics.add.group({
+                                            key: 'star',
+                                            repeat: 0,
+                                            setXY: { x: width * 0.9, y: 0, stepX: 70 }
+                                        });
+
+                                        enemy.children.iterate(function (child) {
+                                            //  Give each star a slightly different bounce
+                                            child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.5));
+                                        });
+
+                                        // console.debug(stars.children.entries[0].active);
+                                        this.physics.add.collider(enemy, platforms);
+                                        this.physics.add.overlap(player, enemy, collectStar, null, this);
+                                    };
+                                    var initTimer = () => {
+                                        timerText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#000' });
+                                        //==計時,時間到進入結算
+                                        gameTimer = this.time.delayedCall(timeRemain, () => gameOver = true, [], this);
+                                    };
+                                    var initPauseMenu = () => {
+
+                                        // Create a label to use as a button
+                                        let pause_label = this.add.text(width - 100, 20, 'Pause', { font: '24px Arial', fill: '#fff' });
+
+                                        // let pauseMenu = new UIScene('pauseMenu');
+                                        pause_label.setInteractive()
+                                            .on('pointerdown', (pointer) => {
+                                                // =When the paus button is pressed, we pause the game
+                                                this.scene.pause();
+                                                gameTimer.paused = true;
+                                                //==create pause menu
+                                                this.scene.add(null, new UIScene('pauseMenu'), true);
+                                                // console.debug(this.scene.manager);
+
+                                            });
+
+                                    };
+
+                                    initEnvironment();
+                                    initPlayer();
+                                    initEnemy();
+                                    initTimer();
+                                    initPauseMenu();
+                                };
+                                update() {
+
+                                    var updatePlayer = () => {
+                                        let speed = playerStats.movementSpeed;
+                                        let jump = playerStats.jumpingPower;
+
+                                        if (cursors.a.isDown) {
+                                            player.setVelocityX(-speed);
+
+                                            player.anims.play('left', true);
+                                        }
+                                        else if (cursors.d.isDown) {
+                                            player.setVelocityX(speed);
+
+                                            player.anims.play('right', true);
+                                        }
+                                        else {
+                                            player.setVelocityX(0);
+
+                                            player.anims.play('turn');
+                                        }
+
+                                        if (cursors.w.isDown && player.body.touching.down) {
+                                            player.setVelocityY(-jump);
+                                        }
+                                    };
+                                    var updateTimer = () => {
+                                        // let text = 'TimeLeft : ' +
+                                        //     ((timeRemain - gameTimer.getElapsed()) / 1000).toFixed(2) + ' s';
+                                        timeVal = parseInt(timeRemain - gameTimer.getElapsed());
+                                        let text = 'TimeLeft : ' + timeVal + ' ms';
+                                        timerText.setText(text);
+                                    };
+                                    updatePlayer();
+                                    updateTimer();
+                                    // console.debug(gameTimer.getOverallProgress());
+
+
+                                    if (gameOver) {
+                                        //===time remove
+                                        gameTimer.remove();
+                                        game.destroy(true, false);
+
+                                        //===get gameResult                                 
+                                        gameResult = {
+                                            liberate: !enemy ? true : false,
+                                            timeRemain: timeVal,
+                                        };
+
+
+
+                                        resolve(gameResult);
+                                    }
+                                };
+
+                            };
+                            class UIScene extends Phaser.Scene {
+
+                                constructor(key) {
+                                    super({ key: key });
+                                    // console.debug(this);
+                                }
+
+                                preload() {
+                                    const uiDir = assetsDir + 'ui/';
+                                    this.load.image('menuButton', uiDir + 'menuButton.png');
+                                };
+                                create() {
+                                    // =Then add the menu
+                                    const buttons = ['resume', 'tutorial', 'exit'];
+                                    const menuMargin = height / 4;
+                                    const buttonGap = 110;
+                                    buttons.forEach((button, i) => {
+                                        let x = width * 0.5;
+                                        // let y = height  / (buttons.length + 1) * (i + 1) ;
+                                        let y = menuMargin + buttonGap * i;
+                                        let menuButton = this.add.image(x, y, 'menuButton');
+                                        let buttonText = this.add.text(x, y, button, { font: '40px Arial', fill: '#fff' }).setOrigin(0.5, 0.6);
+                                        menuButton
+                                            .setScale(width / 4 / menuButton.width)
+                                            .setInteractive()
+                                            .on('pointerdown', (pointer) => {
+                                                switch (button) {
+
+                                                    case 'resume':
+                                                        this.scene.resume('defend');
+                                                        this.scene.remove();
+                                                        gameTimer.paused = false;
+                                                        break;
+
+                                                    case 'tutorial':
+
+                                                        break;
+                                                    case 'exit':
+                                                        gameOver = true;
+                                                        this.scene.resume('defend');
+                                                        this.scene.remove();
+                                                        break;
+                                                }
+                                            });
+
+                                    });
+
+                                    //= And a label to illustrate which menu item was chosen. (This is not necessary)
+                                    // let choiseLabel = this.add.text(width / 2, height - 150, 'Click outside menu to continue', { font: '30px Arial', fill: '#fff' });
+
+                                };
+
+                            };
+
+
+
+
+
+                            const config = {
+                                parent: 'gameMain',
+                                type: Phaser.AUTO,
+                                width: width,
+                                height: height,
+                                physics: {
+                                    default: 'arcade',
+                                    arcade: {
+                                        gravity: { y: 300 },
+                                        debug: false
+                                    }
+                                },
+                                scene: [DefendScene],
+                            };
+                            const game = new Phaser.Game(config);
+                        };
+
+
+
+                        gameResult = await new Promise((resolve, reject) => {
+                            defendGame(stationData, timeRemain, resolve);
+                        });
+                        gameDisplay(false);
+                        console.debug(gameResult);
+
+
+                        //===update icon
+                        if (gameResult.liberate && !stationData.gameData.liberate)
+                            updateStation(stationMarker, { icon: 'player' });
+                        else if (!gameResult.liberate)
+                            updateStation(stationMarker, { icon: 'foe' });
+
+                        //===update circle
+                        if (true) {
+                            let radius = (Math.floor(Math.random() * 3) + 1) * 30000;
+                            updateStation(stationMarker, { circleRadius: radius });
+                        }
+
+
+
+                        break;
+                    case 'dig':
+
+                        break;
+                };
+
+
+                //===set new game data
+                Object.merge2(stationData.gameData, {
+                    liberate: gameResult.liberate,
+                });
+                //=update GameState
+                updateGameState(gameResult, 1000);
+            };
+
+            initMap();
+            gameStart('defend');
         };
-
-
         //===init once
 
         if (!(chartContainerJQ.find('#form-game').length >= 1)) {
             initForm();
         };
-        initMap();
-        gameStart('defend');
+        gameBehavior();
+        getWavePng();
     };
+
+
     return game;
 };

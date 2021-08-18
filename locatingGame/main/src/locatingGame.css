@@ -5,11 +5,19 @@ a {
 }
 
 
-/* #chartMain {
-    position: relative;
+#gameUI {
+    position: absolute;
+    top: 10px;
+    /* left: 0; */
+    z-index: 1000;
+    background: rgb(255, 255, 255);
+    border-style: double;
+    border-width: 10px;
+    border-radius: 5px;
+    padding: 10px 10px;
 }
 
-*/
+
 #loading {
     --loading-width: 150px;
     --loading-height: 60px;

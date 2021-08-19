@@ -1475,8 +1475,6 @@ function waveXdist() {
                 };
                 render();
                 loadingEffect('hide');
-
-                return render;
             };
 
             let hideLoading_flag = true;

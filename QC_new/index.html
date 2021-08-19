@@ -259,8 +259,8 @@
     $('#location').val('10');
     // $('#location').trigger('change');
     // $('#channel').val('EHENZ');
-    $('#sttime').val('2020-10-01');
-    $('#edtime').val('2020-10-17');
+    // $('#sttime').val('2020-10-01');
+    // $('#edtime').val('2020-10-17');
     $('#chartsScale').val('logrithmicScale');
     // $("#overlay").prop("checked", true);
     $(document).ready(function () {
@@ -274,7 +274,7 @@
 
         function checkTimeRange(date) {
             var inputDate = new Date(date);
-            var minDate = new Date("2018-1-1");
+            var minDate = new Date("2012-1-1");
             var maxDate = new Date(getQCUpdatedDate());
 
             // console.log(maxDate);
@@ -334,12 +334,12 @@
         },
         messages: {
             sttime: {
-                timeRange: '可查詢範圍： 2018-1-1 ~ ' + getQCUpdatedDate(),
+                timeRange: '可查詢範圍： 2012-1-1 ~ ' + getQCUpdatedDate(),
                 validDate: '日期格式錯誤',
                 required: '必填',
             },
             edtime: {
-                timeRange: '可查詢範圍： 2018-1-1 ~ ' + getQCUpdatedDate(),
+                timeRange: '可查詢範圍：2012-1-1 ~ ' + getQCUpdatedDate(),
                 validDate: '日期格式錯誤',
                 required: '必填',
                 compareDate: "结束日期必須大於等於開始日期",
@@ -465,7 +465,9 @@
     }
 
 
+    var chart = QCchart().selector('.container');
     function sendRequest() {
+
         // var url = "./php/sendRespDownload.php";
         var sendData = {
             'network': $('#network').val(),
@@ -478,7 +480,8 @@
             // 'scale': $('#chartsScale').val(),
         };
         console.log(sendData);
-
+        var title = sendData['network'] + "." + sendData['station'] + "." + sendData['location'];
+        chart.title(title);//===開始讀取框,不然拼路徑才轉會有間隔
 
         var path = './Data/RMS';
         var paths = [];
@@ -531,7 +534,7 @@
                     var dayStr = j.toString();
                     if (dayStr.length <= 3)
                         dayStr = paddingLeft(dayStr, 3);
-                    paths.push(path + "/" + (stYear + i) + "/" + (stYear + i) + "." + dayStr + "/" + sendData['station'] + ".TW." + sendData['location'] + ".???." + (stYear + i) + "." + dayStr + ".json");
+                    paths.push(path + "/" + (stYear + i) + "/" + (stYear + i) + "." + dayStr + "/" + sendData['station'] + ".TW." + sendData['location'] + ".???." + (stYear + i) + "." + dayStr + ".rms");
                 }
             }
         }
@@ -542,7 +545,7 @@
                 var dayStr = j.toString();
                 if (dayStr.length <= 3)
                     dayStr = paddingLeft(dayStr, 3);
-                paths.push(path + "/" + stYear + "/" + stYear + "." + dayStr + "/" + sendData['station'] + ".TW." + sendData['location'] + ".???." + stYear + "." + dayStr + ".json");
+                paths.push(path + "/" + stYear + "/" + stYear + "." + dayStr + "/" + sendData['station'] + ".TW." + sendData['location'] + ".???." + stYear + "." + dayStr + ".rms");
             }
         }
         // console.log('paths=');
@@ -553,17 +556,15 @@
         var channelArr = sendData['channel'].split(',').reverse();
 
 
+        // console.debug(paths, channelArr, title);
         //=========================================================================
         var dataObj = {
             pathArr: paths,
             channelArr: channelArr,
             // replaceSymbol: '???',
         }
-        var chart = QCchart()
-            .data(dataObj)
-            .title("TSMIP.A002.10")
-            .selector('.container');
 
+        chart.data(dataObj);
         chart();
         //=========================================================================
     }

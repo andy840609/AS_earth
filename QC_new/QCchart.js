@@ -1,76 +1,7 @@
 function QCchart() {
-
     var selector = 'body';
-    var data = [];
+    var data;
     var title = '';
-
-    function init() {
-        $(selector).append(`
-       <form id="form-chart">
-            <div class="form-group" id="chartsOptions">
-                <div class="row">
-                    <div class="form-group col-lg-3 col-md-3 col-sm-6">
-                        <label for="Metric" class="col-form-label" lang="Metric">Metric</label>
-                        <div class="form-group">
-                            <select class="form-control" id="metric" name="metric">
-                                <option value="rms">root-mean-square amplitudes</option>
-                                <option value="mean">mean amplitudes</option>
-                                <option value="max">max amplitudes</option>
-                                <option value="maxDemean">maxDemean amplitudes</option>
-                                <option value="min">min amplitudes</option>
-                                <option value="minDemean">minDemean amplitudes</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group col-lg-3 col-md-3 col-sm-6">
-                        <label for="chartsScale" class="col-form-label" lang="">chart option</label>
-                        <div class="form-group">
-                            <select id="chartsScale" class="form-control">
-                                <option value="linearScale">linear scale</option>
-                                <option value="logrithmicScale">logrithmic scale</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div
-                        class="form-group col-lg-3 col-md-3 col-sm-6 d-flex justify-content-end  align-items-start flex-column col-md-6">
-                        <div class="form-group">
-                            <input class="form-check-label" type="checkbox" id="overlay" name="overlay">
-                            <label class="form-check-label" for="overlay" data-lang="">
-                                overlay
-                            </label>
-                        </div>
-                    </div>
-                    <div id="tzDiv" class="form-group col-lg-3 col-md-3 col-sm-6" style="display: none;">
-                        <label for="tz" class="col-form-label" lang="">time zone</label>
-                        <div class="form-group">
-                            <select id="tz" class="form-control">
-                                <option value="UTC">UTC</option>
-                                <option value="local">local</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="form-group row" id="charts">
-
-            </div>
-            <div id="outerdiv"
-                style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:999;width:100%;height:100%;display:none;">
-                <div id="innerdiv" style="background-color: rgb(255, 255, 255);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
-                </div>
-            </div>
-        </form>
-            `);
-
-
-        $('#chartsScale').change(e => chart());
-        $('#metric').change(e => chart());
-        $('#overlay').change(e => chart());
-        $('#tz').change(e => chart());
-        //==========test=====
-
-        //===================
-    };
 
     chart.selector = (vaule) => {
         selector = vaule;
@@ -82,35 +13,26 @@ function QCchart() {
         let channelArr = obj.channelArr;
         let replaceSymbol = obj.replaceSymbol ? obj.replaceSymbol : '???';
 
-        data = [];
-        var getFileData = (path) => {
+
+        var getJsonData = (path) => {
             var data;
-            try {
-                $.ajax({
-                    url: path,
-                    dataType: "json",
-                    async: false,
-                    success: function (d) {
-                        data = d.data
-                    },
-                    error: function (jqXHR, textStatus, errorThrown) {
-                        // console.error(jqXHR, textStatus, errorThrown);
-
-                    },
-                });
-
-                // console.debug(data);
-            }
-            catch (error) {
-                // console.debug(error.status);
-                //-------------------404 NoData or 200 parsererror(SyntaxError: Unexpected end of JSON input)
-                if (error.status == 404 || error.status == 200) {
+            // try {
+            $.ajax({
+                url: path,
+                dataType: "json",
+                async: false,
+                success: function (d) {
+                    data = d.data
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    // console.error(jqXHR, textStatus, errorThrown);
+                    //-------------------404 NoData or 200 parsererror(SyntaxError: Unexpected end of JSON input)
                     var pathArr = path.split('/');
                     var dateStr = pathArr[pathArr.length - 2];
                     var year = dateStr.split('.')[0];
                     var solorDay = dateStr.split('.')[1];
 
-                    var ms = Date.UTC(year, 0, 1).getTime() + ((solorDay - 1) * 24 * 60 * 60 * 1000);
+                    var ms = new Date(Date.UTC(year, 0, 1)).getTime() + ((solorDay - 1) * 24 * 60 * 60 * 1000);
                     // var date = new Date(ms);
                     // console.debug(date);
                     //-----------------dayEnd=23:59:59
@@ -118,36 +40,226 @@ function QCchart() {
                     // var date = new Date(ms + dayEndInMs);
                     // console.debug(date);
                     data = [{ timestamp: new Date(ms).toISOString(), rms: undefined, mean: undefined }, { timestamp: new Date(ms + dayEndInMs).toISOString(), rms: undefined, mean: undefined }];
-                }
-            }
+
+                },
+            });
             return data;
         }
 
-        //將各分量每天的檔案資料合併
-        channelArr.forEach(channel => {
-            let eachChannelData = [];
+        //-----------------dayEnd=23:59:59
+        const dayEndInMs = 23 * 60 * 60 * 1000 + 59 * 60 * 1000 + 59 * 1000;
+        const fileDataKey = ["timestamp", "mean", "rms", "min", "max", "minDemean", "maxDemean"];
 
-            pathArr.forEach(path => {
-                let tmp = getFileData(path.replace(replaceSymbol, channel));
-                // console.debug(tmp);
-                tmp.forEach(d => {
-                    // console.debug(d);
-                    //==========ISO+Z for UTC Time
-                    var lastChar = d.timestamp.charAt(d.timestamp.length - 1);
-                    if (lastChar != 'Z')
-                        d.timestamp += 'Z';
-                    eachChannelData.push(d);
-                });
+
+
+        //========同步讀檔（慢）
+        // var getFileData = (path) => {
+        //     // console.debug(path);
+        //     var fileData = [];
+        //     var rawFile = new XMLHttpRequest();
+        //     rawFile.open("GET", path, false);
+        //     rawFile.onreadystatechange = function () {
+        //         if (rawFile.readyState === 4) {
+        //             if (rawFile.status === 200 || rawFile.status == 0) {
+        //                 var rows = rawFile.responseText.split("\n");
+        //                 // console.debug(rows);
+        //                 var referenceTime = 0;
+        //                 rows.forEach((row, i) => {
+        //                     // console.debug(i);
+        //                     if (row != '') {
+        //                         //===rms檔頭:參考時間、station、network、channel、location
+        //                         if (i == 0) {
+        //                             let col = row.trim().split('\",').map(c => c.replace('\"', ''));
+        //                             let dateArr = col[0].split(',');
+        //                             let year = dateArr[0];
+        //                             let solorDay = dateArr[1];
+        //                             let timeArr = dateArr[2].split(':');
+        //                             // console.debug(year, solorDay);
+        //                             let hour = timeArr[0];
+        //                             let minute = timeArr[1];
+        //                             let second = timeArr[2];
+        //                             // console.debug(hour, minute, second);
+        //                             referenceTime = new Date(Date.UTC(year, 0, 1, hour, minute, second)).getTime() + (solorDay - 1) * 24 * 60 * 60 * 1000;
+        //                         }
+        //                         else {
+        //                             let col = row.trim().split(",");
+        //                             // console.debug(col);
+        //                             let obj = {};
+        //                             col.forEach((c, index) => {
+        //                                 if (index == 0) {
+        //                                     let dateObj = new Date(referenceTime + c * 1000);//second to ms
+        //                                     // console.debug(dateObj);
+        //                                     obj[fileDataKey[index]] = dateObj.toISOString();
+        //                                 }
+        //                                 else
+        //                                     obj[fileDataKey[index]] = (isNaN(c) ? c : parseFloat(c))
+        //                             });
+        //                             fileData.push(obj);
+        //                         }
+        //                     }
+
+        //                 })
+        //             }
+        //             else//rawFile.status === 404 noData
+        //             {
+        //                 // console.debug(path)
+        //                 //-------------------404 NoData or 200 parsererror(SyntaxError: Unexpected end of JSON input)
+        //                 let pathArr = path.split('/');
+        //                 let dateStr = pathArr[pathArr.length - 2];
+        //                 let year = dateStr.split('.')[0];
+        //                 let solorDay = dateStr.split('.')[1];
+
+        //                 let ms = new Date(Date.UTC(year, 0, 1)).getTime() + ((solorDay - 1) * 24 * 60 * 60 * 1000);
+        //                 // var date = new Date(ms);
+        //                 // console.debug(date);
+
+        //                 // var date = new Date(ms + dayEndInMs);
+        //                 // console.debug(ms, ms + dayEndInMs);
+        //                 //-----------------start time and end time
+        //                 let dateTimeArr = [ms, ms + dayEndInMs];
+        //                 // data = [{ timestamp: new Date(ms).toISOString(), rms: undefined, mean: undefined }, { timestamp: new Date(ms + dayEndInMs).toISOString(), rms: undefined, mean: undefined }];
+
+        //                 dateTimeArr.forEach(date => {
+        //                     let obj = {};
+        //                     fileDataKey.forEach((key, index) => {
+        //                         obj[key] = (index == 0 ? new Date(date).toISOString() : undefined)
+        //                     })
+        //                     fileData.push(obj);
+        //                 });
+
+        //                 // console.debug(fileData);
+        //             }
+
+        //         }
+
+        //     }
+        //     rawFile.send(null);
+        //     return fileData;
+        // };
+        // // 將各分量每天的檔案資料合併
+        // data = channelArr.map(channel => {
+        //     let eachChannelData = [];
+
+        //     pathArr.forEach((path) => {
+        //         let tmp = getFileData(path.replace(replaceSymbol, channel));
+        //         // let tmp = getJsonData(path.replace(replaceSymbol, channel));
+        //         // console.debug(tmp);
+        //         tmp.forEach(d => eachChannelData.push(d));
+        //     });
+        //     // console.debug(eachChannelData);
+        //     return { channel: channel, data: eachChannelData };
+        // });
+        //========同步讀檔
+
+
+
+        //========異步讀檔
+        var getFileData = (path) => {
+            // console.debug(path);
+            var fileData = [];
+
+            return new Promise((resolve, reject) => {
+
+                var rawFile = new XMLHttpRequest();
+                rawFile.open("GET", path, true);
+                rawFile.onreadystatechange = function () {
+                    if (rawFile.readyState === 4) {
+                        if (rawFile.status === 200 || rawFile.status == 0) {
+                            var rows = rawFile.responseText.split("\n");
+                            // console.debug(rows);
+                            var referenceTime = 0;
+                            rows.forEach((row, i) => {
+                                // console.debug(i);
+                                if (row != '') {
+                                    //===rms檔頭:參考時間、station、network、channel、location
+                                    if (i == 0) {
+                                        let col = row.trim().split('\",').map(c => c.replace('\"', ''));
+                                        let dateArr = col[0].split(',');
+                                        let year = dateArr[0];
+                                        let solorDay = dateArr[1];
+                                        let timeArr = dateArr[2].split(':');
+                                        // console.debug(year, solorDay);
+                                        let hour = timeArr[0];
+                                        let minute = timeArr[1];
+                                        let second = timeArr[2];
+                                        // console.debug(hour, minute, second);
+                                        referenceTime = new Date(Date.UTC(year, 0, 1, hour, minute, second)).getTime() + (solorDay - 1) * 24 * 60 * 60 * 1000;
+                                    }
+                                    else {
+                                        let col = row.trim().split(",");
+                                        // console.debug(col);
+                                        let obj = {};
+                                        col.forEach((c, index) => {
+                                            if (index == 0) {
+                                                let dateObj = new Date(referenceTime + c * 1000);//second to ms
+                                                // console.debug(dateObj);
+                                                obj[fileDataKey[index]] = dateObj.toISOString();
+                                            }
+                                            else
+                                                obj[fileDataKey[index]] = (isNaN(c) ? c : parseFloat(c))
+                                        });
+                                        fileData.push(obj);
+                                    }
+                                }
+
+                            })
+                        }
+                        else//rawFile.status === 404 noData
+                        {
+                            // console.debug(path)
+                            //-------------------404 NoData or 200 parsererror(SyntaxError: Unexpected end of JSON input)
+                            let pathArr = path.split('/');
+                            let dateStr = pathArr[pathArr.length - 2];
+                            let year = dateStr.split('.')[0];
+                            let solorDay = dateStr.split('.')[1];
+
+                            let ms = new Date(Date.UTC(year, 0, 1)).getTime() + ((solorDay - 1) * 24 * 60 * 60 * 1000);
+                            // var date = new Date(ms);
+                            // console.debug(date);
+
+                            // var date = new Date(ms + dayEndInMs);
+                            // console.debug(ms, ms + dayEndInMs);
+                            //-----------------start time and end time
+                            let dateTimeArr = [ms, ms + dayEndInMs];
+                            // data = [{ timestamp: new Date(ms).toISOString(), rms: undefined, mean: undefined }, { timestamp: new Date(ms + dayEndInMs).toISOString(), rms: undefined, mean: undefined }];
+
+                            dateTimeArr.forEach(date => {
+                                let obj = {};
+                                fileDataKey.forEach((key, index) => {
+                                    obj[key] = (index == 0 ? new Date(date).toISOString() : undefined)
+                                })
+                                fileData.push(obj);
+                            });
+
+                            // console.debug(fileData);
+                        }
+
+                    }
+                    resolve(fileData);
+                }
+                rawFile.send(null);
+
+
             });
-            // console.debug(eachChannelData);
-            data.push({ channel: channel, data: eachChannelData });
-        })
 
-        console.log(data);
+
+        };
+
+        data = Promise.all(
+            channelArr.map(async (channel) => {
+                let eachChannelData =
+                    Promise.all(
+                        pathArr.map(path => getFileData(path.replace(replaceSymbol, channel)))
+                    ).then(success => [].concat(...success));
+                // console.debug(eachChannelData);
+                return { channel: channel, data: await eachChannelData };
+            })
+        );
         return chart;
     }
 
     chart.title = (vaule) => {
+        loadingEffect('show');
         title = vaule;
         return chart;
     }
@@ -240,26 +352,40 @@ function QCchart() {
 
         }
 
+        function getMargin(xAxisDomain = null, yAxisDomain = null) {
+            // console.debug(xAxisDomain, yAxisDomain);
+            var top = 40, right = 30, bottom = 30, left = 45;
+            if (yAxisDomain) {
+                let yAxisMaxTick = parseInt(Math.max(...yAxisDomain.map(domain => Math.abs(domain))));
+                let tickLength = yAxisMaxTick.toString().length;
+                // console.debug(tickLength);
+                left = tickLength >= 7 ? 60 : tickLength >= 5 ? 50 : 45;
+            }
+            return { top: top, right: right, bottom: bottom, left: left };
+        }
 
         function lineChart(index, title, chartData, metric, scale) {
 
-            var ChartDatas = [];
-            ChartDatas = getEachChannelData(chartData, metric, scale);
+            // var ChartDatas = [];
+            var ChartDatas = getEachChannelData(chartData, metric, scale);
 
-            var height = 500;
-            var width = 500;
-            var margin = ({ top: 20, right: 30, bottom: 30, left: 45 });
+            const height = 500;
+            const width = 500;
+            const xAxisDomain = d3.extent(ChartDatas, d => d.date);
+            const yAxisDomain = d3.extent(ChartDatas, d => d.value);
+            const margin = getMargin(xAxisDomain, yAxisDomain);
+
             var x = d3.scaleUtc()
-                .domain(d3.extent(ChartDatas, d => d.date))
+                .domain(xAxisDomain)
                 .range([margin.left, width - margin.right]);
-            if (metric == 'rms')
-                var y = d3.scaleLinear()
-                    .domain([0, d3.max(ChartDatas, d => d.value)]).nice()
-                    .range([height - margin.bottom, margin.top]);
-            else
-                var y = d3.scaleLinear()
-                    .domain(d3.extent(ChartDatas, d => d.value)).nice()
-                    .range([height - margin.bottom, margin.top]);
+            // if (metric == 'rms')
+            //     var y = d3.scaleLinear()
+            //         .domain([0, d3.max(ChartDatas, d => d.value)]).nice()
+            //         .range([height - margin.bottom, margin.top]);
+            // else
+            var y = d3.scaleLinear()
+                .domain(yAxisDomain).nice()
+                .range([height - margin.bottom, margin.top]);
 
 
 
@@ -491,57 +617,32 @@ function QCchart() {
                 multiChartData.push({ channel: Datas.channel, data: tmpDatas });
             })
 
-            // multiChartData[0].data[0].signed = 0;
-            // multiChartData[0].data[0].value = -3.7320663070467677;
-            // console.debug(multiChartData);
-            // console.debug(Math.log10(1.9));
-            var margin = ({ top: 20, right: 30, bottom: 30, left: 45 })
-            var height = 350
-            var width = 1000;
+            const height = 350
+            const width = 1000;
 
-            // console.debug(timseZone);
+            const xAxisDomain = d3.extent([].concat(...multiChartData.map(Data => d3.extent(Data.data, d => d.date))));
+            const yAxisDomain = d3.extent([].concat(...multiChartData.map(Data => d3.extent(Data.data, d => d.value))));
+            const margin = getMargin(xAxisDomain, yAxisDomain);
 
-            if (timseZone == 'UTC')
-                var x = d3.scaleUtc()
-                    // .domain(d3.extent(multiChartData[0].data, d => d.date))
-                    .domain(
-                        [
-                            d3.min(multiChartData, Data => d3.min(Data.data, d => d.date)),
-                            d3.max(multiChartData, Data => d3.max(Data.data, d => d.date))
-                        ]
-                    )
-                    .range([margin.left, width - margin.right]);
-            else
-                var x = d3.scaleTime()
-                    // .domain(d3.extent(multiChartData[0].data, d => d.date))
-                    .domain(
-                        [
-                            d3.min(multiChartData, Data => d3.min(Data.data, d => d.date)),
-                            d3.max(multiChartData, Data => d3.max(Data.data, d => d.date))
-                        ]
-                    )
-                    .range([margin.left, width - margin.right]);
+            // const xMethod = { UTC: "scaleUtc", local: "scaleTime" }[timseZone];
+            var x = d3[{ UTC: "scaleUtc", local: "scaleTime" }[timseZone]]()
+                .domain(xAxisDomain)
+                .range([margin.left, width - margin.right]);
 
             // console.debug(x.domain());
-            // console.debug(!1 * 1);
 
-
-            if (metric == 'rms')
-                var y = d3.scaleLinear()
-                    .domain([0, d3.max(multiChartData, Data => d3.max(Data.data, d => d.value))]).nice()
-                    .range([height - margin.bottom, margin.top]);
-            else
-                var y = d3.scaleLinear()
-                    .domain(
-                        [
-                            d3.min(multiChartData, Data => d3.min(Data.data, d => d.value)),
-                            d3.max(multiChartData, Data => d3.max(Data.data, d => d.value))
-                        ]
-                    ).nice()
-                    .range([height - margin.bottom, margin.top]);
-
+            // if (metric == 'rms')
+            //     var y = d3.scaleLinear()
+            //         .domain([0, d3.max(multiChartData, Data => d3.max(Data.data, d => d.value))]).nice()
+            //         .range([height - margin.bottom, margin.top]);
+            // else
+            var y = d3.scaleLinear()
+                .domain(yAxisDomain)
+                .nice()
+                .range([height - margin.bottom, margin.top]);
 
             // console.debug(y.domain());
+
             var xAxis = g => g
                 .attr("transform", `translate(0,${height - margin.bottom})`)
                 .call(
@@ -853,7 +954,7 @@ function QCchart() {
 
         }
 
-        function printChart(overlay) {
+        async function printChart(overlay) {
             $('#charts').children().remove();
             // $('.tooltip').remove();
             var i = 1;
@@ -1085,8 +1186,8 @@ function QCchart() {
 
             }
             // console.debug(overlay);  
-
-
+            data = await data;
+            console.debug(data);
             if (overlay) {
                 getChartMenu(title, overlay);
                 $('#chart' + i).append(overlayChart($('#tz').val(), title, data, $('#metric').val(), $('#chartsScale').val()));
@@ -1101,16 +1202,129 @@ function QCchart() {
                 })
                 $('#tzDiv').css('display', 'none');
             }
+            loadingEffect('hide');
             MenuEvents();
         }
+        function init() {
+
+            $(selector).append(`
+            
+           <form id="form-chart">
+                <div class="form-group" id="chartsOptions">
+                    <div class="row">
+                        <div class="form-group col-lg-3 col-md-3 col-sm-6">
+                            <label for="Metric" class="col-form-label" lang="Metric">Metric</label>
+                            <div class="form-group">
+                                <select class="form-control" id="metric" name="metric">
+                                    <option value="rms">root-mean-square amplitudes</option>
+                                    <option value="mean">mean amplitudes</option>
+                                    <option value="max">max amplitudes</option>
+                                    <option value="maxDemean">maxDemean amplitudes</option>
+                                    <option value="min">min amplitudes</option>
+                                    <option value="minDemean">minDemean amplitudes</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group col-lg-3 col-md-3 col-sm-6">
+                            <label for="chartsScale" class="col-form-label" lang="">chart option</label>
+                            <div class="form-group">
+                                <select id="chartsScale" class="form-control">
+                                    <option value="linearScale">linear scale</option>
+                                    <option value="logrithmicScale">logrithmic scale</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div
+                            class="form-group col-lg-3 col-md-3 col-sm-6 d-flex justify-content-end  align-items-start flex-column col-md-6">
+                            <div class="form-group">
+                                <input class="form-check-label" type="checkbox" id="overlay" name="overlay">
+                                <label class="form-check-label" for="overlay" data-lang="">
+                                    overlay
+                                </label>
+                            </div>
+                        </div>
+                        <div id="tzDiv" class="form-group col-lg-3 col-md-3 col-sm-6" style="display: none;">
+                            <label for="tz" class="col-form-label" lang="">time zone</label>
+                            <div class="form-group">
+                                <select id="tz" class="form-control">
+                                    <option value="UTC">UTC</option>
+                                    <option value="local">local</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                
+
+
+                <div class="form-group"  id="chartMain">
+
+                    <div class="form-group row" id="charts"></div>          
+             
+                    <div id="outerdiv"
+                        style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:10;width:100%;height:100%;display:none;">
+                        <div id="innerdiv" style=" background-color: rgb(255, 255, 255);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div>                      
+                    </div>
+
+                    <div id='loading'>
+                        <div class="spinner-border"role="status">
+                            <span class="sr-only" >Loading...</span>
+                        </div>
+                        Loading...
+                    </div>
+
+                </div> 
+
+            </form>
+                `);
+            $('#chartsScale').change(e => printChart($('#overlay').prop('checked')));
+            $('#metric').change(e => printChart($('#overlay').prop('checked')));
+            $('#overlay').change(e => printChart($('#overlay').prop('checked')));
+            $('#tz').change(e => printChart($('#overlay').prop('checked')));
+        };
+
+
 
         if (!($('#form-chart').length >= 1))
             init();
 
+
         printChart($('#overlay').prop('checked'));
 
-
     }
+    let hideLoading_flag = true;
+    let hideLoading_timeOut = null;
+    function loadingEffect(action = 'hide') {
+        const loadingGroup = d3.select('#loading');
+        const transitionDuration = 200;
+
+        if (!hideLoading_flag)
+            hideLoading_timeOut.stop();
+
+        switch (action) {
+            case 'show':
+                d3.timeout(() => {
+                    loadingGroup
+                        .style('opacity', 1)
+                        .style('display', 'inline');
+                }, 0);
+                break;
+            case 'hide':
+
+                hideLoading_timeOut = d3.timeout(() => {
+                    loadingGroup
+                        .transition().duration(transitionDuration)
+                        .style('opacity', 0);
+                    d3.timeout(() => loadingGroup.style('display', 'none'), transitionDuration);
+                    hideLoading_flag = true;
+                }, transitionDuration);
+
+                hideLoading_flag = false;
+                break;
+        }
+
+    };
     return chart;
 
 

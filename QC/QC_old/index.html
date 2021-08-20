@@ -14,7 +14,7 @@
     href="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.0-alpha14/css/tempusdominus-bootstrap-4.min.css" />
 <link rel="stylesheet" type="text/css" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
 <link rel="stylesheet" href="./css/main.css" />
-<link rel="stylesheet" href="./QCchart.css" />
+<link rel="stylesheet" href="./lineChart.css" />
 
 <body>
     <div
@@ -164,7 +164,61 @@
             </div>
         </form>
 
+        <form id="form-chart">
+            <div class="form-group" id="chartsOptions">
+                <div class="row">
+                    <div class="form-group col-lg-3 col-md-3 col-sm-6">
+                        <label for="Metric" class="col-form-label" lang="Metric">Metric</label>
+                        <div class="form-group">
+                            <select class="form-control" id="metric" name="metric">
+                                <option value="rms">root-mean-square amplitudes</option>
+                                <option value="mean">mean amplitudes</option>
+                                <option value="max">max amplitudes</option>
+                                <option value="maxDemean">maxDemean amplitudes</option>
+                                <option value="min">min amplitudes</option>
+                                <option value="minDemean">minDemean amplitudes</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group col-lg-3 col-md-3 col-sm-6">
+                        <label for="chartsScale" class="col-form-label" lang="">chart option</label>
+                        <div class="form-group">
+                            <select id="chartsScale" class="form-control">
+                                <option value="linearScale">linear scale</option>
+                                <option value="logrithmicScale">logrithmic scale</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div
+                        class="form-group col-lg-3 col-md-3 col-sm-6 d-flex justify-content-end  align-items-start flex-column col-md-6">
+                        <div class="form-group">
+                            <input class="form-check-label" type="checkbox" id="overlay" name="overlay">
+                            <label class="form-check-label" for="overlay" data-lang="">
+                                overlay
+                            </label>
+                        </div>
+                    </div>
+                    <div id="tzDiv" class="form-group col-lg-3 col-md-3 col-sm-6" style="display: none;">
+                        <label for="tz" class="col-form-label" lang="">time zone</label>
+                        <div class="form-group">
+                            <select id="tz" class="form-control">
+                                <option value="UTC">UTC</option>
+                                <option value="local">local</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group row" id="charts">
 
+            </div>
+            <div id="outerdiv"
+                style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:999;width:100%;height:100%;display:none;">
+                <div id="innerdiv" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
+                    <img id="bigimg" style=" background-color: rgb(255, 255, 255);" src="" />
+                </div>
+            </div>
+        </form>
     </div>
 
     <!-- <div id="loading">
@@ -202,17 +256,45 @@
 <script type="text/javascript" src="./js/jquery-validation/jquery.validate.min.js"></script>
 <script type="text/javascript" src="./js/jquery-validation/additional-methods.min.js"></script>
 <script type="text/javascript" src="./js/jquery-validation/validation.otherMethod.js"></script>
-<script src="https://d3js.org/d3.v6.min.js"></script>
-<!-- <script src="./js/d3.min.js"></script> -->
+<!-- <script src="https://d3js.org/d3.v6.min.js"></script> -->
+<script src="./js/d3.min.js"></script>
 <!-- <script src="./functions.js"></script> -->
 <script src="./js/functions.js"></script>
-<script src="./QCchart.js"></script>
+<script src="./lineChart.js"></script>
 <script>
+    // var xhr = new XMLHttpRequest();
+    // xhr.open('POST', "./php/getStationList.php", false);
+    // var data = new FormData();
+    // data.append('network_code', "TSMIP");
+    // xhr.send(data);
+    // var response = xhr.responseText;
+    // window.alert(response);
 
+    // if (response != "") {
+    // document.write(response);
+    // var dataJSON = $.parseJSON(response);
+
+
+    // }
+    // function ajaxGetData(inputurl, options) {
+
+
+
+    //先在前面讀頁面上要show的資料
+    // ex: stData = ajaxGetData('./php/getOneStation.php',{data : {network: '',code:''}});	
+    // language = new langChange();
+    //再定義Series
+    // ex: language.addSeries({'stData':stData});
+    // language.setLanguage();
+    // $('#loading').hide();
+    // getChe();
     getSta();
+    // getLoc();
 
     var now = new Date();
     var utc = new Date(now.getTime() + now.getTimezoneOffset() * 60000);
+    // window.alert(utc);
+
 
     //過今天11點(UTC+8)才能查昨天資料
     function getQCUpdatedDate() {
@@ -252,20 +334,20 @@
 
     //----------------------TEST
 
-    $('#network').val('TSMIP');
-    $('#network').trigger('change');
-    $('#station').val('A002');
-    $('#station').trigger('keyup');
-    $('#location').val('10');
-    // $('#location').trigger('change');
-    // $('#channel').val('EHENZ');
+    // $('#network').val('TSMIP');
+    // $('#network').trigger('change');
+    // $('#station').val('A002');
+    // $('#station').trigger('keyup');
+    // $('#location').val('10');
+    // // $('#location').trigger('change');
+    // // $('#channel').val('EHENZ');
     // $('#sttime').val('2020-10-01');
     // $('#edtime').val('2020-10-17');
-    $('#chartsScale').val('logrithmicScale');
-    // $("#overlay").prop("checked", true);
-    $(document).ready(function () {
-        $('#form-search button').click();
-    });
+    // $('#chartsScale').val('logrithmicScale');
+    // // $("#overlay").prop("checked", true);
+    // $(document).ready(function () {
+    //     $('#form-search button').click();
+    // });
 
     //----------------------TEST
 
@@ -274,7 +356,7 @@
 
         function checkTimeRange(date) {
             var inputDate = new Date(date);
-            var minDate = new Date("2012-1-1");
+            var minDate = new Date("2018-1-1");
             var maxDate = new Date(getQCUpdatedDate());
 
             // console.log(maxDate);
@@ -334,12 +416,12 @@
         },
         messages: {
             sttime: {
-                timeRange: '可查詢範圍： 2012-1-1 ~ ' + getQCUpdatedDate(),
+                timeRange: '可查詢範圍： 2018-1-1 ~ ' + getQCUpdatedDate(),
                 validDate: '日期格式錯誤',
                 required: '必填',
             },
             edtime: {
-                timeRange: '可查詢範圍：2012-1-1 ~ ' + getQCUpdatedDate(),
+                timeRange: '可查詢範圍： 2018-1-1 ~ ' + getQCUpdatedDate(),
                 validDate: '日期格式錯誤',
                 required: '必填',
                 compareDate: "结束日期必須大於等於開始日期",
@@ -372,8 +454,8 @@
         var network = $('#network').val();
         var url = './php/getStationList.php';
         var staData = ajaxGetData(url, { data: { network_code: network, col: 'cd' } });
-        // console.log('staData=');
-        // console.log(staData);
+        console.log('staData=');
+        console.log(staData);
 
 
         $('#station')
@@ -420,7 +502,7 @@
 
         var url = "./php/getOneStationChannel.php";
         var cheData = ajaxGetData(url, { data: { nw: network, station: station, location: location } });
-        // console.log("cheData=" + cheData);
+        console.log("cheData=" + cheData);
         // var options = '<option value=""></option>';
         var options = '';
         var cheDir = '';
@@ -455,7 +537,7 @@
         var url = "./php/getLocationList.php";
         // var locData = ajaxGetData(url, { data: { nw: network } });
         var locData = ajaxGetData(url, { data: { nw: network, st: station } });
-        // console.log("locData=" + locData);
+        console.log("locData=" + locData);
         // var options = '<option value=""></option>';
         var options = '';
         for (var i in locData) {
@@ -465,9 +547,20 @@
     }
 
 
-    var chart = QCchart().selector('.container');
-    function sendRequest() {
+    $('#metric').off('change');
+    $('#metric').change(function (event) {
+        if (this.value == 'mean') {
+            $('#chartsScale option[value=logrithmicScale]').hide();
+            $('#chartsScale').val('linearScale');
+        }
+        else
+            $('#chartsScale option[value=logrithmicScale]').show();
+    });
 
+
+
+
+    function sendRequest() {
         // var url = "./php/sendRespDownload.php";
         var sendData = {
             'network': $('#network').val(),
@@ -480,10 +573,11 @@
             // 'scale': $('#chartsScale').val(),
         };
         console.log(sendData);
-        var title = sendData['network'] + "." + sendData['station'] + "." + sendData['location'];
-        chart.title(title);//===開始讀取框,不然拼路徑才轉會有間隔
 
+
+        // var path = './Data/RMS';
         var path = './Data/RMS';
+
         var paths = [];
         path += "/" + sendData['network'];
         var stDate = moment.utc(sendData['stDatetime']);
@@ -534,7 +628,7 @@
                     var dayStr = j.toString();
                     if (dayStr.length <= 3)
                         dayStr = paddingLeft(dayStr, 3);
-                    paths.push(path + "/" + (stYear + i) + "/" + (stYear + i) + "." + dayStr + "/" + sendData['station'] + ".TW." + sendData['location'] + ".???." + (stYear + i) + "." + dayStr + ".rms");
+                    paths.push(path + "/" + (stYear + i) + "/" + (stYear + i) + "." + dayStr + "/" + sendData['station'] + ".TW." + sendData['location'] + ".???." + (stYear + i) + "." + dayStr + ".json");
                 }
             }
         }
@@ -545,29 +639,186 @@
                 var dayStr = j.toString();
                 if (dayStr.length <= 3)
                     dayStr = paddingLeft(dayStr, 3);
-                paths.push(path + "/" + stYear + "/" + stYear + "." + dayStr + "/" + sendData['station'] + ".TW." + sendData['location'] + ".???." + stYear + "." + dayStr + ".rms");
+                paths.push(path + "/" + stYear + "/" + stYear + "." + dayStr + "/" + sendData['station'] + ".TW." + sendData['location'] + ".???." + stYear + "." + dayStr + ".json");
             }
         }
-        // console.log('paths=');
-        // console.log(paths);
+        console.log('paths=');
+        console.log(paths);
         var ChartDatas = [];
 
         //reverse to Z>N>E
         var channelArr = sendData['channel'].split(',').reverse();
 
+        ~async function () {
 
-        // console.debug(paths, channelArr, title);
-        //=========================================================================
-        var dataObj = {
-            pathArr: paths,
-            channelArr: channelArr,
-            // replaceSymbol: '???',
-        }
 
-        chart.data(dataObj);
-        chart();
-        //=========================================================================
+            ChartDatas = await dataExtend(channelArr, paths);
+            console.log(ChartDatas);
+
+            //print chart        
+            function printChart(overlay) {
+                $('#charts').children().remove();
+                $('.tooltip').remove();
+                var i = 1;
+
+                function chartGroup(title, overlay) {
+                    // console.log(d.data);
+                    var div = document.createElement("div");
+                    div.setAttribute("id", "chart" + i);
+                    if (!overlay)
+                        div.setAttribute("class", "col-md-4 col-sm-12");
+                    else
+                        div.setAttribute("class", "col-md-12 col-sm-12");
+                    // div.setAttribute("style", "position:relative");
+
+                    var nav = document.createElement('nav');
+                    nav.setAttribute("id", "nav" + i);
+                    nav.setAttribute("class", "toggle-menu");
+                    nav.setAttribute("style", "position:absolute");
+                    nav.style.right = "0";
+
+                    var a = document.createElement('a');
+                    a.setAttribute("class", "toggle-nav");
+                    a.setAttribute("href", "#");
+                    a.innerHTML = "&#9776;";
+                    nav.append(a);
+
+                    var ul = document.createElement("ul");
+                    ul.classList.add("active");
+                    nav.append(ul);
+
+                    var chartDropDown = ['bigimg', 'svg', 'png', 'jpg'];
+                    chartDropDown.forEach(type => {
+                        var li = document.createElement("li");
+                        var item = document.createElement("a");
+                        if (type != chartDropDown[0]) {
+                            item.href = "javascript:downloadSvg(\'#chart" + i + " svg\',\'" + title + "\',\'" + type + "\',\'download\')";
+                            item.innerHTML = "下載此圖表爲" + type;
+                        }
+                        else {
+                            item.href = "javascript:downloadSvg(\'#chart" + i + " svg\',\'" + title + "\',\'" + type + "\',\'show\')";
+                            item.innerHTML = "放大圖表";
+                        }
+                        li.append(item);
+                        ul.append(li);
+                    });
+                    $('#charts').append(div);
+                    $('#chart' + i).append(nav);
+                }
+
+
+
+                if (!overlay) {
+                    ChartDatas.forEach(d => {
+                        var title = sendData['network'] + "." + sendData['station'] + "." + sendData['location'] + "." + d.channel;
+                        chartGroup(title, overlay);
+                        $('#chart' + i).append(lineChart((i - 1), title, d.data, $('#metric').val(), $('#chartsScale').val()));
+                        i++;
+                    })
+                    $('#tzDiv').css('display', 'none');
+                }
+                else {
+                    var title = sendData['network'] + "." + sendData['station'] + "." + sendData['location'];
+                    chartGroup(title, overlay);
+                    $('#chart' + i).append(multiLineChart($('#tz').val(), title, ChartDatas, $('#metric').val(), $('#chartsScale').val()));
+                    $('#tzDiv').css('display', 'inline');
+                }
+
+
+                var charts = document.getElementById('charts');
+                var stopPropagation = (e) => {
+                    e.stopPropagation();
+                }
+                function chartEventControl(control) {
+                    if (control == 'stop') {
+                        // console.debug('add');
+                        charts.addEventListener('mousemove', stopPropagation, true);
+                        charts.addEventListener('mouseenter', stopPropagation, true);
+                        // charts.addEventListener('click', stopPropagation, true);
+                    }
+                    else {
+                        // console.debug('remove');
+                        charts.removeEventListener('mousemove', stopPropagation, true);
+                        charts.removeEventListener('mouseenter', stopPropagation, true);
+                        // charts.removeEventListener('click', stopPropagation, true);
+                    }
+                }
+
+                $('.toggle-nav').off('click');
+                $('.toggle-nav').click(function (e) {
+                    // console.debug(e.target);
+
+                    $(this).toggleClass('active');
+                    $(this).next().toggleClass('active');
+                    e.preventDefault();
+
+                    //選單打開後阻止事件傳遞SVG
+                    if ($(e.target).hasClass('active'))
+                        chartEventControl('stop');
+                    else
+                        chartEventControl('start');
+                });
+
+                //select未選取前不觸發body click造成SVG事件BUG
+                $('select').off('focus');
+                $('select').focus(e => $('body').trigger("click"));
+
+                $('body').off('click');
+                $('body').click(function (e) {
+                    // console.debug(e.target);
+                    $(".toggle-nav").each((i, d) => {
+                        // console.debug(e.target == d);
+                        if (e.target != d && $(d).hasClass('active')) {
+                            $(d).toggleClass('active');
+                            $(d).next().toggleClass('active');
+
+                            setTimeout(() => chartEventControl('start'), 100);
+                        }
+                    });
+                });
+            }
+
+            printChart($('#overlay').prop('checked'));
+
+
+
+            $('#chartsScale').off('change');
+            $('#chartsScale').change(function (event) {
+                printChart($('#overlay').prop('checked'));
+
+            });
+
+            $('#metric').off('change');
+            $('#metric').change(function (event) {
+                // if (this.value == 'mean') {
+                //     $('#chartsScale option[value=logrithmicScale]').hide();
+                //     $('#chartsScale').val('linearScale');
+                // }
+                // else
+                //     $('#chartsScale option[value=logrithmicScale]').show();
+                printChart($('#overlay').prop('checked'));
+            });
+
+
+
+
+            $('#overlay').off('change');
+            $('#overlay').change(function (event) {
+                printChart(this.checked);
+            });
+
+            $('#tz').off('change');
+            $('#tz').change(function (event) {
+                printChart($('#overlay').prop('checked'));
+            });
+
+        }();
+
+
+
+
     }
+
 
 
 </script>

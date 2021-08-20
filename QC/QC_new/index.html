@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GDMS_QC</title>
+</head>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/select/1.2.7/css/select.bootstrap.min.css" />
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.0-alpha14/css/tempusdominus-bootstrap-4.min.css" />
+<link rel="stylesheet" type="text/css" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+<link rel="stylesheet" href="./css/main.css" />
+<link rel="stylesheet" href="./QCchart.css" />
+
+<body>
+    <div
+        class="d-flex flex-row flex-md-row align-items-center p-1 px-md-4 bg-light border-bottom justify-content-between align-self-center sticky0">
+        <div class="my-0 mr-md-auto title-logo align-items-center align-self-center">
+            <img class="pr-1 title-logo-element" style="height:2rem;" alt="氣象局logo" src="./img/logoBlue.svg"></img>
+            <h5 class="p-2 font-weight-normal title-logo-element" style="line-height:2rem;">GDMS - 2020 </h5>
+        </div>
+
+        <nav class="my-0 mr-md-3 align-items-center align-self-center">
+
+            <a class="p-2 text-dark" style="font-size:1em;" href="javascript:setFontSize(0)">A</a>
+            <a class="p-2 text-dark" style="font-size:1.25em;" href="javascript:setFontSize(1)">A</a>
+            <a class="p-2 text-dark" style="font-size:1.5em;" href="javascript:setFontSize(2)">A</a>
+            <span>|</span>
+            <!--a class="p-2 text-dark" style="font-size:1em;" href="javascript:language.setLanguage('en');">English</a>
+                <a class="p-2 text-dark" style="font-size:1em;" href="javascript:language.setLanguage('zh');">中文</a-->
+            <a class="p-2 text-dark" id="change-lang-btn" style="font-size:1em;"
+                href="javascript:language.setLanguage();"></a>
+
+
+        </nav>
+        <!-- <a class="btn btn-outline-info btn-sm" lang="login" href="./login.php">登入</a> -->
+
+    </div>
+    <nav id="navbar" class="navbar navbar-expand-md navbar-dark bg-this sticky">
+
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbars"
+            aria-controls="navbarsExample04" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse " id="navbars">
+            <ul class="navbar-nav text-center " style="margin-left: 8%;">
+                <li class="nav-item text-center">
+
+                    <div class="nav-icon">
+                        <svg class="bi bi-house-fill" width="2em" height="2em" viewBox="0 0 20 20" fill="currentColor"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd"
+                                d="M12 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm-1.146 6.854a.5.5 0 0 0-.708-.708L7.5 8.793 6.354 7.646a.5.5 0 1 0-.708.708l1.5 1.5a.5.5 0 0 0 .708 0l3-3z" />
+                        </svg>
+                    </div>
+
+                    <a class="nav-link" lang="Home" href="./">波形資料品質查詢 <span class="sr-only">(current)</span></a>
+
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+
+
+    <div class="container">
+        <h3 class="my-4" lang="QC Request">波形資料品質查詢</h3>
+
+        <form id="form-search" method="POST" action="javascript:empty;" novalidate="novalidate">
+            <div class="row">
+                <div class="form-group col-lg-3 col-md-3 col-sm-6">
+                    <label for="network" class="col-form-label" lang="Network">network</label>
+                    <div class="form-group">
+                        <select class="form-control" id="network" name="network"
+                            onchange="/*getChe();getLoc();*/getSta();cleanAll();">
+                            <option value="TSMIP">TSMIP</option>
+                            <option value="CWBSN">CWBSN</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group col-lg-3 col-md-3 col-sm-6">
+                    <label for="station" class="col-form-label" lang="Station">station</label>
+                    <div class="form-group">
+                        <input type="text" class="form-control" id="station" name="station"
+                            lang_placeholder="Please input station">
+                    </div>
+                </div>
+                <div class="form-group col-lg-3 col-md-3 col-sm-6">
+                    <label for="location" class="col-form-label" lang="Location">location</label>
+                    <div class="form-group">
+                        <select class="form-control" id="location" name="location" onchange="getChe();">
+                            <!-- <option value="all">*</option> -->
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group col-lg-3 col-md-3 col-sm-6">
+                    <label for="channel" class="col-form-label" lang="Channel eq"> channel</label>
+                    <div class="form-group">
+                        <select class="form-control" id="channel" name="channel">
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group col-lg-6 col-md-6 col-sm-12">
+                    <div class="row">
+                        <div class="col-6">
+                            <!-- <div class="row"> -->
+                            <label for="sttime" class="col-form-label" lang="Start Time(UTC)">start time(UTC)</label>
+                            <div class="input-group date" id="sttime_ui" data-target-input="nearest">
+                                <input type="text" id="sttime" name="sttime" class="form-control datetimepicker-input"
+                                    data-target="#sttime_ui" onchange="$('#edtime').valid();" />
+                                <div class="input-group-append" data-target="#sttime_ui" data-toggle="datetimepicker">
+                                    <div class="input-group-text">
+                                        <svg class="bi bi-calendar3" width="1em" height="1em" viewBox="0 0 16 16"
+                                            fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                            <path fill-rule="evenodd"
+                                                d="M14 0H2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zM1 3.857C1 3.384 1.448 3 2 3h12c.552 0 1 .384 1 .857v10.286c0 .473-.448.857-1 .857H2c-.552 0-1-.384-1-.857V3.857z" />
+                                            <path fill-rule="evenodd"
+                                                d="M6.5 7a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" />
+                                        </svg>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <span class="error"></span>
+                            <!-- </div> -->
+                            <!-- <div class="row"> -->
+                            <!-- <span class="display_error"></span> -->
+                            <!-- </div> -->
+
+                        </div>
+                        <div class="col-6">
+                            <label for="edTime" class="col-form-label" lang="End Time(UTC)">end time(UTC)</label>
+                            <div class="input-group date" id="edtime_ui" data-target-input="nearest">
+                                <input type="text" id="edtime" name="edtime" class="form-control datetimepicker-input"
+                                    data-target="#edtime_ui" />
+                                <div class="input-group-append" data-target="#edtime_ui" data-toggle="datetimepicker">
+                                    <div class="input-group-text">
+                                        <svg class="bi bi-calendar3" width="1em" height="1em" viewBox="0 0 16 16"
+                                            fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                            <path fill-rule="evenodd"
+                                                d="M14 0H2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zM1 3.857C1 3.384 1.448 3 2 3h12c.552 0 1 .384 1 .857v10.286c0 .473-.448.857-1 .857H2c-.552 0-1-.384-1-.857V3.857z" />
+                                            <path fill-rule="evenodd"
+                                                d="M6.5 7a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="error"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-center  align-items-end flex-column col-md-6 ">
+                    <div id="err"></div>
+                    <button lang="Submit" class="btn btn-secondary">送出</button>
+
+                </div>
+            </div>
+        </form>
+
+
+    </div>
+
+    <!-- <div id="loading">
+        <div class="center">
+            <img src="./img/ajax-loader_gray.gif" alt="loading" />
+        </div>
+    </div> -->
+
+    <footer class="my-md-3 pt-md-5 border-top px-5">
+        <div class="row">
+            <div class="col-12 col-md text-muted">
+                <div class="  ">CWB © 2020</div>
+                <div class="mb-2">gdms@cwb.gov.tw</div>
+            </div>
+
+        </div>
+        </div>
+    </footer>
+
+
+
+</body>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"
+    integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+    integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+    crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
+<!-- <script type="text/javascript" src="https://momentjs.com/downloads/moment-timezone-with-data.js"></script> -->
+<script type="text/javascript" src="./js/tempusdominus-bootstrap-4.min.js"></script>
+
+<!--jquery validation plugin-->
+<script type="text/javascript" src="./js/jquery-validation/jquery.validate.min.js"></script>
+<script type="text/javascript" src="./js/jquery-validation/additional-methods.min.js"></script>
+<script type="text/javascript" src="./js/jquery-validation/validation.otherMethod.js"></script>
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<!-- <script src="./js/d3.min.js"></script> -->
+<!-- <script src="./functions.js"></script> -->
+<script src="./js/functions.js"></script>
+<script src="./QCchart.js"></script>
+<script>
+
+    getSta();
+
+    var now = new Date();
+    var utc = new Date(now.getTime() + now.getTimezoneOffset() * 60000);
+
+    //過今天11點(UTC+8)才能查昨天資料
+    function getQCUpdatedDate() {
+
+        function formatDate(date) {
+            return moment(date).format('YYYY-MM-DD');
+        }
+
+        var dataUpdateHour = 11;
+        var Updated = now.getUTCHours() >= (dataUpdateHour - 8);
+
+        if (Updated)
+            return formatDate(new Date().setUTCDate(utc.getDate() - 1));
+        else
+            return formatDate(new Date().setUTCDate(utc.getDate() - 2));
+    }
+
+
+
+    $('#sttime_ui').datetimepicker({
+        format: 'YYYY-MM-DD',
+        defaultDate: new Date().setUTCDate(utc.getDate() - 31),
+        keyBinds: null,
+        useCurrent: false,
+    });
+    $("#sttime_ui").on("change.datetimepicker", () => {
+        $('#edtime').valid();
+    })
+
+    $('#edtime_ui').datetimepicker({
+        format: 'YYYY-MM-DD',
+        defaultDate: getQCUpdatedDate(),
+        keyBinds: null,
+        useCurrent: false
+    });
+
+
+    //----------------------TEST
+
+    // $('#network').val('TSMIP');
+    // $('#network').trigger('change');
+    // $('#station').val('A002');
+    // $('#station').trigger('keyup');
+    // $('#location').val('10');
+    // // $('#location').trigger('change');
+    // // $('#channel').val('EHENZ');
+    // $('#sttime').val('2020-10-01');
+    // $('#edtime').val('2020-10-17');
+    // $('#chartsScale').val('logrithmicScale');
+    // // $("#overlay").prop("checked", true);
+    // $(document).ready(function () {
+    //     $('#form-search button').click();
+    // });
+
+    //----------------------TEST
+
+    $.validator.addMethod("timeRange", function (value, element) {
+
+
+        function checkTimeRange(date) {
+            var inputDate = new Date(date);
+            var minDate = new Date("2018-1-1");
+            var maxDate = new Date(getQCUpdatedDate());
+
+            // console.log(maxDate);
+            // alert(value);
+            if (inputDate < minDate || inputDate > maxDate)
+                return false;
+            else
+                return true;
+        }
+        return checkTimeRange(value);
+    }, "日期範圍有誤");
+
+    $.validator.addMethod("compareDate", function (value, element, param) {
+        var startDate = new Date($(param).val());
+        var endDate = new Date(value);
+        // alert(endDate);
+
+        return startDate <= endDate;
+    }, "日期範圍有誤");
+
+
+
+    $('#form-search').validate({
+        errorPlacement: function (error, element) {
+            // element.parent(".form-group").find('.display_error').append(error);
+            var placement = element.parent();
+            if (placement.attr('class') == 'form-group') {
+                placement.append(error);
+            } else
+                element.parent().nextAll('span').append(error);
+
+        },
+        rules: {
+            sttime: {
+                timeRange: true,
+                validDate: true,
+                required: true,
+
+            },
+
+            edtime: {
+                timeRange: true,
+                validDate: true,
+                required: true,
+                compareDate: "#sttime",
+            },
+            station: {
+                // checkStationStr: true,
+                required: true,
+            },
+            location: {
+                required: true,
+            },
+            channel: {
+                required: true,
+            },
+        },
+        messages: {
+            sttime: {
+                timeRange: '可查詢範圍： 2018-1-1 ~ ' + getQCUpdatedDate(),
+                validDate: '日期格式錯誤',
+                required: '必填',
+            },
+            edtime: {
+                timeRange: '可查詢範圍： 2018-1-1 ~ ' + getQCUpdatedDate(),
+                validDate: '日期格式錯誤',
+                required: '必填',
+                compareDate: "结束日期必須大於等於開始日期",
+            },
+            station: {
+                required: '必填',
+            },
+            location: {
+                required: '必填',
+            },
+            channel: {
+                required: '必填',
+            },
+        },
+        submitHandler: function (form) {
+            sendRequest();
+
+            console.log('form has been sent.');
+        }
+    });
+
+
+    function cleanAll() {
+        $('#station').val("");
+        $('#location').html("");
+        $('#channel').html("");
+    }
+
+    function getSta() {
+        var network = $('#network').val();
+        var url = './php/getStationList.php';
+        var staData = ajaxGetData(url, { data: { network_code: network, col: 'cd' } });
+        // console.log('staData=');
+        // console.log(staData);
+
+
+        $('#station')
+            .on("keydown", function (event) {
+                if (event.keyCode === $.ui.keyCode.TAB &&
+                    $(this).autocomplete("instance").menu.active) {
+                    event.preventDefault();
+                }
+            })
+            .on("keyup", function (event) {
+                getLoc();
+                getChe();
+            })
+            .autocomplete({
+                minLength: 0,
+                source: staData,
+                focus: function () {
+                    // prevent value inserted on focus
+                    return false;
+                },
+                // change: function () {
+                //     $('#station').trigger("keyup");
+                // },
+                select: function (event, ui) {
+                    this.value = ui.item.value;
+
+                    getLoc(); getChe();
+                    $('#location').valid();
+                    $('#channel').valid();
+                }
+            })
+            .focus(function () {
+                $(this).data("uiAutocomplete").search($(this).val());
+            });
+        $('.ui-autocomplete').css("max-height", "300px");
+        $('.ui-autocomplete').css("overflow-y", "scroll");
+        $('.ui-autocomplete').css("overflow-x", "hidden");
+
+    }
+    function getChe() {
+        var network = $('#network').val();
+        var station = $('#station').val();
+        var location = $('#location').val();
+
+        var url = "./php/getOneStationChannel.php";
+        var cheData = ajaxGetData(url, { data: { nw: network, station: station, location: location } });
+        // console.log("cheData=" + cheData);
+        // var options = '<option value=""></option>';
+        var options = '';
+        var cheDir = '';
+        var cheValue = '';
+        var cheHtml = '';
+        for (var i in cheData) {
+            cheDir = cheData[i].charAt(2);
+
+            if (i == 0)
+                cheHtml = cheData[i];
+            else if (cheDir != '?')
+                if (cheValue == '')
+                    cheValue += cheData[i];
+                else {
+                    cheValue += ',' + cheData[i];
+                    if (i == (cheData.length - 1))
+                        options += '<option value="' + cheValue + '">' + cheHtml + '</option>';
+                }
+            else {
+                options += '<option value="' + cheValue + '">' + cheHtml + '</option>';
+                cheValue = '';
+                cheHtml = cheData[i];
+            }
+        }
+        $('#channel').html(options);
+
+
+    }
+    function getLoc() {
+        var network = $('#network').val();
+        var station = $('#station').val();
+        var url = "./php/getLocationList.php";
+        // var locData = ajaxGetData(url, { data: { nw: network } });
+        var locData = ajaxGetData(url, { data: { nw: network, st: station } });
+        // console.log("locData=" + locData);
+        // var options = '<option value=""></option>';
+        var options = '';
+        for (var i in locData) {
+            options += '<option value="' + locData[i] + '">' + locData[i] + '</option>';
+        }
+        $('#location').html(options);
+    }
+
+
+    function sendRequest() {
+        // var url = "./php/sendRespDownload.php";
+        var sendData = {
+            'network': $('#network').val(),
+            'station': $('#station').val(),
+            'channel': $('#channel').val(),
+            'location': $('#location').val(),
+            'stDatetime': $('#sttime').val(),
+            'edDatetime': $('#edtime').val(),
+            // 'metric': $('#metric').val(),
+            // 'scale': $('#chartsScale').val(),
+        };
+        console.log(sendData);
+
+
+        var path = './Data/RMS';
+        var paths = [];
+        path += "/" + sendData['network'];
+        var stDate = moment.utc(sendData['stDatetime']);
+        var edDate = moment.utc(sendData['edDatetime']);
+        var stYear = stDate.year();
+        var edYear = edDate.year();
+
+        // function getSolorDay(date, options) {
+        //     // console.log(date);
+        //     if (options == 0)
+        //         var solorDay = parseInt((date - new Date(date.getFullYear(), 0, 1)) / 1000 / 60 / 60 / 24) + 1;
+        //     else if (options == 1)
+        //         var solorDay = parseInt((new Date(date, 11, 31) - new Date(date, 0, 1)) / 1000 / 60 / 60 / 24) + 1;
+        //     return solorDay;
+        // }
+
+        function getSolorDay(dateOrYear, options) {
+            if (options == 'whichDay')
+                solorDay = moment.utc(dateOrYear).format("DDDD");
+            else if (options == 'lastDay')
+                solorDay = moment.utc(dateOrYear + "-12-31").format("DDDD");
+            // console.debug(solorDay);
+            return solorDay;
+        }
+        function paddingLeft(str, lenght) {
+            if (str.length >= lenght)
+                return str;
+            else
+                return paddingLeft("0" + str, lenght);
+        }
+
+
+
+        if (stYear != edYear) {
+            var years = edYear - stYear;
+            var stDay, edDay;
+
+            for (var i = 0; i <= years; i++) {
+                stDay = 1;
+                edDay = getSolorDay((stYear + i), 'lastDay');
+                if (i == 0) {
+                    stDay = getSolorDay(stDate, 'whichDay');
+                }
+                else if (i == years)
+                    edDay = getSolorDay(edDate, 'whichDay');
+                // console.log((stYear + i) + "." + stDay + "~" + edDay);
+                for (var j = stDay; j <= edDay; j++) {
+                    var dayStr = j.toString();
+                    if (dayStr.length <= 3)
+                        dayStr = paddingLeft(dayStr, 3);
+                    paths.push(path + "/" + (stYear + i) + "/" + (stYear + i) + "." + dayStr + "/" + sendData['station'] + ".TW." + sendData['location'] + ".???." + (stYear + i) + "." + dayStr + ".json");
+                }
+            }
+        }
+        else {
+            var stDay = getSolorDay(stDate, 'whichDay');
+            var edDay = getSolorDay(edDate, 'whichDay');
+            for (var j = stDay; j <= edDay; j++) {
+                var dayStr = j.toString();
+                if (dayStr.length <= 3)
+                    dayStr = paddingLeft(dayStr, 3);
+                paths.push(path + "/" + stYear + "/" + stYear + "." + dayStr + "/" + sendData['station'] + ".TW." + sendData['location'] + ".???." + stYear + "." + dayStr + ".json");
+            }
+        }
+        // console.log('paths=');
+        // console.log(paths);
+        var ChartDatas = [];
+
+        //reverse to Z>N>E
+        var channelArr = sendData['channel'].split(',').reverse();
+        var title = sendData['network'] + "." + sendData['station'] + "." + sendData['location'];
+
+
+        // console.debug(paths, channelArr, title);
+        //=========================================================================
+        var dataObj = {
+            pathArr: paths,
+            channelArr: channelArr,
+            // replaceSymbol: '???',
+        }
+
+
+
+        var chart = QCchart()
+            .data(dataObj)
+            .title(title)
+            .selector('.container');
+
+        chart();
+        //=========================================================================
+    }
+
+
+</script>
+
+</html>

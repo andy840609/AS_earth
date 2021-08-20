@@ -350,43 +350,45 @@ function locatingGame() {
 
             function initMap() {
 
+                function init() {
+                    mapObj = L.map('bigMap', {
+                        center: [23.58, 120.58],
+                        zoom: 8,
+                        minZoom: 7,
+                        maxZoom: 10,
+                        maxBounds: [[25.100523, 116.257324], [22.024546, 125.793457]],
+                        zoomControl: false,
+                        attributionControl: false,
+                    });
 
-                const esriMap = {
-                    attr: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012',
-                    url: "http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+                    const esriMap = {
+                        attr: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012',
+                        url: "http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+                    };
+
+                    // esri map layer
+                    L.tileLayer(esriMap.url, {
+                        maxZoom: 15,
+                        attribution: esriMap.attr,
+                    }).addTo(mapObj);
+
+                    // control that shows state info on hover
+                    Object.merge2(L.control(), {
+                        onAdd: function (mapObj) {
+                            this._div = L.DomUtil.create('div', 'info');
+                            this._div.id = 'cityName';
+                            this.update();
+                            return this._div;
+                        },
+                        update: function (props) {
+                            this._div.innerHTML = (props ?
+                                '<b>' + props.name + '</b><br />'
+                                : 'Hover over a city or county');
+                        }
+                    }).addTo(mapObj);
+
+
                 };
-                const esriObj = L.tileLayer(esriMap.url, {
-                    maxZoom: 15,
-                    attribution: esriMap.attr,
-                });
-
-                // control that shows state info on hover
-                const infoObj = Object.merge2(L.control(), {
-                    onAdd: function (mapObj) {
-                        this._div = L.DomUtil.create('div', 'info');
-                        this._div.id = 'cityName';
-                        this.update();
-                        return this._div;
-                    },
-                    update: function (props) {
-                        this._div.innerHTML = (props ?
-                            '<b>' + props.name + '</b><br />'
-                            : 'Hover over a city or county');
-                    }
-                });
-                mapObj = L.map('bigMap', {
-                    center: [23.58, 120.58],
-                    zoom: 8,
-                    minZoom: 7,
-                    maxZoom: 10,
-                    maxBounds: [[25.100523, 116.257324], [22.024546, 125.793457]],
-                    zoomControl: false,
-                    attributionControl: false,
-                });
-
-                // console.debug(L.control['layers']());
-                esriObj.addTo(mapObj);
-                infoObj.addTo(mapObj);
                 async function addCounty() {
 
                     geoJSON = await $.ajax({
@@ -470,7 +472,8 @@ function locatingGame() {
 
                     updateGameState({ timeRemain: 500000 }, 800);
 
-                }
+                };
+                init();
                 addStation();
                 // addCounty();
                 addUI();
@@ -754,14 +757,24 @@ function locatingGame() {
                                     var initEnemy = () => {
                                         if (this.enemyDiedFlag) return;
 
+                                        const enemyScale = 2;
                                         enemy = this.physics.add.group({
                                             key: 'dog_Idle',
-                                            repeat: 2,
-                                            setXY: { x: width * 0.9, y: height * 0.8, stepX: -15 },
+                                            // repeat: 2,
                                             randomFrame: true,
+                                            setScale: { x: -enemyScale, y: enemyScale },
+                                            setOrigin: { x: 1, y: 0 },
+                                            setXY: { x: width * 0.8, y: height * 0.75, stepX: 30 },
 
-                                        })
-                                        // enemy.rotateAround({ x: 400, y: 300 }, 0.01);
+                                            // quantity: 3,
+                                            // yoyo: true,
+                                            maxVelocityX: 0,
+                                            // maxVelocityY: 0,
+                                            // gravityX: 1000,
+                                            // gravityY: 1000,
+                                            // enable: false,
+                                            // immovable: true,
+                                        });
 
                                         var animsCreate = () => {
                                             this.anims.create({
@@ -784,12 +797,16 @@ function locatingGame() {
                                         enemy.children.iterate(function (child) {
                                             //  Give each star a slightly different bounce
                                             // child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.5));
-                                            child.play({
-                                                key: 'stand',
-                                                repeat: -1,
-                                                repeatDelay: 500,
-                                            });
-                                            // child.body.setGravityY(500);
+                                            child
+                                                .setCollideWorldBounds(true)
+                                                .play({
+                                                    key: 'stand',
+                                                    repeat: -1,
+                                                    repeatDelay: 500,
+                                                });
+
+
+                                            console.debug(child.getBounds());
                                         });
                                         // var collectStar = (player, star) => {
                                         //     star.disableBody(true, true);
@@ -803,7 +820,7 @@ function locatingGame() {
                                         }
                                         // console.debug(stars.children.entries[0].active);
                                         this.physics.add.collider(enemy, platforms);
-                                        this.physics.add.collider(player, enemy, hitEnemy);
+                                        this.physics.add.collider(player, enemy);
                                     };
                                     var initTimer = () => {
                                         timerText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#000' });
@@ -954,7 +971,7 @@ function locatingGame() {
                                     default: 'arcade',
                                     arcade: {
                                         gravity: { y: 300 },
-                                        debug: false
+                                        debug: true,
                                     }
                                 },
                                 scene: [DefendScene],

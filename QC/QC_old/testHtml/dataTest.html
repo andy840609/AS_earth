@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+</head>
+
+<body>
+
+</body>
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"
+    integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
+<script src="./js/d3.min.js"></script>
+<script src="./lineChart.js"></script>
+<script>
+
+    var path1 = "./testData/TPUB.TW.HHZ..D.2016.211.211753.json";
+    var path2 = "./testData/YULB.TW..HHE.2020.035.json";
+    var Data1 = getData(path1);
+    var Data2 = getData(path2);
+    Data1.then(success => {
+        console.debug(success);
+        $('body').append(lineChart(0, 'AAA', success, 'min', 'linearScale'));
+    });
+    Data2.then(success => {
+        console.debug(success);
+        $('body').append(lineChart(1, 'BBB', success, 'max', 'linearScale'));
+    });
+
+
+
+
+</script>
+
+</html>

@@ -805,7 +805,6 @@ function locatingGame() {
                                                     repeatDelay: 500,
                                                 });
 
-
                                             console.debug(child.getBounds());
                                         });
                                         // var collectStar = (player, star) => {
@@ -817,7 +816,7 @@ function locatingGame() {
                                         // };
                                         var hitEnemy = (player, star) => {
 
-                                        }
+                                        };
                                         // console.debug(stars.children.entries[0].active);
                                         this.physics.add.collider(enemy, platforms);
                                         this.physics.add.collider(player, enemy);

@@ -724,8 +724,13 @@ function locatingGame() {
                                         player = this.physics.add.sprite(100, 450, 'dude');
 
                                         // player.setBounce(0.2);
-                                        player.setCollideWorldBounds(true);
-                                        player.body.setGravityY(500);
+                                        // player.setBounce(100, 0);
+                                        player.setCollideWorldBounds(true)
+                                            .setPushable(false)
+                                        // .setMass(3);
+                                        player.body
+                                            .setGravityY(500)
+
 
                                         var animsCreate = () => {
                                             this.anims.create({
@@ -764,14 +769,14 @@ function locatingGame() {
                                             randomFrame: true,
                                             setScale: { x: -enemyScale, y: enemyScale },
                                             setOrigin: { x: 1, y: 0 },
-                                            setXY: { x: width * 0.8, y: height * 0.75, stepX: 30 },
-
+                                            setXY: { x: width * 0.8, y: height * 0.7, stepX: 30 },
+                                            // setOffset: 50,
                                             // quantity: 3,
                                             // yoyo: true,
-                                            maxVelocityX: 0,
+                                            // maxVelocityX: 0,
                                             // maxVelocityY: 0,
                                             // gravityX: 1000,
-                                            // gravityY: 1000,
+                                            // gravityY: 0,
                                             // enable: false,
                                             // immovable: true,
                                         });
@@ -780,6 +785,26 @@ function locatingGame() {
                                             this.anims.create({
                                                 key: 'stand',
                                                 frames: this.anims.generateFrameNumbers('dog_Idle'),
+                                                frameRate: 10,
+                                            });
+                                            this.anims.create({
+                                                key: 'stand',
+                                                frames: this.anims.generateFrameNumbers('dog_Death'),
+                                                frameRate: 10,
+                                            });
+                                            this.anims.create({
+                                                key: 'stand',
+                                                frames: this.anims.generateFrameNumbers('dog_Hurt'),
+                                                frameRate: 10,
+                                            });
+                                            this.anims.create({
+                                                key: 'stand',
+                                                frames: this.anims.generateFrameNumbers('dog_Walk'),
+                                                frameRate: 10,
+                                            });
+                                            this.anims.create({
+                                                key: 'stand',
+                                                frames: this.anims.generateFrameNumbers('dog_Attack'),
                                                 frameRate: 10,
                                             });
                                         };
@@ -794,32 +819,49 @@ function locatingGame() {
                                         // });
 
 
-                                        enemy.children.iterate(function (child) {
+                                        enemy.children.iterate(child => {
                                             //  Give each star a slightly different bounce
                                             // child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.5));
                                             child
                                                 .setCollideWorldBounds(true)
+                                                // .setBounce(0)
+                                                .setPushable(false)
+                                                // .setImmovable(true)
+                                                .setMass(3)
                                                 .play({
                                                     key: 'stand',
                                                     repeat: -1,
                                                     repeatDelay: 500,
                                                 });
+                                            // child.body.setSize(10, 30,)
+                                            child.body
+                                                .setSize(25, 18, false)
+                                                .setOffset(30, 30);
 
-                                            console.debug(child.getBounds());
+
+                                            // console.debug(enemy.children);
+                                            // console.debug(player);
+                                            // console.debug(child.getBounds());
                                         });
-                                        // var collectStar = (player, star) => {
-                                        //     star.disableBody(true, true);
-                                        //     enemy = null;
-                                        //     //==勝利,清除計時
-                                        //     gameOver = true;
 
-                                        // };
-                                        var hitEnemy = (player, star) => {
+
+                                        var enemyAttack = (enemy, player) => {
+                                            // console.debug(player, enemy);
+                                            console.debug(player.body);
+                                            console.debug(enemy.body);
+
+                                            player.setTint(0xff0000);
+                                            setTimeout(() => {
+                                                player.setTint(0xffffff);
+
+                                            }, 100);
+                                            enemy.anims.play('player_turn');
 
                                         };
                                         // console.debug(stars.children.entries[0].active);
                                         this.physics.add.collider(enemy, platforms);
-                                        this.physics.add.collider(player, enemy);
+                                        this.physics.add.collider(enemy, player, enemyAttack, null, this);
+
                                     };
                                     var initTimer = () => {
                                         timerText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#000' });
@@ -884,8 +926,17 @@ function locatingGame() {
                                         let text = 'TimeLeft : ' + timeVal + ' ms';
                                         timerText.setText(text);
                                     };
+                                    var enemyFollows = () => {
+                                        enemy.children.iterate(child => {
+                                            // console.debug(c)
+                                            this.physics.accelerateToObject(child, player, 500, 800, 1000);
+                                            // this.physics.moveToObject(child, player, 500, 800, 1000);
+                                        });
+
+                                    }
                                     updatePlayer();
                                     updateTimer();
+                                    enemyFollows();
                                     // console.debug(gameTimer.getOverallProgress());
 
 

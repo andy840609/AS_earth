@@ -45,13 +45,21 @@
         };
 
         var title = '全體下載量';
-        var obj = { data: data, title: title };
-        var obj2 = JSON.parse(JSON.stringify(obj));
+        // var obj = { data: data, title: title, subtitle: 'AAA' };
+        // var obj2 = JSON.parse(JSON.stringify(obj));
 
-        var Data = [obj, obj2];
+        var Data = [{ data: data, title: title, subtitle: 'AAA' },];
 
         var chart = pieChart()
             .data(Data)
+            .color({
+                CWBSN: "#2ca9e1",
+                GNSS: "#df7163",
+                GW: "#f8b500",
+                MAGNET: "#005243",
+                TSMIP: "#7a4171",
+                categories: '#808080',
+            })
             .selector('.container');
         chart();
 

@@ -4,13 +4,13 @@ function locatingGame() {
     var stringObj;
 
     //Append to the object constructor function so you can only make static calls
-    Object.merge2 = function (obj1, obj2) {
-        for (var attrname in obj2) {
-            obj1[attrname] = obj2[attrname];
-        }
-        //Returning obj1 is optional and certainly up to your implementation
-        return obj1;
-    };
+    // Object.merge2 = function (obj1, obj2) {
+    //     for (var attrname in obj2) {
+    //         obj1[attrname] = obj2[attrname];
+    //     }
+    //     //Returning obj1 is optional and certainly up to your implementation
+    //     return obj1;
+    // };
 
     game.selector = (value) => {
         selector = value;
@@ -373,7 +373,7 @@ function locatingGame() {
                     }).addTo(mapObj);
 
                     // control that shows state info on hover
-                    Object.merge2(L.control(), {
+                    Object.assign(L.control(), {
                         onAdd: function (mapObj) {
                             this._div = L.DomUtil.create('div', 'info');
                             this._div.id = 'cityName';
@@ -653,7 +653,7 @@ function locatingGame() {
                             // const center = [width];
                             // console.debug();
 
-                            var player, enemy, cursors;
+                            var player, orb, enemy, cursors;
                             var playerStats = {
                                 movementSpeed: 500,
                                 jumpingPower: 400,
@@ -671,11 +671,33 @@ function locatingGame() {
                                 enemyDiedFlag = data.liberate;
                                 preload() {
                                     const gameObjDir = assetsDir + 'gameObj/';
-
-                                    this.load.image('sky', gameObjDir + 'sky.png');
-                                    this.load.image('ground', gameObjDir + 'platform.png');
-                                    this.load.image('star', gameObjDir + 'star.png');
-                                    // this.load.image('bomb', gameObjDir + 'bomb.png');
+                                    var environment = () => {
+                                        const envDir = gameObjDir + 'environment/';
+                                        var station = () => {
+                                            const dir = envDir + 'station/';
+                                            this.load.image('station', dir + 'station.png');
+                                            this.load.image('title', dir + 'title.png');
+                                        }
+                                        var platform = () => {
+                                            const dir = envDir + 'platform/';
+                                            this.load.image('ground', dir + 'platform.png');
+                                        }
+                                        var background = () => {
+                                            const dir = envDir + 'background/forest/game_background_1/';
+                                            this.load.image('background', dir + 'game_background_1.png');
+                                        }
+                                        var instrument = () => {
+                                            const dir = envDir + 'instrument/';
+                                            this.load.spritesheet('instrument',
+                                                dir + 'instrument.png',
+                                                { frameWidth: 256, frameHeight: 256 }
+                                            );
+                                        }
+                                        background();
+                                        platform();
+                                        station();
+                                        instrument();
+                                    };
                                     var player = () => {
                                         this.load.spritesheet('dude',
                                             gameObjDir + 'dude.png',
@@ -698,6 +720,8 @@ function locatingGame() {
                                         wavesSvg.forEach((svg, i) => this.load.svg('wave_' + i, svg, { scale: 1 }));
                                     };
 
+
+                                    environment();
                                     player();
                                     enemy();
                                     wave();
@@ -705,21 +729,66 @@ function locatingGame() {
                                 };
                                 create() {
                                     var initEnvironment = () => {
-                                        // console.debug(this)
-                                        let bgImg = this.add.image(width * 0.5, height * 0.5, 'sky');
-                                        bgImg.setScale(width / bgImg.width, height / bgImg.height);
+                                        // console.debug()
+                                        var station = () => {
+                                            let station = stationData.station ? stationData.station : '???';
+                                            this.add.image(width * 0.07, height * 0.53, 'station')
+                                                .setScale(-1, 0.63);
+                                            // this.add.image(width * 0.12, height * 0.53, 'title')
+                                            //     .setScale(0.1, 0.15).setRotation(0.1).setPosition(width * 0.12, height * 0.53, 100, 100);
+                                            this.add.text(width * 0.12, height * 0.4, station, { fontSize: '32px', fill: '#000' })
+                                                .setRotation(0.1).setOrigin(0.5, 0.5);
 
-                                        platforms = this.physics.add.staticGroup();
+                                            this.add.image(width * 0.5, height * 0.5, 'wave_0');
+                                        }
+                                        var platform = () => {
+                                            platforms = this.physics.add.staticGroup();
+                                            platforms.create(width * 0.5, height * 0.95, 'ground')
+                                                .setScale(3, 0.5).refreshBody().setOffset(30);
+                                        }
+                                        var background = () => {
+                                            let bgImg = this.add.image(width * 0.5, height * 0.5, 'background');
+                                            bgImg.setScale(width / bgImg.width, height / bgImg.height);
+                                        }
+                                        var instrument = () => {
+                                            // let instrument = this.physics.add.sprite(width * 0.1, height * 0.8, 'instrument')
+                                            //     .setScale(0.3);
+                                            orb = this.physics.add.group({
+                                                key: 'instrument',
+                                                repeat: 1,
+                                                randomFrame: true,
+                                                setScale: { x: 0.3, y: 0.3 },
+                                                setXY: { x: width * 0.1, y: height * 0.8, stepX: 15 },
 
-                                        platforms.create(width * 0.5, height * 0.95, 'ground').setScale(3).refreshBody();
+                                            });
 
 
-                                        this.add.image(width * 0.5, height * 0.5, 'wave_0');
-                                        // wave.setScale(3);
-                                        // platforms.create(width * 0.5, 400, 'ground');
-                                        // platforms.create(50, 250, 'ground');
-                                        // platforms.create(750, 220, 'ground');
+                                            var animsCreate = () => {
+                                                this.anims.create({
+                                                    key: 'orb_shine',
+                                                    frames: this.anims.generateFrameNumbers('instrument', { start: 1, end: 4 }),
+                                                    frameRate: 5,
+                                                    repeat: -1,
+                                                    // repeatDelay: 500,
+                                                });
+
+                                            };
+                                            animsCreate();
+
+                                            orb.children.iterate(child => {
+                                                child.play('orb_shine');
+                                                child.body.setSize(100, 100, true);
+                                                child.beenPicked = false;//custom
+                                            });
+                                            // instrument.play('orb_shine');
+                                            this.physics.add.collider(orb, platforms);
+                                        }
+                                        background();
+                                        platform();
+                                        station();
+                                        instrument();
                                     };
+
                                     var initPlayer = () => {
                                         player = this.physics.add.sprite(100, 450, 'dude');
 
@@ -757,20 +826,20 @@ function locatingGame() {
 
                                         this.physics.add.collider(player, platforms);
                                         // cursors = this.input.keyboard.createCursorKeys();
-                                        cursors = this.input.keyboard.addKeys('w,s,a,d');
+                                        cursors = this.input.keyboard.addKeys('w,s,a,d,space');
                                     };
                                     var initEnemy = () => {
                                         if (this.enemyDiedFlag) return;
 
                                         const enemyScale = 2;
                                         enemy = this.physics.add.group({
-                                            key: 'dog_Idle',
+                                            key: 'enemy',
                                             // repeat: 2,
                                             randomFrame: true,
-                                            setScale: { x: -enemyScale, y: enemyScale },
-                                            setOrigin: { x: 1, y: 0 },
+                                            setScale: { x: enemyScale, y: enemyScale },
+                                            setOrigin: { x: 0.4, y: 0.4 },
                                             setXY: { x: width * 0.8, y: height * 0.7, stepX: 30 },
-                                            // setOffset: 50,
+
                                             // quantity: 3,
                                             // yoyo: true,
                                             // maxVelocityX: 0,
@@ -780,32 +849,44 @@ function locatingGame() {
                                             // enable: false,
                                             // immovable: true,
                                         });
+                                        // enemy.rotateAroundDistance([0, 0], 1, 0.1);
 
                                         var animsCreate = () => {
+
                                             this.anims.create({
-                                                key: 'stand',
+                                                key: 'dog_Idle',
                                                 frames: this.anims.generateFrameNumbers('dog_Idle'),
                                                 frameRate: 10,
+                                                repeat: -1,
+                                                repeatDelay: 500,
                                             });
                                             this.anims.create({
-                                                key: 'stand',
+                                                key: 'dog_Death',
                                                 frames: this.anims.generateFrameNumbers('dog_Death'),
                                                 frameRate: 10,
+                                                repeat: -1,
+                                                repeatDelay: 500,
                                             });
                                             this.anims.create({
-                                                key: 'stand',
+                                                key: 'dog_Hurt',
                                                 frames: this.anims.generateFrameNumbers('dog_Hurt'),
                                                 frameRate: 10,
+                                                repeat: -1,
+                                                repeatDelay: 500,
                                             });
                                             this.anims.create({
-                                                key: 'stand',
+                                                key: 'dog_Walk',
                                                 frames: this.anims.generateFrameNumbers('dog_Walk'),
                                                 frameRate: 10,
+                                                repeat: -1,
+                                                // repeatDelay: 500,
                                             });
                                             this.anims.create({
-                                                key: 'stand',
+                                                key: 'dog_Attack',
                                                 frames: this.anims.generateFrameNumbers('dog_Attack'),
                                                 frameRate: 10,
+                                                repeat: -1,
+                                                // repeatDelay: 500,
                                             });
                                         };
                                         animsCreate();
@@ -824,39 +905,50 @@ function locatingGame() {
                                             // child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.5));
                                             child
                                                 .setCollideWorldBounds(true)
-                                                // .setBounce(0)
+                                                .setBounce(0)
                                                 .setPushable(false)
                                                 // .setImmovable(true)
                                                 .setMass(3)
-                                                .play({
-                                                    key: 'stand',
-                                                    repeat: -1,
-                                                    repeatDelay: 500,
-                                                });
-                                            // child.body.setSize(10, 30,)
-                                            child.body
-                                                .setSize(25, 18, false)
-                                                .setOffset(30, 30);
+                                                .play('dog_Idle');
 
 
-                                            // console.debug(enemy.children);
-                                            // console.debug(player);
+                                            child.body.setSize(25, 18, true);
+
+                                            //==custom
+                                            child.filpFlag = false;
+                                            child.filpHandler = function (filp) {
+                                                console.debug(this);
+                                                let scale = Math.abs(this.scaleX);
+                                                if (filp) {
+                                                    this.scaleX = -scale;
+                                                    this.body.setOffset(30, 30);
+                                                    this.filpFlag = true;
+                                                }
+                                                else {
+                                                    this.scaleX = scale;
+                                                    this.body.setOffset(5, 30);
+                                                    this.filpFlag = false;
+                                                }
+                                            };
+
+                                            child.filpHandler(true);
+                                            // console.debug(child);
                                             // console.debug(child.getBounds());
                                         });
 
 
-                                        var enemyAttack = (enemy, player) => {
+                                        var enemyAttack = (player, enemy) => {
                                             // console.debug(player, enemy);
-                                            console.debug(player.body);
-                                            console.debug(enemy.body);
+                                            // console.debug(player.body);
+                                            // console.debug(enemy);
 
                                             player.setTint(0xff0000);
                                             setTimeout(() => {
                                                 player.setTint(0xffffff);
 
                                             }, 100);
-                                            enemy.anims.play('player_turn');
 
+                                            // enemy.anims.play('dog_Attack', true);
                                         };
                                         // console.debug(stars.children.entries[0].active);
                                         this.physics.add.collider(enemy, platforms);
@@ -918,6 +1010,17 @@ function locatingGame() {
                                         if (cursors.w.isDown && player.body.touching.down) {
                                             player.setVelocityY(-jump);
                                         }
+
+                                        if (Phaser.Input.Keyboard.JustDown(cursors.space)) {
+                                            // if (cursors.space.isUp)
+                                            let pickUpObj = null;
+                                            orb.children.iterate(child => {
+                                                // if (Phaser.Math.Distance.BetweenPoints(player, child) <= 20)
+                                                //     console.debug(child);
+
+                                            })
+
+                                        }
                                     };
                                     var updateTimer = () => {
                                         // let text = 'TimeLeft : ' +
@@ -926,17 +1029,38 @@ function locatingGame() {
                                         let text = 'TimeLeft : ' + timeVal + ' ms';
                                         timerText.setText(text);
                                     };
-                                    var enemyFollows = () => {
+                                    var enemyBehavior = () => {
+
+
                                         enemy.children.iterate(child => {
-                                            // console.debug(c)
-                                            this.physics.accelerateToObject(child, player, 500, 800, 1000);
+
+                                            if (Phaser.Math.Distance.BetweenPoints(player, child) < 80) {
+                                                child.anims.play('dog_Attack', true);
+                                            }
+                                            else {
+                                                this.physics.accelerateToObject(child, player, 500, 800, 1000);
+                                                // this.physics.moveToObject(child, player, 500, 800, 1000);
+                                                child.anims.play('dog_Walk', true);
+                                            }
+
+                                            if (child.filpFlag != player.x < child.x)
+                                                child.filpHandler(player.x < child.x);
+
+
+
+                                            // console.debug(Math.abs(player.x - child.x));
+                                            // child.anims.play('dog_Attack', true);
                                             // this.physics.moveToObject(child, player, 500, 800, 1000);
                                         });
 
-                                    }
+                                        // player.body
+                                        // enemy.anims.play('dog_Attack');
+                                    };
+
+
                                     updatePlayer();
                                     updateTimer();
-                                    enemyFollows();
+                                    enemyBehavior();
                                     // console.debug(gameTimer.getOverallProgress());
 
 
@@ -1060,7 +1184,7 @@ function locatingGame() {
 
 
                 //===set new game data
-                Object.merge2(stationData.gameData, {
+                Object.assign(stationData.gameData, {
                     liberate: gameResult.liberate,
                 });
                 //=update GameState

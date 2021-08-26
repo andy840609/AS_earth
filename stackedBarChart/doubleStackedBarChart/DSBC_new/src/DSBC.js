@@ -1266,7 +1266,7 @@ function DSBC() {
                             tooltip
                                 .attr("display", 'none');
                         }
-                    }))
+                    }));
                 };
                 var chartOptionEvent = () => {
                     const chartContainer = d3.select(selector);

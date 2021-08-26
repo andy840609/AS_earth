@@ -2,6 +2,8 @@ function pieChart() {
 
     var selector = 'body';
     var data = [];
+    var colorPalette = {};
+
     const convert_download_unit = (value, unitBefore, unitAfter = undefined) => {
         let newValue, newUnit;
         const unit1 = ['b', 'B'];
@@ -83,13 +85,12 @@ function pieChart() {
         selector = vaule;
         return chart;
     };
-
     chart.data = (vaule) => {
         // console.log(vaule);
         const columns = ['DB', 'count', 'size'];
         let copyObj = JSON.parse(JSON.stringify(vaule));//不影響原資料
         let dataType = typeof (copyObj[0]);
-        // console.debug(dataType);
+        // console.debug(copyObj);
 
         var readTextFile = (file) => {
             var tmpData;
@@ -211,7 +212,7 @@ function pieChart() {
                 return dataObj;
             };
             data = copyObj.map(v => {
-                // console.debug(v);
+                console.debug(v);
                 v.data = convertData(v.data);
                 return v;
             });
@@ -225,6 +226,11 @@ function pieChart() {
         console.debug(data);
         return chart;
     };
+    chart.color = (vaule) => {
+        Object.assign(colorPalette, vaule);
+        return chart;
+    };
+
     function chart() {
 
         const chartContainerJQ = $(selector);
@@ -260,6 +266,17 @@ function pieChart() {
             //     console.debug(e.target.nodeName);
             // })
             //===================
+
+            // Object.assign(colorPalette, {
+            //     CWBSN: "#2ca9e1",
+            //     GNSS: "#df7163",
+            //     GW: "#f8b500",
+            //     MAGNET: "#005243",
+            //     TSMIP: "#7a4171",
+            //     categories: '#808080',
+            // });
+            console.debug(colorPalette);
+
         };
 
         function PieSvg(Data) {
@@ -283,55 +300,51 @@ function pieChart() {
                         break;
                 }
                 return { name: keyName, unit: keyUnit };
-            };
-            const getColor = (network, dataGroup = 0) => {
-                let color;
-                if (dataGroup == 0)
-                    switch (network) {
-                        case "CWBSN":
-                            color = "#2ca9e1";
-                            break;
-                        case "GNSS":
-                            color = "#df7163";
-                            break;
-                        case "GW":
-                            color = "#f8b500";
-                            break;
-                        case "MAGNET":
-                            color = "#005243";
-                            break;
-                        case "TSMIP":
-                            color = "#7a4171";
-                            break;
-                        default:
-                            color = "orange";
-                            break;
+            }
+            const getColor = (key, dataCount = 0) => {
+                // console.debug(key, dataCount);
+                let color, gradientColor;
+                function getGradientColor(hex, level) {
+                    // console.debug(hex, level);
 
-                    }
-                else
-                    switch (network) {
-                        case "CWBSN":
-                            color = "#97CBFF";
-                            break;
-                        case "GNSS":
-                            color = "#FFAD86";
-                            break;
-                        case "GW":
-                            color = "#FFE153";
-                            break;
-                        case "MAGNET":
-                            color = "#64A600";
-                            break;
-                        case "TSMIP":
-                            color = "#AE57A4";
-                            break;
-                        default:
-                            color = "#8080C0";
-                            break;
-
+                    var gradient = (color, level) => {
+                        let val = 30;
+                        let tmp = color + level * val;
+                        color = tmp > 255 ? 255 : tmp;
+                        return color;
                     };
 
-                return color;
+                    let red = parseInt("0x" + hex.slice(1, 3)),
+                        green = parseInt("0x" + hex.slice(3, 5)),
+                        blue = parseInt("0x" + hex.slice(5, 7));
+
+                    red = gradient(red, level);
+                    green = gradient(green, level);
+                    blue = gradient(blue, level);
+
+                    let rgb = "rgb(" + red + "," + green + "," + blue + ")";
+                    return rgb;
+                }
+
+                color = colorPalette[key];
+                //===if color not in colorPalette, get a random color and put in
+                if (!color) {
+                    var randomColor = () => {
+                        let hex = Math.floor(Math.random() * 255).toString(16);
+                        if (hex.length < 2)
+                            hex = '0' + hex;
+                        return hex;
+                    }
+                    color = '#';
+                    for (let i = 0; i < 3; i++)
+                        color += randomColor();
+                    colorPalette[key] = color;
+                }
+
+                // console.debug(colorPalette);
+                gradientColor = getGradientColor(color, dataCount);
+                // console.debug(gradientColor);
+                return gradientColor;
             };
             const width = 500;
             const height = 500;
@@ -372,7 +385,7 @@ function pieChart() {
                         .attr("text-anchor", "middle")
                         .attr("alignment-baseline", "middle")
                         .attr("position", "relative")
-                        .text("GDMS");
+                        .text(Data.subtitle);
 
 
                 };
@@ -896,6 +909,17 @@ function pieChart() {
             updateChart();
 
 
+
+            //恢復所有pie大小
+            const AllPie = focusGroup.selectAll('.pie');
+            svg.on('click', function (e) {
+                // console.debug(e.target.parentNode);
+                if (e.target === svg.node()) {
+                    // console.debug(AllPie);
+                    AllPie.selectAll('path').classed('clicked', false);
+                    AllPie.dispatch('mouseleave');
+                }
+            });
 
             return svg.node();
         }

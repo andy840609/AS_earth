@@ -346,7 +346,11 @@ function locatingGame() {
 
             var mapObj;
             var stationDataArr, geoJSON;//===location data
-            var timeRemain, playerStats;//===game data
+            var timeRemain,//===game data
+                playerStats = {
+                    movementSpeed: 500,
+                    jumpingPower: 400,
+                };
 
             function initMap() {
 
@@ -646,23 +650,24 @@ function locatingGame() {
                         // console.debug(wavesSvg);
 
 
-                        function defendGame(stationData, timeRemain, resolve) {
+                        function defendGame(stationData, playerData, resolve) {
                             const data = stationData.gameData;
                             const assetsDir = '../data/assets/';
                             const width = gameBox.width, height = gameBox.height;
                             // const center = [width];
                             // console.debug();
+                            var playerStats = Object.assign({}, playerData.playerStats);
+                            var timeRemain = playerData.timeRemain;
 
-                            var player, orb, enemy, cursors;
-                            var playerStats = {
-                                movementSpeed: 500,
-                                jumpingPower: 400,
-                            };
+
+                            var player, enemy, cursors;
+                            var orb, bullets;
                             var platforms;
                             var gameTimer = null, timeVal, timerText = null;
                             var gameOver = false,
                                 gameResult = null;
 
+                            var pickUpObj = null;
 
                             class DefendScene extends Phaser.Scene {
                                 constructor() {
@@ -688,10 +693,11 @@ function locatingGame() {
                                         }
                                         var instrument = () => {
                                             const dir = envDir + 'instrument/';
-                                            this.load.spritesheet('instrument',
+                                            let aaa = this.load.spritesheet('instrument',
                                                 dir + 'instrument.png',
                                                 { frameWidth: 256, frameHeight: 256 }
                                             );
+                                            console.debug(aaa);
                                         }
                                         background();
                                         platform();
@@ -753,13 +759,16 @@ function locatingGame() {
                                         var instrument = () => {
                                             // let instrument = this.physics.add.sprite(width * 0.1, height * 0.8, 'instrument')
                                             //     .setScale(0.3);
+                                            const orbScale = 0.25;
                                             orb = this.physics.add.group({
                                                 key: 'instrument',
                                                 repeat: 1,
                                                 randomFrame: true,
-                                                setScale: { x: 0.3, y: 0.3 },
+                                                setScale: { x: orbScale, y: orbScale },
                                                 setXY: { x: width * 0.1, y: height * 0.8, stepX: 15 },
-
+                                                // maxVelocityY: 0,
+                                                // gravityX: 1000,
+                                                // gravityY: -50,
                                             });
 
 
@@ -771,17 +780,98 @@ function locatingGame() {
                                                     repeat: -1,
                                                     // repeatDelay: 500,
                                                 });
-
+                                                this.anims.create({
+                                                    key: 'orb_activate',
+                                                    frames: this.anims.generateFrameNumbers('instrument', { frames: [8, 9, 12] }),
+                                                    frameRate: 5,
+                                                    repeat: -1,
+                                                    // repeatDelay: 500,
+                                                });
+                                                this.anims.create({
+                                                    key: 'orb_left',
+                                                    frames: this.anims.generateFrameNumbers('instrument', { frames: [10, 11, 5, 6, 7] }),
+                                                    frameRate: 5,
+                                                    repeat: -1,
+                                                    // repeatDelay: 500,
+                                                });
                                             };
                                             animsCreate();
 
                                             orb.children.iterate(child => {
                                                 child.play('orb_shine');
                                                 child.body.setSize(100, 100, true);
-                                                child.beenPicked = false;//custom
+
+                                                //==custom
+                                                child.activateFlag = false;
+                                                child.pickUpHadler = function (pickUp) {
+                                                    console.debug(this);
+                                                    let newPlayerStats = playerData.playerStats;
+
+                                                    if (pickUp) {//pick up                         
+                                                        this.body.setMaxVelocityY(0);
+                                                        this.setDepth(2);
+                                                        pickUpObj.anims.play('orb_activate', true);
+
+                                                        newPlayerStats = {
+                                                            movementSpeed: 300,
+                                                            jumpingPower: 300,
+                                                        };
+
+                                                    }
+                                                    else {//put down
+                                                        this.body.setMaxVelocityY(1000);
+                                                        this.setDepth(0);
+                                                        pickUpObj.anims.play('orb_left', true);
+                                                    }
+
+                                                    playerStats = Object.assign(playerStats, newPlayerStats);
+
+                                                    if (!this.activateFlag)
+                                                        this.activateFlag = true;
+
+                                                    // console.debug(playerStats);
+                                                };
                                             });
                                             // instrument.play('orb_shine');
                                             this.physics.add.collider(orb, platforms);
+
+                                            var Bullet = new Phaser.Class({
+
+                                                Extends: Phaser.GameObjects.Image,
+
+                                                initialize:
+
+                                                    function Bullet(scene) {
+                                                        Phaser.GameObjects.Image.call(this, scene, 0, 0, 'instrument');
+
+                                                        this.speed = Phaser.Math.GetSpeed(600, 1);
+                                                    },
+
+                                                fire: function (x, y) {
+                                                    this.setPosition(x, y);
+
+                                                    this.setActive(true);
+                                                    this.setVisible(true);
+                                                },
+
+                                                update: function (time, delta) {
+                                                    // console.debug(time, delta)
+                                                    this.x += this.speed * delta;
+
+                                                    if (this.x > 820) {
+                                                        this.setActive(false);
+                                                        this.setVisible(false);
+                                                    }
+                                                }
+
+                                            });
+
+                                            bullets = this.add.group({
+                                                classType: Bullet,
+                                                maxSize: 30,
+                                                runChildUpdate: true
+                                            });
+                                            console.debug(Bullet, bullets)
                                         }
                                         background();
                                         platform();
@@ -796,7 +886,7 @@ function locatingGame() {
                                         // player.setBounce(100, 0);
                                         player.setCollideWorldBounds(true)
                                             .setPushable(false)
-                                        // .setMass(3);
+                                            .setDepth(1);
                                         player.body
                                             .setGravityY(500)
 
@@ -917,7 +1007,7 @@ function locatingGame() {
                                             //==custom
                                             child.filpFlag = false;
                                             child.filpHandler = function (filp) {
-                                                console.debug(this);
+                                                // console.debug(this);
                                                 let scale = Math.abs(this.scaleX);
                                                 if (filp) {
                                                     this.scaleX = -scale;
@@ -1012,16 +1102,51 @@ function locatingGame() {
                                         }
 
                                         if (Phaser.Input.Keyboard.JustDown(cursors.space)) {
-                                            // if (cursors.space.isUp)
-                                            let pickUpObj = null;
-                                            orb.children.iterate(child => {
-                                                // if (Phaser.Math.Distance.BetweenPoints(player, child) <= 20)
-                                                //     console.debug(child);
 
-                                            })
+                                            if (pickUpObj) {  //==put down
+                                                pickUpObj.pickUpHadler(false);
+                                                pickUpObj = null;
+                                            }
+                                            else {  //==pick up
+                                                const piclUpDistance = 40;
+                                                let colsestOrb;
+                                                orb.children.iterate(child => {
+                                                    if (Phaser.Math.Distance.BetweenPoints(player, child) <= piclUpDistance)
+                                                        if (colsestOrb)
+                                                            colsestOrb =
+                                                                Phaser.Math.Distance.BetweenPoints(player, child) <
+                                                                    Phaser.Math.Distance.BetweenPoints(player, colsestOrb) ?
+                                                                    child : colsestOrb;
+                                                        else
+                                                            colsestOrb = child;
 
+                                                });
+                                                if (colsestOrb) {
+                                                    pickUpObj = colsestOrb;
+                                                    pickUpObj.pickUpHadler(true);
+                                                    // console.debug(pickUpObj);
+                                                };
+                                            }
+
+                                            var bullet = bullets.get();
+                                            if (bullet) {
+                                                bullet.fire(player.x, player.y);
+                                            }
                                         }
                                     };
+                                    var updateOrb = () => {
+
+                                        if (pickUpObj) {
+                                            pickUpObj.setPosition(player.x, player.y + 10);
+
+                                            // pickUpObj.x = player.x;
+                                            // pickUpObj.y = player.y;
+                                            // pickUpObj.anims.play('orb_activate', true);
+                                            // console.debug(bullets)
+                                        }
+
+
+                                    }
                                     var updateTimer = () => {
                                         // let text = 'TimeLeft : ' +
                                         //     ((timeRemain - gameTimer.getElapsed()) / 1000).toFixed(2) + ' s';
@@ -1029,6 +1154,7 @@ function locatingGame() {
                                         let text = 'TimeLeft : ' + timeVal + ' ms';
                                         timerText.setText(text);
                                     };
+
                                     var enemyBehavior = () => {
 
 
@@ -1059,6 +1185,7 @@ function locatingGame() {
 
 
                                     updatePlayer();
+                                    updateOrb();
                                     updateTimer();
                                     enemyBehavior();
                                     // console.debug(gameTimer.getOverallProgress());
@@ -1156,7 +1283,8 @@ function locatingGame() {
 
 
                         gameResult = await new Promise((resolve, reject) => {
-                            defendGame(stationData, timeRemain, resolve);
+                            let playerData = { playerStats: playerStats, timeRemain: timeRemain }
+                            defendGame(stationData, playerData, resolve);
                         });
                         gameDisplay(false);
                         console.debug(gameResult);

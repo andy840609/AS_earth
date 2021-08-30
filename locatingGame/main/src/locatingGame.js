@@ -84,11 +84,12 @@ function locatingGame() {
 
         };
         //==之後作
-        async function getWaveImg(station) {
-            station = 'sample';
-            const waveFileDir = '../data/wave/';
+        async function getWaveImg(stationData) {
+            const waveFileDir = '../data/datafile/station/xy/';
+            const solarDate = '2010.166';
+            const station = stationData.station ? stationData.station : 'MASB';
+            const channel = ['BHE', 'BHN', 'BHZ'];
             const fileExtension = '.xy';
-            const cannel = ['E', 'N', 'Z'];
             const fileDataKey = ['x', 'y'];
 
             function getData(paths) {
@@ -126,10 +127,10 @@ function locatingGame() {
                                             pushData(row);
                                         }
                                     })
-                                    var channel = filePath.substring(
+                                    var fileName = filePath.substring(
                                         filePath.lastIndexOf('/') + 1,
                                         filePath.indexOf(fileExtension));
-                                    var fileData = { channel: channel, data: tmpData };
+                                    var fileData = { fileName: fileName, data: tmpData };
                                     resolve(fileData);
                                 }
                                 else {
@@ -152,8 +153,8 @@ function locatingGame() {
                 return data;
             }
             function getSvgUrlArr(data) {
-                var getSvgNode = (d) => {
-                    // console.debug(d);
+                var getSvgNode = (d, i) => {
+                    console.debug(d);
                     const data = d.data;
                     const getMargin = (yAxisDomain = null) => {
                         // console.debug(yAxisDomain);
@@ -166,45 +167,22 @@ function locatingGame() {
                         }
                         return { top: top, right: right, bottom: bottom, left: left };
                     };
-                    const getColor = (key) => {
-                        var color;
-                        if (colorPalette[key])
-                            color = colorPalette[key];
-                        else {
-                            let data = newDataObj.newData;
-                            let index = undefined;
-                            for (i = 0; i < data.length; i++)
-                                if (data[i][dataKeys[1]] == key) {
-                                    index = i;
-                                    break;
-                                }
-
-                            switch (index % 6) {
-                                case 0:
-                                    color = "#AE0000";
-                                    break;
-                                case 1:
-                                    color = "#006030";
-                                    break;
-                                case 2:
-                                    color = "steelblue";
-                                    break;
-                                case 3:
-                                    color = "#EA7500";
-                                    break;
-                                case 4:
-                                    color = "#4B0091";
-                                    break;
-                                case 5:
-                                    color = "#272727";
-                                    break;
-                                default:
-                                    color = "steelblue";
-                                    break;
-                            }
-                            colorPalette[key] = color;
+                    const getColor = (index) => {
+                        let color;
+                        switch (index % 3) {
+                            case 0:
+                                color = "steelblue";
+                                break;
+                            case 1:
+                                color = "red";
+                                break;
+                            case 2:
+                                color = "green";
+                                break;
+                            default:
+                                color = "steelblue";
+                                break;
                         }
-                        // console.debug(colorPalette);
                         return color;
                     };
                     const getString = (key) => {
@@ -239,7 +217,7 @@ function locatingGame() {
                         .attr("viewBox", [0, 0, width, height]);
                     const xAxis = svg.append("g").attr("class", "xAxis");
                     const yAxis = svg.append("g").attr("class", "yAxis");
-                    const pathGroup = svg.append("g").attr('class', 'paths').attr("clip-path", "url(#clip)");
+                    const pathGroup = svg.append("g").attr('class', 'paths');
 
                     function updateChart() {
                         x = d3.scaleLinear()
@@ -303,11 +281,11 @@ function locatingGame() {
                                 .append("path")
                                 .style("mix-blend-mode", "normal")
                                 .attr("fill", "none")
-                                .attr("stroke-width", 1)
-                                .attr("stroke-linejoin", "round")
-                                .attr("stroke-linecap", "round")
+                                .attr("stroke-width", 2)
+                                .attr("stroke-linejoin", "bevel")//arcs | bevel |miter | miter-clip | round
+                                .attr("stroke-linecap", "butt")//butt,square,round
                                 .attr("stroke-opacity", 1)
-                                .attr("stroke", 'red')
+                                .attr("stroke", getColor(i))
                                 .attr("d", line(data))
 
 
@@ -330,12 +308,13 @@ function locatingGame() {
                     return svgUrl;
                 }
 
-                return data.map(d => getSvgUrl(getSvgNode(d)));
+                return data.map((d, i) => getSvgUrl(getSvgNode(d, i)));
             };
-            var paths = cannel.map(c => waveFileDir + station + fileExtension);
+            const prePath = waveFileDir + solarDate + '.' + station;
+            var paths = channel.map(cha => prePath + '.' + cha + fileExtension);
             var data = await getData(paths);//等data處理完才能畫圖
             var SvgUrlArr = getSvgUrlArr(data);
-            // console.debug(SvgUrlArr);
+            console.debug(SvgUrlArr);
             return SvgUrlArr;
         };
 
@@ -396,7 +375,7 @@ function locatingGame() {
                 async function addCounty() {
 
                     geoJSON = await $.ajax({
-                        url: "../data/json/twCounty.json",
+                        url: "../data/datafile/twCounty.json",
                         dataType: "json",
                         async: true,
                         // success: function (d) { console.debug(d); },
@@ -421,22 +400,42 @@ function locatingGame() {
 
                 };
                 async function addStation() {
-                    stationDataArr = await $.ajax({
-                        url: "../src/php/getStation.php",
-                        data: { whereStr: 1 },
-                        method: 'POST',
-                        dataType: 'json',
-                        async: true,
+                    // stationDataArr = await $.ajax({
+                    //     url: "../src/php/getStation.php",
+                    //     data: { whereStr: 1 },
+                    //     method: 'POST',
+                    //     dataType: 'json',
+                    //     async: true,
+                    //     success: function (d) {
+                    //         // console.debug(d);
+                    //     },
+                    //     error: function (jqXHR, textStatus, errorThrown) {
+                    //         console.error(jqXHR, textStatus, errorThrown);
+                    //     },
+                    // });
+
+                    $.ajax({
+                        url: "../data/datafile/station/station.csv",
+                        dataType: 'text',
+                        async: false,
                         success: function (d) {
                             // console.debug(d);
+                            stationDataArr = d.split("\n").map(row => {
+                                let col = row.trim().split(',');
+                                let sta = col[0].replace(new RegExp("'", "g"), '');
+                                let coord = [parseFloat(col[1]), parseFloat(col[2])];
+                                return { station: sta, coordinate: coord };
+                            });
                         },
                         error: function (jqXHR, textStatus, errorThrown) {
                             console.error(jqXHR, textStatus, errorThrown);
                         },
                     });
 
-                    stationDataArr.forEach((d, i) => {
+                    // console.debug(stationDataArr);
 
+                    stationDataArr.forEach((d, i) => {
+                        // console.debug(d);
                         d['gameData'] = { liberate: false };//==遊戲資料：liberate用來判斷是否已經贏過
 
                         //===station icon
@@ -745,7 +744,13 @@ function locatingGame() {
                                             this.add.text(width * 0.12, height * 0.4, station, { fontSize: '32px', fill: '#000' })
                                                 .setRotation(0.1).setOrigin(0.5, 0.5);
 
-                                            this.add.image(width * 0.5, height * 0.5, 'wave_0');
+                                            wavesSvg.forEach((svg, i) => {
+                                                console.debug(i)
+                                                this.add.image(width * 0.5, height * (0.15 + 0.25 * i), 'wave_' + i)
+                                            });
+                                            // this.add.image(width * 0.5, height * 0.5, 'wave_0')
+                                            // this.add.image(width * 0.5, height * 0.3, 'wave_1')
+                                            // this.add.image(width * 0.5, height * 0.1, 'wave_2')
                                         }
                                         var platform = () => {
                                             platforms = this.physics.add.staticGroup();

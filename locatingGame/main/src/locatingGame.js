@@ -1,7 +1,7 @@
 function locatingGame() {
     var selector = 'body';
-    // var data;
-    var stringObj;
+    var data;
+    // var stringObj;
 
     //Append to the object constructor function so you can only make static calls
     // Object.merge2 = function (obj1, obj2) {
@@ -16,14 +16,100 @@ function locatingGame() {
         selector = value;
         return game;
     };
-    game.dataPath = (value) => {
+    game.dataDir = (value) => {
+        const event = '2010.166';//之後能選
+        const eventCatlog = (value ? value : '../data/datafile/event/') + event + '/';
+        const channel = ['BHE', 'BHN', 'BHZ'];//不一定BH的話還要有檔案得到
+        const fileExtension = '.xy';
 
+        //==異步讀檔,回傳一個promise而非結果
+        var readTextFile = (filePath, fileDataKey) => {
+            // console.debug(fileDataKey);
+            var tmpData = [];
 
+            var pushData;
+            if (fileDataKey.length > 1) {//一行有兩列以上的資料則作物件陣列
+                pushData = (row) => {
+                    var col = row.trim().split(/\s+/);
+                    // console.debug(col);
+                    let obj = {};
+                    col.forEach((c, index) => obj[fileDataKey[index]] = (isNaN(c) ? c : parseFloat(c)));
+                    tmpData.push(obj);
+                }
+            }
+            else {//一行有一列直接作數值陣列
+                pushData = (row) => {
+                    tmpData.push(isNaN(row) ? row : parseFloat(row));
+                }
+            }
+
+            return new Promise((resolve, reject) => {
+                var rawFile = new XMLHttpRequest();
+                rawFile.open("GET", filePath, true);
+                // rawFile.open("GET", filePath, false);
+                rawFile.onreadystatechange = function () {
+                    if (rawFile.readyState === 4) {
+                        if (rawFile.status === 200 || rawFile.status == 0) {
+                            var rows = rawFile.responseText.split("\n");
+                            rows.forEach(row => {
+                                if (row != '') {
+                                    pushData(row);
+                                }
+                            })
+                            // var fileName = filePath.substring(
+                            //     filePath.lastIndexOf('/') + 1,
+                            //     filePath.indexOf(fileExtension));
+                            // var fileData = { fileName: fileName, data: tmpData };
+                            resolve(tmpData);
+                        }
+                        else {
+                            // reject(new Error(req))
+                        }
+                    }
+                }
+                rawFile.send(null);
+            });
+
+        };
+
+        //1.===得測站和經緯度資料
+        $.ajax({
+            url: eventCatlog + "station.csv",
+            dataType: 'text',
+            async: false,
+            success: function (d) {
+                // console.debug(d);
+                data = d.split("\n").map(row => {
+                    let col = row.trim().split(',');
+                    let sta = col[0].replace(new RegExp("'", "g"), '');
+                    let coord = [parseFloat(col[1]), parseFloat(col[2])];
+                    return { station: sta, coordinate: coord };
+                });
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error(jqXHR, textStatus, errorThrown);
+            },
+        });
+        // console.debug(data);
+
+        //2.===依個測站名稱得個分量xy陣列
+        const dir = eventCatlog + 'xy/' + event;
+        const fileDataKey = ['x', 'y'];
+        data.forEach(async (d) => {
+            d.waveData =
+                await Promise.all(
+                    channel.map(async (cha) => {
+                        let path = dir + '.' + d.station + '.' + cha + fileExtension;
+                        return { channel: cha, data: await readTextFile(path, fileDataKey) };
+                    })
+                );
+        });
+        console.log(data);
 
         return game;
     };
     game.string = (value) => {
-        stringObj = value;
+        // stringObj = value;
         return game;
     };
 
@@ -84,77 +170,13 @@ function locatingGame() {
 
         };
         //==之後作
-        async function getWaveImg(stationData) {
-            const waveFileDir = '../data/datafile/station/xy/';
-            const solarDate = '2010.166';
-            const station = stationData.station ? stationData.station : 'MASB';
-            const channel = ['BHE', 'BHN', 'BHZ'];
-            const fileExtension = '.xy';
-            const fileDataKey = ['x', 'y'];
+        async function getWaveImg(stationData, timeDomain = null) {
 
-            function getData(paths) {
-                //==異步讀檔,回傳一個promise而非結果
-                var readTextFile = (filePath, fileDataKey) => {
-                    // console.debug(fileDataKey);
-                    var tmpData = [];
-
-                    var pushData;
-                    if (fileDataKey.length > 1) {//一行有兩列以上的資料則作物件陣列
-                        pushData = (row) => {
-                            var col = row.trim().split(/\s+/);
-                            // console.debug(col);
-                            let obj = {};
-                            col.forEach((c, index) => obj[fileDataKey[index]] = (isNaN(c) ? c : parseFloat(c)));
-                            tmpData.push(obj);
-                        }
-                    }
-                    else {//一行有一列直接作數值陣列
-                        pushData = (row) => {
-                            tmpData.push(isNaN(row) ? row : parseFloat(row));
-                        }
-                    }
-
-                    return new Promise((resolve, reject) => {
-                        var rawFile = new XMLHttpRequest();
-                        rawFile.open("GET", filePath, true);
-                        // rawFile.open("GET", filePath, false);
-                        rawFile.onreadystatechange = function () {
-                            if (rawFile.readyState === 4) {
-                                if (rawFile.status === 200 || rawFile.status == 0) {
-                                    var rows = rawFile.responseText.split("\n");
-                                    rows.forEach(row => {
-                                        if (row != '') {
-                                            pushData(row);
-                                        }
-                                    })
-                                    var fileName = filePath.substring(
-                                        filePath.lastIndexOf('/') + 1,
-                                        filePath.indexOf(fileExtension));
-                                    var fileData = { fileName: fileName, data: tmpData };
-                                    resolve(fileData);
-                                }
-                                else {
-                                    reject(new Error(req))
-                                }
-                            }
-                        }
-                        rawFile.send(null);
-                    });
-
-                };
-
-                let chaData = paths.map(path => readTextFile(path, fileDataKey));
-                // console.debug(sampleData);
-                let data = Promise.all(chaData).then(success => {
-                    // console.debug(success);
-                    return success;
-                });
-
-                return data;
-            }
+            let waveData = stationData.waveData ? stationData.waveData : data[0];
+            console.debug(waveData);
             function getSvgUrlArr(data) {
                 var getSvgNode = (d, i) => {
-                    console.debug(d);
+                    // console.debug(d);
                     const data = d.data;
                     const getMargin = (yAxisDomain = null) => {
                         // console.debug(yAxisDomain);
@@ -220,12 +242,21 @@ function locatingGame() {
                     const pathGroup = svg.append("g").attr('class', 'paths');
 
                     function updateChart() {
+                        function getNewData() {
+                            let timeArr = data
+                            let i1 = d3.bisectCenter(timeArr, yAxis_domain[0]);
+                            let i2 = d3.bisectCenter(timeArr, yAxis_domain[1]) + 1;//包含最大範圍
+                            newData.forEach(d => d[dataKeys[3]] = d[dataKeys[3]].slice(i1, i2));
+                            newTimeArr = timeArr.slice(i1, i2);
+                        }
+                        let newData = timeDomain ? getNewData(data) : data;
+
                         x = d3.scaleLinear()
-                            .domain(d3.extent(data.map(d => d.x)))
+                            .domain(d3.extent(newData.map(d => d.x)))
                             .range([0, width]);
 
                         y = d3.scaleLinear()
-                            .domain(d3.extent(data.map(d => d.y)))
+                            .domain(d3.extent(newData.map(d => d.y)))
                             .range([height - margin.bottom, 0]);
 
                         var refreshText = () => {
@@ -286,7 +317,7 @@ function locatingGame() {
                                 .attr("stroke-linecap", "butt")//butt,square,round
                                 .attr("stroke-opacity", 1)
                                 .attr("stroke", getColor(i))
-                                .attr("d", line(data))
+                                .attr("d", line(newData))
 
 
                             pathGroup.call(makePaths);
@@ -308,12 +339,13 @@ function locatingGame() {
                     return svgUrl;
                 }
 
-                return data.map((d, i) => getSvgUrl(getSvgNode(d, i)));
+                return data.map((d, i) => new Object({
+                    channel: d.channel,
+                    svg: getSvgUrl(getSvgNode(d, i)),
+                }));
             };
-            const prePath = waveFileDir + solarDate + '.' + station;
-            var paths = channel.map(cha => prePath + '.' + cha + fileExtension);
-            var data = await getData(paths);//等data處理完才能畫圖
-            var SvgUrlArr = getSvgUrlArr(data);
+
+            var SvgUrlArr = getSvgUrlArr(waveData);
             console.debug(SvgUrlArr);
             return SvgUrlArr;
         };
@@ -400,41 +432,8 @@ function locatingGame() {
 
                 };
                 async function addStation() {
-                    // stationDataArr = await $.ajax({
-                    //     url: "../src/php/getStation.php",
-                    //     data: { whereStr: 1 },
-                    //     method: 'POST',
-                    //     dataType: 'json',
-                    //     async: true,
-                    //     success: function (d) {
-                    //         // console.debug(d);
-                    //     },
-                    //     error: function (jqXHR, textStatus, errorThrown) {
-                    //         console.error(jqXHR, textStatus, errorThrown);
-                    //     },
-                    // });
 
-                    $.ajax({
-                        url: "../data/datafile/station/station.csv",
-                        dataType: 'text',
-                        async: false,
-                        success: function (d) {
-                            // console.debug(d);
-                            stationDataArr = d.split("\n").map(row => {
-                                let col = row.trim().split(',');
-                                let sta = col[0].replace(new RegExp("'", "g"), '');
-                                let coord = [parseFloat(col[1]), parseFloat(col[2])];
-                                return { station: sta, coordinate: coord };
-                            });
-                        },
-                        error: function (jqXHR, textStatus, errorThrown) {
-                            console.error(jqXHR, textStatus, errorThrown);
-                        },
-                    });
-
-                    // console.debug(stationDataArr);
-
-                    stationDataArr.forEach((d, i) => {
+                    data.forEach((d, i) => {
                         // console.debug(d);
                         d['gameData'] = { liberate: false };//==遊戲資料：liberate用來判斷是否已經贏過
 
@@ -641,7 +640,7 @@ function locatingGame() {
 
                 const gameBox = gameDiv.getBoundingClientRect();
                 const stationData = stationMarker ? stationMarker.options.data : { gameData: {} };
-
+                // console.debug(stationData);
                 let gameResult;
                 switch (gameMode) {
                     case 'defend':
@@ -679,8 +678,9 @@ function locatingGame() {
                                         const envDir = gameObjDir + 'environment/';
                                         var station = () => {
                                             const dir = envDir + 'station/';
-                                            this.load.image('station', dir + 'station.png');
+                                            let aaa = this.load.image('station', dir + 'station.png');
                                             this.load.image('title', dir + 'title.png');
+                                            console.debug(aaa);
                                         }
                                         var platform = () => {
                                             const dir = envDir + 'platform/';
@@ -745,7 +745,7 @@ function locatingGame() {
                                                 .setRotation(0.1).setOrigin(0.5, 0.5);
 
                                             wavesSvg.forEach((svg, i) => {
-                                                console.debug(i)
+                                                // console.debug(i)
                                                 this.add.image(width * 0.5, height * (0.15 + 0.25 * i), 'wave_' + i)
                                             });
                                             // this.add.image(width * 0.5, height * 0.5, 'wave_0')
@@ -921,7 +921,7 @@ function locatingGame() {
 
                                         this.physics.add.collider(player, platforms);
                                         // cursors = this.input.keyboard.createCursorKeys();
-                                        cursors = this.input.keyboard.addKeys('w,s,a,d,space');
+                                        cursors = this.input.keyboard.addKeys('w,s,a,d,space,p,q,e');
                                     };
                                     var initEnemy = () => {
                                         if (this.enemyDiedFlag) return;
@@ -1100,11 +1100,11 @@ function locatingGame() {
                                             player.setVelocityX(0);
 
                                             player.anims.play('player_turn');
-                                        }
+                                        };
 
                                         if (cursors.w.isDown && player.body.touching.down) {
                                             player.setVelocityY(-jump);
-                                        }
+                                        };
 
                                         if (Phaser.Input.Keyboard.JustDown(cursors.space)) {
 
@@ -1137,6 +1137,22 @@ function locatingGame() {
                                             if (bullet) {
                                                 bullet.fire(player.x, player.y);
                                             }
+                                        };
+
+                                        //===test
+                                        if (Phaser.Input.Keyboard.JustDown(cursors.q)) {
+                                            getWaveImg(stationData).then(success => {
+                                                console.debug(success);
+                                                let aaa = this.load.svg('wave_0', success[0], { scale: 1 })
+                                                console.debug(aaa);
+                                                this.add.image(width * 0.5, height * 0.8, 'wave_0')
+                                            });
+
+                                        }
+                                        else if (Phaser.Input.Keyboard.JustDown(cursors.e)) {
+
+                                            // let wavesSvg = getWaveImg(stationData);
+                                            console.debug(this.textures);
                                         }
                                     };
                                     var updateOrb = () => {
@@ -1325,7 +1341,7 @@ function locatingGame() {
             };
 
             initMap();
-            gameStart('defend');
+            // gameStart('defend');
         };
         //===init once
 

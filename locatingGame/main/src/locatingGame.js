@@ -95,15 +95,16 @@ function locatingGame() {
         //2.===依個測站名稱得個分量xy陣列
         const dir = eventCatlog + 'xy/' + event;
         const fileDataKey = ['x', 'y'];
-        data.forEach(async (d) => {
+        data.map(async (d) => {
             d.waveData =
-                await Promise.all(
+                Promise.all(
                     channel.map(async (cha) => {
                         let path = dir + '.' + d.station + '.' + cha + fileExtension;
                         return { channel: cha, data: await readTextFile(path, fileDataKey) };
                     })
                 );
-        });
+            return d;
+        })
         console.log(data);
 
         return game;
@@ -147,49 +148,22 @@ function locatingGame() {
                 </div> 
                 </form>
                 `);
-            //================dropdown-menu內元素被點擊不關閉menu
 
-            let All_dropdownMenu = chartContainerJQ.find('.dropdown-menu');
-
-            All_dropdownMenu
-                .on("click.bs.dropdown", function (e) {
-                    // console.debug(e.target);
-                    e.stopPropagation();
-                })
-            // .on("shown.bs.dropdown", function (e) {
-            //     console.debug(e.target);
-            // })
-
-            $(window)
-                //==用來關閉dropdown menu
-                .on('click', e => All_dropdownMenu.removeClass('show'));
-
-            //================
-
-
-
+            if (data === undefined)
+                game.dataDir();
         };
         //==之後作
         async function getWaveImg(stationData, timeDomain = null) {
 
-            let waveData = stationData.waveData ? stationData.waveData : data[0];
-            console.debug(waveData);
+            let waveData = await (stationData.waveData ? stationData.waveData : data[0].waveData);
+            // console.debug(waveData);
+
             function getSvgUrlArr(data) {
-                var getSvgNode = (d, i) => {
-                    // console.debug(d);
-                    const data = d.data;
-                    const getMargin = (yAxisDomain = null) => {
-                        // console.debug(yAxisDomain);
-                        var top = 30, right = 30, bottom = 70, left = 50;
-                        if (yAxisDomain) {
-                            let yAxisMaxTick = parseInt(Math.max(...yAxisDomain.map(domain => Math.abs(domain))));
-                            let tickLength = yAxisMaxTick.toString().length;
-                            // console.debug(tickLength);
-                            left = tickLength >= 7 ? 60 : tickLength >= 5 ? 50 : 45;
-                        }
-                        return { top: top, right: right, bottom: bottom, left: left };
-                    };
-                    const getColor = (index) => {
+                var getSvgNode = (d, axisSvg = false) => {
+
+                    const chaData = d.data;
+                    const getColor = () => {
+                        let index = data.indexOf(d);
                         let color;
                         switch (index % 3) {
                             case 0:
@@ -207,100 +181,68 @@ function locatingGame() {
                         }
                         return color;
                     };
-                    const getString = (key) => {
-                        let keyName, keyUnit = '';
-                        switch (key) {
-                            case 'dist':
-                                keyName = 'Distance(km)';
-                                keyUnit = 'km';
-                                break;
-                            case 'az':
-                                keyName = 'Azimuth(°)';
-                                keyUnit = '°';
-                                break;
-                            case 'time':
-                                keyName = 'Time(s)';
-                                keyUnit = 's';
-                                break;
-                            case 'station':
-                                keyName = 'Station';
-                                break;
-                            default:
-                                keyName = key;
-                                break;
-                        }
-                        return { keyName: keyName, keyUnit: keyUnit };
-                    };
 
                     const width = 800;
                     const height = 300;
-                    const margin = { top: 0, right: 0, bottom: 0, left: 0 };
+                    const margin = { top: 30, right: 30, bottom: 40, left: 30 };
                     const svg = d3.create("svg")
                         .attr("viewBox", [0, 0, width, height]);
                     const xAxis = svg.append("g").attr("class", "xAxis");
-                    const yAxis = svg.append("g").attr("class", "yAxis");
+                    // const yAxis = svg.append("g").attr("class", "yAxis");
                     const pathGroup = svg.append("g").attr('class', 'paths');
 
                     function updateChart() {
                         function getNewData() {
-                            let timeArr = data
+                            let timeArr = chaData.map(d => d.y);
                             let i1 = d3.bisectCenter(timeArr, yAxis_domain[0]);
                             let i2 = d3.bisectCenter(timeArr, yAxis_domain[1]) + 1;//包含最大範圍
                             newData.forEach(d => d[dataKeys[3]] = d[dataKeys[3]].slice(i1, i2));
                             newTimeArr = timeArr.slice(i1, i2);
                         }
-                        let newData = timeDomain ? getNewData(data) : data;
+                        let newData = timeDomain ? getNewData(chaData) : chaData;
 
-                        x = d3.scaleLinear()
+                        let x = d3.scaleLinear()
                             .domain(d3.extent(newData.map(d => d.x)))
-                            .range([0, width]);
+                            .range([margin.right, width - margin.left]);
 
-                        y = d3.scaleLinear()
-                            .domain(d3.extent(newData.map(d => d.y)))
-                            .range([height - margin.bottom, 0]);
 
-                        var refreshText = () => {
-                            xAxis
-                                .select('.axis_name')
-                                .attr("y", margin.bottom - 20)
-                                .text({ band: getString(dataKeys[1]), linear: getString(xAxisName) }[xAxisScale].keyName);
 
-                            yAxis
-                                .select('.axis_name')
-                                .attr("y", -margin.left + 8)
-                                .attr("opacity", function (d, i) {
-                                    let tickLength = d3.select(this.parentNode).select(".tick>text").text().length;
-                                    return tickLength > 3 ? 0.3 : 1;
-                                });
 
-                            //==title
-                            svg
-                                .select('.title text')
-                                .attr("x", width / 2)
-                                .attr("y", margin.top / 2);
-
-                        }
                         var updateAxis = () => {
                             var makeXAxis = g => g
-                                .attr("transform", `translate(0,${height - margin.bottom})`)
-                                .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0));
+                                // .style('font', '20px sans-serif')
+                                .style('font', 'italic small-caps bold 20px/2 cursive')
 
+                                .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0))
+                                .call(g => g.append('text')
+                                    .attr('fill', '#FBFBFF')
+                                    .attr("font-weight", "bold")
+                                    .attr("textLength", "150")
+                                    .attr("lengthAdjust", "spacingAndGlyphs")
+                                    .attr('stroke', 'grey')
+                                    .attr("stroke-width", "0.5px")
+                                    .attr('x', width / 2)
+                                    .attr("y", margin.bottom)
+                                    .text('Time(s)')
+                                )
+                                .call(g => g.selectAll('path,line')
+                                    // .attr("stroke", "red")
+                                    .attr("stroke-width", "5px")
+                                    .attr("shape-rendering", "crispEdges")
 
-                            var makeYAxis = g => g
-                                .attr("transform", `translate(${margin.left},0)`)
-                                .call(d3.axisLeft(y)
-                                    .ticks(height / 30))
-                                .call(g => g.select(".domain").remove())
-                                .call(g => g.selectAll("g.yAxis g.tick line")
-                                    .attr("x2", d => width - margin.left - margin.right)
-                                    .attr("stroke-opacity", 0.2)
-                                );
+                                )
+                            // .call(g => g.select('text'))
 
                             xAxis.call(makeXAxis);
-                            yAxis.call(makeYAxis);
+
+
+
                         }
                         var updatePaths = () => {
 
+                            let y = d3.scaleLinear()
+                                .domain(d3.extent(newData.map(d => d.y)))
+                                .range([height, 0]);
 
                             var line = d3.line()
                                 .defined(d => !isNaN(d.x))
@@ -316,17 +258,14 @@ function locatingGame() {
                                 .attr("stroke-linejoin", "bevel")//arcs | bevel |miter | miter-clip | round
                                 .attr("stroke-linecap", "butt")//butt,square,round
                                 .attr("stroke-opacity", 1)
-                                .attr("stroke", getColor(i))
+                                .attr("stroke", getColor(d))
                                 .attr("d", line(newData))
 
 
                             pathGroup.call(makePaths);
 
                         };
-                        // updateAxis();
-                        updatePaths();
-                        // refreshText();
-
+                        axisSvg ? updateAxis() : updatePaths();
 
                     };
                     updateChart();
@@ -339,14 +278,23 @@ function locatingGame() {
                     return svgUrl;
                 }
 
-                return data.map((d, i) => new Object({
-                    channel: d.channel,
-                    svg: getSvgUrl(getSvgNode(d, i)),
+                let svgArr = data.map((d, i) => new Object({
+                    svgName: d.channel,
+                    svg: getSvgUrl(getSvgNode(d)),
                 }));
+
+
+                //==get xAxis svg
+                svgArr.push({
+                    svgName: 'xAxis',
+                    svg: getSvgUrl(getSvgNode(data[0], true)),
+                });
+                // console.debug(svgArr);
+                return svgArr;
             };
 
             var SvgUrlArr = getSvgUrlArr(waveData);
-            console.debug(SvgUrlArr);
+            // console.debug(SvgUrlArr);
             return SvgUrlArr;
         };
 
@@ -629,7 +577,6 @@ function locatingGame() {
             async function gameStart(gameMode, stationMarker = null) {
                 // console.debug(gameMode, stationMarker);
 
-
                 var gameDisplay = (display) => {
                     let value = display ? 'inline' : 'none';
                     gameOuterDiv.style.display = value;
@@ -647,9 +594,8 @@ function locatingGame() {
                         let wavesSvg = await getWaveImg(stationData);
                         // console.debug(wavesSvg);
 
-
                         function defendGame(stationData, playerData, resolve) {
-                            const data = stationData.gameData;
+                            const gameData = stationData.gameData;
                             const assetsDir = '../data/assets/';
                             const width = gameBox.width, height = gameBox.height;
                             // const center = [width];
@@ -671,16 +617,16 @@ function locatingGame() {
                                 constructor() {
                                     super({ key: 'defend' });
                                 }
-                                enemyDiedFlag = data.liberate;
+                                enemyDiedFlag = gameData.liberate;
                                 preload() {
                                     const gameObjDir = assetsDir + 'gameObj/';
                                     var environment = () => {
                                         const envDir = gameObjDir + 'environment/';
                                         var station = () => {
                                             const dir = envDir + 'station/';
-                                            let aaa = this.load.image('station', dir + 'station.png');
+                                            this.load.image('station', dir + 'station.png');
                                             this.load.image('title', dir + 'title.png');
-                                            console.debug(aaa);
+
                                         }
                                         var platform = () => {
                                             const dir = envDir + 'platform/';
@@ -692,11 +638,11 @@ function locatingGame() {
                                         }
                                         var instrument = () => {
                                             const dir = envDir + 'instrument/';
-                                            let aaa = this.load.spritesheet('instrument',
+                                            this.load.spritesheet('instrument',
                                                 dir + 'instrument.png',
                                                 { frameWidth: 256, frameHeight: 256 }
                                             );
-                                            console.debug(aaa);
+
                                         }
                                         background();
                                         platform();
@@ -722,7 +668,7 @@ function locatingGame() {
 
                                     };
                                     var wave = () => {
-                                        wavesSvg.forEach((svg, i) => this.load.svg('wave_' + i, svg, { scale: 1 }));
+                                        wavesSvg.forEach(d => this.load.svg('wave_' + d.svgName, d.svg, { scale: 1 }));
                                     };
 
 
@@ -737,16 +683,22 @@ function locatingGame() {
                                         // console.debug()
                                         var station = () => {
                                             let station = stationData.station ? stationData.station : '???';
-                                            this.add.image(width * 0.07, height * 0.53, 'station')
-                                                .setScale(-1, 0.63);
+                                            this.add.image(width * 0.91, height * 0.53, 'station')
+                                                .setScale(1, 0.63);
                                             // this.add.image(width * 0.12, height * 0.53, 'title')
                                             //     .setScale(0.1, 0.15).setRotation(0.1).setPosition(width * 0.12, height * 0.53, 100, 100);
-                                            this.add.text(width * 0.12, height * 0.4, station, { fontSize: '32px', fill: '#000' })
-                                                .setRotation(0.1).setOrigin(0.5, 0.5);
+                                            this.add.text(width * 0.87, height * 0.46, station, { fontSize: '32px', fill: '#000' })
+                                                .setRotation(-0.1).setOrigin(0.5, 0.5);
 
-                                            wavesSvg.forEach((svg, i) => {
-                                                // console.debug(i)
-                                                this.add.image(width * 0.5, height * (0.15 + 0.25 * i), 'wave_' + i)
+                                            wavesSvg.forEach((d, i) => {
+                                                console.debug()
+                                                let y;
+                                                if (d.svgName != 'xAxis')
+                                                    y = height * (0.15 + 0.25 * i);
+                                                else
+                                                    y = height * 1.15;
+
+                                                this.add.image(width * 0.5, y, 'wave_' + d.svgName);
                                             });
                                             // this.add.image(width * 0.5, height * 0.5, 'wave_0')
                                             // this.add.image(width * 0.5, height * 0.3, 'wave_1')
@@ -770,7 +722,7 @@ function locatingGame() {
                                                 repeat: 1,
                                                 randomFrame: true,
                                                 setScale: { x: orbScale, y: orbScale },
-                                                setXY: { x: width * 0.1, y: height * 0.8, stepX: 15 },
+                                                setXY: { x: width * 0.86, y: height * 0.8, stepX: 15 },
                                                 // maxVelocityY: 0,
                                                 // gravityX: 1000,
                                                 // gravityY: -50,
@@ -809,7 +761,7 @@ function locatingGame() {
                                                 //==custom
                                                 child.activateFlag = false;
                                                 child.pickUpHadler = function (pickUp) {
-                                                    console.debug(this);
+                                                    // console.debug(this);
                                                     let newPlayerStats = playerData.playerStats;
 
                                                     if (pickUp) {//pick up                         
@@ -876,7 +828,7 @@ function locatingGame() {
                                                 maxSize: 30,
                                                 runChildUpdate: true
                                             });
-                                            console.debug(Bullet, bullets)
+                                            // console.debug(Bullet, bullets)
                                         }
                                         background();
                                         platform();
@@ -1009,7 +961,9 @@ function locatingGame() {
 
                                             child.body.setSize(25, 18, true);
 
-                                            //==custom
+                                            //==========custom attr
+
+                                            //=處理轉向
                                             child.filpFlag = false;
                                             child.filpHandler = function (filp) {
                                                 // console.debug(this);
@@ -1025,8 +979,18 @@ function locatingGame() {
                                                     this.filpFlag = false;
                                                 }
                                             };
+                                            //=判斷進入攻擊範圍
+                                            child.startAttack = false;
+                                            //=判斷是否休息(追一段時間要休息)
+                                            child.restFlag = false;
 
+                                            //=轉向左邊(素材一開始向右)
                                             child.filpHandler(true);
+
+                                            //==========custom attr
+
+
+
                                             // console.debug(child);
                                             // console.debug(child.getBounds());
                                         });
@@ -1093,8 +1057,10 @@ function locatingGame() {
                                         }
                                         else if (cursors.d.isDown) {
                                             player.setVelocityX(speed);
-
                                             player.anims.play('player_right', true);
+                                            // console.debug(enemy.children.entries[0])
+                                            // console.debug(Phaser.Math.Distance.BetweenPoints(player, enemy.children.entries[0]));
+
                                         }
                                         else {
                                             player.setVelocityX(0);
@@ -1141,11 +1107,13 @@ function locatingGame() {
 
                                         //===test
                                         if (Phaser.Input.Keyboard.JustDown(cursors.q)) {
-                                            getWaveImg(stationData).then(success => {
+
+                                            let waveData = data[0].waveData;
+                                            getWaveImg(waveData).then(success => {
                                                 console.debug(success);
-                                                let aaa = this.load.svg('wave_0', success[0], { scale: 1 })
+                                                let aaa = this.load.svg('wave_BHZ', success[0], { scale: 1 })
                                                 console.debug(aaa);
-                                                this.add.image(width * 0.5, height * 0.8, 'wave_0')
+                                                this.add.image(width * 0.5, height * 0.8, 'wave_BHZ')
                                             });
 
                                         }
@@ -1175,23 +1143,69 @@ function locatingGame() {
                                         let text = 'TimeLeft : ' + timeVal + ' ms';
                                         timerText.setText(text);
                                     };
-
                                     var enemyBehavior = () => {
 
+                                        var chasingBehavior = (child) => {
+                                            const chasingDuration = 3000;//追擊多久後休息
+
+                                            let dist = Phaser.Math.Distance.BetweenPoints(player, child);
+
+                                            //===進入敵人的攻擊範圍才啟動追擊
+                                            if (!child.startAttack)
+                                                if (dist < 300) child.startAttack = true;
+                                                else return;
+                                            //===開始追擊行為
+                                            else
+                                                //===不在休息時就追擊
+                                                if (!child.restFlag) {
+                                                    this.physics.accelerateToObject(child, player, 500, 500, 0);
+                                                    // this.physics.moveToObject(child, player, 500, chasingDuration);
+                                                    child.anims.play('dog_Walk', true);
+
+                                                    //==時間到後休息restFlag= true
+                                                    this.time.delayedCall(chasingDuration, () => {
+                                                        child.restFlag = true;
+                                                        child.body.reset(child.x, child.y);//==停下
+                                                    }, [], this);
+                                                }
+                                                //===休息時間到就繼續追
+                                                else {
+                                                    //==休息隨機0~3秒
+
+                                                    let restingDuration = Phaser.Math.Between(0, 3) * 1000;
+                                                    this.time.delayedCall(restingDuration, (a, b, c, d) => {
+                                                        console.debug(a, b, c, d);
+                                                        child.restFlag = false;
+                                                    }, [], this);
+                                                }
+
+
+                                            if (dist < 80) {
+                                                child.anims.play('dog_Attack', true);
+                                                // child.body.reset(child.x, child.y);
+                                                // console.debug();
+                                            }
+
+                                        };
+                                        var filping = (child, filpDir) => {
+                                            // console.debug('filping');
+                                            child.filpHandler(filpDir);
+                                        };
 
                                         enemy.children.iterate(child => {
 
-                                            if (Phaser.Math.Distance.BetweenPoints(player, child) < 80) {
-                                                child.anims.play('dog_Attack', true);
-                                            }
-                                            else {
-                                                this.physics.accelerateToObject(child, player, 500, 800, 1000);
-                                                // this.physics.moveToObject(child, player, 500, 800, 1000);
-                                                child.anims.play('dog_Walk', true);
-                                            }
 
-                                            if (child.filpFlag != player.x < child.x)
-                                                child.filpHandler(player.x < child.x);
+                                            chasingBehavior(child);
+
+
+                                            //===判斷player相對狗的位子來轉向
+                                            let filpDir = player.x < child.x;
+                                            if (child.filpFlag != filpDir)
+                                                filping(child, filpDir);
+
+
+
+
 
 
 
@@ -1341,7 +1355,9 @@ function locatingGame() {
             };
 
             initMap();
-            // gameStart('defend');
+
+            // console.debug(data);
+            gameStart('defend');
         };
         //===init once
 

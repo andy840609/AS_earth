@@ -135,7 +135,7 @@ function locatingGame() {
                   
                  
                     <div id="gameOuter"  class="row">
-                        <div id="gameMain"  class="col-12"></div>                      
+                        <div id="gameMain"></div>                      
                     </div>
 
                     <div id='loading'  style="display:none;">
@@ -159,7 +159,8 @@ function locatingGame() {
             // console.debug(waveData);
 
             function getSvgUrlArr(data) {
-                var getSvgNode = (d, axisSvg = false) => {
+                var getSvgObj = (d, axisSvg = false) => {
+                    var svgObj = {};
 
                     const chaData = d.data;
                     const getColor = () => {
@@ -181,7 +182,6 @@ function locatingGame() {
                         }
                         return color;
                     };
-
                     const width = 800;
                     const height = 300;
                     const margin = { top: 30, right: 30, bottom: 40, left: 30 };
@@ -191,21 +191,26 @@ function locatingGame() {
                     // const yAxis = svg.append("g").attr("class", "yAxis");
                     const pathGroup = svg.append("g").attr('class', 'paths');
 
-                    function updateChart() {
+                    function getChart() {
                         function getNewData() {
                             let timeArr = chaData.map(d => d.y);
                             let i1 = d3.bisectCenter(timeArr, yAxis_domain[0]);
                             let i2 = d3.bisectCenter(timeArr, yAxis_domain[1]) + 1;//包含最大範圍
                             newData.forEach(d => d[dataKeys[3]] = d[dataKeys[3]].slice(i1, i2));
                             newTimeArr = timeArr.slice(i1, i2);
-                        }
+                        };
+                        function getSvgUrl(svgNode) {
+                            let svgData = (new XMLSerializer()).serializeToString(svgNode);
+                            let svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+                            let svgUrl = URL.createObjectURL(svgBlob);
+                            return svgUrl;
+                        };
+
                         let newData = timeDomain ? getNewData(chaData) : chaData;
 
                         let x = d3.scaleLinear()
                             .domain(d3.extent(newData.map(d => d.x)))
                             .range([margin.right, width - margin.left]);
-
-
 
 
                         var updateAxis = () => {
@@ -265,30 +270,30 @@ function locatingGame() {
                             pathGroup.call(makePaths);
 
                         };
-                        axisSvg ? updateAxis() : updatePaths();
+                        if (axisSvg) {
+                            updateAxis();
+                            Object.assign(svgObj, {
+                                x: x,
+                                margin: margin,
+                            });
+                        }
+                        else
+                            updatePaths();
+
+                        svgObj.svg = getSvgUrl(svg.node());
 
                     };
-                    updateChart();
-                    return svg.node();
-                }
-                var getSvgUrl = (svgNode) => {
-                    let svgData = (new XMLSerializer()).serializeToString(svgNode);
-                    let svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-                    let svgUrl = URL.createObjectURL(svgBlob);
-                    return svgUrl;
+
+                    getChart();
+                    return svgObj;
                 }
 
-                let svgArr = data.map((d, i) => new Object({
-                    svgName: d.channel,
-                    svg: getSvgUrl(getSvgNode(d)),
-                }));
 
 
+                //==get ENZ channel svg
+                let svgArr = data.map(d => Object.assign({ svgName: d.channel }, getSvgObj(d)));
                 //==get xAxis svg
-                svgArr.push({
-                    svgName: 'xAxis',
-                    svg: getSvgUrl(getSvgNode(data[0], true)),
-                });
+                svgArr.push(Object.assign({ svgName: 'xAxis' }, getSvgObj(data[0], true)));
                 // console.debug(svgArr);
                 return svgArr;
             };
@@ -591,8 +596,8 @@ function locatingGame() {
                 let gameResult;
                 switch (gameMode) {
                     case 'defend':
-                        let wavesSvg = await getWaveImg(stationData);
-                        // console.debug(wavesSvg);
+                        let waveSvgObjs = await getWaveImg(stationData);
+                        // console.debug(waveSvgObjs);
 
                         function defendGame(stationData, playerData, resolve) {
                             const gameData = stationData.gameData;
@@ -612,12 +617,14 @@ function locatingGame() {
                                 gameResult = null;
 
                             var pickUpObj = null;
+                            var waveGameObjs = [];
 
                             class DefendScene extends Phaser.Scene {
                                 constructor() {
                                     super({ key: 'defend' });
                                 }
                                 enemyDiedFlag = gameData.liberate;
+
                                 preload() {
                                     const gameObjDir = assetsDir + 'gameObj/';
                                     var environment = () => {
@@ -641,6 +648,10 @@ function locatingGame() {
                                             this.load.spritesheet('instrument',
                                                 dir + 'instrument.png',
                                                 { frameWidth: 256, frameHeight: 256 }
+                                            );
+                                            this.load.spritesheet('laser',
+                                                dir + 'laser.png',
+                                                { frameWidth: 512, frameHeight: 682.6 }
                                             );
 
                                         }
@@ -668,7 +679,7 @@ function locatingGame() {
 
                                     };
                                     var wave = () => {
-                                        wavesSvg.forEach(d => this.load.svg('wave_' + d.svgName, d.svg, { scale: 1 }));
+                                        waveSvgObjs.forEach(d => this.load.svg('wave_' + d.svgName, d.svg, { scale: 1 }));
                                     };
 
 
@@ -679,6 +690,45 @@ function locatingGame() {
 
                                 };
                                 create() {
+
+
+                                    var Bullet = new Phaser.Class({
+
+                                        Extends: Phaser.GameObjects.Image,
+
+                                        initialize:
+
+                                            function Bullet(scene) {
+                                                Phaser.GameObjects.Image.call(this, scene, 0, 0, 'instrument');
+
+                                                this.speed = Phaser.Math.GetSpeed(600, 1);
+                                            },
+
+                                        fire: function (x, y) {
+                                            this.setPosition(x, y);
+
+                                            this.setActive(true);
+                                            this.setVisible(true);
+                                        },
+
+                                        update: function (time, delta) {
+                                            // console.debug(time, delta)
+                                            this.x += this.speed * delta;
+
+                                            if (this.x > 820) {
+                                                this.setActive(false);
+                                                this.setVisible(false);
+                                            }
+                                        }
+
+                                    });
+                                    bullets = this.add.group({
+                                        classType: Bullet,
+                                        maxSize: 30,
+                                        runChildUpdate: true
+                                    });
+
+
                                     var initEnvironment = () => {
                                         // console.debug()
                                         var station = () => {
@@ -690,16 +740,17 @@ function locatingGame() {
                                             this.add.text(width * 0.87, height * 0.46, station, { fontSize: '32px', fill: '#000' })
                                                 .setRotation(-0.1).setOrigin(0.5, 0.5);
 
-                                            wavesSvg.forEach((d, i) => {
-                                                console.debug()
+                                            waveGameObjs = waveSvgObjs.map((d, i) => {
+
                                                 let y;
                                                 if (d.svgName != 'xAxis')
                                                     y = height * (0.15 + 0.25 * i);
                                                 else
                                                     y = height * 1.15;
 
-                                                this.add.image(width * 0.5, y, 'wave_' + d.svgName);
+                                                return this.add.image(width * 0.5, y, 'wave_' + d.svgName);
                                             });
+
                                             // this.add.image(width * 0.5, height * 0.5, 'wave_0')
                                             // this.add.image(width * 0.5, height * 0.3, 'wave_1')
                                             // this.add.image(width * 0.5, height * 0.1, 'wave_2')
@@ -726,49 +777,58 @@ function locatingGame() {
                                                 // maxVelocityY: 0,
                                                 // gravityX: 1000,
                                                 // gravityY: -50,
-                                            });
 
+                                            });
 
                                             var animsCreate = () => {
                                                 this.anims.create({
-                                                    key: 'orb_shine',
+                                                    key: 'orb_inactive',
                                                     frames: this.anims.generateFrameNumbers('instrument', { start: 1, end: 4 }),
                                                     frameRate: 5,
                                                     repeat: -1,
                                                     // repeatDelay: 500,
                                                 });
                                                 this.anims.create({
-                                                    key: 'orb_activate',
+                                                    key: 'orb_holded',
                                                     frames: this.anims.generateFrameNumbers('instrument', { frames: [8, 9, 12] }),
                                                     frameRate: 5,
                                                     repeat: -1,
                                                     // repeatDelay: 500,
                                                 });
                                                 this.anims.create({
-                                                    key: 'orb_left',
+                                                    key: 'orb_activate',
                                                     frames: this.anims.generateFrameNumbers('instrument', { frames: [10, 11, 5, 6, 7] }),
                                                     frameRate: 5,
                                                     repeat: -1,
                                                     // repeatDelay: 500,
                                                 });
+                                                this.anims.create({
+                                                    key: 'orb_laser',
+                                                    frames: this.anims.generateFrameNumbers('laser'),
+                                                    frameRate: 5,
+                                                    repeat: -1,
+                                                    // repeatDelay: 500,
+                                                });
+
                                             };
                                             animsCreate();
 
                                             orb.children.iterate(child => {
-                                                child.play('orb_shine');
+                                                child.play('orb_inactive');
                                                 child.body.setSize(100, 100, true);
 
                                                 //==custom
                                                 child.activateFlag = false;
-                                                child.pickUpHadler = function (pickUp) {
+                                                child.statusHadler = function (pickUp, activate = true) {
                                                     // console.debug(this);
                                                     let newPlayerStats = playerData.playerStats;
 
                                                     if (pickUp) {//pick up                         
                                                         this.body.setMaxVelocityY(0);
                                                         this.setDepth(2);
-                                                        pickUpObj.anims.play('orb_activate', true);
+                                                        pickUpObj.anims.play('orb_holded', true);
 
+                                                        //==撿起後角色屬性改變
                                                         newPlayerStats = {
                                                             movementSpeed: 300,
                                                             jumpingPower: 300,
@@ -778,57 +838,27 @@ function locatingGame() {
                                                     else {//put down
                                                         this.body.setMaxVelocityY(1000);
                                                         this.setDepth(0);
-                                                        pickUpObj.anims.play('orb_left', true);
+                                                        pickUpObj.anims.play(activate ? 'orb_activate' : 'orb_inactive', true);
                                                     }
 
                                                     playerStats = Object.assign(playerStats, newPlayerStats);
 
-                                                    if (!this.activateFlag)
-                                                        this.activateFlag = true;
+
+                                                    this.activateFlag = activate;
 
                                                     // console.debug(playerStats);
                                                 };
+                                                child.laserObj = this.physics.add.sprite(child.x, child.y + 20)
+                                                    .setGravityY(0)
+                                                    .setAlpha(0.8)
+                                                    .setScale(0.3, 1)
+                                                    .setOrigin(0.5, 1)
+                                                    .setDepth(0);
+                                                console.debug(child.laserObj)
                                             });
-                                            // instrument.play('orb_shine');
+
                                             this.physics.add.collider(orb, platforms);
 
-                                            var Bullet = new Phaser.Class({
-
-                                                Extends: Phaser.GameObjects.Image,
-
-                                                initialize:
-
-                                                    function Bullet(scene) {
-                                                        Phaser.GameObjects.Image.call(this, scene, 0, 0, 'instrument');
-
-                                                        this.speed = Phaser.Math.GetSpeed(600, 1);
-                                                    },
-
-                                                fire: function (x, y) {
-                                                    this.setPosition(x, y);
-
-                                                    this.setActive(true);
-                                                    this.setVisible(true);
-                                                },
-
-                                                update: function (time, delta) {
-                                                    // console.debug(time, delta)
-                                                    this.x += this.speed * delta;
-
-                                                    if (this.x > 820) {
-                                                        this.setActive(false);
-                                                        this.setVisible(false);
-                                                    }
-                                                }
-
-                                            });
-
-                                            bullets = this.add.group({
-                                                classType: Bullet,
-                                                maxSize: 30,
-                                                runChildUpdate: true
-                                            });
-                                            // console.debug(Bullet, bullets)
                                         }
                                         background();
                                         platform();
@@ -946,10 +976,10 @@ function locatingGame() {
                                         //     ease: 'Linear'
                                         // });
 
+                                        const enemyType = ['dog', 'cat', 'bird'];
+                                        // const dogBehavior;
+                                        enemy.children.iterate((child, i) => {
 
-                                        enemy.children.iterate(child => {
-                                            //  Give each star a slightly different bounce
-                                            // child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.5));
                                             child
                                                 .setCollideWorldBounds(true)
                                                 .setBounce(0)
@@ -979,11 +1009,76 @@ function locatingGame() {
                                                     this.filpFlag = false;
                                                 }
                                             };
-                                            //=判斷進入攻擊範圍
-                                            child.startAttack = false;
-                                            //=判斷是否休息(追一段時間要休息)
-                                            child.restFlag = false;
 
+                                            child.startBehaviorFlag = false;//=狗開始追...（爲true後永遠爲true）
+                                            child.restFlag = false;//=判斷是否休息(追一段時間要休息)
+
+                                            child.behaviorCallback = null;//==為了計時器不重複註冊多個
+                                            child.behaviorHandler = function (scene) {
+
+                                                let dist = Phaser.Math.Distance.BetweenPoints(player, this);
+                                                // console.debug(dist);
+                                                //===進入敵人的攻擊範圍才啟動追擊
+                                                if (!this.startBehaviorFlag)
+                                                    if (dist < 300) this.startBehaviorFlag = true;
+                                                    else return;
+                                                //===開始攻擊模式(行爲：1.攻擊 2.追擊 3.休息)
+                                                else {
+
+                                                    if (dist < 80) {
+                                                        this.anims.play('dog_Attack', true);
+                                                        // this.body.reset(this.x, this.y);
+                                                    }
+                                                    else if (!this.restFlag) { //===不在休息時就追擊
+
+
+
+                                                        scene.physics.accelerateToObject(this, player, 500, 500, 0);
+                                                        // this.physics.moveToObject(this, player, 500, chasingDuration);
+                                                        this.anims.play('dog_Walk', true);
+
+                                                        //==時間到後休息restFlag= true        
+
+
+                                                        if (!this.behaviorCallback) {
+                                                            const chasingDuration = Phaser.Math.FloatBetween(5, 6) * 1000;//追擊隨機x秒後休息
+                                                            // console.debug('追擊時間：' + chasingDuration);
+                                                            this.behaviorCallback = scene.time.delayedCall(chasingDuration, () => {
+                                                                this.restFlag = true;
+                                                                this.body.reset(this.x, this.y);//==停下
+                                                                this.behaviorCallback = null;
+                                                                // console.debug('休息');
+                                                            }, [], scene);
+                                                        }
+                                                        // this.behaviorCallback.remove();
+                                                        // console.debug(this.behaviorCallback);
+                                                    }
+                                                    //===休息時間到就繼續追
+                                                    else {
+                                                        this.anims.play('dog_Idle', true);
+                                                        if (!this.behaviorCallback) {
+                                                            const restingDuration = Phaser.Math.FloatBetween(1, 1.5) * 1000;//==休息隨機x秒
+                                                            // console.debug('休息時間：' + restingDuration);
+                                                            this.behaviorCallback = scene.time.delayedCall(restingDuration, () => {
+                                                                this.restFlag = false;
+                                                                this.behaviorCallback = null;
+                                                                // console.debug('追擊');
+                                                            }, [], scene);
+                                                        }
+                                                    }
+
+                                                    //===判斷player相對敵人的位子來轉向(轉向時停下)
+                                                    let filpDir = player.x < this.x;
+                                                    if (this.filpFlag != filpDir) {
+                                                        this.filpHandler(filpDir);
+                                                        this.body.reset(this.x, this.y);
+                                                    }
+
+                                                }
+
+
+
+                                            };
                                             //=轉向左邊(素材一開始向右)
                                             child.filpHandler(true);
 
@@ -1073,10 +1168,37 @@ function locatingGame() {
                                         };
 
                                         if (Phaser.Input.Keyboard.JustDown(cursors.space)) {
+                                            var getTimePoint = (x) => {
+                                                let xAxisObj = waveSvgObjs.find(svg => svg.svgName == 'xAxis');
+                                                let scaleFun = xAxisObj.x;
+                                                let margin = xAxisObj.margin;
+
+                                                let xAxisRange = [
+                                                    (width - waveGameObjs[0].width) * 0.5 + margin.right,
+                                                    (width + waveGameObjs[0].width) * 0.5 - margin.left,
+                                                ];
+                                                scaleFun.range(xAxisRange);
+                                                // console.debug(scaleFun.domain());
+                                                let time = scaleFun.invert(x);
+                                                let isInRange = (x >= xAxisRange[0] && x <= xAxisRange[1]);
+
+                                                return {
+                                                    time: time,
+                                                    isInRange: isInRange,
+                                                };
+
+                                            };
 
                                             if (pickUpObj) {  //==put down
-                                                pickUpObj.pickUpHadler(false);
+
+                                                let timePoint = getTimePoint(pickUpObj.x);
+                                                let time = timePoint.time;
+
+                                                // console.debug(time);
+                                                // console.debug(timePoint.isInRange);
+                                                pickUpObj.statusHadler(false, timePoint.isInRange);
                                                 pickUpObj = null;
+
                                             }
                                             else {  //==pick up
                                                 const piclUpDistance = 40;
@@ -1094,7 +1216,7 @@ function locatingGame() {
                                                 });
                                                 if (colsestOrb) {
                                                     pickUpObj = colsestOrb;
-                                                    pickUpObj.pickUpHadler(true);
+                                                    pickUpObj.statusHadler(true);
                                                     // console.debug(pickUpObj);
                                                 };
                                             }
@@ -1119,20 +1241,30 @@ function locatingGame() {
                                         }
                                         else if (Phaser.Input.Keyboard.JustDown(cursors.e)) {
 
-                                            // let wavesSvg = getWaveImg(stationData);
+                                            // let waveSvgObjs = getWaveImg(stationData);
                                             console.debug(this.textures);
                                         }
                                     };
                                     var updateOrb = () => {
 
-                                        if (pickUpObj) {
+                                        if (pickUpObj)
                                             pickUpObj.setPosition(player.x, player.y + 10);
 
-                                            // pickUpObj.x = player.x;
-                                            // pickUpObj.y = player.y;
-                                            // pickUpObj.anims.play('orb_activate', true);
-                                            // console.debug(bullets)
-                                        }
+
+
+
+                                        orb.children.iterate(child => {
+
+                                            let laserObj = child.laserObj;
+                                            if (child.activateFlag) {
+                                                laserObj.enableBody(true, child.x, child.y + 20, true, true);
+                                                laserObj.anims.play('orb_laser', true);
+                                            }
+                                            else
+                                                laserObj.disableBody(true, true);
+
+                                        });
+
 
 
                                     }
@@ -1143,71 +1275,13 @@ function locatingGame() {
                                         let text = 'TimeLeft : ' + timeVal + ' ms';
                                         timerText.setText(text);
                                     };
-                                    var enemyBehavior = () => {
+                                    var updateEnemy = () => {
 
-                                        var chasingBehavior = (child) => {
-                                            const chasingDuration = 3000;//追擊多久後休息
-
-                                            let dist = Phaser.Math.Distance.BetweenPoints(player, child);
-
-                                            //===進入敵人的攻擊範圍才啟動追擊
-                                            if (!child.startAttack)
-                                                if (dist < 300) child.startAttack = true;
-                                                else return;
-                                            //===開始追擊行為
-                                            else
-                                                //===不在休息時就追擊
-                                                if (!child.restFlag) {
-                                                    this.physics.accelerateToObject(child, player, 500, 500, 0);
-                                                    // this.physics.moveToObject(child, player, 500, chasingDuration);
-                                                    child.anims.play('dog_Walk', true);
-
-                                                    //==時間到後休息restFlag= true
-                                                    this.time.delayedCall(chasingDuration, () => {
-                                                        child.restFlag = true;
-                                                        child.body.reset(child.x, child.y);//==停下
-                                                    }, [], this);
-                                                }
-                                                //===休息時間到就繼續追
-                                                else {
-                                                    //==休息隨機0~3秒
-
-                                                    let restingDuration = Phaser.Math.Between(0, 3) * 1000;
-                                                    this.time.delayedCall(restingDuration, (a, b, c, d) => {
-                                                        console.debug(a, b, c, d);
-                                                        child.restFlag = false;
-                                                    }, [], this);
-                                                }
+                                        //===對話完??
+                                        enemy.children.iterate((child) => {
 
 
-                                            if (dist < 80) {
-                                                child.anims.play('dog_Attack', true);
-                                                // child.body.reset(child.x, child.y);
-                                                // console.debug();
-                                            }
-
-                                        };
-                                        var filping = (child, filpDir) => {
-                                            // console.debug('filping');
-                                            child.filpHandler(filpDir);
-                                        };
-
-                                        enemy.children.iterate(child => {
-
-
-                                            chasingBehavior(child);
-
-
-                                            //===判斷player相對狗的位子來轉向
-                                            let filpDir = player.x < child.x;
-                                            if (child.filpFlag != filpDir)
-                                                filping(child, filpDir);
-
-
-
-
-
-
+                                            child.behaviorHandler(this);
 
                                             // console.debug(Math.abs(player.x - child.x));
                                             // child.anims.play('dog_Attack', true);
@@ -1222,7 +1296,7 @@ function locatingGame() {
                                     updatePlayer();
                                     updateOrb();
                                     updateTimer();
-                                    enemyBehavior();
+                                    updateEnemy();
                                     // console.debug(gameTimer.getOverallProgress());
 
 
@@ -1310,7 +1384,7 @@ function locatingGame() {
                                         debug: true,
                                     }
                                 },
-                                scene: [DefendScene],
+                                scene: DefendScene,
                             };
                             const game = new Phaser.Game(config);
                         };

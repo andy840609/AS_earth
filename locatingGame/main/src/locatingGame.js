@@ -72,41 +72,81 @@ function locatingGame() {
 
         };
 
-        //1.===得測站和經緯度資料
-        $.ajax({
-            url: eventCatlog + "station.csv",
-            dataType: 'text',
-            async: false,
-            success: function (d) {
-                // console.debug(d);
-                data = d.split("\n").map(row => {
+        var ajaxReadFile = (dataObj) => {
+            return $.ajax({
+                url: dataObj.url ? dataObj.url : '',
+                dataType: dataObj.dataType ? dataObj.dataType : 'text',
+                async: dataObj.async == undefined ? true : dataObj.async,
+                // success: function (d) { },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.error(jqXHR, textStatus, errorThrown);
+                },
+            });
+        };
+
+
+        //===A.讀測站資料
+        let stationData = new Promise((resolve, reject) =>
+            ajaxReadFile({ url: eventCatlog + "station.csv" }).then(success => {
+                // console.debug(success);
+                let data;
+                //A-1.===得測站和經緯度資料
+                data = success.split("\n").map(row => {
                     let col = row.trim().split(',');
                     let sta = col[0].replace(new RegExp("'", "g"), '');
                     let coord = [parseFloat(col[1]), parseFloat(col[2])];
                     return { station: sta, coordinate: coord };
                 });
-            },
-            error: function (jqXHR, textStatus, errorThrown) {
-                console.error(jqXHR, textStatus, errorThrown);
-            },
+
+                //A-2.===依個測站名稱得個分量xy陣列
+                const dir = eventCatlog + 'xy/' + event;
+                const fileDataKey = ['x', 'y'];
+                data.map(async (d) => {
+                    d.waveData =
+                        Promise.all(
+                            channel.map(async (cha) => {
+                                let path = dir + '.' + d.station + '.' + cha + fileExtension;
+                                return { channel: cha, data: await readTextFile(path, fileDataKey) };
+                            })
+                        );
+                    return d;
+                });
+                resolve(data);
+            })
+        );
+
+        //===B.讀震央資料
+        let epicenterData = new Promise((resolve, reject) =>
+            ajaxReadFile({ url: eventCatlog + "epicenter.csv" }).then(success => {
+                // console.debug(success);
+                let data;
+                // const datakey = ['lat', 'lng', 'depth'];
+                // let tmp = {};
+                // success.split(',').map((d, i) => tmp[datakey[i]] = !isNaN(d) ? parseFloat(d) : d);
+                // data = {
+                //     coordinate: [tmp.lat, tmp.lng],
+                //     depth: tmp.depth,
+                // }
+
+                let col = success.split(',');
+                data = {
+                    coordinate: [parseFloat(col[0]), parseFloat(col[1])],
+                    depth: parseFloat(col[2]),
+                }
+
+                resolve(data);
+            })
+        );
+
+
+        data = Promise.all([stationData, epicenterData]).then(sucess => {
+            // console.debug(sucess);
+            let tmp = sucess[0];
+            tmp.epicenter = sucess[1];
+            return tmp;
         });
+
         // console.debug(data);
-
-        //2.===依個測站名稱得個分量xy陣列
-        const dir = eventCatlog + 'xy/' + event;
-        const fileDataKey = ['x', 'y'];
-        data.map(async (d) => {
-            d.waveData =
-                Promise.all(
-                    channel.map(async (cha) => {
-                        let path = dir + '.' + d.station + '.' + cha + fileExtension;
-                        return { channel: cha, data: await readTextFile(path, fileDataKey) };
-                    })
-                );
-            return d;
-        })
-        console.log(data);
-
         return game;
     };
     game.string = (value) => {
@@ -114,7 +154,7 @@ function locatingGame() {
         return game;
     };
 
-    function game() {
+    async function game() {
 
         const chartContainerJQ = $(selector);
         const chartContainerD3 = d3.select(selector);
@@ -314,7 +354,11 @@ function locatingGame() {
                 playerStats = {
                     movementSpeed: 500,
                     jumpingPower: 400,
-                };
+                    attackSpeed: 800,
+                },
+                controllCursor = [];
+
+
 
             function initMap() {
 
@@ -385,6 +429,7 @@ function locatingGame() {
 
                 };
                 async function addStation() {
+                    // console.debug(data);
 
                     data.forEach((d, i) => {
                         // console.debug(d);
@@ -413,6 +458,7 @@ function locatingGame() {
                         //===station circle
                         let circle = L.circle(d['coordinate'], {
                             className: 'station-circle',
+                            radius: 0,
                         });
 
                         d['circleObj'] = circle;
@@ -421,6 +467,26 @@ function locatingGame() {
                         marker.addTo(mapObj);
                         circle.addTo(mapObj);
                     });
+
+                    //＝＝test 震央
+                    let size = 60;
+                    L.marker(data.epicenter['coordinate'], {
+                        icon: L.icon({
+                            iconUrl: '../data/assets/icon/star.png',
+                            iconSize: [size, size],
+                            iconAnchor: [size / 2, size / 2],
+                        }),
+                        pane: 'markerPane',
+                        data: data.epicenter,
+                        // bubblingMouseEvents: true,
+                    })
+                        // .bindTooltip("<b><font size='5'>epicenter</font><br>", {
+                        //     direction: 'top',
+                        //     // permanent: true,
+                        //     className: 'station-tooltip',
+                        // })
+                        .addTo(mapObj);
+                    //＝＝test 震央
 
                 };
                 async function addUI() {
@@ -603,15 +669,34 @@ function locatingGame() {
                             const gameData = stationData.gameData;
                             const assetsDir = '../data/assets/';
                             const width = gameBox.width, height = gameBox.height;
-                            // const center = [width];
-                            // console.debug();
-                            var playerStats = Object.assign({}, playerData.playerStats);
+                            const getTimePoint = (x) => {
+                                let xAxisObj = waveSvgObjs.find(svg => svg.svgName == 'xAxis');
+                                let scaleFun = xAxisObj.x;
+                                let margin = xAxisObj.margin;
+
+                                let xAxisRange = [
+                                    (width - waveGameObjs[0].width) * 0.5 + margin.right,
+                                    (width + waveGameObjs[0].width) * 0.5 - margin.left,
+                                ];
+                                scaleFun.range(xAxisRange);
+                                // console.debug(scaleFun.range());
+                                let time = scaleFun.invert(x);
+                                let isInRange = (x >= xAxisRange[0] && x <= xAxisRange[1]);
+
+                                return {
+                                    time: time,
+                                    isInRange: isInRange,
+                                };
+
+                            };
+
+                            // console.debug(playerData);
                             var timeRemain = playerData.timeRemain;
 
-
                             var player, enemy, cursors;
-                            var orb, bullets;
+                            var orbGroup, bullets;
                             var platforms;
+
                             var gameTimer = null, timeVal, timerText = null;
                             var gameOver = false,
                                 gameResult = null;
@@ -691,53 +776,50 @@ function locatingGame() {
                                 };
                                 create() {
 
-
                                     var Bullet = new Phaser.Class({
 
-                                        Extends: Phaser.GameObjects.Image,
+                                        Extends: Phaser.Physics.Arcade.Sprite,
 
                                         initialize:
-
                                             function Bullet(scene) {
-                                                Phaser.GameObjects.Image.call(this, scene, 0, 0, 'instrument');
-
-                                                this.speed = Phaser.Math.GetSpeed(600, 1);
+                                                Phaser.Physics.Arcade.Sprite.call(this, scene, 0, 0, 'instrument');
+                                                // scene.physics.world.enableBody(this, 0);
+                                                // console.debug(this)
                                             },
 
-                                        fire: function (x, y) {
+                                        fire: function (x, y, speed) {
                                             this.setPosition(x, y);
-
                                             this.setActive(true);
                                             this.setVisible(true);
+                                            this.speed = Phaser.Math.GetSpeed(speed, 1);
                                         },
 
                                         update: function (time, delta) {
                                             // console.debug(time, delta)
                                             this.x += this.speed * delta;
 
-                                            if (this.x > 820) {
+                                            // let outOfWindow =
+                                            //     this.x > width + this.width || this.x < 0 - this.width ||
+                                            //     this.y > height + this.height || this.y < 0 - this.height;
+
+                                            let outOfWindow = !this.scene.cameras.main.worldView.contains(this.x, this.y);
+                                            if (outOfWindow) {
                                                 this.setActive(false);
                                                 this.setVisible(false);
                                             }
                                         }
 
                                     });
-                                    bullets = this.add.group({
-                                        classType: Bullet,
-                                        maxSize: 30,
-                                        runChildUpdate: true
-                                    });
-
 
                                     var initEnvironment = () => {
                                         // console.debug()
                                         var station = () => {
                                             let station = stationData.station ? stationData.station : '???';
-                                            this.add.image(width * 0.91, height * 0.53, 'station')
+                                            this.add.image(width * 0.92, height * 0.53, 'station')
                                                 .setScale(1, 0.63);
                                             // this.add.image(width * 0.12, height * 0.53, 'title')
                                             //     .setScale(0.1, 0.15).setRotation(0.1).setPosition(width * 0.12, height * 0.53, 100, 100);
-                                            this.add.text(width * 0.87, height * 0.46, station, { fontSize: '32px', fill: '#000' })
+                                            this.add.text(width * 0.88, height * 0.46, station, { fontSize: '32px', fill: '#000' })
                                                 .setRotation(-0.1).setOrigin(0.5, 0.5);
 
                                             waveGameObjs = waveSvgObjs.map((d, i) => {
@@ -768,12 +850,13 @@ function locatingGame() {
                                             // let instrument = this.physics.add.sprite(width * 0.1, height * 0.8, 'instrument')
                                             //     .setScale(0.3);
                                             const orbScale = 0.25;
-                                            orb = this.physics.add.group({
+
+                                            orbGroup = this.physics.add.group({
                                                 key: 'instrument',
                                                 repeat: 1,
                                                 randomFrame: true,
                                                 setScale: { x: orbScale, y: orbScale },
-                                                setXY: { x: width * 0.86, y: height * 0.8, stepX: 15 },
+                                                // setXY: { x: width * 0.86, y: height * 0.8, stepX: 15 },
                                                 // maxVelocityY: 0,
                                                 // gravityX: 1000,
                                                 // gravityY: -50,
@@ -813,12 +896,26 @@ function locatingGame() {
                                             };
                                             animsCreate();
 
-                                            orb.children.iterate(child => {
-                                                child.play('orb_inactive');
-                                                child.body.setSize(100, 100, true);
+                                            let orbStatus = gameData.orbStatus;
+                                            // console.debug(orbStatus);
+                                            orbGroup.children.iterate((child, i) => {
 
-                                                //==custom
-                                                child.activateFlag = false;
+                                                let activate, orbPosition;
+                                                if (orbStatus) {
+                                                    activate = orbStatus[i].timePoint.isInRange;
+                                                    orbPosition = orbStatus[i].postition;
+                                                }
+                                                else {
+                                                    activate = false;
+                                                    orbPosition = 875 + i * 15;
+                                                }
+
+                                                child.setPosition(orbPosition, height * 0.8);
+                                                child.body.setSize(100, 100, true);
+                                                child.play(activate ? 'orb_activate' : 'orb_inactive');
+
+                                                //=====custom
+                                                child.activateFlag = activate;
                                                 child.statusHadler = function (pickUp, activate = true) {
                                                     // console.debug(this);
                                                     let newPlayerStats = playerData.playerStats;
@@ -841,23 +938,43 @@ function locatingGame() {
                                                         pickUpObj.anims.play(activate ? 'orb_activate' : 'orb_inactive', true);
                                                     }
 
-                                                    playerStats = Object.assign(playerStats, newPlayerStats);
+                                                    player.playerStats = Object.assign(player.playerStats, newPlayerStats);
 
 
                                                     this.activateFlag = activate;
 
                                                     // console.debug(playerStats);
                                                 };
-                                                child.laserObj = this.physics.add.sprite(child.x, child.y + 20)
-                                                    .setGravityY(0)
-                                                    .setAlpha(0.8)
-                                                    .setScale(0.3, 1)
-                                                    .setOrigin(0.5, 1)
-                                                    .setDepth(0);
-                                                console.debug(child.laserObj)
+                                                //=laser
+                                                child.laserObj =
+                                                    this.physics.add.sprite(child.x, child.y + 20, 'laser')
+                                                        .setAlpha(0.8)
+                                                        .setScale(0.3, 1)
+                                                        .setOrigin(0.5, 1)
+                                                        .setDepth(0)
+                                                        .setVisible(false);
+                                                // console.debug(child.laserObj);
+
+                                                child.laserObj.body
+                                                    .setMaxVelocityY(0)
+                                                    .setSize(50);
+
+                                                //=time
+                                                child.timeText = this.add.text(0, 0, '',
+                                                    {
+                                                        fontSize: '20px',
+                                                        fill: '#A8FF24',
+                                                    })
+                                                    .setOrigin(0.5);
+
+
+
+                                                //=====custom
+
+                                                // console.debug(child.laserObj)
                                             });
 
-                                            this.physics.add.collider(orb, platforms);
+                                            this.physics.add.collider(orbGroup, platforms);
 
                                         }
                                         background();
@@ -867,8 +984,9 @@ function locatingGame() {
                                     };
 
                                     var initPlayer = () => {
-                                        player = this.physics.add.sprite(100, 450, 'dude');
 
+
+                                        player = this.physics.add.sprite(100, 450, 'dude');
                                         // player.setBounce(0.2);
                                         // player.setBounce(100, 0);
                                         player.setCollideWorldBounds(true)
@@ -876,7 +994,6 @@ function locatingGame() {
                                             .setDepth(1);
                                         player.body
                                             .setGravityY(500)
-
 
                                         var animsCreate = () => {
                                             this.anims.create({
@@ -903,7 +1020,113 @@ function locatingGame() {
 
                                         this.physics.add.collider(player, platforms);
                                         // cursors = this.input.keyboard.createCursorKeys();
+
+                                        //===init cursors
                                         cursors = this.input.keyboard.addKeys('w,s,a,d,space,p,q,e');
+
+                                        //===init attack
+                                        bullets = this.physics.add.group({
+                                            classType: Bullet,
+                                            maxSize: 30,
+                                            runChildUpdate: true,
+                                            maxVelocityY: 0,
+                                        });
+
+                                        //======custom
+                                        let playerStats = player.playerStats = Object.assign({}, playerData.playerStats);
+                                        let playerTurnLeft = false;//==判斷子彈方向
+                                        //==移動
+                                        player.movingHadler = () => {
+
+                                            if (cursors.a.isDown) {
+                                                player.setVelocityX(-playerStats.movementSpeed);
+                                                player.anims.play('player_left', true);
+                                                playerTurnLeft = true;
+                                            }
+                                            else if (cursors.d.isDown) {
+                                                player.setVelocityX(playerStats.movementSpeed);
+                                                player.anims.play('player_right', true);
+                                                playerTurnLeft = false;
+                                            }
+                                            else {
+                                                player.setVelocityX(0);
+                                                player.anims.play('player_turn');
+                                            };
+
+                                            //==跳
+                                            if (cursors.w.isDown && player.body.touching.down) {
+                                                player.setVelocityY(-playerStats.jumpingPower);
+                                            };
+
+                                        };
+                                        //==撿起
+                                        player.pickingHadler = () => {
+
+                                            if (Phaser.Input.Keyboard.JustDown(cursors.s)) {
+
+                                                // console.debug(orbStatus);
+                                                if (pickUpObj) {  //==put down
+
+                                                    // console.debug(pickUpObj.laserObj.body);
+                                                    // console.debug(timePoint.isInRange);
+                                                    let timePoint = getTimePoint(pickUpObj.x);
+                                                    pickUpObj.statusHadler(false, timePoint.isInRange);
+                                                    pickUpObj = null;
+
+                                                }
+                                                else {  //==pick up
+                                                    const piclUpDistance = 40;
+                                                    let colsestOrb;
+                                                    orbGroup.children.iterate(child => {
+                                                        if (Phaser.Math.Distance.BetweenPoints(player, child) <= piclUpDistance)
+                                                            if (colsestOrb)
+                                                                colsestOrb =
+                                                                    Phaser.Math.Distance.BetweenPoints(player, child) <
+                                                                        Phaser.Math.Distance.BetweenPoints(player, colsestOrb) ?
+                                                                        child : colsestOrb;
+                                                            else
+                                                                colsestOrb = child;
+
+                                                    });
+                                                    if (colsestOrb) {
+                                                        pickUpObj = colsestOrb;
+                                                        pickUpObj.statusHadler(true);
+                                                        // console.debug(pickUpObj);
+                                                    };
+                                                }
+
+                                            };
+
+                                        };
+                                        //==攻擊
+                                        player.attackHandler = () => {
+
+                                            if (Phaser.Input.Keyboard.JustDown(cursors.space)) {
+                                                var bullet = bullets.get();
+                                                if (bullet) {
+                                                    bullet.enableBody(false, 0, 0, true, true);
+                                                    // console.debug(bullet.collider);
+                                                    // console.debug(Phaser.Physics.Arcade.Body());
+
+
+                                                    bullet.fire(player.x, player.y, playerStats.attackSpeed * (playerTurnLeft ? -1 : 1));
+                                                    bullet.anims.play(playerTurnLeft ? 'player_left' : 'player_right', true);
+
+
+                                                    bullet.body.setSize(30, 40);
+                                                    bullet.collider = this.physics.add.collider(bullets, enemy, kill, null, this);
+
+                                                }
+                                            };
+                                        };
+                                        //======custom
+
+                                        var kill = (bullet, enemy) => {
+                                            bullet.disableBody(true, true);
+                                            console.debug(bullet, enemy);
+                                        }
+
+                                        // bullet.refreshBody();
                                     };
                                     var initEnemy = () => {
                                         if (this.enemyDiedFlag) return;
@@ -915,14 +1138,14 @@ function locatingGame() {
                                             randomFrame: true,
                                             setScale: { x: enemyScale, y: enemyScale },
                                             setOrigin: { x: 0.4, y: 0.4 },
-                                            setXY: { x: width * 0.8, y: height * 0.7, stepX: 30 },
-
+                                            setXY: { x: width * 0.8, y: height * 0.8, stepX: 30 },
+                                            gravityY: 300,
                                             // quantity: 3,
                                             // yoyo: true,
                                             // maxVelocityX: 0,
                                             // maxVelocityY: 0,
                                             // gravityX: 1000,
-                                            // gravityY: 0,
+
                                             // enable: false,
                                             // immovable: true,
                                         });
@@ -968,7 +1191,6 @@ function locatingGame() {
                                         };
                                         animsCreate();
                                         // enemy.play({ key: 'stand', repeat: 7 });
-
                                         // this.tweens.add({
                                         //     targets: dog,
                                         //     x: 750,
@@ -976,8 +1198,16 @@ function locatingGame() {
                                         //     ease: 'Linear'
                                         // });
 
-                                        const enemyType = ['dog', 'cat', 'bird'];
-                                        // const dogBehavior;
+                                        // const enemyType = ['dog', 'cat', 'bird'];
+
+                                        //======custom
+                                        let enemyStatus = gameData.enemyStatus;
+                                        // console.debug(gameData)
+                                        //=狗開始追...（爲true後永遠爲true）
+                                        enemy.startBehaviorFlag = enemyStatus ? enemyStatus.enemyActive : false;
+                                        //======custom
+
+
                                         enemy.children.iterate((child, i) => {
 
                                             child
@@ -1010,7 +1240,7 @@ function locatingGame() {
                                                 }
                                             };
 
-                                            child.startBehaviorFlag = false;//=狗開始追...（爲true後永遠爲true）
+
                                             child.restFlag = false;//=判斷是否休息(追一段時間要休息)
 
                                             child.behaviorCallback = null;//==為了計時器不重複註冊多個
@@ -1019,8 +1249,8 @@ function locatingGame() {
                                                 let dist = Phaser.Math.Distance.BetweenPoints(player, this);
                                                 // console.debug(dist);
                                                 //===進入敵人的攻擊範圍才啟動追擊
-                                                if (!this.startBehaviorFlag)
-                                                    if (dist < 300) this.startBehaviorFlag = true;
+                                                if (!enemy.startBehaviorFlag)
+                                                    if (dist < 300) enemy.startBehaviorFlag = true;
                                                     else return;
                                                 //===開始攻擊模式(行爲：1.攻擊 2.追擊 3.休息)
                                                 else {
@@ -1032,8 +1262,8 @@ function locatingGame() {
                                                     else if (!this.restFlag) { //===不在休息時就追擊
 
 
-
-                                                        scene.physics.accelerateToObject(this, player, 500, 500, 0);
+                                                        // ==== accelerateToObject(gameObject, destination, acceleration, xSpeedMax, ySpeedMax);
+                                                        scene.physics.accelerateToObject(this, player, 500, 500, 500);
                                                         // this.physics.moveToObject(this, player, 500, chasingDuration);
                                                         this.anims.play('dog_Walk', true);
 
@@ -1117,19 +1347,22 @@ function locatingGame() {
                                     var initPauseMenu = () => {
 
                                         // Create a label to use as a button
-                                        let pause_label = this.add.text(width - 100, 20, 'Pause', { font: '24px Arial', fill: '#fff' });
+                                        let pauseButton = this.add.text(width - 100, 20, 'Pause', { font: '24px Arial', fill: '#fff' });
 
                                         // let pauseMenu = new UIScene('pauseMenu');
-                                        pause_label.setInteractive()
-                                            .on('pointerdown', (pointer) => {
-                                                // =When the paus button is pressed, we pause the game
+                                        pauseButton.setInteractive()
+                                            .on('pointerdown', () => {
+                                                // =When the pause button is pressed, we pause the game
                                                 this.scene.pause();
                                                 gameTimer.paused = true;
                                                 //==create pause menu
                                                 this.scene.add(null, new UIScene('pauseMenu'), true);
-                                                // console.debug(this.scene.manager);
-
                                             });
+
+
+                                        //==custom for keyboard pause
+                                        pauseButton.key = 'pause';
+
 
                                     };
 
@@ -1140,93 +1373,23 @@ function locatingGame() {
                                     initPauseMenu();
                                 };
                                 update() {
+                                    // return;
+
+
 
                                     var updatePlayer = () => {
-                                        let speed = playerStats.movementSpeed;
-                                        let jump = playerStats.jumpingPower;
 
-                                        if (cursors.a.isDown) {
-                                            player.setVelocityX(-speed);
+                                        player.movingHadler();
+                                        player.pickingHadler();
+                                        player.attackHandler();
 
-                                            player.anims.play('player_left', true);
-                                        }
-                                        else if (cursors.d.isDown) {
-                                            player.setVelocityX(speed);
-                                            player.anims.play('player_right', true);
-                                            // console.debug(enemy.children.entries[0])
-                                            // console.debug(Phaser.Math.Distance.BetweenPoints(player, enemy.children.entries[0]));
 
-                                        }
-                                        else {
-                                            player.setVelocityX(0);
-
-                                            player.anims.play('player_turn');
+                                        //==暫停
+                                        if (Phaser.Input.Keyboard.JustDown(cursors.p)) {
+                                            // console.debug(this);
+                                            let pauseButton = this.add.displayList.list.find(obj => obj.key == 'pause');
+                                            pauseButton.emit('pointerdown');
                                         };
-
-                                        if (cursors.w.isDown && player.body.touching.down) {
-                                            player.setVelocityY(-jump);
-                                        };
-
-                                        if (Phaser.Input.Keyboard.JustDown(cursors.space)) {
-                                            var getTimePoint = (x) => {
-                                                let xAxisObj = waveSvgObjs.find(svg => svg.svgName == 'xAxis');
-                                                let scaleFun = xAxisObj.x;
-                                                let margin = xAxisObj.margin;
-
-                                                let xAxisRange = [
-                                                    (width - waveGameObjs[0].width) * 0.5 + margin.right,
-                                                    (width + waveGameObjs[0].width) * 0.5 - margin.left,
-                                                ];
-                                                scaleFun.range(xAxisRange);
-                                                // console.debug(scaleFun.domain());
-                                                let time = scaleFun.invert(x);
-                                                let isInRange = (x >= xAxisRange[0] && x <= xAxisRange[1]);
-
-                                                return {
-                                                    time: time,
-                                                    isInRange: isInRange,
-                                                };
-
-                                            };
-
-                                            if (pickUpObj) {  //==put down
-
-                                                let timePoint = getTimePoint(pickUpObj.x);
-                                                let time = timePoint.time;
-
-                                                // console.debug(time);
-                                                // console.debug(timePoint.isInRange);
-                                                pickUpObj.statusHadler(false, timePoint.isInRange);
-                                                pickUpObj = null;
-
-                                            }
-                                            else {  //==pick up
-                                                const piclUpDistance = 40;
-                                                let colsestOrb;
-                                                orb.children.iterate(child => {
-                                                    if (Phaser.Math.Distance.BetweenPoints(player, child) <= piclUpDistance)
-                                                        if (colsestOrb)
-                                                            colsestOrb =
-                                                                Phaser.Math.Distance.BetweenPoints(player, child) <
-                                                                    Phaser.Math.Distance.BetweenPoints(player, colsestOrb) ?
-                                                                    child : colsestOrb;
-                                                        else
-                                                            colsestOrb = child;
-
-                                                });
-                                                if (colsestOrb) {
-                                                    pickUpObj = colsestOrb;
-                                                    pickUpObj.statusHadler(true);
-                                                    // console.debug(pickUpObj);
-                                                };
-                                            }
-
-                                            var bullet = bullets.get();
-                                            if (bullet) {
-                                                bullet.fire(player.x, player.y);
-                                            }
-                                        };
-
                                         //===test
                                         if (Phaser.Input.Keyboard.JustDown(cursors.q)) {
 
@@ -1243,29 +1406,34 @@ function locatingGame() {
 
                                             // let waveSvgObjs = getWaveImg(stationData);
                                             console.debug(this.textures);
-                                        }
+                                        };
                                     };
                                     var updateOrb = () => {
 
                                         if (pickUpObj)
                                             pickUpObj.setPosition(player.x, player.y + 10);
 
-
-
-
-                                        orb.children.iterate(child => {
+                                        orbGroup.children.iterate(child => {
 
                                             let laserObj = child.laserObj;
                                             if (child.activateFlag) {
-                                                laserObj.enableBody(true, child.x, child.y + 20, true, true);
+                                                laserObj.enableBody(false, 0, 0, true, true);
+                                                laserObj.setPosition(child.x, child.y + 20);
                                                 laserObj.anims.play('orb_laser', true);
+
+                                                child.timeText
+                                                    .setPosition(child.x, 650)
+                                                    .setVisible(true)
+                                                    .setText(getTimePoint(child.x).time.toFixed(2));
+
                                             }
-                                            else
+                                            else {
                                                 laserObj.disableBody(true, true);
+                                                child.timeText.setVisible(false);
+                                                // console.debug(child.timeText);
+                                            }
 
                                         });
-
-
 
                                     }
                                     var updateTimer = () => {
@@ -1292,7 +1460,6 @@ function locatingGame() {
                                         // enemy.anims.play('dog_Attack');
                                     };
 
-
                                     updatePlayer();
                                     updateOrb();
                                     updateTimer();
@@ -1303,16 +1470,39 @@ function locatingGame() {
                                     if (gameOver) {
                                         //===time remove
                                         gameTimer.remove();
-                                        game.destroy(true, false);
 
-                                        //===get gameResult                                 
-                                        gameResult = {
-                                            liberate: !enemy ? true : false,
+
+                                        //===get gameResult     
+
+                                        //==更新角色資料(剩餘時間、能力值...)
+                                        let playerInfo = {
                                             timeRemain: timeVal,
                                         };
 
+                                        //==更新測站資料(半徑情報....)
+                                        let orbStatus = orbGroup.children.entries.map(orb =>
+                                            new Object({
+                                                postition: orb.x,
+                                                timePoint: getTimePoint(orb.x),
+                                            })
+                                        );
+                                        let enemyStatus = {
+                                            enemyActive: enemy.startBehaviorFlag,
+                                            enemyHP: [100],
+                                        }
+                                        let stationInfo = {
+                                            liberate: !enemy ? true : false,
+                                            orbStatus: orbStatus,
+                                            enemyStatus: enemyStatus,
+                                        };
+
+                                        gameResult = {
+                                            playerInfo: playerInfo,
+                                            stationInfo: stationInfo,
+                                        };
 
 
+                                        game.destroy(true, false);
                                         resolve(gameResult);
                                     }
                                 };
@@ -1331,6 +1521,7 @@ function locatingGame() {
                                 };
                                 create() {
                                     // =Then add the menu
+                                    this.buttonObj = {};
                                     const buttons = ['resume', 'tutorial', 'exit'];
                                     const menuMargin = height / 4;
                                     const buttonGap = 110;
@@ -1363,13 +1554,18 @@ function locatingGame() {
                                                 }
                                             });
 
+                                        this.buttonObj[button] = menuButton;
                                     });
 
                                     //= And a label to illustrate which menu item was chosen. (This is not necessary)
                                     // let choiseLabel = this.add.text(width / 2, height - 150, 'Click outside menu to continue', { font: '30px Arial', fill: '#fff' });
+                                    this.hotkeys = this.input.keyboard.addKeys('p');
+                                };
+                                update() {
+                                    if (Phaser.Input.Keyboard.JustDown(this.hotkeys.p))
+                                        this.buttonObj.resume.emit('pointerdown');
 
                                 };
-
                             };
 
                             const config = {
@@ -1381,7 +1577,7 @@ function locatingGame() {
                                     default: 'arcade',
                                     arcade: {
                                         gravity: { y: 300 },
-                                        debug: true,
+                                        // debug: true,
                                     }
                                 },
                                 scene: DefendScene,
@@ -1392,26 +1588,49 @@ function locatingGame() {
 
 
                         gameResult = await new Promise((resolve, reject) => {
-                            let playerData = { playerStats: playerStats, timeRemain: timeRemain }
+                            let playerData = {
+                                playerStats: playerStats,
+                                controllCursor: controllCursor,
+                                timeRemain: timeRemain,
+                            }
                             defendGame(stationData, playerData, resolve);
                         });
                         gameDisplay(false);
                         console.debug(gameResult);
-
+                        let stationInfo = gameResult.stationInfo;
+                        let playerInfo = gameResult.playerInfo;
 
                         //===update icon
-                        if (gameResult.liberate && !stationData.gameData.liberate)
+                        if (stationInfo.liberate && !stationData.gameData.liberate)
                             updateStation(stationMarker, { icon: 'player' });
-                        else if (!gameResult.liberate)
+                        else if (!stationInfo.liberate)
                             updateStation(stationMarker, { icon: 'foe' });
 
                         //===update circle
-                        if (true) {
-                            let radius = (Math.floor(Math.random() * 3) + 1) * 30000;
-                            updateStation(stationMarker, { circleRadius: radius });
+                        let timePoint1 = stationInfo.orbStatus[0].timePoint;
+                        let timePoint2 = stationInfo.orbStatus[1].timePoint;
+                        let allOrbActived = timePoint1.isInRange && timePoint2.isInRange;
+
+
+                        if (allOrbActived) {
+                            let timeGap = Math.abs(timePoint1.time - timePoint2.time);
+
+                            //距離=時間*速度(目前先用7.5),km換算成m;
+                            let radius = timeGap * 7.5 * 1000;
+
+                            //==半徑跟之前一樣不作動畫
+                            let pre_radius = stationMarker.options.data.circleObj.getRadius();
+                            if (radius != pre_radius)
+                                updateStation(stationMarker, { circleRadius: radius });
                         }
 
 
+
+                        //===更新測站情報
+                        Object.assign(stationData.gameData, stationInfo);
+
+                        //===更新人物資料
+                        updateGameState(playerInfo, 1000);
 
                         break;
                     case 'dig':
@@ -1420,24 +1639,20 @@ function locatingGame() {
                 };
 
 
-                //===set new game data
-                Object.assign(stationData.gameData, {
-                    liberate: gameResult.liberate,
-                });
-                //=update GameState
-                updateGameState(gameResult, 1000);
             };
 
             initMap();
 
             // console.debug(data);
-            gameStart('defend');
+            // gameStart('defend');
         };
         //===init once
 
         if (!(chartContainerJQ.find('#form-game').length >= 1)) {
             initForm();
         };
+        data = await data;
+        console.log(data);
         gameBehavior();
 
     };

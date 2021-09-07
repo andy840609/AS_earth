@@ -1033,7 +1033,7 @@ function locatingGame() {
                                             runChildUpdate: true,
                                             maxVelocityY: 0,
                                         });
-                                        var playerAttack = (bullet, enemy) => {
+                                        player.playerAttack = (bullet, enemy) => {
                                             bullet.disableBody(true, true);
                                             // console.debug(bullet.x, enemy.x);
                                             let knockBackDir = bullet.x < enemy.x ? 1 : -1;
@@ -1125,7 +1125,7 @@ function locatingGame() {
                                                     bullet.body.setSize(30, 40);
 
                                                     if (!bullet.collider)
-                                                        bullet.collider = this.physics.add.overlap(bullet, enemy, playerAttack, null, this);
+                                                        bullet.collider = this.physics.add.overlap(bullet, enemy, player.playerAttack, null, this);
 
                                                 }
                                             };
@@ -1140,7 +1140,7 @@ function locatingGame() {
                                         if (this.enemyDiedFlag) return;
 
                                         const enemyType = ['dog', 'cat', 'bird'];
-                                        const enemyAttackRange = 80;
+                                        const enemyAttackRange = 60;
                                         const enemyScale = 2;
 
 
@@ -1305,9 +1305,12 @@ function locatingGame() {
                                                     else return;
                                                 //===開始行爲模式(0.受傷 1.攻擊 2.追擊 3.休息 )
                                                 else {
-
+                                                    if (!this.behavior) this.behavior = 'chase';
                                                     if (dist < enemyAttackRange && !(this.behavior == 'hurt' || this.behavior == 'rest'))
                                                         this.behavior = 'attack';
+
+                                                    var isCollided = scene.physics.world.overlap(player, platforms);
+                                                    console.debug(isCollided);
 
                                                     // console.debug(this.behavior);
                                                     switch (this.behavior) {
@@ -1329,6 +1332,7 @@ function locatingGame() {
                                                             break;
                                                         case 'attack':
                                                             this.anims.play('dog_Attack', true);
+                                                            this.body.reset(this.x, this.y);//==停下
                                                             if (dist > enemyAttackRange && this.behavior != 'rest')
                                                                 this.behavior = 'chase';
                                                             break;
@@ -1382,6 +1386,7 @@ function locatingGame() {
 
 
                                             };
+
                                             //=轉向左邊(素材一開始向右)
                                             child.filpHandler(true);
 
@@ -1394,7 +1399,7 @@ function locatingGame() {
                                         });
 
 
-                                        var enemyAttack = (player, enemy) => {
+                                        enemy.enemyAttack = (player, enemy) => {
                                             // console.debug(player, enemy);
                                             // console.debug(player.body);
                                             // console.debug(enemy);
@@ -1407,9 +1412,10 @@ function locatingGame() {
 
                                             // enemy.anims.play('dog_Attack', true);
                                         };
+
                                         // console.debug(stars.children.entries[0].active);
                                         this.physics.add.collider(enemy, platforms);
-                                        this.physics.add.collider(enemy, player, enemyAttack, null, this);
+                                        this.physics.add.collider(enemy, player, enemy.enemyAttack, null, this);
 
                                     };
                                     var initTimer = () => {

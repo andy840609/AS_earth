@@ -343,7 +343,7 @@ function locatingGame() {
             return SvgUrlArr;
         };
 
-        function gameBehavior() {
+        function gameGenerate() {
             const gameOuterDiv = document.querySelector('#gameOuter');
             const gameDiv = gameOuterDiv.querySelector('#gameMain');
             const gameUI = document.querySelector('#gameUI');
@@ -1310,7 +1310,7 @@ function locatingGame() {
                                                         this.behavior = 'attack';
 
                                                     var isCollided = scene.physics.world.overlap(player, platforms);
-                                                    console.debug(isCollided);
+                                                    // console.debug(isCollided);
 
                                                     // console.debug(this.behavior);
                                                     switch (this.behavior) {
@@ -1730,7 +1730,7 @@ function locatingGame() {
         };
         data = await data;
         console.log(data);
-        gameBehavior();
+        gameGenerate();
 
     };
 

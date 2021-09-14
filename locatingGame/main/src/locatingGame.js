@@ -349,8 +349,10 @@ function locatingGame() {
             const gameUI = document.querySelector('#gameUI');
 
             var mapObj;
-            var stationDataArr, geoJSON;//===location data
+            var geoJSON;//===location data
             var GameData = null;
+
+            var testArr;//==get markerData for debug
 
             function initGameData() {
                 GameData = {
@@ -445,20 +447,28 @@ function locatingGame() {
                     let markerArr = [],
                         circleArr = [];
 
-                    let enemy = ['dog'];//==之後隨機抽敵人組
+
 
                     data.forEach((d, i) => {
                         // console.debug(d);
+                        // let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
+                        let enemy = ['cat'];//==之後隨機抽敵人組
+                        let enemyStats = {};
+
+
+                        enemy.forEach((key) => {
+                            let gameObj = GameObjectStats[key];
+                            let tmp = Object.assign(gameObj, {
+                                maxHP: gameObj.HP,
+                                active: false,//=狗開始追...（爲true後永遠爲true）
+                            });
+                            enemyStats[key] = JSON.parse(JSON.stringify(tmp));//==深拷貝不然每個測站共用
+                        });
+                        // console.debug(enemyStats);
+
                         d['gameData'] = {
                             liberate: false,
-                            enemyStats: {
-                                dog: {
-                                    HP: 1000,
-                                    active: false,
-                                },
-
-
-                            },
+                            enemyStats: enemyStats,
                         };//==遊戲資料：liberate用來判斷是否已經贏過
 
                         //===station icon
@@ -497,6 +507,7 @@ function locatingGame() {
                     // new L.layerGroup(markerArr).addTo(mapObj);
                     // let markerLayerGroupIdx = Object.keys(mapObj._layers).filter(i => mapObj._layers[i].options['key'] == 'markerGroup')[0];
                     // console.debug(mapObj._layers);
+                    testArr = markerArr;
 
                     //＝＝test 震央
                     let size = 60;
@@ -692,12 +703,14 @@ function locatingGame() {
 
                 gameDisplay(true);
 
+                // console.debug(testArr);
+
                 const gameBox = gameDiv.getBoundingClientRect();
                 const stationData = stationMarker ?
                     stationMarker.options.data :
-                    mapObj._layers['58']._layers['52'].options.data;//test
+                    testArr[0].options.data;//test
 
-                // console.debug(mapObj);
+
                 let gameResult;
                 switch (gameMode) {
                     case 'defend':
@@ -707,6 +720,8 @@ function locatingGame() {
                         function defendGame(stationData, playerData, resolve) {
                             // console.debug(stationData);
                             const gameData = stationData.gameData;
+                            const enemyStats = gameData.enemyStats;
+
                             const assetsDir = '../data/assets/';
                             const width = gameBox.width, height = gameBox.height;
                             const getTimePoint = (x) => {
@@ -747,6 +762,9 @@ function locatingGame() {
                             class DefendScene extends Phaser.Scene {
                                 constructor() {
                                     super({ key: 'defend' });
+                                    this.aliveEnemy = Object.keys(enemyStats).filter(enemy => enemyStats[enemy].HP > 0);
+
+                                    // console.debug(this.aliveEnemy);
                                 }
 
 
@@ -794,13 +812,18 @@ function locatingGame() {
                                     };
                                     var enemy = () => {
                                         if (gameData.liberate) return;
-                                        const dir = gameObjDir + 'dog/';
-                                        const frameObj = { frameWidth: 48, frameHeight: 48 };
-                                        this.load.spritesheet('dog_Attack', dir + 'Attack.png', frameObj);
-                                        this.load.spritesheet('dog_Death', dir + 'Death.png', frameObj);
-                                        this.load.spritesheet('dog_Hurt', dir + 'Hurt.png', frameObj);
-                                        this.load.spritesheet('dog_Idle', dir + 'Idle.png', frameObj);
-                                        this.load.spritesheet('dog_Walk', dir + 'Walk.png', frameObj);
+                                        // console.debug(this.aliveEnemy);
+                                        this.aliveEnemy.forEach(enemy => {
+                                            const dir = gameObjDir + enemy + '/';
+                                            const frameObj = { frameWidth: 48, frameHeight: 48 };
+                                            this.load.spritesheet(enemy + '_Attack', dir + 'Attack.png', frameObj);
+                                            this.load.spritesheet(enemy + '_Death', dir + 'Death.png', frameObj);
+                                            this.load.spritesheet(enemy + '_Hurt', dir + 'Hurt.png', frameObj);
+                                            this.load.spritesheet(enemy + '_Idle', dir + 'Idle.png', frameObj);
+                                            this.load.spritesheet(enemy + '_Walk', dir + 'Walk.png', frameObj);
+
+                                        });
+
 
                                     };
                                     var wave = () => {
@@ -816,41 +839,6 @@ function locatingGame() {
                                 };
                                 create() {
 
-                                    const Bullet = new Phaser.Class({
-
-                                        Extends: Phaser.Physics.Arcade.Sprite,
-
-                                        initialize:
-                                            function Bullet(scene) {
-                                                Phaser.Physics.Arcade.Sprite.call(this, scene, 0, 0, 'instrument');
-                                                // console.debug(this.body)
-                                                // scene.physics.world.enableBody(this, 0);
-
-                                            },
-
-                                        fire: function (x, y, speed) {
-                                            this.setPosition(x, y);
-                                            this.setActive(true);
-                                            this.setVisible(true);
-                                            this.speed = Phaser.Math.GetSpeed(speed, 1);
-                                        },
-
-                                        update: function (time, delta) {
-                                            // console.debug(time, delta)
-                                            this.x += this.speed * delta;
-
-                                            // let outOfWindow =
-                                            //     this.x > width + this.width || this.x < 0 - this.width ||
-                                            //     this.y > height + this.height || this.y < 0 - this.height;
-
-                                            let outOfWindow = !this.scene.cameras.main.worldView.contains(this.x, this.y);
-                                            if (outOfWindow) {
-                                                this.setActive(false);
-                                                this.setVisible(false);
-                                            }
-                                        }
-
-                                    });
 
                                     var initEnvironment = () => {
                                         // console.debug()
@@ -1061,6 +1049,7 @@ function locatingGame() {
                                         player.setCollideWorldBounds(true)
                                             .setPushable(false)
                                             .setDepth(1)
+                                            .setName('player')
                                             .play('player_turn');
                                         player.body
                                             .setGravityY(500);
@@ -1087,15 +1076,17 @@ function locatingGame() {
                                             this.physics.accelerateTo(enemy, enemy.x + 10 * knockBackDir, enemy.y, 500, 500, 0);
                                             enemy.behavior = 'hurt';
                                             // console.debug(enemy.stats.HP, player.stats.attackPower);
-                                            enemy.statsChangeHandler({ HP: enemy.stats.HP -= player.stats.attackPower });
+                                            enemy.statsChangeHandler({ HP: enemy.stats.HP -= player.stats.attackPower }, this);
                                         };
 
                                         //======custom
+                                        player.knockBackFlag = false;
                                         player.stats = Object.assign({}, playerData.playerStats);
                                         // console.debug(player.stats);
                                         let playerTurnLeft = false;//==判斷子彈方向
                                         //==移動
                                         player.movingHadler = function () {
+                                            if (this.knockBackFlag) return;
 
                                             if (cursors.a.isDown) {
                                                 player.setVelocityX(-this.stats.movementSpeed);
@@ -1176,7 +1167,7 @@ function locatingGame() {
 
 
                                                     bullet.body.setSize(30, 40);
-                                                    player.statsChangeHandler({ MP: this.stats.MP -= this.stats.manaCost });
+                                                    player.statsChangeHandler({ MP: this.stats.MP -= this.stats.manaCost }, this);
                                                     // console.debug(this.stats);
                                                 }
                                             };
@@ -1200,7 +1191,7 @@ function locatingGame() {
                                             this.stats = Object.assign(this.stats, statsObj);
 
                                         };
-                                        player.statsChangeHandler({ HP: player.stats.HP, MP: player.stats.MP });
+                                        player.statsChangeHandler({ HP: player.stats.HP, MP: player.stats.MP }, this);
 
                                         // console.debug(player);
 
@@ -1218,477 +1209,38 @@ function locatingGame() {
                                     var initEnemy = () => {
                                         if (gameData.liberate) return;
 
-                                        // const enemyType = ['dog', 'cat', 'bird'];
-                                        // const enemyType = ['dog'];
-                                        const enemyAttackRange = 80;
-                                        const enemyScale = 2;
-
-                                        const enemyStats = gameData.enemyStats;
-                                        const aliveEnemy = enemyStats
-                                            .filter(enemy => enemy.HP > 0)
-                                            .map(enemy => enemy.type);
-                                        // console.debug(aliveEnemy);
-
-
                                         enemy = this.physics.add.group({
                                             classType: Enemy,
-                                            key: 'enemy',
-                                            randomFrame: true,
-                                            setScale: { x: enemyScale, y: enemyScale },
-                                            setOrigin: { x: 0.4, y: 0.4 },
-                                            setXY: { x: width * 0.8, y: height * 0.8, stepX: 30 },
-                                            gravityY: 300,
-                                            repeat: aliveEnemy.length - 1,
-                                            // repeat: 2,
-                                            // quantity: 1,
-                                            // yoyo: true,
-                                            // maxVelocityX: 0,
-                                            // maxVelocityY: 0,
-                                            // gravityX: 1000,
-
-                                            // enable: false,
-                                            // immovable: true,
+                                            maxSize: this.aliveEnemy.length,
                                         });
-                                        // enemy.rotateAroundDistance([0, 0], 1, 0.1);
-
                                         // console.debug(enemy);
+                                        this.aliveEnemy.forEach((key, i) => {
 
-
-                                        // enemy.get(100, 200);
-                                        enemy.children.iterate((child, i) => {
-                                            // console.debug(child);
-                                            // let enemyStats = enemyStats;
-                                            // let enemyType = enemyStats
-                                            console.debug(enemyStats);
-
-                                            var animsCreate = () => {
-
-                                                this.anims.create({
-                                                    key: 'dog_Idle',
-                                                    frames: this.anims.generateFrameNumbers('dog_Idle'),
-                                                    frameRate: 10,
-                                                    repeat: -1,
-                                                    repeatDelay: 500,
-                                                });
-                                                this.anims.create({
-                                                    key: 'dog_Death',
-                                                    frames: this.anims.generateFrameNumbers('dog_Death'),
-                                                    frameRate: 5,
-                                                    repeat: 0,
-                                                    // repeatDelay: 500,
-                                                });
-                                                this.anims.create({
-                                                    key: 'dog_Hurt',
-                                                    frames: this.anims.generateFrameNumbers('dog_Hurt'),
-                                                    frameRate: 200,
-                                                    repeat: -1,
-                                                    // repeatDelay: 500,
-                                                });
-                                                this.anims.create({
-                                                    key: 'dog_Walk',
-                                                    frames: this.anims.generateFrameNumbers('dog_Walk'),
-                                                    frameRate: 10,
-                                                    repeat: -1,
-                                                    // repeatDelay: 500,
-                                                });
-                                                this.anims.create({
-                                                    key: 'dog_Attack',
-                                                    frames: this.anims.generateFrameNumbers('dog_Attack'),
-                                                    frameRate: 10,
-                                                    repeat: -1,
-                                                    // repeatDelay: 500,
-                                                });
-                                            };
-                                            animsCreate();
-
-                                            child
-                                                .setCollideWorldBounds(true)
-                                                .setBounce(0)
-                                                .setPushable(false)
-                                                // .setImmovable(true)
-                                                .setMass(3)
-                                                .play('dog_Idle');
-
-
-                                            child.body.setSize(25, 18, true);
-
-                                            //==========custom attr
-
-                                            //=stats
-                                            child.enemyType = aliveEnemy[i];
-                                            child.stats = {
-                                                attackPower: 10,
-                                                HP: enemyStats.HP,
-                                                maxHP: 1000,
-                                            };
-
-
-                                            child.statsChangeCallback = null;//==為了計時器不重複註冊多個
-                                            child.statsChangeHandler = (statsObj) => {
-                                                if ('HP' in statsObj) {
-                                                    let hpString = parseInt(statsObj.HP) + ' / ' + child.stats.maxHP;
-
-                                                    child.lifeBar
-                                                        .setText(hpString)
-                                                        .setVisible(true);
-
-                                                    if (child.statsChangeCallback) child.statsChangeCallback.remove();
-                                                    child.statsChangeCallback = this.time.delayedCall(1500, () => child.lifeBar.setVisible(false), [], this);
-
-                                                };
-                                                child.stats = Object.assign(child.stats, statsObj);
-                                            };
-                                            //=狗開始追...（爲true後永遠爲true）
-                                            child.startBehaviorFlag = enemyStats ? enemyStats.enemyActive : false;
-                                            child.behavior = null;
-                                            child.behaviorCallback = null;//==為了計時器不重複註冊多個
-                                            child.knockBackCallback = null;//==擊退計時
-                                            child.behaviorHandler = function (scene) {
-
-                                                let dist = Phaser.Math.Distance.BetweenPoints(player, this);
-                                                // console.debug(dist);
-                                                //===人物攻擊或進入領域則啟動追擊
-                                                if (!this.startBehaviorFlag)
-                                                    if (dist < 300 || this.behavior == 'hurt') {
-                                                        this.startBehaviorFlag = true;
-                                                        if (!this.behavior) this.behavior = 'chase';
-                                                    }
-                                                    else return;
-                                                //===開始行爲模式(0.受傷 1.攻擊 2.追擊 3.休息 )
-                                                else {
-                                                    if (!this.behavior) this.behavior = 'chase';
-                                                    if (dist < enemyAttackRange && !(this.behavior == 'hurt' || this.behavior == 'rest'))
-                                                        this.behavior = 'attack';
-
-                                                    var isCollided = scene.physics.world.overlap(player, platforms);
-                                                    // console.debug(isCollided);
-
-                                                    // console.debug(this.behavior);
-                                                    switch (this.behavior) {
-                                                        case 'hurt':
-                                                            this.anims.play('dog_Hurt', true);
-                                                            const knockBackDuration = 200;
-
-                                                            if (this.behaviorCallback) {
-                                                                this.behaviorCallback.remove();
-                                                                this.behaviorCallback = null;
-                                                            };
-
-                                                            if (!this.knockBackCallback)
-                                                                this.knockBackCallback = scene.time.delayedCall(knockBackDuration, () => {
-                                                                    this.behavior = 'chase';
-                                                                    this.knockBackCallback = null;
-                                                                }, [], scene);
-
-                                                            break;
-                                                        case 'attack':
-                                                            this.anims.play('dog_Attack', true);
-                                                            this.body.reset(this.x, this.y);//==停下
-                                                            if (dist > enemyAttackRange && this.behavior != 'rest')
-                                                                this.behavior = 'chase';
-                                                            break;
-                                                        case 'chase':
-                                                            // ==== accelerateToObject(gameObject, destination, acceleration, xSpeedMax, ySpeedMax);
-                                                            scene.physics.accelerateToObject(this, player, 500, 500, 500);
-                                                            // this.physics.moveToObject(this, player, 500, chasingDuration);
-                                                            this.anims.play('dog_Walk', true);
-
-                                                            //==時間到後休息restFlag= true        
-
-
-                                                            if (!this.behaviorCallback) {
-                                                                const chasingDuration = Phaser.Math.FloatBetween(5, 6) * 1000;//追擊隨機x秒後休息
-                                                                // console.debug('追擊時間：' + chasingDuration);
-                                                                this.behaviorCallback = scene.time.delayedCall(chasingDuration, () => {
-                                                                    this.behavior = 'rest';
-                                                                    this.body.reset(this.x, this.y);//==停下
-                                                                    this.behaviorCallback = null;
-                                                                    // console.debug('休息');
-                                                                }, [], scene);
-                                                            }
-                                                            // this.behaviorCallback.remove();
-                                                            // console.debug(this.behaviorCallback);
-                                                            break;
-                                                        default:
-                                                        case 'rest':
-                                                            this.anims.play('dog_Idle', true);
-                                                            if (!this.behaviorCallback) {
-                                                                const restingDuration = Phaser.Math.FloatBetween(1.5, 2) * 1000;//==休息隨機x秒
-                                                                // console.debug('休息時間：' + restingDuration);
-                                                                this.behaviorCallback = scene.time.delayedCall(restingDuration, () => {
-                                                                    this.behavior = 'chase';
-                                                                    this.behaviorCallback = null;
-                                                                    // console.debug('追擊');
-                                                                }, [], scene);
-                                                            }
-                                                            break;
-                                                    }
-
-
-                                                    //===判斷player相對敵人的位子來轉向(轉向時停下)
-                                                    let filpDir = player.x < this.x;
-                                                    if (this.filpFlag != filpDir) {
-                                                        this.filpHandler(filpDir);
-                                                        this.body.reset(this.x, this.y);
-                                                    }
-
-                                                }
-                                                // console.debug();
-                                                //==死亡
-                                                if (this.stats.HP <= 0) {
-                                                    // console.debug('dog_Death');
-                                                    this.knockBackCallback.remove();
-                                                    this.behavior = 'Death';
-                                                    this.body.reset(this.x, this.y);
-                                                    this.body.enable = false;
-                                                    this.anims.play('dog_Death', true);
-
-                                                }
-
-                                            };
-
+                                            let child = enemy.get(key, i, enemyStats[key]);
                                             //=轉向左邊(素材一開始向右)
                                             child.filpHandler(true);
-
-                                            //==========custom attr
-
-
-
                                             // console.debug(child);
-                                            // console.debug(child.getBounds());
                                         });
-                                        // enemy.children.iterate((child, i) => {
-                                        //     console.debug(child);
-                                        //     var animsCreate = () => {
-
-                                        //         this.anims.create({
-                                        //             key: 'dog_Idle',
-                                        //             frames: this.anims.generateFrameNumbers('dog_Idle'),
-                                        //             frameRate: 10,
-                                        //             repeat: -1,
-                                        //             repeatDelay: 500,
-                                        //         });
-                                        //         this.anims.create({
-                                        //             key: 'dog_Death',
-                                        //             frames: this.anims.generateFrameNumbers('dog_Death'),
-                                        //             frameRate: 5,
-                                        //             repeat: 0,
-                                        //             // repeatDelay: 500,
-                                        //         });
-                                        //         this.anims.create({
-                                        //             key: 'dog_Hurt',
-                                        //             frames: this.anims.generateFrameNumbers('dog_Hurt'),
-                                        //             frameRate: 200,
-                                        //             repeat: -1,
-                                        //             // repeatDelay: 500,
-                                        //         });
-                                        //         this.anims.create({
-                                        //             key: 'dog_Walk',
-                                        //             frames: this.anims.generateFrameNumbers('dog_Walk'),
-                                        //             frameRate: 10,
-                                        //             repeat: -1,
-                                        //             // repeatDelay: 500,
-                                        //         });
-                                        //         this.anims.create({
-                                        //             key: 'dog_Attack',
-                                        //             frames: this.anims.generateFrameNumbers('dog_Attack'),
-                                        //             frameRate: 10,
-                                        //             repeat: -1,
-                                        //             // repeatDelay: 500,
-                                        //         });
-                                        //     };
-                                        //     animsCreate();
-
-                                        //     child
-                                        //         .setCollideWorldBounds(true)
-                                        //         .setBounce(0)
-                                        //         .setPushable(false)
-                                        //         // .setImmovable(true)
-                                        //         .setMass(3)
-                                        //         .play('dog_Idle');
-
-
-                                        //     child.body.setSize(25, 18, true);
-
-                                        //     //==========custom attr
-
-                                        //     //=處理轉向
-                                        //     child.filpFlag = false;
-                                        //     child.filpHandler = function (filp) {
-                                        //         // console.debug(this);
-                                        //         let scale = Math.abs(this.scaleX);
-                                        //         if (filp) {
-                                        //             this.scaleX = -scale;
-                                        //             this.body.setOffset(30, 30);
-                                        //             this.filpFlag = true;
-                                        //         }
-                                        //         else {
-                                        //             this.scaleX = scale;
-                                        //             this.body.setOffset(5, 30);
-                                        //             this.filpFlag = false;
-                                        //         }
-                                        //     };
-
-                                        //     //=stats
-                                        //     child.enemyType = aliveEnemy[i];
-                                        //     child.stats = {
-                                        //         attackPower: 10,
-                                        //         HP: enemyStats ? enemyStats.enemyHP[i] : 1000,
-                                        //         maxHP: 1000,
-                                        //     };
-
-                                        //     //==HP
-
-                                        //     child.lifeBar = this.add.text(0, 0, '', { fontSize: '25px', fill: 'red' })
-                                        //         .setOrigin(0.5)
-                                        //         .setVisible(false);
-
-                                        //     child.statsChangeCallback = null;//==為了計時器不重複註冊多個
-                                        //     child.statsChangeHandler = (statsObj) => {
-                                        //         if ('HP' in statsObj) {
-                                        //             let hpString = parseInt(statsObj.HP) + ' / ' + child.stats.maxHP;
-
-                                        //             child.lifeBar
-                                        //                 .setText(hpString)
-                                        //                 .setVisible(true);
-
-                                        //             if (child.statsChangeCallback) child.statsChangeCallback.remove();
-                                        //             child.statsChangeCallback = this.time.delayedCall(1500, () => child.lifeBar.setVisible(false), [], this);
-
-                                        //         };
-                                        //         child.stats = Object.assign(child.stats, statsObj);
-                                        //     };
-
-                                        //     child.behavior = null;
-                                        //     child.behaviorCallback = null;//==為了計時器不重複註冊多個
-                                        //     child.knockBackCallback = null;//==擊退計時
-                                        //     child.behaviorHandler = function (scene) {
-
-                                        //         let dist = Phaser.Math.Distance.BetweenPoints(player, this);
-                                        //         // console.debug(dist);
-                                        //         //===人物攻擊或進入領域則啟動追擊
-                                        //         if (!enemy.startBehaviorFlag)
-                                        //             if (dist < 300 || this.behavior == 'hurt') {
-                                        //                 enemy.startBehaviorFlag = true;
-                                        //                 if (!this.behavior) this.behavior = 'chase';
-                                        //             }
-                                        //             else return;
-                                        //         //===開始行爲模式(0.受傷 1.攻擊 2.追擊 3.休息 )
-                                        //         else {
-                                        //             if (!this.behavior) this.behavior = 'chase';
-                                        //             if (dist < enemyAttackRange && !(this.behavior == 'hurt' || this.behavior == 'rest'))
-                                        //                 this.behavior = 'attack';
-
-                                        //             var isCollided = scene.physics.world.overlap(player, platforms);
-                                        //             // console.debug(isCollided);
-
-                                        //             // console.debug(this.behavior);
-                                        //             switch (this.behavior) {
-                                        //                 case 'hurt':
-                                        //                     this.anims.play('dog_Hurt', true);
-                                        //                     const knockBackDuration = 200;
-
-                                        //                     if (this.behaviorCallback) {
-                                        //                         this.behaviorCallback.remove();
-                                        //                         this.behaviorCallback = null;
-                                        //                     };
-
-                                        //                     if (!this.knockBackCallback)
-                                        //                         this.knockBackCallback = scene.time.delayedCall(knockBackDuration, () => {
-                                        //                             this.behavior = 'chase';
-                                        //                             this.knockBackCallback = null;
-                                        //                         }, [], scene);
-
-                                        //                     break;
-                                        //                 case 'attack':
-                                        //                     this.anims.play('dog_Attack', true);
-                                        //                     this.body.reset(this.x, this.y);//==停下
-                                        //                     if (dist > enemyAttackRange && this.behavior != 'rest')
-                                        //                         this.behavior = 'chase';
-                                        //                     break;
-                                        //                 case 'chase':
-                                        //                     // ==== accelerateToObject(gameObject, destination, acceleration, xSpeedMax, ySpeedMax);
-                                        //                     scene.physics.accelerateToObject(this, player, 500, 500, 500);
-                                        //                     // this.physics.moveToObject(this, player, 500, chasingDuration);
-                                        //                     this.anims.play('dog_Walk', true);
-
-                                        //                     //==時間到後休息restFlag= true        
-
-
-                                        //                     if (!this.behaviorCallback) {
-                                        //                         const chasingDuration = Phaser.Math.FloatBetween(5, 6) * 1000;//追擊隨機x秒後休息
-                                        //                         // console.debug('追擊時間：' + chasingDuration);
-                                        //                         this.behaviorCallback = scene.time.delayedCall(chasingDuration, () => {
-                                        //                             this.behavior = 'rest';
-                                        //                             this.body.reset(this.x, this.y);//==停下
-                                        //                             this.behaviorCallback = null;
-                                        //                             // console.debug('休息');
-                                        //                         }, [], scene);
-                                        //                     }
-                                        //                     // this.behaviorCallback.remove();
-                                        //                     // console.debug(this.behaviorCallback);
-                                        //                     break;
-                                        //                 default:
-                                        //                 case 'rest':
-                                        //                     this.anims.play('dog_Idle', true);
-                                        //                     if (!this.behaviorCallback) {
-                                        //                         const restingDuration = Phaser.Math.FloatBetween(1.5, 2) * 1000;//==休息隨機x秒
-                                        //                         // console.debug('休息時間：' + restingDuration);
-                                        //                         this.behaviorCallback = scene.time.delayedCall(restingDuration, () => {
-                                        //                             this.behavior = 'chase';
-                                        //                             this.behaviorCallback = null;
-                                        //                             // console.debug('追擊');
-                                        //                         }, [], scene);
-                                        //                     }
-                                        //                     break;
-                                        //             }
-
-
-                                        //             //===判斷player相對敵人的位子來轉向(轉向時停下)
-                                        //             let filpDir = player.x < this.x;
-                                        //             if (this.filpFlag != filpDir) {
-                                        //                 this.filpHandler(filpDir);
-                                        //                 this.body.reset(this.x, this.y);
-                                        //             }
-
-                                        //         }
-                                        //         // console.debug();
-                                        //         //==死亡
-                                        //         if (this.stats.HP <= 0) {
-                                        //             // console.debug('dog_Death');
-                                        //             this.knockBackCallback.remove();
-                                        //             this.behavior = 'Death';
-                                        //             this.body.reset(this.x, this.y);
-                                        //             this.body.enable = false;
-                                        //             this.anims.play('dog_Death', true);
-
-                                        //         }
-
-                                        //     };
-
-                                        //     //=轉向左邊(素材一開始向右)
-                                        //     child.filpHandler(true);
-
-                                        //     //==========custom attr
-
-
-
-                                        //     // console.debug(child);
-                                        //     // console.debug(child.getBounds());
-                                        // });
 
 
                                         enemy.enemyAttack = (player, enemy) => {
                                             // console.debug(player, enemy);
                                             // console.debug(player.body);
-                                            // console.debug(enemy);
+                                            console.debug('player hurt');
+                                            player.knockBackFlag = true;
+                                            const knockBackDuration = 200;
+                                            let knockBackDir = enemy.x < player.x ? 1 : -1;
+                                            player.body.reset(player.x, player.y);//==停下
+                                            this.physics.accelerateTo(player, player.x + 100 * knockBackDir, player.y, 1000, 1000);
 
                                             player.setTint(0xff0000);
-                                            setTimeout(() => {
+                                            this.time.delayedCall(knockBackDuration, () => {
                                                 player.setTint(0xffffff);
-                                            }, 100);
+                                                player.body.reset(player.x, player.y);//==停下
+                                                player.knockBackFlag = false;
+                                            }, [], this);
 
-                                            player.statsChangeHandler({ HP: player.stats.HP -= enemy.stats.attackPower });
+                                            player.statsChangeHandler({ HP: player.stats.HP -= enemy.stats.attackPower }, this);
                                             // enemy.anims.play('dog_Attack', true);
                                         };
 
@@ -1745,7 +1297,7 @@ function locatingGame() {
                                         player.attackHandler();
 
                                         if (player.stats.MP < player.stats.maxMP)
-                                            player.statsChangeHandler({ MP: player.stats.MP += player.stats.manaRegen });//自然回魔
+                                            player.statsChangeHandler({ MP: player.stats.MP += player.stats.manaRegen }, this);//自然回魔
 
                                         //==暫停
                                         if (Phaser.Input.Keyboard.JustDown(cursors.p)) {
@@ -1812,7 +1364,8 @@ function locatingGame() {
                                         enemy.children.iterate((child) => {
                                             if (child.behavior == 'Death') return;
                                             // console.debug('alive');
-                                            child.behaviorHandler(this);
+                                            // console.debug(child.behaviorHandler);
+                                            child.behaviorHandler(player, this);
                                             child.lifeBar.setPosition(child.x, child.y - 20);
                                         });
 
@@ -1838,13 +1391,6 @@ function locatingGame() {
                                                 timePoint: getTimePoint(orb.x),
                                             })
                                         );
-                                        let enemyStats = gameData.liberate ?
-                                            gameData.enemyStats : {
-                                                enemyActive: enemy.startBehaviorFlag,
-                                                enemyHP: enemy.children.entries.map(child => child.stats.HP),
-                                            };
-                                        let liberate = gameData.liberate ?
-                                            gameData.liberate : !(enemyStats.enemyHP.filter(hp => hp > 0).length > 0);
 
 
                                         let gameResult = {
@@ -1857,7 +1403,7 @@ function locatingGame() {
                                             stationInfo: {
                                                 orbStats: orbStats,
                                                 enemyStats: enemyStats,
-                                                liberate: liberate,
+                                                liberate: !(Object.keys(enemyStats).filter(enemy => enemyStats[enemy].HP > 0).length > 0),
                                             },
                                         };
 

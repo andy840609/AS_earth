@@ -358,18 +358,7 @@ function locatingGame() {
                 GameData = {
                     timeRemain: 500000,
                     controllCursor: [],
-                    playerStats: {
-                        movementSpeed: 500,
-                        jumpingPower: 400,
-                        attackSpeed: 800,
-                        attackPower: 100,
-                        manaCost: 10,
-                        manaRegen: 1,//per 10 ms(game update per 10ms)0.05
-                        HP: 100,
-                        maxHP: 100,
-                        MP: 100,
-                        maxMP: 100,
-                    },
+                    playerStats: GameObjectStats.player['mage'],
 
                 }
             };
@@ -457,7 +446,7 @@ function locatingGame() {
 
 
                         enemy.forEach((key) => {
-                            let gameObj = GameObjectStats[key];
+                            let gameObj = GameObjectStats.creature[key];
                             let tmp = Object.assign(gameObj, {
                                 maxHP: gameObj.HP,
                                 active: false,//=狗開始追...（爲true後永遠爲true）
@@ -869,7 +858,8 @@ function locatingGame() {
                                         var platform = () => {
                                             platforms = this.physics.add.staticGroup();
                                             platforms.create(width * 0.5, height * 0.95, 'ground')
-                                                .setScale(3, 0.5).refreshBody().setOffset(30);
+                                                .setScale(3, 0.5).refreshBody().setOffset(30)
+                                                .setName('platform');
                                         }
                                         var background = () => {
                                             let bgImg = this.add.image(width * 0.5, height * 0.5, 'background');
@@ -891,7 +881,7 @@ function locatingGame() {
                                                 // gravityY: -50,
 
                                             });
-
+                                            // console.debug(orbGroup);
                                             var animsCreate = () => {
                                                 this.anims.create({
                                                     key: 'orb_inactive',
@@ -1046,7 +1036,8 @@ function locatingGame() {
                                         player = this.physics.add.sprite(100, 450, 'dude');
                                         // player.setBounce(0.2);
                                         // player.setBounce(100, 0);
-                                        player.setCollideWorldBounds(true)
+                                        player
+                                            .setCollideWorldBounds(true)
                                             .setPushable(false)
                                             .setDepth(1)
                                             .setName('player')
@@ -1071,22 +1062,21 @@ function locatingGame() {
                                         player.playerAttack = (bullet, enemy) => {
                                             // console.debug(bullet, enemy);
                                             bullet.disableBody(true, true);
-                                            let knockBackDir = bullet.x < enemy.x ? 1 : -1;
-                                            enemy.body.reset(enemy.x, enemy.y);//==停下
-                                            this.physics.accelerateTo(enemy, enemy.x + 10 * knockBackDir, enemy.y, 500, 500, 0);
+                                            enemy.body.setVelocityX(player.stats.knockBackSpeed * (bullet.x < enemy.x ? 1 : -1));
+
                                             enemy.behavior = 'hurt';
-                                            // console.debug(enemy.stats.HP, player.stats.attackPower);
                                             enemy.statsChangeHandler({ HP: enemy.stats.HP -= player.stats.attackPower }, this);
                                         };
 
-                                        //======custom
-                                        player.knockBackFlag = false;
+                                        //======custom 
+                                        player.stopCursorsFlag = false;
+                                        player.invincibleCallback = null;//無敵時間計時
                                         player.stats = Object.assign({}, playerData.playerStats);
                                         // console.debug(player.stats);
                                         let playerTurnLeft = false;//==判斷子彈方向
                                         //==移動
                                         player.movingHadler = function () {
-                                            if (this.knockBackFlag) return;
+                                            if (this.stopCursorsFlag) return;
 
                                             if (cursors.a.isDown) {
                                                 player.setVelocityX(-this.stats.movementSpeed);
@@ -1157,15 +1147,9 @@ function locatingGame() {
                                                 var bullet = bullets.get();
                                                 // console.debug(bullet);
                                                 if (bullet) {
-                                                    bullet.enableBody(false, 0, 0, true, true);
-
-                                                    // console.debug(Phaser.Physics.Arcade.Body());
-
-
                                                     bullet.fire(player.x, player.y, this.stats.attackSpeed * (playerTurnLeft ? -1 : 1));
                                                     bullet.anims.play(playerTurnLeft ? 'player_left' : 'player_right', true);
-
-
+                                                    // bullet.setMass(1);
                                                     bullet.body.setSize(30, 40);
                                                     player.statsChangeHandler({ MP: this.stats.MP -= this.stats.manaCost }, this);
                                                     // console.debug(this.stats);
@@ -1200,7 +1184,8 @@ function locatingGame() {
 
                                         //==敵人玩家相關碰撞
                                         if (!gameData.liberate) {
-                                            this.physics.add.overlap(bullets, enemy, player.playerAttack, null, this);
+                                            this.physics.add.collider(bullets, enemy, player.playerAttack, null, this);
+                                            // player.enemyCollider = this.physics.add.collider(enemy, player, enemy.enemyAttack, null, this);
                                             this.physics.add.collider(enemy, player, enemy.enemyAttack, null, this);
                                         }
 
@@ -1212,36 +1197,55 @@ function locatingGame() {
                                         enemy = this.physics.add.group({
                                             classType: Enemy,
                                             maxSize: this.aliveEnemy.length,
+                                            // key: 'enemy',
+                                            // maxVelocityY: 0,
+                                            collideWorldBounds: true,
+                                            // bounceX: 0.1,
+                                            mass: 100,
+                                            // immovable: true,
                                         });
-                                        // console.debug(enemy);
+                                        console.debug(enemy);
                                         this.aliveEnemy.forEach((key, i) => {
-
                                             let child = enemy.get(key, i, enemyStats[key]);
                                             //=轉向左邊(素材一開始向右)
                                             child.filpHandler(true);
-                                            // console.debug(child);
+                                            // child.setCollideWorldBounds(true)
+                                            // console.debug(child.body);
                                         });
 
 
-                                        enemy.enemyAttack = (player, enemy) => {
-                                            // console.debug(player, enemy);
+                                        enemy.enemyAttack = (player, foe) => {
+                                            // console.debug(player, foe);
                                             // console.debug(player.body);
-                                            console.debug('player hurt');
-                                            player.knockBackFlag = true;
+                                            // console.debug('player hurt');
+                                            const invincibleDuration = 800;
                                             const knockBackDuration = 200;
-                                            let knockBackDir = enemy.x < player.x ? 1 : -1;
-                                            player.body.reset(player.x, player.y);//==停下
-                                            this.physics.accelerateTo(player, player.x + 100 * knockBackDir, player.y, 1000, 1000);
+                                            const knockBackDist = 100;
 
-                                            player.setTint(0xff0000);
-                                            this.time.delayedCall(knockBackDuration, () => {
-                                                player.setTint(0xffffff);
-                                                player.body.reset(player.x, player.y);//==停下
-                                                player.knockBackFlag = false;
-                                            }, [], this);
+                                            if (!player.invincibleCallback) {
+                                                player.setTint(0xff0000);
+                                                // let knockBackDir = foe.x < player.x ? 1 : -1;
+                                                // this.physics.moveTo(player, player.x + knockBackDist * knockBackDir, player.y, 1000, knockBackDuration);
+                                                player.body.setVelocityX(300 * (foe.x < player.x ? 1 : -1));
 
-                                            player.statsChangeHandler({ HP: player.stats.HP -= enemy.stats.attackPower }, this);
-                                            // enemy.anims.play('dog_Attack', true);
+
+                                                //==暫停人物操作(一直往前走不會有擊退效果)
+                                                player.stopCursorsFlag = true;
+                                                this.time.delayedCall(knockBackDuration, () => {
+                                                    player.setTint(0xffffff);
+                                                    player.body.reset(player.x, player.y);//==停下
+                                                    player.stopCursorsFlag = false;
+                                                }, [], this);
+
+
+                                                player.statsChangeHandler({ HP: player.stats.HP -= foe.stats.attackPower }, this);
+                                                player.invincibleCallback = this.time.delayedCall(invincibleDuration, () => {
+                                                    player.invincibleCallback = null;
+                                                }, [], this);
+                                            }
+
+
+                                            // foe.anims.play('dog_Attack', true);
                                         };
 
                                         // console.debug(stars.children.entries[0].active);

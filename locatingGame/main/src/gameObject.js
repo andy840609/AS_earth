@@ -22,6 +22,42 @@ const GameObjectStats = {
 
 };
 
+const BackGroundResources = {
+    forest_1: {
+        static: ['sky.png', 'rocks_1.png', 'rocks_2.png', 'clouds_1.png'],
+        dynamic: ['clouds_2.png', 'clouds_3.png', 'clouds_4.png'],
+        depth: {
+            static: [0, 1, 2, 0],
+            dynamic: [0, 1, 2],
+        },
+    },
+    forest_2: {
+        static: ['sky.png', 'rocks_3.png', 'rocks_2.png', 'rocks_1.png', 'pines.png', 'clouds_2.png'],
+        dynamic: ['clouds_1.png', 'clouds_3.png', 'birds.png'],
+        depth: {
+            static: [0, 0, 0, 0, 0, 0],
+            dynamic: [1, 1, 1],
+        },
+    },
+    forest_3: {
+        static: ['sky.png', 'rocks.png', 'ground_1.png', 'ground_2.png', 'ground_3.png', 'plant.png'],
+        dynamic: ['clouds_1.png', 'clouds_2.png'],
+        depth: {
+            static: [0, 1, 2, 2, 2, 2],
+            dynamic: [0, 1],
+        },
+    },
+    forest_4: {
+        static: ['sky.png', 'rocks.png', 'ground.png',],
+        dynamic: ['clouds_1.png', 'clouds_2.png'],
+        depth: {
+            static: [0, 1, 2],
+            dynamic: [0, 1],
+        },
+    },
+
+}
+
 const Bullet = new Phaser.Class({
 
     Extends: Phaser.Physics.Arcade.Sprite,
@@ -29,8 +65,7 @@ const Bullet = new Phaser.Class({
     initialize:
         function Bullet(scene) {
             Phaser.Physics.Arcade.Sprite.call(this, scene, 0, 0, 'instrument');
-            // console.debug(this.body)
-            // scene.physics.world.enableBody(this, 0);
+            this.setDepth(15);
 
         },
 
@@ -132,7 +167,7 @@ const Enemy = new Phaser.Class({
                 .setScale(2)
                 .setOrigin(0.4)
                 .setPosition(canvas.width * 0.8 + 30 * i, canvas.height * 0.5)
-                // .setPushable(true)
+                .setDepth(9)
                 .setPushable(false)
                 // .setImmovable(true)
                 .setName(key)
@@ -149,7 +184,8 @@ const Enemy = new Phaser.Class({
             //==HP bar
             this.lifeBar = scene.add.text(0, 0, '', { fontSize: '25px', fill: 'red' })
                 .setOrigin(0.5)
-                .setVisible(false);
+                .setVisible(false)
+                .setDepth(20);
 
             //==stats
             this.stats = stats;
@@ -162,7 +198,6 @@ const Enemy = new Phaser.Class({
     filpFlag: false,
     filpHandler: function (filp) {
         // console.debug(this);
-        // return;
         let scale = Math.abs(this.scaleX);
         if (filp) {
             this.scaleX = -scale;
@@ -349,63 +384,50 @@ const Enemy = new Phaser.Class({
 
                             let dist = Phaser.Math.Distance.BetweenPoints(player, this);
                             // console.debug(this.body);
-                            // let jumpingRange = 300;
-                            // if (dist < jumpingRange) {
-                            //     // console.debug(this.body.touching.down);
-                            //     if (player.y < this.y && this.body.touching.down) {//==玩家跳起時貓也跳起
-                            //         console.debug('cat jump');
-                            //         // scene.physics.moveTo(this, this.x - jumpingRange, player.y, 1000, 500);
-                            //         // scene.physics.moveTo(this, this.x, 200, 10, 10);
+                            let jumpingRange = 300;
+                            if (dist < jumpingRange) {
+                                // console.debug(this.body.touching.down);
+                                if (player.y < this.y && this.body.touching.down) {//==玩家跳起時貓也跳起
+                                    console.debug('cat jump');
+                                    // scene.physics.moveTo(this, this.x - jumpingRange, player.y, 1000, 500);
+                                    // scene.physics.moveTo(this, this.x, 200, 10, 10);
 
-                            //         // this.body.reset(this.x, this.y);//==停下
-                            //         // scene.physics.accelerateTo(this, player.x, player.y, this.body.speed, 1000, 10000);
-                            //         // console.debug(this.body);
-                            //         // console.debug(this.body.maxVelocity.y);
+                                    // this.body.reset(this.x, this.y);//==停下
+                                    // scene.physics.accelerateTo(this, player.x, player.y, this.body.speed, 1000, 10000);
+                                    // console.debug(this.body);
+                                    // console.debug(this.body.maxVelocity.y);
 
-                            //         this.body.reset(this.x, this.y);//==停下
-                            //         this.body
-                            //             .setMaxVelocityY(1000)
-                            //             //     .setVelocityY(-100);
-                            //             .setVelocity(-300, -100);
-                            //     }
-                            //     else if (scene.physics.overlap(this, player)) {//==cat attack(之後條件改碰撞)
-                            //         // console.debug('cat_Attack');
-                            //         this.anims.msPerFrame = 30;
-                            //         this.anims.play('cat_Attack', true);
-                            //         const attackDuration = 300;
-
-                            //         if (!this.behaviorCallback)
-                            //             this.behaviorCallback = scene.time.delayedCall(attackDuration, () => {
-                            //                 this.behavior = 'rest';//==攻擊後休息
-                            //                 this.body.reset(this.x, this.y);//==停下
-                            //                 this.behaviorCallback = null;
-                            //             }, [], scene);
-                            //     }
-                            //     // else {
-                            //     // this.anims.msPerFrame = 30;
-                            //     // this.anims.play('cat_Walk', true);
-                            //     // ==== scene.physics.accelerateTo(gameObject, x, y, acceleration, xSpeedMax, ySpeedMax);
-                            //     // scene.physics.accelerateToObject(this, player, 1000, 1000, 30);
-                            //     // this.physics.moveToObject(this, player, 500, chasingDuration);
-                            //     // }
+                                    this.body.reset(this.x, this.y);//==停下
+                                    this.body
+                                        .setMaxVelocityY(1000)
+                                        //     .setVelocityY(-100);
+                                        .setVelocity(-300, -100);
+                                }
+                            }
 
 
-                            // }
-                            // else {
-                            //     this.anims.msPerFrame = 30;
-                            //     this.anims.play('cat_Walk', true);
-                            //     // ==== scene.physics.accelerateTo(gameObject, x, y, acceleration, xSpeedMax, ySpeedMax);
-                            //     scene.physics.accelerateToObject(this, player, 1000, 1000, 100);
-                            //     // this.physics.moveToObject(this, player, 500, chasingDuration);
-                            // }
+                            if (scene.physics.overlap(this, player)) {//==cat attack(之後條件改碰撞)
+                                // console.debug('cat_Attack');
+                                this.anims.msPerFrame = 30;
+                                this.anims.play('cat_Attack', true);
+                                const attackDuration = 300;
 
-                            this.anims.msPerFrame = 30;
-                            this.anims.play('cat_Walk', true);
-                            // this.body.reset(this.x, this.y);
-                            // ==== scene.physics.accelerateTo(gameObject, x, y, acceleration, xSpeedMax, ySpeedMax);
-                            scene.physics.accelerateTo(this, player.x, this.y, 1000, 1000);
-                            // scene.physics.accelerateToObject(this, player, 1000, 1000, 100);
-                            // this.physics.moveToObject(this, player, 500, chasingDuration);
+                                if (!this.behaviorCallback)
+                                    this.behaviorCallback = scene.time.delayedCall(attackDuration, () => {
+                                        this.behavior = 'rest';//==攻擊後休息
+                                        this.body.reset(this.x, this.y);//==停下
+                                        this.behaviorCallback = null;
+                                    }, [], scene);
+                            }
+                            else {
+                                this.anims.msPerFrame = 30;
+                                this.anims.play('cat_Walk', true);
+                                // ==== scene.physics.accelerateTo(gameObject, x, y, acceleration, xSpeedMax, ySpeedMax);
+                                scene.physics.accelerateToObject(this, player, 1000, 1000);
+                                // this.physics.moveToObject(this, player, 500, chasingDuration);
+                            }
+
+
 
                             //===判斷player相對敵人的位子來轉向(轉向時停下)
                             let filpDir = player.x < this.x;
@@ -435,7 +457,7 @@ const Enemy = new Phaser.Class({
                                     this.behavior = 'rest';
                                     this.body.reset(this.x, this.y);//==停下
                                     this.behaviorCallback = null;
-                                    console.debug('休息');
+                                    // console.debug('休息');
                                 }, [], scene);
 
                                 //===判斷移動位子來轉向

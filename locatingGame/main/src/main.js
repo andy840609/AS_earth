@@ -433,10 +433,13 @@ function locatingGame() {
                 async function addStation() {
                     // console.debug(data);
 
+                    var getRandom = (x) => {
+                        return Math.floor(Math.random() * x);
+                    };
+
+                    const backgroundArr = Object.keys(BackGroundResources);
                     let markerArr = [],
                         circleArr = [];
-
-
 
                     data.forEach((d, i) => {
                         // console.debug(d);
@@ -455,9 +458,13 @@ function locatingGame() {
                         });
                         // console.debug(enemyStats);
 
+                        let background = backgroundArr[getRandom(backgroundArr.length)];
+                        console.debug(background);
+
                         d['gameData'] = {
                             liberate: false,
                             enemyStats: enemyStats,
+                            background: background,
                         };//==遊戲資料：liberate用來判斷是否已經贏過
 
                         //===station icon
@@ -752,8 +759,9 @@ function locatingGame() {
                                 constructor() {
                                     super({ key: 'defend' });
                                     this.aliveEnemy = Object.keys(enemyStats).filter(enemy => enemyStats[enemy].HP > 0);
-
+                                    this.background = gameData.background;
                                     // console.debug(this.aliveEnemy);
+
                                 }
 
 
@@ -772,8 +780,15 @@ function locatingGame() {
                                             this.load.image('ground', dir + 'platform.png');
                                         }
                                         var background = () => {
-                                            const dir = envDir + 'background/forest/game_background_1/';
-                                            this.load.image('background', dir + 'game_background_1.png');
+
+                                            const dir = envDir + 'background/' + this.background + '/';
+
+                                            let resources = BackGroundResources[this.background];
+                                            resources.static.concat(resources.dynamic).forEach(res => {
+                                                this.load.image(res, dir + res);
+                                            });
+
+
                                         }
                                         var instrument = () => {
                                             const dir = envDir + 'instrument/';
@@ -818,8 +833,6 @@ function locatingGame() {
                                     var wave = () => {
                                         waveSvgObjs.forEach(d => this.load.svg('wave_' + d.svgName, d.svg, { scale: 1 }));
                                     };
-
-
                                     environment();
                                     player();
                                     enemy();
@@ -829,16 +842,28 @@ function locatingGame() {
                                 create() {
 
 
+                                    /*
+                                    Depth:
+                                        0-4(background)
+                                        5(wave)
+                                        6(orbs)
+                                        9(enemy)
+                                        10(player,laser)
+                                        11(orb pickUp)
+                                        15(bullet)
+                                        20(UI:HP bar...)
+                                    */
                                     var initEnvironment = () => {
                                         // console.debug()
                                         var station = () => {
-                                            let station = stationData.station ? stationData.station : '???';
+                                            let station = stationData.station;
                                             this.add.image(width * 0.92, height * 0.53, 'station')
-                                                .setScale(1, 0.63);
+                                                .setScale(1, 0.63)
+                                                .setDepth(4);
                                             // this.add.image(width * 0.12, height * 0.53, 'title')
                                             //     .setScale(0.1, 0.15).setRotation(0.1).setPosition(width * 0.12, height * 0.53, 100, 100);
                                             this.add.text(width * 0.88, height * 0.46, station, { fontSize: '32px', fill: '#000' })
-                                                .setRotation(-0.1).setOrigin(0.5, 0.5);
+                                                .setRotation(-0.1).setOrigin(0.5, 0.5).setDepth(4);
 
                                             waveGameObjs = waveSvgObjs.map((d, i) => {
 
@@ -848,7 +873,7 @@ function locatingGame() {
                                                 else
                                                     y = height * 1.15;
 
-                                                return this.add.image(width * 0.5, y, 'wave_' + d.svgName);
+                                                return this.add.image(width * 0.5, y, 'wave_' + d.svgName).setDepth(5);
                                             });
 
                                             // this.add.image(width * 0.5, height * 0.5, 'wave_0')
@@ -859,11 +884,49 @@ function locatingGame() {
                                             platforms = this.physics.add.staticGroup();
                                             platforms.create(width * 0.5, height * 0.95, 'ground')
                                                 .setScale(3, 0.5).refreshBody().setOffset(30)
+                                                .setDepth(3)
                                                 .setName('platform');
                                         }
                                         var background = () => {
-                                            let bgImg = this.add.image(width * 0.5, height * 0.5, 'background');
-                                            bgImg.setScale(width / bgImg.width, height / bgImg.height);
+
+                                            let resources = BackGroundResources[this.background];
+                                            resources.static.forEach((res, i) => {
+                                                let img = this.add.image(width * 0.5, height * 0.5, res);
+                                                img
+                                                    .setScale(width / img.width, height / img.height)
+                                                    .setDepth(resources.depth.static[i]);
+                                            });
+
+                                            let clouds = this.add.group();
+                                            resources.dynamic.forEach((res, i) => {
+                                                let cloud = clouds.create(width * 0.5, height * 0.5, res);
+                                                cloud
+                                                    .setScale(width / cloud.width, height / cloud.height)
+                                                    .setDepth(resources.depth.dynamic[i]);
+                                                //==custom
+                                                cloud.firstLoop = true;
+                                                cloud.targetIndex = i;
+                                                cloud.movingDuration = Phaser.Math.Between(5, 20) * 1000;//==第一次移動5到20秒
+
+                                            });
+                                            // console.debug(clouds);  
+
+                                            this.tweens.add({
+                                                targets: clouds.getChildren(),
+                                                repeat: -1,
+                                                ease: 'Linear',
+                                                duration: (target) => target.movingDuration,
+                                                x: { start: width * 0.5, to: width * 1.5 },
+                                                onRepeat: (tween, target) => {
+                                                    if (target.firstLoop) {
+                                                        Object.assign(tween.data[target.targetIndex], {
+                                                            duration: target.movingDuration * 2,
+                                                            start: -width * 0.5,
+                                                        });
+                                                        target.firstLoop = false;
+                                                    }
+                                                },
+                                            });
                                         }
                                         var instrument = () => {
                                             // let instrument = this.physics.add.sprite(width * 0.1, height * 0.8, 'instrument')
@@ -875,7 +938,7 @@ function locatingGame() {
                                                 repeat: 1,
                                                 randomFrame: true,
                                                 setScale: { x: orbScale, y: orbScale },
-                                                // setXY: { x: width * 0.86, y: height * 0.8, stepX: 15 },
+                                                setDepth: { value: 6 },
                                                 // maxVelocityY: 0,
                                                 // gravityX: 1000,
                                                 // gravityY: -50,
@@ -941,7 +1004,7 @@ function locatingGame() {
 
                                                     if (pickUp) {//pick up                         
                                                         this.body.setMaxVelocityY(0);
-                                                        this.setDepth(2);
+                                                        this.setDepth(11);
                                                         pickUpObj.anims.play('orb_holded', true);
 
                                                         //==撿起後角色屬性改變
@@ -953,7 +1016,7 @@ function locatingGame() {
                                                     }
                                                     else {//put down
                                                         this.body.setMaxVelocityY(1000);
-                                                        this.setDepth(0);
+                                                        this.setDepth(6);
                                                         pickUpObj.anims.play(activate ? 'orb_activate' : 'orb_inactive', true);
 
                                                         //==放下後角色屬性恢復
@@ -976,7 +1039,7 @@ function locatingGame() {
                                                         .setAlpha(0.8)
                                                         .setScale(0.3, 1)
                                                         .setOrigin(0.5, 1)
-                                                        .setDepth(0)
+                                                        .setDepth(10)
                                                         .setVisible(false);
                                                 // console.debug(child.laserObj);
 
@@ -1039,7 +1102,7 @@ function locatingGame() {
                                         player
                                             .setCollideWorldBounds(true)
                                             .setPushable(false)
-                                            .setDepth(1)
+                                            .setDepth(10)
                                             .setName('player')
                                             .play('player_turn');
                                         player.body
@@ -1070,7 +1133,7 @@ function locatingGame() {
 
                                         //======custom 
                                         player.stopCursorsFlag = false;
-                                        player.invincibleCallback = null;//無敵時間計時
+                                        player.invincibleFlag = false;//無敵時間
                                         player.stats = Object.assign({}, playerData.playerStats);
                                         // console.debug(player.stats);
                                         let playerTurnLeft = false;//==判斷子彈方向
@@ -1159,8 +1222,8 @@ function locatingGame() {
                                         //==HP/MP
                                         const maxHPVal = player.stats.maxHP;
                                         const maxMPVal = player.stats.maxMP;
-                                        let hpText = this.add.text(16, 50, '', { fontSize: '32px', fill: '#000' });
-                                        let mpText = this.add.text(16, 80, '', { fontSize: '32px', fill: '#000' });
+                                        let hpText = this.add.text(16, 50, '', { fontSize: '32px', fill: '#000' }).setDepth(20);
+                                        let mpText = this.add.text(16, 80, '', { fontSize: '32px', fill: '#000' }).setDepth(20);
 
                                         player.statsChangeHandler = function (statsObj) {
                                             if ('HP' in statsObj) {
@@ -1185,8 +1248,7 @@ function locatingGame() {
                                         //==敵人玩家相關碰撞
                                         if (!gameData.liberate) {
                                             this.physics.add.collider(bullets, enemy, player.playerAttack, null, this);
-                                            // player.enemyCollider = this.physics.add.collider(enemy, player, enemy.enemyAttack, null, this);
-                                            this.physics.add.collider(enemy, player, enemy.enemyAttack, null, this);
+                                            this.physics.add.overlap(enemy, player, enemy.enemyAttack, null, this);
                                         }
 
 
@@ -1220,28 +1282,44 @@ function locatingGame() {
                                             // console.debug('player hurt');
                                             const invincibleDuration = 800;
                                             const knockBackDuration = 200;
-                                            const knockBackDist = 100;
+                                            const knockBackSpeed = 300;
 
-                                            if (!player.invincibleCallback) {
-                                                player.setTint(0xff0000);
-                                                // let knockBackDir = foe.x < player.x ? 1 : -1;
-                                                // this.physics.moveTo(player, player.x + knockBackDist * knockBackDir, player.y, 1000, knockBackDuration);
-                                                player.body.setVelocityX(300 * (foe.x < player.x ? 1 : -1));
+                                            if (!player.invincibleFlag) {
+                                                player.invincibleFlag = true;
+                                                // player.setTint(0xff0000);
+
+                                                player.body.setVelocityX(knockBackSpeed * (foe.x < player.x ? 1 : -1));
 
 
                                                 //==暫停人物操作(一直往前走不會有擊退效果)
                                                 player.stopCursorsFlag = true;
                                                 this.time.delayedCall(knockBackDuration, () => {
-                                                    player.setTint(0xffffff);
+                                                    // player.setTint(0xffffff);
                                                     player.body.reset(player.x, player.y);//==停下
                                                     player.stopCursorsFlag = false;
                                                 }, [], this);
 
+                                                this.tweens.add({
+                                                    targets: player,
+                                                    alpha: 0.5,
+                                                    duration: invincibleDuration / 20,//==   20=repeat(10)*yoyo(=2)
+                                                    yoyo: true,
+                                                    repeat: 10,
+                                                    ease: 'Sine.easeInOut',
+                                                    // props: {
+                                                    //     alpha: {
+                                                    //         duration: 100,
+                                                    //         yoyo: true,
+                                                    //         repeat: 10,
+                                                    //         ease: 'Sine.easeInOut',
+                                                    //         value: '0.5',
+                                                    //     },
+                                                    // },
+                                                    onComplete: () => player.invincibleFlag = false,
+                                                });
 
                                                 player.statsChangeHandler({ HP: player.stats.HP -= foe.stats.attackPower }, this);
-                                                player.invincibleCallback = this.time.delayedCall(invincibleDuration, () => {
-                                                    player.invincibleCallback = null;
-                                                }, [], this);
+
                                             }
 
 
@@ -1254,14 +1332,14 @@ function locatingGame() {
 
                                     };
                                     var initTimer = () => {
-                                        timerText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#000' });
+                                        timerText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#000' }).setDepth(20);
                                         //==計時,時間到進入結算
                                         gameTimer = this.time.delayedCall(timeRemain, () => gameOver = true, [], this);
                                     };
                                     var initPauseMenu = () => {
 
                                         // Create a label to use as a button
-                                        let pauseButton = this.add.text(width - 100, 20, 'Pause', { font: '24px Arial', fill: '#fff' });
+                                        let pauseButton = this.add.text(width - 100, 20, 'Pause', { font: '24px Arial', fill: '#fff' }).setDepth(20);
 
                                         // let pauseMenu = new UIScene('pauseMenu');
                                         pauseButton.setInteractive()
@@ -1389,7 +1467,7 @@ function locatingGame() {
                                         gameTimer.remove();
 
                                         //===get gameResult 
-                                        let orbStats = orbGroup.children.entries.map(orb =>
+                                        let orbStats = orbGroup.getChildren().map(orb =>
                                             new Object({
                                                 postition: orb.x,
                                                 timePoint: getTimePoint(orb.x),

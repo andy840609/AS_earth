@@ -743,9 +743,12 @@ function waveXdist() {
                     chartContainerD3.selectAll('#normalizeScale').dispatch("input");
                 });
 
-            normalizeScale.forEach((d, i) => {
-                chartContainerJQ.find('#NSList').append($("<option></option>").attr("value", i).text(d));
-            });
+            // normalizeScale.forEach((d, i) => {
+            //     chartContainerJQ.find('#NSList').append($("<option></option>").attr("value", i).text(d));
+            // });
+
+            let normalizeScale_html = normalizeScale.map((d, i) => `<option value="${i}">${d}</option>`).join('');
+            chartContainerJQ.find('#NSList').append(normalizeScale_html);
 
         };
         function WD_Charts(xAxisScale = 'linear', xAxisName = 'dist') {
@@ -1310,9 +1313,7 @@ function waveXdist() {
 
                         var makeYAxis = g => g
                             .attr("transform", `translate(${margin.left},0)`)
-                            .call(d3.axisLeft(y)
-                                .ticks(height / 30))
-                            .call(g => g.select(".domain").remove())
+                            .call(d3.axisLeft(y).ticks(height / 30))
                             .call(g => g.selectAll("g.yAxis g.tick line")
                                 .attr("x2", d => width - margin.left - margin.right)
                                 .attr("stroke-opacity", 0.2)

@@ -459,7 +459,7 @@ function locatingGame() {
                         // console.debug(enemyStats);
 
                         let background = backgroundArr[getRandom(backgroundArr.length)];
-                        console.debug(background);
+                        // console.debug(background);
 
                         d['gameData'] = {
                             liberate: false,
@@ -710,58 +710,59 @@ function locatingGame() {
                 let gameResult;
                 switch (gameMode) {
                     case 'defend':
-                        let waveSvgObjs = await getWaveImg(stationData);
+
                         // console.debug(waveSvgObjs);
 
-                        function defendGame(stationData, playerData, resolve) {
+                        function defendGame(stationData, playerData, waveSvgObjs, resolve) {
                             // console.debug(stationData);
                             const gameData = stationData.gameData;
                             const enemyStats = gameData.enemyStats;
 
                             const assetsDir = '../data/assets/';
                             const width = gameBox.width, height = gameBox.height;
-                            const getTimePoint = (x) => {
-                                let xAxisObj = waveSvgObjs.find(svg => svg.svgName == 'xAxis');
-                                let scaleFun = xAxisObj.x;
-                                let margin = xAxisObj.margin;
-
-                                let xAxisRange = [
-                                    (width - waveGameObjs[0].width) * 0.5 + margin.right,
-                                    (width + waveGameObjs[0].width) * 0.5 - margin.left,
-                                ];
-                                scaleFun.range(xAxisRange);
-                                // console.debug(scaleFun.range());
-                                let time = scaleFun.invert(x);
-                                let isInRange = (x >= xAxisRange[0] && x <= xAxisRange[1]);
-
-                                return {
-                                    time: time,
-                                    isInRange: isInRange,
-                                };
-
-                            };
 
 
                             var timeRemain = playerData.timeRemain;
 
-                            var player, enemy, cursors;
-                            var orbGroup;
-                            var platforms;
-
-                            var gameTimer = null, timeVal, timerText = null;
-                            var gameOver = false;
-
-
-                            var pickUpObj = null;
-                            var waveGameObjs = [];
-
                             class DefendScene extends Phaser.Scene {
-                                constructor() {
+                                constructor(stationData, playerData, waveSvgObjs, resolve) {
                                     super({ key: 'defend' });
                                     this.aliveEnemy = Object.keys(enemyStats).filter(enemy => enemyStats[enemy].HP > 0);
                                     this.background = gameData.background;
-                                    // console.debug(this.aliveEnemy);
 
+                                    Object.assign(this, {
+                                        player: null,
+                                        enemy: null,
+                                        cursors: null,
+                                        orbGroup: null,
+                                        platforms: null,
+                                        gameTimer: null,
+                                        waveSvgObjs: waveSvgObjs,
+                                        waveGameObjs: [],
+                                        gameOver: false,
+                                        getTimePoint: function (waveObjWidth, x) {
+                                            let xAxisObj = this.waveSvgObjs.find(svg => svg.svgName == 'xAxis');
+                                            let scaleFun = xAxisObj.x;
+                                            let margin = xAxisObj.margin;
+
+                                            let xAxisRange = [
+                                                (width - waveObjWidth) * 0.5 + margin.right,
+                                                (width + waveObjWidth) * 0.5 - margin.left,
+                                            ];
+                                            scaleFun.range(xAxisRange);
+                                            // console.debug(scaleFun.range());
+                                            let time = scaleFun.invert(x);
+                                            let isInRange = (x >= xAxisRange[0] && x <= xAxisRange[1]);
+
+                                            return {
+                                                time: time,
+                                                isInRange: isInRange,
+                                            };
+
+                                        },
+
+                                    });
+                                    console.debug(this);
                                 }
 
 
@@ -831,7 +832,7 @@ function locatingGame() {
 
                                     };
                                     var wave = () => {
-                                        waveSvgObjs.forEach(d => this.load.svg('wave_' + d.svgName, d.svg, { scale: 1 }));
+                                        this.waveSvgObjs.forEach(d => this.load.svg('wave_' + d.svgName, d.svg, { scale: 1 }));
                                     };
                                     environment();
                                     player();
@@ -865,7 +866,7 @@ function locatingGame() {
                                             this.add.text(width * 0.88, height * 0.46, station, { fontSize: '32px', fill: '#000' })
                                                 .setRotation(-0.1).setOrigin(0.5, 0.5).setDepth(4);
 
-                                            waveGameObjs = waveSvgObjs.map((d, i) => {
+                                            this.waveGameObjs = this.waveSvgObjs.map((d, i) => {
 
                                                 let y;
                                                 if (d.svgName != 'xAxis')
@@ -881,8 +882,8 @@ function locatingGame() {
                                             // this.add.image(width * 0.5, height * 0.1, 'wave_2')
                                         }
                                         var platform = () => {
-                                            platforms = this.physics.add.staticGroup();
-                                            platforms.create(width * 0.5, height * 0.95, 'ground')
+                                            this.platforms = this.physics.add.staticGroup();
+                                            this.platforms.create(width * 0.5, height * 0.95, 'ground')
                                                 .setScale(3, 0.5).refreshBody().setOffset(30)
                                                 .setDepth(3)
                                                 .setName('platform');
@@ -933,7 +934,7 @@ function locatingGame() {
                                             //     .setScale(0.3);
                                             const orbScale = 0.25;
 
-                                            orbGroup = this.physics.add.group({
+                                            this.orbGroup = this.physics.add.group({
                                                 key: 'instrument',
                                                 repeat: 1,
                                                 randomFrame: true,
@@ -980,7 +981,7 @@ function locatingGame() {
 
                                             let orbStats = gameData.orbStats;
                                             // console.debug(orbStats);
-                                            orbGroup.children.iterate((child, i) => {
+                                            this.orbGroup.children.iterate((child, i) => {
 
                                                 let activate, orbPosition;
                                                 if (orbStats) {
@@ -1005,7 +1006,7 @@ function locatingGame() {
                                                     if (pickUp) {//pick up                         
                                                         this.body.setMaxVelocityY(0);
                                                         this.setDepth(11);
-                                                        pickUpObj.anims.play('orb_holded', true);
+                                                        this.player.pickUpObj.anims.play('orb_holded', true);
 
                                                         //==撿起後角色屬性改變
                                                         newPlayerStats = {
@@ -1017,7 +1018,7 @@ function locatingGame() {
                                                     else {//put down
                                                         this.body.setMaxVelocityY(1000);
                                                         this.setDepth(6);
-                                                        pickUpObj.anims.play(activate ? 'orb_activate' : 'orb_inactive', true);
+                                                        this.player.pickUpObj.anims.play(activate ? 'orb_activate' : 'orb_inactive', true);
 
                                                         //==放下後角色屬性恢復
                                                         newPlayerStats = {
@@ -1026,7 +1027,7 @@ function locatingGame() {
                                                         };
                                                     }
 
-                                                    player.stats = Object.assign(player.stats, newPlayerStats);
+                                                    this.player.stats = Object.assign(this.player.stats, newPlayerStats);
 
 
                                                     this.activateFlag = activate;
@@ -1062,7 +1063,7 @@ function locatingGame() {
                                                 // console.debug(child.laserObj)
                                             });
 
-                                            this.physics.add.collider(orbGroup, platforms);
+                                            this.physics.add.collider(this.orbGroup, this.platforms);
 
                                         }
                                         background();
@@ -1096,24 +1097,24 @@ function locatingGame() {
                                         };
                                         animsCreate();
 
-                                        player = this.physics.add.sprite(100, 450, 'dude');
+                                        this.player = this.physics.add.sprite(100, 450, 'dude');
                                         // player.setBounce(0.2);
                                         // player.setBounce(100, 0);
-                                        player
+                                        this.player
                                             .setCollideWorldBounds(true)
                                             .setPushable(false)
                                             .setDepth(10)
                                             .setName('player')
                                             .play('player_turn');
-                                        player.body
+                                        this.player.body
                                             .setGravityY(500);
 
 
-                                        this.physics.add.collider(player, platforms);
+                                        this.physics.add.collider(this.player, this.platforms);
                                         // cursors = this.input.keyboard.createCursorKeys();
 
                                         //===init cursors
-                                        cursors = this.input.keyboard.addKeys('w,s,a,d,space,p,q,e');
+                                        this.cursors = this.input.keyboard.addKeys('w,s,a,d,space,p,q,e');
 
                                         //===init attack
                                         var bullets = this.physics.add.group({
@@ -1122,133 +1123,143 @@ function locatingGame() {
                                             runChildUpdate: true,
                                             maxVelocityY: 0,
                                         });
-                                        player.playerAttack = (bullet, enemy) => {
-                                            // console.debug(bullet, enemy);
-                                            bullet.disableBody(true, true);
-                                            enemy.body.setVelocityX(player.stats.knockBackSpeed * (bullet.x < enemy.x ? 1 : -1));
 
-                                            enemy.behavior = 'hurt';
-                                            enemy.statsChangeHandler({ HP: enemy.stats.HP -= player.stats.attackPower }, this);
-                                        };
+                                        //======custom
+                                        Object.assign(this.player, {
+                                            stats: Object.assign({}, playerData.playerStats),
+                                            stopCursorsFlag: false,
+                                            invincibleFlag: false,//無敵時間
+                                            playerTurnLeft: false,//==判斷子彈方向
 
-                                        //======custom 
-                                        player.stopCursorsFlag = false;
-                                        player.invincibleFlag = false;//無敵時間
-                                        player.stats = Object.assign({}, playerData.playerStats);
-                                        // console.debug(player.stats);
-                                        let playerTurnLeft = false;//==判斷子彈方向
-                                        //==移動
-                                        player.movingHadler = function () {
-                                            if (this.stopCursorsFlag) return;
+                                            //==HP/MP                
+                                            hpText: this.add.text(16, 50, '', { fontSize: '32px', fill: '#000' }).setDepth(20),
+                                            mpText: this.add.text(16, 80, '', { fontSize: '32px', fill: '#000' }).setDepth(20),
 
-                                            if (cursors.a.isDown) {
-                                                player.setVelocityX(-this.stats.movementSpeed);
-                                                player.anims.play('player_left', true);
-                                                playerTurnLeft = true;
-                                            }
-                                            else if (cursors.d.isDown) {
-                                                player.setVelocityX(this.stats.movementSpeed);
-                                                player.anims.play('player_right', true);
-                                                playerTurnLeft = false;
-                                            }
-                                            else {
-                                                player.setVelocityX(0);
-                                                // player.anims.play('player_turn');
-                                            };
+                                            playerAttack: (bullet, enemy) => {
+                                                // console.debug(bullet, enemy);
+                                                let playerStats = this.player.stats;
+                                                bullet.disableBody(true, true);
+                                                enemy.body.setVelocityX(playerStats.knockBackSpeed * (bullet.x < enemy.x ? 1 : -1));
 
-                                            //==跳
-                                            if (cursors.w.isDown && player.body.touching.down) {
-                                                player.setVelocityY(-this.stats.jumpingPower);
-                                            };
+                                                enemy.behavior = 'hurt';
+                                                enemy.statsChangeHandler({ HP: enemy.stats.HP -= playerStats.attackPower }, this);
+                                            },
 
-                                        };
-                                        //==撿起
-                                        player.pickingHadler = function () {
+                                            //==移動
+                                            movingHadler: function (scene) {
+                                                if (this.stopCursorsFlag) return;
 
-                                            if (Phaser.Input.Keyboard.JustDown(cursors.s)) {
+                                                let cursors = scene.cursors;
 
-                                                // console.debug(orbStats);
-                                                if (pickUpObj) {  //==put down
-
-                                                    // console.debug(pickUpObj.laserObj.body);
-                                                    // console.debug(timePoint.isInRange);
-                                                    let timePoint = getTimePoint(pickUpObj.x);
-                                                    pickUpObj.statusHadler(false, timePoint.isInRange);
-                                                    pickUpObj = null;
-
+                                                if (cursors.a.isDown) {
+                                                    this.setVelocityX(-this.stats.movementSpeed);
+                                                    this.anims.play('player_left', true);
+                                                    this.playerTurnLeft = true;
                                                 }
-                                                else {  //==pick up
-                                                    const piclUpDistance = 40;
-                                                    let colsestOrb;
-                                                    orbGroup.children.iterate(child => {
-                                                        if (Phaser.Math.Distance.BetweenPoints(player, child) <= piclUpDistance)
-                                                            if (colsestOrb)
-                                                                colsestOrb =
-                                                                    Phaser.Math.Distance.BetweenPoints(player, child) <
-                                                                        Phaser.Math.Distance.BetweenPoints(player, colsestOrb) ?
-                                                                        child : colsestOrb;
-                                                            else
-                                                                colsestOrb = child;
-
-                                                    });
-                                                    if (colsestOrb) {
-                                                        pickUpObj = colsestOrb;
-                                                        pickUpObj.statusHadler(true);
-                                                        // console.debug(pickUpObj);
-                                                    };
+                                                else if (cursors.d.isDown) {
+                                                    this.setVelocityX(this.stats.movementSpeed);
+                                                    this.anims.play('player_right', true);
+                                                    this.playerTurnLeft = false;
                                                 }
+                                                else {
+                                                    this.setVelocityX(0);
+                                                    // this.anims.play('player_turn');
+                                                };
 
-                                            };
+                                                //==跳
+                                                if (cursors.w.isDown && this.body.touching.down) {
+                                                    this.setVelocityY(-this.stats.jumpingPower);
+                                                };
 
-                                        };
-                                        //==攻擊
-                                        player.attackHandler = function () {
+                                            },
+                                            //==撿起
+                                            pickingHadler: function (scene) {
 
-                                            if (Phaser.Input.Keyboard.JustDown(cursors.space)) {
-                                                if (this.stats.MP < this.stats.manaCost) return;
+                                                if (Phaser.Input.Keyboard.JustDown(scene.cursors.s)) {
 
-                                                var bullet = bullets.get();
-                                                // console.debug(bullet);
-                                                if (bullet) {
-                                                    bullet.fire(player.x, player.y, this.stats.attackSpeed * (playerTurnLeft ? -1 : 1));
-                                                    bullet.anims.play(playerTurnLeft ? 'player_left' : 'player_right', true);
-                                                    // bullet.setMass(1);
-                                                    bullet.body.setSize(30, 40);
-                                                    player.statsChangeHandler({ MP: this.stats.MP -= this.stats.manaCost }, this);
-                                                    // console.debug(this.stats);
-                                                }
-                                            };
-                                        };
-                                        //==HP/MP
-                                        const maxHPVal = player.stats.maxHP;
-                                        const maxMPVal = player.stats.maxMP;
-                                        let hpText = this.add.text(16, 50, '', { fontSize: '32px', fill: '#000' }).setDepth(20);
-                                        let mpText = this.add.text(16, 80, '', { fontSize: '32px', fill: '#000' }).setDepth(20);
+                                                    // console.debug(orbStats);
+                                                    if (this.pickUpObj) {  //==put down
 
-                                        player.statsChangeHandler = function (statsObj) {
-                                            if ('HP' in statsObj) {
-                                                let hpString = 'HP : ' + parseInt(statsObj.HP) + ' / ' + maxHPVal;
-                                                hpText.setText(hpString);
-                                            };
-                                            if ('MP' in statsObj) {
-                                                let mpString = 'MP : ' + parseInt(statsObj.MP) + ' / ' + maxMPVal;
-                                                mpText.setText(mpString);
-                                            };
+                                                        // console.debug(this.pickUpObj.laserObj.body);
+                                                        // console.debug(timePoint.isInRange);
+                                                        let timePoint = getTimePoint(scene.waveGameObjs[0].width, this.pickUpObj.x);
+                                                        this.pickUpObj.statusHadler(false, timePoint.isInRange);
+                                                        this.pickUpObj = null;
 
-                                            this.stats = Object.assign(this.stats, statsObj);
+                                                    }
+                                                    else {  //==pick up
+                                                        const piclUpDistance = 40;
+                                                        console.debug(this.pickUpObj);
+                                                        let colsestOrb;
+                                                        scene.orbGroup.children.iterate(child => {
+                                                            if (Phaser.Math.Distance.BetweenPoints(this, child) <= piclUpDistance)
+                                                                if (colsestOrb)
+                                                                    colsestOrb =
+                                                                        Phaser.Math.Distance.BetweenPoints(this, child) <
+                                                                            Phaser.Math.Distance.BetweenPoints(this, colsestOrb) ?
+                                                                            child : colsestOrb;
+                                                                else
+                                                                    colsestOrb = child;
 
-                                        };
-                                        player.statsChangeHandler({ HP: player.stats.HP, MP: player.stats.MP }, this);
+                                                        });
+                                                        if (colsestOrb) {
+                                                            this.pickUpObj = colsestOrb;
+                                                            this.pickUpObj.statusHadler(true);
+
+                                                        };
+                                                    }
+
+                                                };
+
+                                            },
+                                            //==攻擊
+                                            attackHandler: function (scene) {
+
+                                                if (Phaser.Input.Keyboard.JustDown(scene.cursors.space)) {
+                                                    if (this.stats.MP < this.stats.manaCost) return;
+
+                                                    var bullet = bullets.get();
+                                                    // console.debug(bullet);
+                                                    if (bullet) {
+                                                        bullet.fire(this.x, this.y, this.stats.attackSpeed * (this.playerTurnLeft ? -1 : 1));
+                                                        bullet.anims.play(this.playerTurnLeft ? 'player_left' : 'player_right', true);
+                                                        // bullet.setMass(1);
+                                                        bullet.body.setSize(30, 40);
+                                                        this.statsChangeHandler({ MP: this.stats.MP -= this.stats.manaCost }, this);
+                                                        // console.debug(this.stats);
+                                                    }
+                                                };
+                                            },
+                                            //==HP/MP
+                                            statsChangeHandler: function (statsObj) {
+                                                if ('HP' in statsObj) {
+                                                    let hpString = 'HP : ' + parseInt(statsObj.HP) + ' / ' + this.stats.maxHP;
+                                                    this.hpText.setText(hpString);
+                                                };
+                                                if ('MP' in statsObj) {
+                                                    let mpString = 'MP : ' + parseInt(statsObj.MP) + ' / ' + this.stats.maxMP;
+                                                    this.mpText.setText(mpString);
+                                                };
+
+                                                this.stats = Object.assign(this.stats, statsObj);
+
+                                            },
+                                        });
+
+
+
+
+                                        this.player.statsChangeHandler({ HP: this.player.stats.HP, MP: this.player.stats.MP }, this);
 
                                         // console.debug(player);
 
-                                        //======custom
+
 
 
                                         //==敵人玩家相關碰撞
                                         if (!gameData.liberate) {
-                                            this.physics.add.collider(bullets, enemy, player.playerAttack, null, this);
-                                            this.physics.add.overlap(enemy, player, enemy.enemyAttack, null, this);
+                                            this.physics.add.collider(bullets, this.enemy, this.player.playerAttack, null, this);
+                                            this.physics.add.overlap(this.enemy, this.player, this.enemy.enemyAttack, null, this);
                                         }
 
 
@@ -1256,7 +1267,7 @@ function locatingGame() {
                                     var initEnemy = () => {
                                         if (gameData.liberate) return;
 
-                                        enemy = this.physics.add.group({
+                                        this.enemy = this.physics.add.group({
                                             classType: Enemy,
                                             maxSize: this.aliveEnemy.length,
                                             // key: 'enemy',
@@ -1266,9 +1277,9 @@ function locatingGame() {
                                             mass: 100,
                                             // immovable: true,
                                         });
-                                        console.debug(enemy);
+                                        console.debug(this.enemy);
                                         this.aliveEnemy.forEach((key, i) => {
-                                            let child = enemy.get(key, i, enemyStats[key]);
+                                            let child = this.enemy.get(key, i, enemyStats[key]);
                                             //=轉向左邊(素材一開始向右)
                                             child.filpHandler(true);
                                             // child.setCollideWorldBounds(true)
@@ -1276,7 +1287,7 @@ function locatingGame() {
                                         });
 
 
-                                        enemy.enemyAttack = (player, foe) => {
+                                        this.enemy.enemyAttack = (player, foe) => {
                                             // console.debug(player, foe);
                                             // console.debug(player.body);
                                             // console.debug('player hurt');
@@ -1327,14 +1338,16 @@ function locatingGame() {
                                         };
 
                                         // console.debug(stars.children.entries[0].active);
-                                        this.physics.add.collider(enemy, platforms);
+                                        this.physics.add.collider(this.enemy, this.platforms);
 
 
                                     };
                                     var initTimer = () => {
-                                        timerText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#000' }).setDepth(20);
                                         //==計時,時間到進入結算
-                                        gameTimer = this.time.delayedCall(timeRemain, () => gameOver = true, [], this);
+                                        this.gameTimer = this.time.delayedCall(timeRemain, () => this.gameOver = true, [], this);
+                                        this.gameTimer.timerText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#000' }).setDepth(20);
+
+
                                     };
                                     var initPauseMenu = () => {
 
@@ -1346,7 +1359,7 @@ function locatingGame() {
                                             .on('pointerdown', () => {
                                                 // =When the pause button is pressed, we pause the game
                                                 this.scene.pause();
-                                                gameTimer.paused = true;
+                                                this.gameTimer.paused = true;
                                                 //==create pause menu
                                                 this.scene.add(null, new UIScene('pauseMenu'), true);
                                             });
@@ -1374,12 +1387,14 @@ function locatingGame() {
 
                                     var updatePlayer = () => {
 
-                                        player.movingHadler();
-                                        player.pickingHadler();
-                                        player.attackHandler();
+                                        this.player.movingHadler(this);
+                                        this.player.pickingHadler(this);
+                                        this.player.attackHandler(this);
 
-                                        if (player.stats.MP < player.stats.maxMP)
-                                            player.statsChangeHandler({ MP: player.stats.MP += player.stats.manaRegen }, this);//自然回魔
+                                        let cursors = this.cursors;
+                                        let playerStats = this.player.stats;
+                                        if (playerStats.MP < playerStats.maxMP)
+                                            this.player.statsChangeHandler({ MP: playerStats.MP += playerStats.manaRegen }, this);//自然回魔
 
                                         //==暫停
                                         if (Phaser.Input.Keyboard.JustDown(cursors.p)) {
@@ -1407,10 +1422,10 @@ function locatingGame() {
                                     };
                                     var updateOrb = () => {
 
-                                        if (pickUpObj)
-                                            pickUpObj.setPosition(player.x, player.y + 10);
+                                        if (this.player.pickUpObj)
+                                            this.player.pickUpObj.setPosition(this.player.x, this.player.y + 10);
 
-                                        orbGroup.children.iterate(child => {
+                                        this.orbGroup.children.iterate(child => {
 
                                             let laserObj = child.laserObj;
                                             if (child.activateFlag) {
@@ -1434,20 +1449,21 @@ function locatingGame() {
 
                                     }
                                     var updateTimer = () => {
-                                        // let text = 'TimeLeft : ' +
-                                        //     ((timeRemain - gameTimer.getElapsed()) / 1000).toFixed(2) + ' s';
-                                        timeVal = parseInt(timeRemain - gameTimer.getElapsed());
+
+                                        let gameTimer = this.gameTimer;
+                                        let timeVal = parseInt(timeRemain - gameTimer.getElapsed());
                                         let text = 'TimeLeft : ' + timeVal + ' ms';
-                                        timerText.setText(text);
+                                        gameTimer.timeVal = timeVal;
+                                        gameTimer.timerText.setText(text);
                                     };
                                     var updateEnemy = () => {
                                         if (gameData.liberate) return;
                                         //===對話完??
-                                        enemy.children.iterate((child) => {
+                                        this.enemy.children.iterate((child) => {
                                             if (child.behavior == 'Death') return;
                                             // console.debug('alive');
                                             // console.debug(child.behaviorHandler);
-                                            child.behaviorHandler(player, this);
+                                            child.behaviorHandler(this.player, this);
                                             child.lifeBar.setPosition(child.x, child.y - 20);
                                         });
 
@@ -1462,12 +1478,12 @@ function locatingGame() {
                                     // console.debug(gameTimer.getOverallProgress());
                                     // console.debug(enemy.children.entries);
 
-                                    if (gameOver) {
+                                    if (this.gameOver) {
                                         //===time remove
-                                        gameTimer.remove();
+                                        this.gameTimer.remove();
 
                                         //===get gameResult 
-                                        let orbStats = orbGroup.getChildren().map(orb =>
+                                        let orbStats = this.orbGroup.getChildren().map(orb =>
                                             new Object({
                                                 postition: orb.x,
                                                 timePoint: getTimePoint(orb.x),
@@ -1478,8 +1494,8 @@ function locatingGame() {
                                         let gameResult = {
                                             //==更新角色資料(剩餘時間、能力值...)
                                             playerInfo: {
-                                                timeRemain: timeVal,
-                                                playerStats: player.stats,
+                                                timeRemain: this.gameTimer.timeVal,
+                                                playerStats: this.player.stats,
                                             },
                                             //==更新測站資料(半徑情報....)
                                             stationInfo: {
@@ -1533,7 +1549,7 @@ function locatingGame() {
 
                                                         break;
                                                     case 'exit':
-                                                        gameOver = true;
+                                                        this.gameOver = true;
                                                         this.scene.resume('defend');
                                                         this.scene.remove();
                                                         break;
@@ -1566,18 +1582,18 @@ function locatingGame() {
                                         debug: true,
                                     }
                                 },
-                                scene: DefendScene,
+                                scene: new DefendScene(stationData, playerData, waveSvgObjs, resolve),
                             };
                             const game = new Phaser.Game(config);
                         };
-
+                        let waveSvgObjs = await getWaveImg(stationData);
                         gameResult = await new Promise((resolve, reject) => {
                             let playerData = {
                                 playerStats: GameData.playerStats,
                                 controllCursor: GameData.controllCursor,
                                 timeRemain: GameData.timeRemain,
                             }
-                            defendGame(stationData, playerData, resolve);
+                            defendGame(stationData, playerData, waveSvgObjs, resolve);
                         });
                         gameDisplay(false);
                         console.debug(gameResult);

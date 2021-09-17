@@ -727,31 +727,14 @@ function sacPlots() {
 
                     var yAxis_g = g => g
                         .attr("transform", `translate(${margin.left},0)`)
-                        .attr("class", "y axis")
+                        .attr("class", "yAxis")
                         .call(d3.axisLeft(y))
-                        .call(g => g.select(".domain").remove())
                         .call(g => {
                             // let indexArr = [];
                             // console.debug(indexArr);
                             g.selectAll(".tick text")
-                                .text(d => {
-                                    // console.debug(d);
-                                    let SN = toScientificNotation(d, tick_toSN_index);
-                                    // console.debug(SN);
-                                    // indexArr.push(SN[1]);
-                                    // if (SN[0] != 0)
-                                    //     return SN[0] + ' x 10';
-                                    // else
-                                    return SN[0];
-                                })
-                                // .append('tspan')
-                                // .attr("dy", -5)
-                                // .attr("font-size", "8")
-                                // .text((d, i) => {
-                                //     if (indexArr[i] != 0)
-                                //         return indexArr[i];
-                                // })
-                                ;
+                                .text(d => toScientificNotation(d, tick_toSN_index)[0]);
+
                             //標示指數在左上角(10的0次不標)
                             if (tick_toSN_index != 0)
                                 g.selectAll(".tick:last-child")
@@ -775,7 +758,7 @@ function sacPlots() {
 
                         })
                         .call(g =>
-                            g.selectAll("g.y.axis g.tick line")
+                            g.selectAll("g.yAxis g.tick line")
                                 // .attr("stroke-width", "1px")
                                 .attr("x2", width - margin.left - margin.right)
                                 .attr("stroke-opacity", 0.2)
@@ -1498,7 +1481,6 @@ function sacPlots() {
                         // .tickValues(d3.range(y.domain()[0], y.domain()[1] + (tickRange / 10), tickRange))
                         .tickValues(getTickValues(y.domain()[0], y.domain()[1] + (tickRange / 10), tickRange))
                         .ticks(height / 40))
-                    .call(g => g.select(".domain").remove())
                     //＝＝＝＝＝＝＝＝＝＝tick扣掉各資料的上移量並轉科學記號
                     .call(g => {
                         line_tick_index = [];
@@ -2368,7 +2350,6 @@ function sacPlots() {
                         // .tickValues(d3.range(y.domain()[0], y.domain()[1] + (tickRange / 10), tickRange))
                         // .tickValues(getTickValues(y.domain()[0], y.domain()[1] + (tickRange / 10), tickRange))
                         .ticks(height / 40))
-                    .call(g => g.select(".domain").remove())
 
                     // //＝＝＝＝＝＝＝＝＝＝tick轉科學記號
                     // //刻度轉成科學記號的常數

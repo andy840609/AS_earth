@@ -1,3 +1,5 @@
+const assetsDir = '../data/assets/';
+
 const GameObjectStats = {
     creature: {
         dog: { HP: 100000, attackPower: 10, },
@@ -8,7 +10,7 @@ const GameObjectStats = {
         mage: {
             movementSpeed: 500,
             jumpingPower: 400,
-            attackSpeed: 600,
+            attackSpeed: 800,
             attackPower: 100,
             knockBackSpeed: 200,//==擊退時間固定200ms,這個速度越大擊退越遠
             manaCost: 10,
@@ -191,7 +193,7 @@ const Enemy = new Phaser.Class({
             this.stats = stats;
 
             // this.setCollideWorldBounds(true);
-            console.debug(this.body);
+            // console.debug(this.body);
         },
 
     //=處理轉向

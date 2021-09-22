@@ -1401,7 +1401,7 @@ function sacPlots() {
 
                     let dataRangeArrayANDtickRange = [];
                     dataRangeArrayANDtickRange.push(dataRangeArray, tickRange);
-                    // console.debug(dataRangeArrayANDtickRange);
+                    console.debug(dataRangeArrayANDtickRange);
                     return dataRangeArrayANDtickRange;
                 }
 
@@ -1545,20 +1545,7 @@ function sacPlots() {
                         });
                         // console.debug(tick_SN_Arr);
                         g.selectAll(".tick text")
-                            .text((d, i) => {
-                                // if (tick_SN_Arr[i].constant != 0 && !normalize)
-                                //     return tick_SN_Arr[i].constant + ' x 10';
-                                // else
-                                return tick_SN_Arr[i].constant;
-                            })
-                            // .append('tspan')
-                            // .attr("dy", -5)
-                            // .attr("font-size", "8")
-                            // .text((d, i) => {
-                            //     if (tick_SN_Arr[i].index != 0)
-                            //         return tick_SN_Arr[i].index;
-                            // })
-                            ;
+                            .text((d, i) => tick_SN_Arr[i].constant);
                         //標示指數在左上角(10的0次不標)
                         if (tick_toSN_index != 0)
                             g.selectAll(".tick:last-child")

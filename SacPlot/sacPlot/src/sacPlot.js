@@ -1508,7 +1508,7 @@ function sacPlots() {
                                             .attr("class", "clone_text")
                                             .attr("color", getLineColor(lastIndex - j))
                                             .attr("font-weight", "bold")
-                                            .text(floatCalculate('minus', d, dataRangeArray[j].supRange));// .text((d - dataRangeArray[j].supRange));
+                                            .text(encodeURI(floatCalculate('minus', d, dataRangeArray[j].supRange)));// .text((d - dataRangeArray[j].supRange));
                                         // console.debug(d - dataRangeArray[j].supRange);
                                         // console.debug(new_g_text_obj[0]);
                                         // console.debug(g.selectAll(".tick text"));
@@ -1533,6 +1533,8 @@ function sacPlots() {
                                 }
                                 return getLineColor(lastIndex - j);
                             });
+
+
 
                         //刻度轉成科學記號的常數
                         tick_SN_Arr = [];

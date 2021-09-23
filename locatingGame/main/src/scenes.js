@@ -427,9 +427,6 @@ class DefendScene extends Phaser.Scene {
                             }
 
 
-
-
-
                             if (activate) {
                                 this.laserObj
                                     .enableBody(false, 0, 0, true, true)
@@ -673,9 +670,9 @@ class DefendScene extends Phaser.Scene {
                 collideWorldBounds: true,
                 // bounceX: 0.1,
                 mass: 100,
-                // immovable: true,
+                gravityY: 100,
             });
-            // console.debug(this.enemy);
+            console.debug(this.enemy);
             this.aliveEnemy.forEach((key, i) => {
                 let child = this.enemy.get(key, i, stationStats.enemyStats[key]);
                 //=轉向左邊(素材一開始向右)

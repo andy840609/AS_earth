@@ -1227,10 +1227,6 @@ function requestRate() {
                             // console.log('drag end');
                         });
 
-
-                    // var content = document.getElementById('FeaturedContent');
-                    // var parent = content.parentNode;svg.insertBefore(l.node(), svg.firstChild)
-                    // parent.insertBefore(content, parent.firstChild);
                     svg.select('.legendGroup')
                         .call(lg => lg.raise())//把legend拉到最上層(比zoom的選取框優先)
                         .selectAll('.legend')

@@ -1713,7 +1713,6 @@ function DatexDVV() {
                     selectionButtonEvent();
                 }
                 function infoBoxDragEvent() {
-
                     var raiseAndDrag = (d3_selection) => {
                         let x_fixed = 0, y_fixed = 0;
                         let legend_dragBehavior = d3.drag()

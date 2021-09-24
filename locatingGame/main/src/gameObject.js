@@ -2,9 +2,24 @@ const assetsDir = '../data/assets/';
 
 const GameObjectStats = {
     creature: {
-        dog: { HP: 100000, attackPower: 10, },
-        cat: { HP: 80000, attackPower: 20, },
-        dove: { HP: 300, attackPower: 5, },
+        dog: {
+            HP: 100000,
+            attackPower: 10,
+            movementSpeed: 300,
+            jumpingPower: 0,
+        },
+        cat: {
+            HP: 80000,
+            attackPower: 20,
+            movementSpeed: 200,
+            jumpingPower: 200,
+        },
+        dove: {
+            HP: 300,
+            attackPower: 5,
+            movementSpeed: 500,
+            jumpingPower: 0,
+        },
     },
     player: {
         mage: {
@@ -168,7 +183,7 @@ const Enemy = new Phaser.Class({
             this
                 .setScale(2)
                 .setOrigin(0.4)
-                .setPosition(canvas.width * 0.8 + 30 * i, canvas.height * 0.5)
+                .setPosition(canvas.width * 0.8 + 30 * i, canvas.height * 0.8)
                 .setDepth(9)
                 .setPushable(false)
                 // .setImmovable(true)
@@ -193,7 +208,7 @@ const Enemy = new Phaser.Class({
             this.stats = stats;
 
             // this.setCollideWorldBounds(true);
-            // console.debug(this.body);
+            // console.debug(stats);
         },
 
     //=處理轉向
@@ -295,9 +310,11 @@ const Enemy = new Phaser.Class({
                             }
                             //==chasing
                             else {
+
                                 this.anims.play('dog_Walk', true);
                                 // ==== accelerateToObject(gameObject, destination, acceleration, xSpeedMax, ySpeedMax);
-                                scene.physics.accelerateToObject(this, player, 500, 500, 0);
+                                let speed = this.stats.movementSpeed;
+                                scene.physics.accelerateToObject(this, player, speed, speed * 1.3);
                                 // this.physics.moveToObject(this, player, 500, chasingDuration);
 
                                 //==時間到後休息restFlag= true        
@@ -407,38 +424,28 @@ const Enemy = new Phaser.Class({
                                 this.anims.play('cat_Walk', true);
                                 this.anims.msPerFrame = 30;
 
-                                let filp = false;
-                                let dist = Phaser.Math.Distance.BetweenPoints(player, this);
-                                if (!player.body.touching.down && dist < 300) {//==玩家跳起時距離小於某數貓也跳起
-                                    if (this.body.touching.down) {
-                                        // console.debug('cat jump');
-                                        filp = true;//跳起前先轉向
-
-                                        console.debug(this.body.speed);
+                                if (this.body.touching.down) {
+                                    //==玩家跳起時距離小於某數貓也跳起
+                                    if (!player.body.touching.down && Phaser.Math.Distance.BetweenPoints(player, this) < 300) {
+                                        // console.debug(this.body.speed);
                                         let speed = this.body.speed > 800 ? 800 : this.body.speed;
-
-                                        this.body.reset(this.x, this.y);//==停下    
-
-
-                                        this.body
-                                            // .setMaxVelocityY(1000)
-                                            .setVelocity(speed * (player.x > this.x ? 1 : -1), -200);
-                                        // .setVelocityY(-200);
+                                        this.body.reset(this.x, this.y)//==停下    
+                                        this.body.setVelocity(speed * (player.x > this.x ? 1 : -1), -this.stats.jumpingPower);
                                     }
+                                    //==以加速度追
+                                    else {
+                                        let speed = this.stats.movementSpeed;
+                                        // ==== scene.physics.accelerateTo(gameObject, x, y, acceleration, xSpeedMax, ySpeedMax);
+                                        scene.physics.accelerateToObject(this, player, speed * 4, speed * 5);
+                                    };
 
-                                }
-                                else {
-                                    // ==== scene.physics.accelerateTo(gameObject, x, y, acceleration, xSpeedMax, ySpeedMax);
-                                    filp = true;
-                                    scene.physics.accelerateToObject(this, player, 1000, 1000);
-                                    // this.physics.moveToObject(this, player, 500, chasingDuration);
+                                    //===判斷player相對敵人的位子來轉向(轉向時停下)
+                                    let filpDir = player.x < this.x;
+                                    if (this.filpFlag != filpDir)
+                                        this.filpHandler(filpDir);
                                 };
 
 
-                                //===判斷player相對敵人的位子來轉向(轉向時停下)
-                                let filpDir = player.x < this.x;
-                                if (this.filpFlag != filpDir && filp)
-                                    this.filpHandler(filpDir);
                             }
                             break;
                         case 'cruising':
@@ -448,7 +455,7 @@ const Enemy = new Phaser.Class({
                                 this.anims.play('cat_Walk', true);
 
                                 let randomX = Phaser.Math.Between(16, scene.sys.game.canvas.width);//==隨機移動到螢幕內x;
-                                let speed = 200;//pixel per sec
+                                let speed = this.stats.movementSpeed;//pixel per sec
                                 let dist = Phaser.Math.Distance.BetweenPoints(this, { x: randomX, y: this.y });
                                 let cruisingDuration = dist / (speed / 1000);
                                 // ====scene.physics.moveTo(gameObject, x, y, speed(pixel/sec), maxTime(ms));

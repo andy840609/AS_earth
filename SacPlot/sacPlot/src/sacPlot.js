@@ -48,8 +48,8 @@ function sacPlots() {
                 fileName = fileName.substring(0, fileName.indexOf('_'));
             data.push({ fileName: fileName, data: xyArr });
         });
-        console.debug('data=');
-        console.debug(data);
+        // console.log('data=');
+        console.log(data);
         return chart;
     }
 
@@ -1401,7 +1401,7 @@ function sacPlots() {
 
                     let dataRangeArrayANDtickRange = [];
                     dataRangeArrayANDtickRange.push(dataRangeArray, tickRange);
-                    console.debug(dataRangeArrayANDtickRange);
+                    // console.debug(dataRangeArrayANDtickRange);
                     return dataRangeArrayANDtickRange;
                 }
 
@@ -1419,7 +1419,7 @@ function sacPlots() {
                 var dataRangeArray = dataRangeArrayANDtickRange[0];
                 var tickRange = dataRangeArrayANDtickRange[1];
                 var tick_toSN_index = toScientificNotation(tickRange)[1];
-                // console.debug(tick_toSN_index);
+                // console.debug(dataRangeArray);
 
                 // //longest tick lenght to get margin left
                 // let maxLenght = d3.max(dataRangeArray, d => d.max).toString().length;
@@ -1461,8 +1461,6 @@ function sacPlots() {
                     .attr("font-weight", "bold")
                     .text("Time" + (referenceTime ? "" : " (s)"));
 
-                var line_tick_index, tick_SN_Arr;
-                // console.debug(y.domain());
                 var getTickValues = (minRange, maxRange, tickRange) => {
                     var tickValues = [];
                     var tickValue = minRange;
@@ -1482,148 +1480,95 @@ function sacPlots() {
                         .tickValues(getTickValues(y.domain()[0], y.domain()[1] + (tickRange / 10), tickRange))
                         .ticks(height / 40))
                     //＝＝＝＝＝＝＝＝＝＝tick扣掉各資料的上移量並轉科學記號
-                    .call(g => {
-                        line_tick_index = [];
-                        g.selectAll(".tick text")
-                            // g.selectAll(".tick_text")
-                            .text((d, i) => {
-                                let j = 0;
-                                // console.debug(d);
-                                while (d > dataRangeArray[j].supMax)
-                                    j++;
-                                // console.debug(j);
+                    .call(g => g.selectAll(".tick text").each(function (d, i) {
+                        let text = d3.select(this);
+
+                        for (let i = 0; i < dataRangeArray.length; i++) {
+                            if (d <= dataRangeArray[i].supMax) {
+                                let val = floatCalculate('minus', d, dataRangeArray[i].supRange);
+                                //刻度轉成科學記號的常數
+                                text.text(toScientificNotation(val, tick_toSN_index)[0]);
                                 //分界線的tick
-                                if (d == dataRangeArray[j].supMax) {
-                                    line_tick_index.push(i);
-                                    //最後一個分界線不需複製tick
-                                    if (j != (dataRangeArray.length - 1)) {
-
-                                        let current_g_obj = $(g.selectAll(".tick")._groups[0][i]);
-                                        let current_g_text_obj = current_g_obj.children('text');
-
-                                        current_g_text_obj
-                                            .attr("y", -5);
-                                        let new_g_text_obj = current_g_text_obj.clone()
-                                            .attr("y", 5)
-                                            .attr("class", "clone_text")
-                                            .attr("color", getLineColor(lastIndex - j))
-                                            .attr("font-weight", "bold")
-                                            .text(encodeURI(floatCalculate('minus', d, dataRangeArray[j].supRange)));// .text((d - dataRangeArray[j].supRange));
-                                        // console.debug(d - dataRangeArray[j].supRange);
-                                        // console.debug(new_g_text_obj[0]);
-                                        // console.debug(g.selectAll(".tick text"));
-
-                                        current_g_obj.append(new_g_text_obj);
-                                        return floatCalculate('minus', d, dataRangeArray[j + 1].supRange); // return d - dataRangeArray[j + 1].supRange;
+                                if (d == dataRangeArray[i].supMax) {
+                                    if (i != dataRangeArray.length - 1) {
+                                        val = floatCalculate('minus', d, dataRangeArray[i + 1].supRange);
+                                        text.attr("y", 5)
+                                            .append('tspan')
+                                            .attr("x", function () { return this.parentNode.x.baseVal[0].value })
+                                            .attr("y", -1)
+                                            .attr("color", getLineColor(lastIndex - (i + 1)))
+                                            .text(toScientificNotation(val, tick_toSN_index)[0]);
                                     }
-                                    else
-                                        return floatCalculate('minus', d, dataRangeArray[j].supRange);// return d - dataRangeArray[j].supRange;
+                                    //最後一個tick標示指數在左上角(10的0次不標)
+                                    else if (tick_toSN_index != 0) {
+                                        text
+                                            .append('tspan')
+                                            .attr('x', 0)
+                                            .attr("y", -margin.top / 3)
+                                            .attr("fill", "black")
+                                            .attr("font-weight", "normal")
+                                            .attr("text-anchor", "start")
+                                            .text('( x 10')
+                                            .append('tspan')
+                                            .attr("dy", -5)
+                                            .attr("font-weight", "bold")
+                                            .attr("font-size", "10")
+                                            .text(tick_toSN_index)
+                                            .append('tspan')
+                                            .attr("dy", 5)
+                                            .attr("font-weight", "normal")
+                                            .attr("font-size", "10")
+                                            .text(' )');
+                                    }
                                 }
-                                else
-                                    return floatCalculate('minus', d, dataRangeArray[j].supRange);// return d - dataRangeArray[j].supRange;
-                            })
-                            .attr("font-weight", "bold")
-                            .attr("color", (d, i) => {
-                                let j = 0;
-                                // console.debug(d);
-                                while (i >= line_tick_index[j]) {
-                                    j++;
-                                    if (j > (line_tick_index.length - 1))
-                                        break;
-                                }
-                                return getLineColor(lastIndex - j);
-                            });
 
-
-
-                        //刻度轉成科學記號的常數
-                        tick_SN_Arr = [];
-                        // console.debug(tick_SN_Arr);
-                        g.selectAll(".tick text")._groups[0].forEach(d => {
-                            // console.debug(d.textContent);
-                            let SN = toScientificNotation(d.textContent, tick_toSN_index);
-                            // tick_SN_Arr.push({ constant: SN[0], index: SN[1] });
-                            tick_SN_Arr.push({ constant: SN[0] });
-                        });
-                        // console.debug(tick_SN_Arr);
-                        g.selectAll(".tick text")
-                            .text((d, i) => tick_SN_Arr[i].constant);
-                        //標示指數在左上角(10的0次不標)
-                        if (tick_toSN_index != 0)
-                            g.selectAll(".tick:last-child")
-                                .append('text')
-                                .attr('x', 0)
-                                .attr("y", -margin.top / 3)
-                                .attr("fill", "black")
-                                .attr("text-anchor", "start")
-                                // .attr("alignment-baseline", "before-edge")              
-                                .text('( x 10')
-                                .append('tspan')
-                                .attr("dy", -5)
-                                .attr("font-weight", "bold")
-                                .attr("font-size", "10")
-                                .text(tick_toSN_index)
-                                .append('tspan')
-                                .attr("dy", 5)
-                                .attr("font-weight", "normal")
-                                .attr("font-size", "10")
-                                .text(' )');
-
-
-                    })
-                    //＝＝＝＝＝＝＝＝＝＝資料分隔線與tick虛線
-                    .call(g => {
-                        g.selectAll("g.yAxis g.tick line")
-                            // .attr("stroke-width", "1px")
-                            .attr("x2", d => {
-                                // let block = dataRangeArray.map(d => d.supMax);
-                                // console.debug(block);
-                                // if (block.includes(d))
-                                return width - margin.left - margin.right;
-                                // else
-                                //     return -6;
-                            })
-                            .attr("stroke-opacity", d => {
-                                let block = dataRangeArray.map(d => d.supMax);
-                                // console.debug(block);
-                                // console.debug(d);
-                                if (block.includes(d))
-                                    return 1;
-                                else
-                                    return 0.2;
-                            });
-                    })
-                    //＝＝＝＝＝＝＝＝＝＝資料標題
-                    .call(g => {
-                        for (let i = 0; i < line_tick_index.length; i++) {
-                            let trans_line = g.selectAll('g.tick:nth-child(' + (line_tick_index[i] + 1) + ')');
-                            // console.debug(trans_line);
-                            trans_line
-                                .append('text')
-                                .attr("x", 0)
-                                // .attr("align", "center")
-                                // .attr("y", 0)
-                                .attr("fill", "currentColor")
-                                .attr("text-anchor", "start")
-                                .attr("alignment-baseline", "before-edge")
-                                .attr("font-weight", "bold")
-                                .attr("font-size", "13")
-                                .text(title + (channel ? "." + channel[lastIndex - i] : ""));
-                            if (i == lastIndex)
-                                trans_line
-                                    .append('text')
-                                    .attr("x", width - margin.right - margin.left)
-                                    // .attr("align", "center")
-                                    // .attr("y", 0)
-                                    .attr("fill", "currentColor")
-                                    .attr("text-anchor", "end")
-                                    .attr("alignment-baseline", "after-edge")
+                                text
                                     .attr("font-weight", "bold")
-                                    .attr("font-size", "13")
-                                    .text("referenceTime : " + referenceTimeStr);
-                        }
+                                    .attr("color", getLineColor(lastIndex - i));
+
+                                break;
+                            };
+                        };
+
+                    }))
+                    //＝＝＝＝＝＝＝＝＝＝資料分隔線、tick虛線、資料標題
+                    .call(g => {
+                        g.selectAll(".tick line")
+                            .attr("x2", () => width - margin.left - margin.right)
+                            .attr("stroke-opacity", function (d) {
+                                let isDivider = dataRangeArray.findIndex(range => range.supMax == d);
+
+                                let stroke;
+                                if (isDivider != -1) {
+                                    stroke = 1;
+                                    let tick = d3.select(this.parentNode);
+                                    tick
+                                        .append('text')
+                                        .attr("x", 0)
+                                        .attr("fill", "currentColor")
+                                        .attr("text-anchor", "start")
+                                        .attr("alignment-baseline", "before-edge")
+                                        .attr("font-weight", "bold")
+                                        .attr("font-size", "13")
+                                        .text(title + (channel ? "." + channel[lastIndex - i] : ""));
+                                    if (isDivider == lastIndex)
+                                        tick
+                                            .append('text')
+                                            .attr("x", width - margin.right - margin.left)
+                                            .attr("fill", "currentColor")
+                                            .attr("text-anchor", "end")
+                                            .attr("alignment-baseline", "after-edge")
+                                            .attr("font-weight", "bold")
+                                            .attr("font-size", "13")
+                                            .text("referenceTime : " + referenceTimeStr);
+                                }
+                                else
+                                    stroke = 0.2
+                                return stroke;
+                            });
+
                     })
-                    //＝＝＝＝＝＝＝＝＝＝資料標題
+                    //＝＝＝＝＝＝＝＝＝＝Axis name
                     .append('text')
                     .attr('x', -height / 2)
                     .attr("y", -margin.left + 8)
@@ -1633,22 +1578,7 @@ function sacPlots() {
                     .style("text-anchor", "middle")
                     .attr("alignment-baseline", "text-before-edge")
                     .attr("transform", "rotate(-90)")
-                    .call(g => {
-                        if (normalize)
-                            g.text("Amplipude (count)");
-                        else
-                            // g.text("Amplipude (cm/s")
-                            //     .append('tspan')
-                            //     .attr("dy", 5)
-                            //     .attr("font-size", "8")
-                            //     .text('2')
-                            //     .append('tspan')
-                            //     .attr("dy", 4)
-                            //     .attr("font-size", "10")
-                            //     .text(')');
-                            g.text("Amplipude");
-                    });
-
+                    .text("Amplipude" + (normalize ? ' (count)' : ''));
 
                 var xAxis = svg.append("g")
                     .call(xAxis_g);
@@ -1798,15 +1728,13 @@ function sacPlots() {
 
                                         svg.select(".mouse-line")
                                             .attr("d", function () {
-
-                                                var val = "M" + x(d.data[idx].x) + "," + (height - margin.bottom);
-                                                val += " " + x(d.data[idx].x) + "," + margin.top;
-                                                // console.debug(d.data);
-                                                return val;
+                                                let data = "M" + x(newData[i].data[idx].x) + "," + (height - margin.bottom);
+                                                data += " " + x(newData[i].data[idx].x) + "," + margin.top;
+                                                return data;
                                             });
                                         let supRange = dataRangeArray[i].supRange;
                                         // console.debug(d.data[idx].y);
-                                        return "translate(" + x(d.data[idx].x) + "," + y(d.data[idx].y + supRange) + ")";
+                                        return "translate(" + x(newData[i].data[idx].x) + "," + y(newData[i].data[idx].y + supRange) + ")";
                                     });
 
                                 let timeStr;
@@ -2496,636 +2424,684 @@ function sacPlots() {
                     .text("referenceTime : " + referenceTimeStr);
                 //====================================legend=========================================================
 
-                const legend_x = (width - margin.right) / 2;
-                const legend_y = margin.top + 10;
-
-                const path_width = 50;
-                const path_interval = 50;
-                const path_margin_horizontal = 10;
-                const path_margin_vertical = 5;
-
-                const legend_width = (path_width + path_interval) * data.length + path_margin_horizontal * 2;
-                const legend_height = 50;
-
-                const legend = svg.append("g")
+                svg.append("g")
                     .attr("class", "legend")
-                    .style("font-size", "12px");
+                    .style("font-size", "12px")
+                    .attr("transform", `translate(${(width - margin.right) / 2}, ${margin.top * 0.3})`)
+                    .call(legend => {
 
-                legend.append("rect")
-                    .attr("x", legend_x)
-                    .attr("y", legend_y)
-                    .attr("height", legend_height)
-                    .attr("width", legend_width)
-                    .attr("fill", "#D3D3D3")
-                    .attr("opacity", .5)
-                    .attr("stroke-width", "1")
-                    .attr("stroke", "black")
-                    .attr("stroke-opacity", .8);
+                        const path_width = 50;
+                        const path_interval = 50;
+                        const path_margin_horizontal = 10;
 
-                legend
-                    .selectAll('line')
-                    .data(data)
-                    .enter()
-                    .append('line')
-                    .attr("stroke-width", 3)
-                    .attr("stroke-opacity", 1)
-                    .attr("stroke", (d, i) => getLineColor(i))
-                    .attr("x1", (d, i) => legend_x + (path_width + path_interval) * i + path_margin_horizontal)
-                    .attr("x2", (d, i) => legend_x + (path_interval + path_width) * i + path_width + path_margin_horizontal)
-                    .attr("y1", (d, i) => legend_y + legend_height / 2)
-                    .attr("y2", (d, i) => legend_y + legend_height / 2)
+                        const legend_width = (path_width + path_interval) * data.length + path_margin_horizontal * 2;
+                        const legend_height = 50;
 
-                legend
-                    .selectAll('text')
-                    .data(data)
-                    .enter()
-                    .append('text')
-                    .attr("font-weight", "bold")
-                    .style("text-anchor", "middle")
-                    .attr("alignment-baseline", "middle")
-                    .attr("transform", `translate( ${legend_x}, ${legend_y}  )`)
-                    .attr('x', (d, i) => i * (path_width + path_interval) + path_width + path_interval / 2 + path_margin_horizontal)
-                    .attr('y', legend_height / 2)
-                    .text((d, i) => channel ? channel[i] : d.fileName.split('.')[2]);
+                        legend.append("rect")
+                            .attr("height", legend_height)
+                            .attr("width", legend_width)
+                            .attr("fill", "#D3D3D3")
+                            .attr("opacity", .5)
+                            .attr("stroke-width", "1")
+                            .attr("stroke", "black")
+                            .attr("stroke-opacity", .8);
+
+                        legend
+                            .selectAll('g')
+                            .data(data)
+                            .join("g")
+                            .call(g => {
+                                g.append('line')
+                                    .attr("stroke-width", 3)
+                                    .attr("stroke-opacity", 1)
+                                    .attr("stroke", (d, i) => getLineColor(i))
+                                    .attr("x1", (d, i) => (path_width + path_interval) * i + path_margin_horizontal)
+                                    .attr("x2", (d, i) => (path_interval + path_width) * i + path_width + path_margin_horizontal)
+                                    .attr("y1", legend_height / 2)
+                                    .attr("y2", legend_height / 2);
+
+                                g.append('text')
+                                    .attr("font-weight", "bold")
+                                    .style("text-anchor", "middle")
+                                    .attr("alignment-baseline", "middle")
+                                    .attr('x', (d, i) => i * (path_width + path_interval) + path_width + path_interval / 2 + path_margin_horizontal)
+                                    .attr('y', legend_height / 2)
+                                    .text((d, i) => channel ? channel[i] : d.fileName.split('.')[2]);
+                            });
+
+                    });
+
                 //====================================legend=========================================================
 
 
                 //====================================events=========================================================
-                function events(svg, focus) {
+                function events(svg) {
+                    function chartEvent() {
+                        const datesArr = data[0].data.map(obj => obj.x);
+                        var newDatesArr = datesArr;
+                        var newData = data;
 
-                    const datesArr = data[0].data.map(obj => obj.x);
-                    var newDatesArr = datesArr;
-                    var newData = data;
+                        const lineStroke = "2px";
+                        const lineStroke2 = "0.5px";
 
-                    const lineStroke = "2px";
-                    const lineStroke2 = "0.5px";
+                        const tooltip = d3.select("#charts").append("div")
+                            .attr("id", "tooltip")
+                            .style('position', 'absolute')
+                            .style('z-index', '999')
+                            .style("background-color", "#D3D3D3")
+                            .style('padding', '20px 20px 20px 20px')
+                            .style("opacity", " .9")
+                            .style('display', 'none');
 
-                    const tooltip = d3.select("#charts").append("div")
-                        .attr("id", "tooltip")
-                        .style('position', 'absolute')
-                        .style('z-index', '999')
-                        .style("background-color", "#D3D3D3")
-                        .style('padding', '20px 20px 20px 20px')
-                        .style("opacity", " .9")
-                        .style('display', 'none');
+                        //====================================mouse move==================================================
+                        const mouseG = svg.append("g")
+                            .attr("class", "mouse-over-effects");
 
-                    //====================================mouse move==================================================
-                    const mouseG = svg.append("g")
-                        .attr("class", "mouse-over-effects");
-
-                    mouseG.append("path") // create vertical line to follow mouse
-                        .attr("class", "mouse-line")
-                        .style("stroke", "#A9A9A9")
-                        .style("stroke-width", lineStroke)
-                        .style("opacity", "0");
-
-
-                    // console.debug(data);
-                    const mousePerLine = mouseG.selectAll('.mouse-per-line')
-                        .data(data)
-                        .enter()
-                        .append("g")
-                        .attr("class", "mouse-per-line");
-
-                    mousePerLine.append("circle")
-                        .attr("r", 3)
-                        .style("stroke", "white")
-                        .style("fill", "none")
-                        .style("stroke-width", lineStroke2)
-                        .style("opacity", "0");
-                    mousePerLine.append("circle")
-                        .attr("r", 4)
-                        .style("stroke", (d, i) => getLineColor(i))
-                        .style("fill", "none")
-                        .style("stroke-width", lineStroke)
-                        .style("opacity", "0");
-                    mousePerLine.append("circle")
-                        .attr("r", 5)
-                        .style("stroke", "white")
-                        .style("fill", "none")
-                        .style("stroke-width", lineStroke2)
-                        .style("opacity", "0");
+                        mouseG.append("path") // create vertical line to follow mouse
+                            .attr("class", "mouse-line")
+                            .style("stroke", "#A9A9A9")
+                            .style("stroke-width", lineStroke)
+                            .style("opacity", "0");
 
 
-                    svg
-                        .append("defs")
-                        .append("clipPath")
-                        .attr("id", "clip")
-                        .append("rect")
-                        .attr("id", "rectRenderRange")
-                        .attr('x', margin.left)
-                        .attr('y', margin.top)
-                        .attr('width', width - margin.right - margin.left)
-                        .attr('height', height - margin.top - margin.bottom)
-                        .attr('fill', 'none')
-                        .attr('pointer-events', 'all');
+                        // console.debug(data);
+                        const mousePerLine = mouseG.selectAll('.mouse-per-line')
+                            .data(data)
+                            .enter()
+                            .append("g")
+                            .attr("class", "mouse-per-line");
 
-                    // append a rect to catch mouse movements on canvas
-                    var event_rect =
-                        mouseG
-                            .append("use")
-                            .attr('xlink:href', "#rectRenderRange")
-                            .on('mouseleave', function () { // on mouse out hide line, circles and text
-                                svg.select(".mouse-line")
-                                    .style("opacity", "0");
-                                svg.selectAll(".mouse-per-line circle")
-                                    .style("opacity", "0");
-                                svg.selectAll(".mouse-per-line text")
-                                    .style("opacity", "0");
-                                tooltip
-                                    // .transition().duration(500)
-                                    // .style("opacity", 0)
-                                    .style("display", "none");
+                        mousePerLine.append("circle")
+                            .attr("r", 3)
+                            .style("stroke", "white")
+                            .style("fill", "none")
+                            .style("stroke-width", lineStroke2)
+                            .style("opacity", "0");
+                        mousePerLine.append("circle")
+                            .attr("r", 4)
+                            .style("stroke", (d, i) => getLineColor(i))
+                            .style("fill", "none")
+                            .style("stroke-width", lineStroke)
+                            .style("opacity", "0");
+                        mousePerLine.append("circle")
+                            .attr("r", 5)
+                            .style("stroke", "white")
+                            .style("fill", "none")
+                            .style("stroke-width", lineStroke2)
+                            .style("opacity", "0");
 
-                            })
-                            .on('mousemove', function (event) { // update tooltip content, line, circles and text when mouse moves
-                                event.preventDefault();
-                                const pointer = d3.pointer(event, this);
-                                const xm = x.invert(pointer[0]);
-                                // const ym = y.invert(pointer[1]);
-                                const idx = d3.bisectCenter(newDatesArr, xm);
-                                const sortedIndex = d3.range(newData.length);
-                                // console.debug('start' + sortedIndex);
-                                // console.debug(newData[0].data.length);
-                                // console.debug(idx + "/" + newData[0].data.length);
-                                // console.debug(data[0].data.length);
-                                svg.selectAll(".mouse-per-line")
-                                    .attr("transform", function (d, i) {
-                                        // console.debug(d);
-                                        svg.select(".mouse-line")
-                                            .attr("d", function () {
-                                                let data = "M" + x(newData[i].data[idx].x) + "," + (height - margin.bottom);
-                                                data += " " + x(newData[i].data[idx].x) + "," + margin.top;
-                                                return data;
-                                            });
 
-                                        // console.debug(d.data[idx].y);
-                                        return "translate(" + x(newData[i].data[idx].x) + "," + y(newData[i].data[idx].y) + ")";
-                                    });
+                        svg
+                            .append("defs")
+                            .append("clipPath")
+                            .attr("id", "clip")
+                            .append("rect")
+                            .attr("id", "rectRenderRange")
+                            .attr('x', margin.left)
+                            .attr('y', margin.top)
+                            .attr('width', width - margin.right - margin.left)
+                            .attr('height', height - margin.top - margin.bottom)
+                            .attr('fill', 'none')
+                            .attr('pointer-events', 'all');
 
-                                let timeStr;
-                                if (referenceTime) {
-                                    let ISOString = new Date(newDatesArr[idx]).toISOString();
-                                    timeStr = ISOString.substring(ISOString.indexOf("T") + 1, ISOString.indexOf("Z"));
+                        // append a rect to catch mouse movements on canvas
+                        var event_rect =
+                            mouseG
+                                .append("use")
+                                .attr('xlink:href', "#rectRenderRange")
+                                .on('mouseleave', function () { // on mouse out hide line, circles and text
+                                    svg.select(".mouse-line")
+                                        .style("opacity", "0");
+                                    svg.selectAll(".mouse-per-line circle")
+                                        .style("opacity", "0");
+                                    svg.selectAll(".mouse-per-line text")
+                                        .style("opacity", "0");
+                                    tooltip
+                                        // .transition().duration(500)
+                                        // .style("opacity", 0)
+                                        .style("display", "none");
+
+                                })
+                                .on('mousemove', function (event) { // update tooltip content, line, circles and text when mouse moves
+                                    event.preventDefault();
+                                    const pointer = d3.pointer(event, this);
+                                    const xm = x.invert(pointer[0]);
+                                    // const ym = y.invert(pointer[1]);
+                                    const idx = d3.bisectCenter(newDatesArr, xm);
+                                    const sortedIndex = d3.range(newData.length);
+                                    // console.debug('start' + sortedIndex);
+                                    // console.debug(newData[0].data.length);
+                                    // console.debug(idx + "/" + newData[0].data.length);
+                                    // console.debug(data[0].data.length);
+                                    svg.selectAll(".mouse-per-line")
+                                        .attr("transform", function (d, i) {
+                                            // console.debug(d);
+                                            svg.select(".mouse-line")
+                                                .attr("d", function () {
+                                                    let data = "M" + x(newData[i].data[idx].x) + "," + (height - margin.bottom);
+                                                    data += " " + x(newData[i].data[idx].x) + "," + margin.top;
+                                                    return data;
+                                                });
+
+                                            // console.debug(d.data[idx].y);
+                                            return "translate(" + x(newData[i].data[idx].x) + "," + y(newData[i].data[idx].y) + ")";
+                                        });
+
+                                    let timeStr;
+                                    if (referenceTime) {
+                                        let ISOString = new Date(newDatesArr[idx]).toISOString();
+                                        timeStr = ISOString.substring(ISOString.indexOf("T") + 1, ISOString.indexOf("Z"));
+                                    }
+                                    else
+                                        timeStr = newDatesArr[idx].toFixed(2);
+                                    const divHtml = "Time : <br/><font size='5'>" + timeStr + "</font> s<br/>Amplipude : <br/>";
+                                    // console.debug(dot.offset());
+                                    svg.select(".mouse-line")
+                                        .style("opacity", "0.7");
+                                    svg.selectAll(".mouse-per-line circle")
+                                        .style("opacity", "1");
+                                    tooltip
+                                        // .transition().duration(200)
+                                        // .style("opacity", .9)
+                                        .style("display", "inline");
+                                    tooltip.html(divHtml)
+                                        .style("left", (event.clientX + 20) + "px")
+                                        .style("top", (event.clientY - 20) + "px")
+                                        .selectAll()
+                                        .data(newData).enter()
+                                        .append('div')
+                                        .call(() => {
+                                            // console.debug('=============');
+                                            for (let i = 0; i < newData.length - 1; i++)
+                                                for (let j = 0; j < newData.length - 1 - i; j++)
+                                                    // console.debug(data[sortedIndex[j]].data[idx].y, data[sortedIndex[j + 1]].data[idx].y);
+                                                    if (newData[sortedIndex[j]].data[idx].y < newData[sortedIndex[j + 1]].data[idx].y) {
+                                                        let tmp = sortedIndex[j];
+                                                        sortedIndex[j] = sortedIndex[j + 1];
+                                                        sortedIndex[j + 1] = tmp;
+                                                    }
+                                            // console.debug(sortedIndex);
+                                        })
+                                        .style('color', (d, i) => getLineColor(sortedIndex[i]))
+                                        .style('font-size', 10)
+                                        .html((d, i) => {
+                                            // console.debug(d.data);
+                                            let y = newData[sortedIndex[i]].data[idx].y;
+                                            let SN = toScientificNotation(y, tick_toSN_index);
+                                            let constant = Number.isInteger(SN[0]) ? SN[0] : (Math.round(SN[0] * 100000) / 100000);
+                                            let index = SN[1];
+                                            let SN_html = '';
+                                            if (index == 0)
+                                                SN_html = constant;
+                                            else
+                                                SN_html = constant + ' x 10<sup>' + index + '</sup>';
+                                            let html = "<font size='5'>" + SN_html + "</font>";
+                                            // if (normalize)
+                                            return html;
+                                            // else {
+                                            //     return html + ' cm/s<sup>2</sup>';
+                                            // }
+                                        });
+                                });
+
+                        //====================================context==================================================
+                        function getNewDataArr(x_domain) {
+                            let newData = [];
+                            let i1 = d3.bisectCenter(datesArr, x_domain[0]);
+                            let i2 = d3.bisectCenter(datesArr, x_domain[1]);
+                            // console.debug(i1, i2);
+
+                            //make sure zoom in path will be continue 
+                            if (i1 - 1 >= 0)
+                                i1--;
+                            if (i2 + 1 < data[0].data.length)
+                                i2++;
+
+                            data.forEach((d, index) => {
+                                let tmpData = [], tmpDates = [];
+                                for (let i = i1; i <= i2; i++) {
+                                    tmpData.push(d.data[i]);
+                                    if (index == 0)
+                                        tmpDates.push(d.data[i].x);
                                 }
-                                else
-                                    timeStr = newDatesArr[idx].toFixed(2);
-                                const divHtml = "Time : <br/><font size='5'>" + timeStr + "</font> s<br/>Amplipude : <br/>";
-                                // console.debug(dot.offset());
-                                svg.select(".mouse-line")
-                                    .style("opacity", "0.7");
-                                svg.selectAll(".mouse-per-line circle")
-                                    .style("opacity", "1");
-                                tooltip
-                                    // .transition().duration(200)
-                                    // .style("opacity", .9)
-                                    .style("display", "inline");
-                                tooltip.html(divHtml)
-                                    .style("left", (event.clientX + 20) + "px")
-                                    .style("top", (event.clientY - 20) + "px")
-                                    .selectAll()
-                                    .data(newData).enter()
-                                    .append('div')
-                                    .call(() => {
-                                        // console.debug('=============');
-                                        for (let i = 0; i < newData.length - 1; i++)
-                                            for (let j = 0; j < newData.length - 1 - i; j++)
-                                                // console.debug(data[sortedIndex[j]].data[idx].y, data[sortedIndex[j + 1]].data[idx].y);
-                                                if (newData[sortedIndex[j]].data[idx].y < newData[sortedIndex[j + 1]].data[idx].y) {
-                                                    let tmp = sortedIndex[j];
-                                                    sortedIndex[j] = sortedIndex[j + 1];
-                                                    sortedIndex[j + 1] = tmp;
-                                                }
-                                        // console.debug(sortedIndex);
-                                    })
-                                    .style('color', (d, i) => getLineColor(sortedIndex[i]))
-                                    .style('font-size', 10)
-                                    .html((d, i) => {
-                                        // console.debug(d.data);
-                                        let y = newData[sortedIndex[i]].data[idx].y;
-                                        let SN = toScientificNotation(y, tick_toSN_index);
-                                        let constant = Number.isInteger(SN[0]) ? SN[0] : (Math.round(SN[0] * 100000) / 100000);
-                                        let index = SN[1];
-                                        let SN_html = '';
-                                        if (index == 0)
-                                            SN_html = constant;
-                                        else
-                                            SN_html = constant + ' x 10<sup>' + index + '</sup>';
-                                        let html = "<font size='5'>" + SN_html + "</font>";
-                                        // if (normalize)
-                                        return html;
-                                        // else {
-                                        //     return html + ' cm/s<sup>2</sup>';
-                                        // }
-                                    });
-                            });
-
-                    //====================================context==================================================
-                    function getNewDataArr(x_domain) {
-                        let newData = [];
-                        let i1 = d3.bisectCenter(datesArr, x_domain[0]);
-                        let i2 = d3.bisectCenter(datesArr, x_domain[1]);
-                        // console.debug(i1, i2);
-
-                        //make sure zoom in path will be continue 
-                        if (i1 - 1 >= 0)
-                            i1--;
-                        if (i2 + 1 < data[0].data.length)
-                            i2++;
-
-                        data.forEach((d, index) => {
-                            let tmpData = [], tmpDates = [];
-                            for (let i = i1; i <= i2; i++) {
-                                tmpData.push(d.data[i]);
+                                newData.push({ data: tmpData });
                                 if (index == 0)
-                                    tmpDates.push(d.data[i].x);
-                            }
-                            newData.push({ data: tmpData });
-                            if (index == 0)
-                                newDatesArr = tmpDates;
-                        });
-                        // console.log(newData);
-                        return newData;
-                    }
-                    let update_xAxis = (x_domain, trans = false) => {
-                        pre_xdomain = x_domain;
-                        x.domain(x_domain);
-                        if (trans)
-                            xAxis
-                                .transition().duration(1000)
-                                .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0));
-
-                        else
-                            xAxis
-                                .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0));
-                    }
-                    let update_yAxis = (origin = true, newDataArr = undefined) => {
-                        if (origin) {
-                            y.domain(origin_y_domain);
-                            newData = data;
-                            newDatesArr = datesArr;
+                                    newDatesArr = tmpDates;
+                            });
+                            // console.log(newData);
+                            return newData;
                         }
-                        else {
-                            y.domain([
-                                d3.min(newDataArr, d => d3.min(d.data, d => d.y)),
-                                d3.max(newDataArr, d => d3.max(d.data, d => d.y))
-                            ]).nice();
+                        let update_xAxis = (x_domain, trans = false) => {
+                            pre_xdomain = x_domain;
+                            x.domain(x_domain);
+                            if (trans)
+                                xAxis
+                                    .transition().duration(1000)
+                                    .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0));
+
+                            else
+                                xAxis
+                                    .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0));
                         }
-                        yAxis.selectAll('*').remove();
-                        yAxis.call(yAxis_g);
-                    }
-                    // var contextData = data[lastIndex];
-                    var context = svg.append("g")
-                        .attr("class", "context")
-                        .attr("transform", "translate(0, " + height + ")")
-                        .selectAll("path")
-                        .data(data)
-                        .join("path")
-                        .style("mix-blend-mode", "normal")
-                        .attr("fill", "none")
-                        .attr("stroke-width", 1)
-                        .attr("stroke-linejoin", "round")
-                        .attr("stroke-linecap", "round")
-                        .attr("stroke-opacity", 1)
-                        .attr("stroke", "#272727")
-                        .attr("d", (d, i) => {
-                            let y2 = d3.scaleLinear()
-                                .domain(origin_y_domain)
-                                .range([height2 - margin.bottom, 0]);
-
-                            let line2 = d3.line()
-                                .defined(d => !isNaN(d.x))
-                                .x(d => x(d.x))
-                                .y(d => y2(d.y));
-
-                            return line2(d.data);
-                        });
-
-
-
-                    if (referenceTime)
-                        var x2 = d3.scaleUtc()
-                            .domain(origin_x_domain)
-                            .range([margin.left, width - margin.right]);
-                    else
-                        var x2 = d3.scaleLinear()
-                            .domain(origin_x_domain)
-                            .range([margin.left, width - margin.right]);
-
-
-                    svg.append("g")
-                        .attr('class', 'context_xAxis')
-                        .attr("transform", "translate(0," + (height + height2 - margin.bottom) + ")")
-                        .call(d3.axisBottom(x2).ticks(width / 80).tickSizeOuter(0));
-
-
-                    var pre_selection = x2.range();
-                    brush_flag = true;
-                    var brush = d3.brushX()
-                        .extent([[margin.left, 0], [width - margin.right, height2 - margin.bottom]])
-                        .on("start", event => {
-                            if (!event.sourceEvent) return;
-                            // console.log("brush start");
-                            update_yAxis(true);
-                            renderChart();
-                        })
-                        .on("brush", event => {
-                            if (!event.sourceEvent) return; // ignore brush-by-zoom
-
-                            var action = () => {
-                                // console.log("brushing");
-                                let selection = event.selection;
-                                // console.debug(selection);
-
-                                if (selection) {
-
-                                    let x_domain = [x2.invert(selection[0]), x2.invert(selection[1])];
-
-                                    if (x_domain[1] - x_domain[0] > 40 * timeDiff) {
-                                        if (brush_flag) {
-                                            update_xAxis(x_domain);
-                                            newData = getNewDataArr(x_domain);
-                                            renderChart(false, newData);
-                                            brush_flag = false;
-                                            d3.timeout(() => brush_flag = true, 100);
-                                        }
-                                    }
-                                    else {
-                                        if (selection[0] == pre_selection[0]) {
-                                            // console.log('brush rihgt');
-                                            brush_g.call(brush.move, [selection[0], x2(x_domain[0] + 40 * timeDiff)]);
-                                        }
-                                        else if (selection[1] == pre_selection[1]) {
-                                            // console.log('brush left');
-                                            brush_g.call(brush.move, [x2(x_domain[1] - 40 * timeDiff), selection[1]]);
-                                        }
-                                        else {
-                                            // console.log('brush clear');
-                                            brush_g.call(brush.clear);
-                                        }
-                                    }
-                                }
-                                pre_selection = selection;
-                            }
-                            updateHandler(action);
-                        })
-                        .on("end", event => {
-                            if (!event.sourceEvent) return; // ignore brush-by-zoom
-                            // console.log("brush end");
-                            let selection = event.selection;
-
-                            if (selection) {
-                                let x_domain = [x2.invert(selection[0]), x2.invert(selection[1])];
-                                update_xAxis(x_domain, true);
-                                newData = getNewDataArr(x_domain);
-                                update_yAxis(false, newData);
-                                renderChart(true, newData);
+                        let update_yAxis = (origin = true, newDataArr = undefined) => {
+                            if (origin) {
+                                y.domain(origin_y_domain);
+                                newData = data;
+                                newDatesArr = datesArr;
                             }
                             else {
-                                update_xAxis(origin_x_domain, true);
-                                update_yAxis(true);
-                                renderChart(true);
-                                brush_g.call(brush.move, x2.range());
+                                y.domain([
+                                    d3.min(newDataArr, d => d3.min(d.data, d => d.y)),
+                                    d3.max(newDataArr, d => d3.max(d.data, d => d.y))
+                                ]).nice();
                             }
-
-                        });
-
-
-                    var brush_g = svg.append("g")
-                        .attr("class", "brush")
-                        .attr("transform", "translate(0," + (height) + ")");
-
-                    brush_g
-                        .call(brush)
-                        .call(brush.move, x2.range());
-
-
-
-
-                    // console.debug($(".selection"));
-                    // $(".selection").bind('change', function (event) {
-
-                    //     alert($(".selection").attr("value"));
-                    // });
-
-                    // console.debug(x.range());
-
-                    //***********TEST************
-                    // let TEST_x_domain = [95.12, 95.40];
-                    // brush_g.call(brush.move, [x2(TEST_x_domain[0]), x2(TEST_x_domain[1])]);
-                    // update_xAxis(TEST_x_domain, true);
-                    // update_yAxis(false, TEST_x_domain);
-                    // renderChart(true);
-                    //***********TEST************
-                    // //====================================zoom==================================================
-                    var selectionRect = {
-                        element: null,
-                        previousElement: null,
-                        currentY: 0,
-                        currentX: 0,
-                        originX: 0,
-                        originY: 0,
-                        setElement: function (ele) {
-                            this.previousElement = this.element;
-                            this.element = ele;
-                        },
-                        getNewAttributes: function () {
-                            var x = this.currentX < this.originX ? this.currentX : this.originX;
-                            var y = this.currentY < this.originY ? this.currentY : this.originY;
-                            var width = Math.abs(this.currentX - this.originX);
-                            var height = Math.abs(this.currentY - this.originY);
-                            return {
-                                x: x,
-                                y: y,
-                                width: width,
-                                height: height
-                            };
-                        },
-                        getCurrentAttributes: function () {
-                            // use plus sign to convert string into number
-                            var x = +this.element.attr("x");
-                            var y = +this.element.attr("y");
-                            var width = +this.element.attr("width");
-                            var height = +this.element.attr("height");
-                            return {
-                                x1: x,
-                                y1: y,
-                                x2: x + width,
-                                y2: y + height
-                            };
-                        },
-                        // getCurrentAttributesAsText: function () {
-                        //     var attrs = this.getCurrentAttributes();
-                        //     return "x1: " + attrs.x1 + " x2: " + attrs.x2 + " y1: " + attrs.y1 + " y2: " + attrs.y2;
-                        // },
-                        init: function (newX, newY) {
-                            var rectElement = svg
-                                .append("rect")
-                                .attr('rx', 0)
-                                .attr('ry', 0)
-                                .attr('x', 0)
-                                .attr('y', 0)
-                                .attr('width', 0)
-                                .attr('height', 0)
-                                // .attr('stroke', '#545454')
-                                // .attr('stroke-width', ' 2px')
-                                .attr('stroke-opacity', 1)
-                                .attr('fill', '#97CBFF')
-                                .attr('fill-opacity', 0.5);
-                            this.setElement(rectElement);
-                            this.originX = newX;
-                            this.originY = newY;
-                            this.update(newX, newY);
-                        },
-                        update: function (newX, newY) {
-                            this.currentX = newX;
-                            this.currentY = newY;
-
-                            let newAttr = this.getNewAttributes();
-                            this.element
-                                .attr('x', newAttr.x)
-                                .attr('y', newAttr.y)
-                                .attr('width', newAttr.width)
-                                .attr('height', newAttr.height);
-                        },
-                        // focus: function () {
-                        //     this.element
-                        //         .style("stroke", "#DE695B")
-                        //         .style("stroke-width", "2.5");
-                        // },
-                        remove: function () {
-                            this.element.remove();
-                            this.element = null;
-                        },
-                        removePrevious: function () {
-                            if (this.previousElement) {
-                                this.previousElement.remove();
-                            }
+                            yAxis.selectAll('*').remove();
+                            yAxis.call(yAxis_g);
                         }
-                    };
-                    //================alarm
-                    var alarm_width = 300;
-                    var alarm_height = 50;
+                        // var contextData = data[lastIndex];
+                        var context = svg.append("g")
+                            .attr("class", "context")
+                            .attr("transform", "translate(0, " + height + ")")
+                            .selectAll("path")
+                            .data(data)
+                            .join("path")
+                            .style("mix-blend-mode", "normal")
+                            .attr("fill", "none")
+                            .attr("stroke-width", 1)
+                            .attr("stroke-linejoin", "round")
+                            .attr("stroke-linecap", "round")
+                            .attr("stroke-opacity", 1)
+                            .attr("stroke", "#272727")
+                            .attr("d", (d, i) => {
+                                let y2 = d3.scaleLinear()
+                                    .domain(origin_y_domain)
+                                    .range([height2 - margin.bottom, 0]);
 
-                    var alarm = svg.append("g")
-                        .attr('class', 'alarm')
-                        .attr('display', 'none');
+                                let line2 = d3.line()
+                                    .defined(d => !isNaN(d.x))
+                                    .x(d => x(d.x))
+                                    .y(d => y2(d.y));
 
-                    var minimum_data = 10;
-                    const timeDiff = data[0].data[1].x - data[0].data[0].x;//======for limit zooming range
-                    // console.debug(timeDiff);
+                                return line2(d.data);
+                            });
 
-                    var alarm_g_timeOut;
-                    var alarm_rect = alarm.append("rect")
-                        .attr('rx', 5)
-                        .attr('ry', 5)
-                        .attr('x', margin.left + (width - margin.left - margin.right - alarm_width) / 2)
-                        .attr('y', margin.top + (height - margin.bottom - margin.top - alarm_height) / 2)
-                        .attr('width', alarm_width)
-                        .attr('height', alarm_height)
-                        .attr('stroke', '#000000')
-                        .attr('stroke-opacity', 0)
-                        .attr('fill', '#D3D3D3')
-                        .attr('fill-opacity', 0);
-                    var alarm_text = alarm.append('text')
-                        .attr('x', margin.left + (width - margin.left - margin.right) / 2)
-                        .attr('y', margin.top + (height - margin.bottom - margin.top) / 2)
-                        .attr('text-anchor', 'middle')
-                        .attr('alignment-baseline', 'middle')
-                        .attr('opacity', 0)
-                        .text("It can\'t be less than " + minimum_data + " data points");
-                    //================alarm
 
-                    var dragBehavior = d3.drag()
-                        .on("start", () => {
-                            // console.log("dragStart");
-                            const p = d3.pointer(event, event_rect.node());
-                            selectionRect.init(p[0], margin.top);
-                            selectionRect.removePrevious();
-                        })
-                        .on("drag", () => {
-                            // console.log("dragMove");
-                            const p = d3.pointer(event, event_rect.node());
-                            if (p[0] < margin.left)
-                                p[0] = margin.left;
-                            else if (p[0] > width - margin.right)
-                                p[0] = width - margin.right;
-                            // console.debug(p);
-                            // const xm = x.invert(p[0]);
-                            selectionRect.update(p[0], height - margin.bottom);
-                        })
-                        .on("end", () => {
-                            // console.log("dragEnd");
-                            // console.debug('end');
-                            const finalAttributes = selectionRect.getCurrentAttributes();
-                            // console.debug(finalAttributes);
 
-                            if (finalAttributes.x2 - finalAttributes.x1 > 1 && finalAttributes.y2 - finalAttributes.y1 > 1) {
-                                // console.log("range selected");
-                                // range selected
-                                event.preventDefault();
+                        if (referenceTime)
+                            var x2 = d3.scaleUtc()
+                                .domain(origin_x_domain)
+                                .range([margin.left, width - margin.right]);
+                        else
+                            var x2 = d3.scaleLinear()
+                                .domain(origin_x_domain)
+                                .range([margin.left, width - margin.right]);
 
-                                //-------- Update x_domain
-                                let x_domain = [x.invert(finalAttributes.x1), x.invert(finalAttributes.x2)];
-                                // console.debug(x_domain);
-                                //-------- Update Axis and paths(at less minimum_data  points)
-                                if (x_domain[1] - x_domain[0] > minimum_data * timeDiff) {
+
+                        svg.append("g")
+                            .attr('class', 'context_xAxis')
+                            .attr("transform", "translate(0," + (height + height2 - margin.bottom) + ")")
+                            .call(d3.axisBottom(x2).ticks(width / 80).tickSizeOuter(0));
+
+
+                        var pre_selection = x2.range();
+                        brush_flag = true;
+                        var brush = d3.brushX()
+                            .extent([[margin.left, 0], [width - margin.right, height2 - margin.bottom]])
+                            .on("start", event => {
+                                if (!event.sourceEvent) return;
+                                // console.log("brush start");
+                                update_yAxis(true);
+                                renderChart();
+                            })
+                            .on("brush", event => {
+                                if (!event.sourceEvent) return; // ignore brush-by-zoom
+
+                                var action = () => {
+                                    // console.log("brushing");
+                                    let selection = event.selection;
+                                    // console.debug(selection);
+
+                                    if (selection) {
+
+                                        let x_domain = [x2.invert(selection[0]), x2.invert(selection[1])];
+
+                                        if (x_domain[1] - x_domain[0] > 40 * timeDiff) {
+                                            if (brush_flag) {
+                                                update_xAxis(x_domain);
+                                                newData = getNewDataArr(x_domain);
+                                                renderChart(false, newData);
+                                                brush_flag = false;
+                                                d3.timeout(() => brush_flag = true, 100);
+                                            }
+                                        }
+                                        else {
+                                            if (selection[0] == pre_selection[0]) {
+                                                // console.log('brush rihgt');
+                                                brush_g.call(brush.move, [selection[0], x2(x_domain[0] + 40 * timeDiff)]);
+                                            }
+                                            else if (selection[1] == pre_selection[1]) {
+                                                // console.log('brush left');
+                                                brush_g.call(brush.move, [x2(x_domain[1] - 40 * timeDiff), selection[1]]);
+                                            }
+                                            else {
+                                                // console.log('brush clear');
+                                                brush_g.call(brush.clear);
+                                            }
+                                        }
+                                    }
+                                    pre_selection = selection;
+                                }
+                                updateHandler(action);
+                            })
+                            .on("end", event => {
+                                if (!event.sourceEvent) return; // ignore brush-by-zoom
+                                // console.log("brush end");
+                                let selection = event.selection;
+
+                                if (selection) {
+                                    let x_domain = [x2.invert(selection[0]), x2.invert(selection[1])];
                                     update_xAxis(x_domain, true);
                                     newData = getNewDataArr(x_domain);
                                     update_yAxis(false, newData);
                                     renderChart(true, newData);
-                                    brush_g.call(brush.move, [x2(x_domain[0]), x2(x_domain[1])]);
                                 }
                                 else {
-                                    //lower than minimum_data points alarm
-                                    alarm
-                                        .attr('display', 'inline');
-                                    alarm_rect
-                                        .transition().duration(500)
-                                        .attr('fill-opacity', 1)
-                                        .attr('stroke-opacity', 1)
-                                        .transition().duration(800)
-                                        .attr('fill-opacity', 0)
-                                        .attr('stroke-opacity', 0);
-                                    alarm_text
-                                        .transition().duration(500)
-                                        .attr('opacity', 1)
-                                        .transition().duration(800)
-                                        .attr('opacity', 0);
-
-                                    if (alarm_g_timeOut)
-                                        if (alarm_g_timeOut._time != Infinity)
-                                            alarm_g_timeOut.stop();
-                                    alarm_g_timeOut = d3.timeout(() => alarm.attr('display', 'none'), 1300);
-                                    // console.debug(alarm_g_timeOut._time);
+                                    update_xAxis(origin_x_domain, true);
+                                    update_yAxis(true);
+                                    renderChart(true);
+                                    brush_g.call(brush.move, x2.range());
                                 }
 
+                            });
 
 
+                        var brush_g = svg.append("g")
+                            .attr("class", "brush")
+                            .attr("transform", "translate(0," + (height) + ")");
+
+                        brush_g
+                            .call(brush)
+                            .call(brush.move, x2.range());
+
+
+
+
+                        // console.debug($(".selection"));
+                        // $(".selection").bind('change', function (event) {
+
+                        //     alert($(".selection").attr("value"));
+                        // });
+
+                        // console.debug(x.range());
+
+                        //***********TEST************
+                        // let TEST_x_domain = [95.12, 95.40];
+                        // brush_g.call(brush.move, [x2(TEST_x_domain[0]), x2(TEST_x_domain[1])]);
+                        // update_xAxis(TEST_x_domain, true);
+                        // update_yAxis(false, TEST_x_domain);
+                        // renderChart(true);
+                        //***********TEST************
+                        // //====================================zoom==================================================
+                        var selectionRect = {
+                            element: null,
+                            previousElement: null,
+                            currentY: 0,
+                            currentX: 0,
+                            originX: 0,
+                            originY: 0,
+                            setElement: function (ele) {
+                                this.previousElement = this.element;
+                                this.element = ele;
+                            },
+                            getNewAttributes: function () {
+                                var x = this.currentX < this.originX ? this.currentX : this.originX;
+                                var y = this.currentY < this.originY ? this.currentY : this.originY;
+                                var width = Math.abs(this.currentX - this.originX);
+                                var height = Math.abs(this.currentY - this.originY);
+                                return {
+                                    x: x,
+                                    y: y,
+                                    width: width,
+                                    height: height
+                                };
+                            },
+                            getCurrentAttributes: function () {
+                                // use plus sign to convert string into number
+                                var x = +this.element.attr("x");
+                                var y = +this.element.attr("y");
+                                var width = +this.element.attr("width");
+                                var height = +this.element.attr("height");
+                                return {
+                                    x1: x,
+                                    y1: y,
+                                    x2: x + width,
+                                    y2: y + height
+                                };
+                            },
+                            // getCurrentAttributesAsText: function () {
+                            //     var attrs = this.getCurrentAttributes();
+                            //     return "x1: " + attrs.x1 + " x2: " + attrs.x2 + " y1: " + attrs.y1 + " y2: " + attrs.y2;
+                            // },
+                            init: function (newX, newY) {
+                                var rectElement = svg
+                                    .append("rect")
+                                    .attr('rx', 0)
+                                    .attr('ry', 0)
+                                    .attr('x', 0)
+                                    .attr('y', 0)
+                                    .attr('width', 0)
+                                    .attr('height', 0)
+                                    // .attr('stroke', '#545454')
+                                    // .attr('stroke-width', ' 2px')
+                                    .attr('stroke-opacity', 1)
+                                    .attr('fill', '#97CBFF')
+                                    .attr('fill-opacity', 0.5);
+                                this.setElement(rectElement);
+                                this.originX = newX;
+                                this.originY = newY;
+                                this.update(newX, newY);
+                            },
+                            update: function (newX, newY) {
+                                this.currentX = newX;
+                                this.currentY = newY;
+
+                                let newAttr = this.getNewAttributes();
+                                this.element
+                                    .attr('x', newAttr.x)
+                                    .attr('y', newAttr.y)
+                                    .attr('width', newAttr.width)
+                                    .attr('height', newAttr.height);
+                            },
+                            // focus: function () {
+                            //     this.element
+                            //         .style("stroke", "#DE695B")
+                            //         .style("stroke-width", "2.5");
+                            // },
+                            remove: function () {
+                                this.element.remove();
+                                this.element = null;
+                            },
+                            removePrevious: function () {
+                                if (this.previousElement) {
+                                    this.previousElement.remove();
+                                }
                             }
-                            else {
-                                //-------- reset zoom
-                                // console.log("single point");
-                                update_xAxis(origin_x_domain, true);
-                                update_yAxis(true);
-                                renderChart();
-                                brush_g.call(brush.move, x2.range());
-                            }
-                            selectionRect.remove();
-                        })
-                    event_rect.call(dragBehavior);
+                        };
+                        //================alarm
+                        var alarm_width = 300;
+                        var alarm_height = 50;
 
-                    //zoom to pre_xdomain before normalize
-                    if (pre_xdomain) {
-                        brush_g.call(brush.move, [x2(pre_xdomain[0]), x2(pre_xdomain[1])]);
-                        update_xAxis(pre_xdomain, false);
-                        newData = getNewDataArr(pre_xdomain);
-                        update_yAxis(false, newData);
-                        renderChart(false, newData);
-                    }
+                        var alarm = svg.append("g")
+                            .attr('class', 'alarm')
+                            .attr('display', 'none');
 
+                        var minimum_data = 10;
+                        const timeDiff = data[0].data[1].x - data[0].data[0].x;//======for limit zooming range
+                        // console.debug(timeDiff);
+
+                        var alarm_g_timeOut;
+                        var alarm_rect = alarm.append("rect")
+                            .attr('rx', 5)
+                            .attr('ry', 5)
+                            .attr('x', margin.left + (width - margin.left - margin.right - alarm_width) / 2)
+                            .attr('y', margin.top + (height - margin.bottom - margin.top - alarm_height) / 2)
+                            .attr('width', alarm_width)
+                            .attr('height', alarm_height)
+                            .attr('stroke', '#000000')
+                            .attr('stroke-opacity', 0)
+                            .attr('fill', '#D3D3D3')
+                            .attr('fill-opacity', 0);
+                        var alarm_text = alarm.append('text')
+                            .attr('x', margin.left + (width - margin.left - margin.right) / 2)
+                            .attr('y', margin.top + (height - margin.bottom - margin.top) / 2)
+                            .attr('text-anchor', 'middle')
+                            .attr('alignment-baseline', 'middle')
+                            .attr('opacity', 0)
+                            .text("It can\'t be less than " + minimum_data + " data points");
+                        //================alarm
+
+                        var dragBehavior = d3.drag()
+                            .on("start", () => {
+                                // console.log("dragStart");
+                                const p = d3.pointer(event, event_rect.node());
+                                selectionRect.init(p[0], margin.top);
+                                selectionRect.removePrevious();
+                            })
+                            .on("drag", () => {
+                                // console.log("dragMove");
+                                const p = d3.pointer(event, event_rect.node());
+                                if (p[0] < margin.left)
+                                    p[0] = margin.left;
+                                else if (p[0] > width - margin.right)
+                                    p[0] = width - margin.right;
+                                // console.debug(p);
+                                // const xm = x.invert(p[0]);
+                                selectionRect.update(p[0], height - margin.bottom);
+                            })
+                            .on("end", () => {
+                                // console.log("dragEnd");
+                                // console.debug('end');
+                                const finalAttributes = selectionRect.getCurrentAttributes();
+                                // console.debug(finalAttributes);
+
+                                if (finalAttributes.x2 - finalAttributes.x1 > 1 && finalAttributes.y2 - finalAttributes.y1 > 1) {
+                                    // console.log("range selected");
+                                    // range selected
+                                    event.preventDefault();
+
+                                    //-------- Update x_domain
+                                    let x_domain = [x.invert(finalAttributes.x1), x.invert(finalAttributes.x2)];
+                                    // console.debug(x_domain);
+                                    //-------- Update Axis and paths(at less minimum_data  points)
+                                    if (x_domain[1] - x_domain[0] > minimum_data * timeDiff) {
+                                        update_xAxis(x_domain, true);
+                                        newData = getNewDataArr(x_domain);
+                                        update_yAxis(false, newData);
+                                        renderChart(true, newData);
+                                        brush_g.call(brush.move, [x2(x_domain[0]), x2(x_domain[1])]);
+                                    }
+                                    else {
+                                        //lower than minimum_data points alarm
+                                        alarm
+                                            .attr('display', 'inline');
+                                        alarm_rect
+                                            .transition().duration(500)
+                                            .attr('fill-opacity', 1)
+                                            .attr('stroke-opacity', 1)
+                                            .transition().duration(800)
+                                            .attr('fill-opacity', 0)
+                                            .attr('stroke-opacity', 0);
+                                        alarm_text
+                                            .transition().duration(500)
+                                            .attr('opacity', 1)
+                                            .transition().duration(800)
+                                            .attr('opacity', 0);
+
+                                        if (alarm_g_timeOut)
+                                            if (alarm_g_timeOut._time != Infinity)
+                                                alarm_g_timeOut.stop();
+                                        alarm_g_timeOut = d3.timeout(() => alarm.attr('display', 'none'), 1300);
+                                        // console.debug(alarm_g_timeOut._time);
+                                    }
+
+
+
+                                }
+                                else {
+                                    //-------- reset zoom
+                                    // console.log("single point");
+                                    update_xAxis(origin_x_domain, true);
+                                    update_yAxis(true);
+                                    renderChart();
+                                    brush_g.call(brush.move, x2.range());
+                                }
+                                selectionRect.remove();
+                            })
+                        event_rect.call(dragBehavior);
+
+                        //zoom to pre_xdomain before normalize
+                        if (pre_xdomain) {
+                            brush_g.call(brush.move, [x2(pre_xdomain[0]), x2(pre_xdomain[1])]);
+                            update_xAxis(pre_xdomain, false);
+                            newData = getNewDataArr(pre_xdomain);
+                            update_yAxis(false, newData);
+                            renderChart(false, newData);
+                        }
+                    };
+                    function infoBoxDragEvent() {
+
+                        var raiseAndDrag = (d3_selection) => {
+                            let x_fixed = 0, y_fixed = 0;
+                            let legend_dragBehavior = d3.drag()
+                                .on('start', function (e) {
+                                    // console.log('drag start');
+                                    // console.debug(this);
+                                    let matrix = this.transform.baseVal[0].matrix;
+                                    x_fixed = e.x - matrix.e;
+                                    y_fixed = e.y - matrix.f;
+                                })
+                                .on('drag end', function (e) {
+                                    // console.log('drag');
+                                    let translateX = e.x - x_fixed;
+                                    let translateY = e.y - y_fixed;
+
+                                    let targetSVGRect = this.getBBox();
+                                    let targetWidth = targetSVGRect.width;
+                                    let targetHeight = targetSVGRect.height;
+
+
+                                    // console.debug(targetSVGRect);
+                                    let range_margin = 5;
+                                    let xRange = [0 + range_margin, width - targetWidth - range_margin];
+                                    let yRange = [range_margin, height - targetHeight - range_margin];
+                                    //不能拉出svg範圍
+
+                                    if (translateX < xRange[0])
+                                        translateX = xRange[0];
+                                    else if (translateX > xRange[1])
+                                        translateX = xRange[1];
+                                    // console.debug(width)
+                                    if (translateY < yRange[0])
+                                        translateY = yRange[0];
+                                    else if (translateY > yRange[1])
+                                        translateY = yRange[1];
+
+                                    d3.select(this).attr("transform", `translate(${translateX}, ${translateY})`);
+                                });
+
+
+                            d3_selection
+                                .attr("cursor", 'grab')
+                                .call(g => g.raise())//把選中元素拉到最上層(比zoom的選取框優先)
+                                .call(legend_dragBehavior);
+
+                        }
+                        svg.select('.legend').call(raiseAndDrag);
+                    };
+                    chartEvent();
+                    infoBoxDragEvent();
                 }
-                svg.call(events, focus);
+                svg.call(events);
 
                 return svg.node();
             }

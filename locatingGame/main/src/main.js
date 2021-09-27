@@ -297,12 +297,12 @@ function locatingGame() {
 
                             var makePaths = pathGroup => pathGroup
                                 .append("path")
-                                .style("mix-blend-mode", "normal")
+                                .style("mix-blend-mode", "luminosity")
                                 .attr("fill", "none")
                                 .attr("stroke-width", 2)
                                 .attr("stroke-linejoin", "bevel")//arcs | bevel |miter | miter-clip | round
                                 .attr("stroke-linecap", "butt")//butt,square,round
-                                .attr("stroke-opacity", 1)
+                                .attr("stroke-opacity", 0.9)
                                 .attr("stroke", getColor(d))
                                 .attr("d", line(newData))
 

@@ -214,25 +214,40 @@ class DefendScene extends Phaser.Scene {
         /*
         Depth:
             0-4(background)
-            5(wave)
-            6(orbs)
+            5(laser)
+            6(wave)
+            7(orbs)
             9(enemy)
-            10(player,laser)
+            10(player)
             11(orb pickUp)
             15(bullet)
             20(UI:HP bar...)
         */
+        const Depth = {
+            platform: 3,
+            station: 4,
+            laser: 5,
+            wave: 6,
+            orbs: 7,
+            enemy: 9,
+            player: 10,
+            pickUpObj: 11,
+            bullet: 15,
+            UI: 20,
+        };
+
+
         var initEnvironment = () => {
             // console.debug()
             var station = () => {
                 let station = this.gameData.stationData.station;
                 this.add.image(width * 0.92, height * 0.53, 'station')
                     .setScale(1, 0.63)
-                    .setDepth(4);
+                    .setDepth(Depth.station);
                 // this.add.image(width * 0.12, height * 0.53, 'title')
                 //     .setScale(0.1, 0.15).setRotation(0.1).setPosition(width * 0.12, height * 0.53, 100, 100);
                 this.add.text(width * 0.88, height * 0.46, station, { fontSize: '32px', fill: '#000' })
-                    .setRotation(-0.1).setOrigin(0.5, 0.5).setDepth(4);
+                    .setRotation(-0.1).setOrigin(0.5, 0.5).setDepth(Depth.station);
 
                 this.waveForm.gameObjs = this.waveForm.svgArr.map((d, i) => {
 
@@ -242,7 +257,9 @@ class DefendScene extends Phaser.Scene {
                     else
                         y = height * 1.15;
 
-                    return this.add.image(width * 0.5, y, 'wave_' + d.svgName).setDepth(5);
+                    return this.add.image(width * 0.5, y, 'wave_' + d.svgName)
+                        .setDepth(Depth.wave)
+                        .setAlpha(.7);
                 });
 
                 // this.add.image(width * 0.5, height * 0.5, 'wave_0')
@@ -253,7 +270,7 @@ class DefendScene extends Phaser.Scene {
                 this.platforms = this.physics.add.staticGroup();
                 this.platforms.create(width * 0.5, height * 0.95, 'ground')
                     .setScale(3, 0.5).refreshBody().setOffset(30)
-                    .setDepth(3)
+                    .setDepth(Depth.platform)
                     .setName('platform');
             }
             var background = () => {
@@ -307,13 +324,12 @@ class DefendScene extends Phaser.Scene {
                     repeat: 1,
                     randomFrame: true,
                     setScale: { x: orbScale, y: orbScale },
-                    setDepth: { value: 6 },
+                    setDepth: { value: Depth.orbs },
                     // maxVelocityY: 0,
                     // gravityX: 1000,
-                    // gravityY: -50,
-
                 });
-                // console.debug(orbGroup);
+
+
                 var animsCreate = () => {
                     this.anims.create({
                         key: 'orb_inactive',
@@ -363,28 +379,29 @@ class DefendScene extends Phaser.Scene {
 
                     child.setPosition(orbPosition, height * 0.8);
                     child.body.setSize(100, 100, true);
-                    // child.play(activate ? 'orb_activate' : 'orb_inactive');
+                    child.play(activate ? 'orb_activate' : 'orb_inactive');
 
                     //=====custom
 
                     //=laser
                     child.laserObj =
                         this.physics.add.sprite(child.x, child.y + 20, 'laser')
-                            .setAlpha(0.8)
                             .setScale(0.3, 1)
                             .setOrigin(0.5, 1)
-                            .setDepth(10)
+                            .setDepth(Depth.laser)
                             .setVisible(false);
-                    // console.debug(child.laserObj);
+
+                    // console.debug(orbStats);
 
                     child.laserObj.body
                         .setMaxVelocityY(0)
                         .setSize(50);
 
                     //=time
+                    // let timeString = activate ? (orbStats[i].timePoint.time).toFixed(2) : '';
                     child.timeText = this.add.text(0, 0, '', { fontSize: '20px', fill: '#A8FF24', })
                         .setOrigin(0.5)
-                        .setDepth(20);
+                        .setDepth(Depth.UI);
 
                     Object.assign(child, {
 
@@ -396,13 +413,14 @@ class DefendScene extends Phaser.Scene {
 
                             if (beholding) {//pick up                         
                                 this.body.setMaxVelocityY(0);
-                                this.setDepth(11);
+                                this.setDepth(Depth.pickUpObj);
                                 this.anims.play('orb_holded', true);
                             }
                             else {//put down
                                 this.body.setMaxVelocityY(1000);
-                                this.setDepth(6);
+                                this.setDepth(Depth.orbs);
                                 this.anims.play(activate ? 'orb_activate' : 'orb_inactive', true);
+                                this.laserUpdateFlag = true;
                             };
 
                             if (pickUper) {
@@ -424,19 +442,19 @@ class DefendScene extends Phaser.Scene {
                                 }
 
                                 pickUper.stats = Object.assign(pickUper.stats, newCharacterStats);
-                            }
+                            };
 
 
                             if (activate) {
                                 this.laserObj
                                     .enableBody(false, 0, 0, true, true)
-                                    .setPosition(child.x, child.y + 20)
+                                    // .setPosition(child.x, child.y + 20)
                                     .anims.play('orb_laser', true);
 
                                 this.timeText
                                     .setVisible(true)
-                                    .setPosition(child.x, 650)
-                                // .setText(this.getTimePoint(child.x).time.toFixed(2))
+                                    .setPosition(child.x, 650);
+
                             }
                             else {
                                 this.laserObj.disableBody(true, true);
@@ -450,8 +468,8 @@ class DefendScene extends Phaser.Scene {
                         },
                     });
 
-
-                    child.statusHadler(null, false, activate);
+                    //==laserUpdateFlag
+                    child.laserUpdateFlag = true;//==寶珠落下到地面後更新雷射一次
                     //=====custom
 
                     // console.debug(child.laserObj)
@@ -497,7 +515,7 @@ class DefendScene extends Phaser.Scene {
             this.player
                 .setCollideWorldBounds(true)
                 .setPushable(false)
-                .setDepth(10)
+                .setDepth(Depth.player)
                 .setName('player')
                 .play('player_turn');
             this.player.body
@@ -526,8 +544,8 @@ class DefendScene extends Phaser.Scene {
                 playerTurnLeft: false,//==判斷子彈方向
 
                 //==HP/MP                
-                hpText: this.add.text(16, 50, '', { fontSize: '32px', fill: '#000' }).setDepth(20),
-                mpText: this.add.text(16, 80, '', { fontSize: '32px', fill: '#000' }).setDepth(20),
+                hpText: this.add.text(16, 50, '', { fontSize: '32px', fill: '#000' }).setDepth(Depth.UI),
+                mpText: this.add.text(16, 80, '', { fontSize: '32px', fill: '#000' }).setDepth(Depth.UI),
 
                 playerAttack: (bullet, enemy) => {
                     // console.debug(bullet, enemy);
@@ -741,14 +759,14 @@ class DefendScene extends Phaser.Scene {
             //==計時,時間到進入結算
             let timeRemain = this.gameData.playerData.timeRemain;
             this.gameTimer = this.time.delayedCall(timeRemain, () => this.gameOver.flag = true, [], this);
-            this.gameTimer.timerText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#000' }).setDepth(20);
+            this.gameTimer.timerText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#000' }).setDepth(Depth.UI);
 
 
         };
         var initPauseMenu = () => {
 
             // Create a label to use as a button
-            let pauseButton = this.add.text(width - 100, 20, 'Pause', { font: '24px Arial', fill: '#fff' }).setDepth(20);
+            let pauseButton = this.add.text(width - 100, 20, 'Pause', { font: '24px Arial', fill: '#fff' }).setDepth(Depth.UI);
 
             // let pauseMenu = new UIScene('pauseMenu');
             pauseButton.setInteractive()
@@ -829,15 +847,17 @@ class DefendScene extends Phaser.Scene {
 
             this.orbGroup.children.iterate(child => {
 
-                let laserObj = child.laserObj;
+                if (child.beholdingFlag || (child.laserUpdateFlag && child.body.touching.down)) {
+                    let laserObj = child.laserObj;
 
-                if (child.beholdingFlag) {
                     laserObj.setPosition(child.x, child.y + 20);
 
-                    child.timeText
-                        .setPosition(child.x, 650)
-                        .setText(this.getTimePoint(child.x).time.toFixed(2));
+                    if (child.activateFlag)
+                        child.timeText
+                            .setPosition(child.x, 650)
+                            .setText(this.getTimePoint(child.x).time.toFixed(2));
 
+                    child.laserUpdateFlag = false;
                 }
 
 

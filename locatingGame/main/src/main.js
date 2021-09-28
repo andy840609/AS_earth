@@ -199,6 +199,11 @@ function locatingGame() {
             // console.debug(waveData);
 
             function getSvgUrlArr(data) {
+                //==max min要一樣起始點才會落在同位置(避免波形間隔看起來不同)
+                const xAxisDomain = timeDomain ? timeDomain : d3.extent(data[0].data.map(d => d.x));
+                const yAxisDomain = d3.extent([].concat(...data.map(d => d3.extent(d.data, d => d.y))));
+                // console.debug(xAxisDomain, yAxisDomain);
+
                 var getSvgObj = (d, axisSvg = false) => {
                     var svgObj = {};
 
@@ -232,12 +237,12 @@ function locatingGame() {
                     const pathGroup = svg.append("g").attr('class', 'paths');
 
                     function getChart() {
-                        function getNewData() {
-                            let timeArr = chaData.map(d => d.y);
-                            let i1 = d3.bisectCenter(timeArr, yAxis_domain[0]);
-                            let i2 = d3.bisectCenter(timeArr, yAxis_domain[1]) + 1;//包含最大範圍
-                            newData.forEach(d => d[dataKeys[3]] = d[dataKeys[3]].slice(i1, i2));
-                            newTimeArr = timeArr.slice(i1, i2);
+                        function getNewData(timeDomain) {
+                            let timeArr = chaData.map(d => d.x);
+                            let i1 = d3.bisectCenter(timeArr, timeDomain[0]);
+                            let i2 = d3.bisectCenter(timeArr, timeDomain[1]) + 1;//包含最大範圍
+                            let newData = chaData.slice(i1, i2);
+                            return newData;
                         };
                         function getSvgUrl(svgNode) {
                             let svgData = (new XMLSerializer()).serializeToString(svgNode);
@@ -246,10 +251,10 @@ function locatingGame() {
                             return svgUrl;
                         };
 
-                        let newData = timeDomain ? getNewData(chaData) : chaData;
+                        let newData = timeDomain ? getNewData(timeDomain) : chaData;
 
                         let x = d3.scaleLinear()
-                            .domain(d3.extent(newData.map(d => d.x)))
+                            .domain(xAxisDomain)
                             .range([margin.right, width - margin.left]);
 
 
@@ -286,7 +291,7 @@ function locatingGame() {
                         var updatePaths = () => {
 
                             let y = d3.scaleLinear()
-                                .domain(d3.extent(newData.map(d => d.y)))
+                                .domain(yAxisDomain)
                                 .range([height, 0]);
 
                             var line = d3.line()
@@ -302,7 +307,7 @@ function locatingGame() {
                                 .attr("stroke-width", 2)
                                 .attr("stroke-linejoin", "bevel")//arcs | bevel |miter | miter-clip | round
                                 .attr("stroke-linecap", "butt")//butt,square,round
-                                .attr("stroke-opacity", 0.9)
+                                // .attr("stroke-opacity", 0.9)
                                 .attr("stroke", getColor(d))
                                 .attr("d", line(newData))
 
@@ -326,7 +331,7 @@ function locatingGame() {
 
                     getChart();
                     return svgObj;
-                }
+                };
 
 
 
@@ -443,8 +448,8 @@ function locatingGame() {
 
                     data.forEach((d, i) => {
                         // console.debug(d);
-                        let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
-                        // let enemy = ['cat'];//==之後隨機抽敵人組
+                        // let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
+                        let enemy = [];//==之後隨機抽敵人組
                         let enemyStats = {};
 
 
@@ -711,7 +716,8 @@ function locatingGame() {
                             stationMarker.options.data :
                             testArr[0].options.data;//test
 
-                        let waveSvgArr = await getWaveImg(stationData);
+                        let xAxisDomain = stationData.stationStats.orbStats ? stationData.stationStats.orbStats.xAxisDomain : null;
+                        let waveSvgArr = await getWaveImg(stationData, xAxisDomain);
                         // console.debug(waveSvgArr);
 
                         gameResult = await new Promise((resolve, reject) => {
@@ -748,13 +754,12 @@ function locatingGame() {
                             updateStation(stationMarker, { icon: 'foe' });
 
                         //===update circle
-                        let timePoint1 = stationInfo.orbStats[0].timePoint;
-                        let timePoint2 = stationInfo.orbStats[1].timePoint;
-                        let allOrbActived = timePoint1.isInRange && timePoint2.isInRange;
-
+                        let orbStats = stationInfo.orbStats;
+                        let allOrbActived = orbStats.every(d => d.isInRange == true);
+                        // console.debug(allOrbActived);
 
                         if (allOrbActived) {
-                            let timeGap = Math.abs(timePoint1.time - timePoint2.time);
+                            let timeGap = Math.abs(orbStats[0].time - orbStats[1].time);
 
                             //距離=時間*速度(目前先用7.5),km換算成m;
                             let radius = timeGap * 7.5 * 1000;

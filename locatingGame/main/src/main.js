@@ -717,7 +717,9 @@ function locatingGame() {
                             testArr[0].options.data;//test
 
                         let xAxisDomain = stationData.stationStats.orbStats ? stationData.stationStats.orbStats.xAxisDomain : null;
+
                         let waveSvgArr = await getWaveImg(stationData, xAxisDomain);
+                        let overviewSvgArr = xAxisDomain ? await getWaveImg(stationData) : waveSvgArr;
                         // console.debug(waveSvgArr);
 
                         gameResult = await new Promise((resolve, reject) => {
@@ -734,6 +736,7 @@ function locatingGame() {
                                     }
                                 },
                                 scene: new DefendScene(stationData, GameData, {
+                                    overviewSvgArr: overviewSvgArr,
                                     waveSvgArr: waveSvgArr,
                                     getWaveImg: getWaveImg,
                                     resolve: resolve,

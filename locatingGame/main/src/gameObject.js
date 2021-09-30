@@ -29,7 +29,7 @@ const GameObjectStats = {
             attackPower: 100,
             knockBackSpeed: 200,//==擊退時間固定200ms,這個速度越大擊退越遠
             manaCost: 10,
-            manaRegen: 1,//per 10 ms(game update per 10ms)0.05
+            manaRegen: 0.05,//per 10 ms(game update per 10ms)0.05
             HP: 100,
             maxHP: 100,
             MP: 100,

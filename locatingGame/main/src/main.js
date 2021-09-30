@@ -257,11 +257,11 @@ function locatingGame() {
                             .domain(xAxisDomain)
                             .range([margin.right, width - margin.left]);
 
-
                         var updateAxis = () => {
                             var makeXAxis = g => g
                                 // .style('font', '20px sans-serif')
-                                .style('font', 'italic small-caps bold 20px/2 cursive')
+                                // .style('font', 'italic small-caps bold 20px/2 cursive')
+                                .style('font', 'small-caps bold 20px/1 sans-serif')
 
                                 .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0))
                                 .call(g => g.append('text')
@@ -279,7 +279,6 @@ function locatingGame() {
                                     // .attr("stroke", "red")
                                     .attr("stroke-width", "5px")
                                     .attr("shape-rendering", "crispEdges")
-
                                 )
                             // .call(g => g.select('text'))
 
@@ -362,10 +361,24 @@ function locatingGame() {
             function initGameData() {
                 GameData = {
                     timeRemain: 500000,
-                    controllCursor: [],
+                    controllCursor: {
+                        up: 'w',
+                        down: 's',
+                        left: 'a',
+                        right: 'd',
+                        attack: 'space',
+                        //==UI controll
+                        pause: 'p',
+                        backpack: 'i',
+                        detector: 'o',
+                        detectorLeft: 'q',
+                        detectorRight: 'e',
+
+
+                    },
                     playerStats: GameObjectStats.player['mage'],
 
-                }
+                };
             };
             function initMap() {
 
@@ -661,13 +674,13 @@ function locatingGame() {
             function updateMapUI(gameResult, duration = 600) {
                 let timeRemain = gameResult.timeRemain;
                 let playerStats = gameResult.playerStats;
-
+                let controllCursor = gameResult.controllCursor;
 
                 GameData.timeRemain = timeRemain;
                 GameData.playerStats = Object.assign(GameData.playerStats, playerStats);
+                if (controllCursor) GameData.controllCursor = controllCursor;
 
                 const timer = gameUI.querySelector('.timer');
-
                 const start = parseInt(timer.innerHTML),
                     end = parseInt(timeRemain);
                 const increase = start > end ? false : true;
@@ -716,12 +729,6 @@ function locatingGame() {
                             stationMarker.options.data :
                             testArr[0].options.data;//test
 
-                        let xAxisDomain = stationData.stationStats.orbStats ? stationData.stationStats.orbStats.xAxisDomain : null;
-
-                        let waveSvgArr = await getWaveImg(stationData, xAxisDomain);
-                        let overviewSvgArr = xAxisDomain ? await getWaveImg(stationData) : waveSvgArr;
-                        // console.debug(waveSvgArr);
-
                         gameResult = await new Promise((resolve, reject) => {
                             const config = {
                                 parent: 'gameMain',
@@ -736,8 +743,6 @@ function locatingGame() {
                                     }
                                 },
                                 scene: new DefendScene(stationData, GameData, {
-                                    overviewSvgArr: overviewSvgArr,
-                                    waveSvgArr: waveSvgArr,
                                     getWaveImg: getWaveImg,
                                     resolve: resolve,
                                 }),

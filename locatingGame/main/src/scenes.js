@@ -9,14 +9,15 @@ class UIScene extends Phaser.Scene {
         const height = canvas.height;
         const Depth = {
             detector: 8,
+            wave: 6,
             UI: 20,
+            tooltip: 30,
         };
+        const controllCursor = gameScene.gameData.controllCursor;
+
         let preload, create, update;
         switch (key) {
             case 'iconBar':
-                console.debug()
-
-
                 let buttonArr;
                 switch (gameScene.name) {
                     case 'defend':
@@ -26,7 +27,7 @@ class UIScene extends Phaser.Scene {
                     case 'dig':
                         break;
                     default:
-                        buttonArr = ['pause', 'detector'];
+                        // buttonArr = ['pause', 'detector'];
                         break;
                 };
 
@@ -34,10 +35,13 @@ class UIScene extends Phaser.Scene {
                     const iconDir = assetsDir + 'icon/';
                     buttonArr.forEach(button => {
                         this.load.image(button + '_icon', iconDir + button + '.png');
-                    })
+                    });
 
                 };
                 create = () => {
+                    const tooltip = this.tooltip;
+                    const tooltipHandler = tooltip.tooltipHandler;
+
                     const barWidth = buttonArr.length * 85;
                     const barHeight = 50;
                     const barX = width - 15 - barWidth;
@@ -60,16 +64,24 @@ class UIScene extends Phaser.Scene {
                     buttonArr.forEach((button, i) => {
                         let key = button + '_icon';
                         let iconButton = this.add.image(barX + barWidth * ((i + 1) / (buttonArr.length + 1)), barY + barHeight * 0.5, key)
-                            .setDepth(Depth.UI);
+                            .setDepth(Depth.UI)
+                            .setName(button);
+
                         const scale = iconWidth / iconButton.width;
                         iconButton.setScale(scale);
                         iconButton.setInteractive({ cursor: 'pointer' })
-                            .on('pointerover', () => {
-                                // gameScene.input.setDefaultCursor('pointer');
+                            .on('pointerover', function () {
+
                                 iconButton.setScale(scale * 1.3);
+                                tooltipHandler(true, {
+                                    obj: this,
+                                    text: this.name,
+                                    img: 'tooltip_button',
+                                });
                             })
-                            .on('pointerout', () => {
+                            .on('pointerout', function () {
                                 iconButton.setScale(scale);
+                                tooltipHandler(false);
                             })
                             .on('pointerdown', () => {
                                 let key = button + 'UI';
@@ -81,18 +93,16 @@ class UIScene extends Phaser.Scene {
                                 // this.scene.resume();
                             });
 
-                        iconButton.setName(key);
                     });
-
-                    this.UIhotkeys = this.input.keyboard.addKeys('p');
 
                 };
                 update = () => {
 
+                    let cursors = gameScene.cursors;
+
                     buttonArr.forEach(button => {
-                        if (button != 'pause') return;//==之後加其他按鍵
-                        if (Phaser.Input.Keyboard.JustDown(this.UIhotkeys.p)) {
-                            let iconButton = this.children.getByName(button + '_icon');
+                        if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor[button]])) {
+                            let iconButton = this.children.getByName(button);
                             iconButton.emit('pointerdown');
                         };
 
@@ -100,7 +110,6 @@ class UIScene extends Phaser.Scene {
 
                 };
                 break;
-
             case 'pauseUI':
                 // =When the pause button is pressed, we pause the game
                 gameScene.scene.pause();
@@ -147,7 +156,7 @@ class UIScene extends Phaser.Scene {
 
                     });
                     this.events.on('destroy', function () {
-                        // console.debug(this);
+                        if (gameScene.gameOver.flag) return;//避免離開多扣時間
                         gameScene.scene.resume();
                         gameScene.gameTimer.paused = false;
                     });
@@ -163,143 +172,250 @@ class UIScene extends Phaser.Scene {
                         width: 208,
                         height: 200,
                     }));
+
                 };
                 create = () => {
+                    const tooltip = this.tooltip;
+                    const tooltipHandler = tooltip.tooltipHandler;
+
                     const x = width - 140, y = 185;
-                    let detector = this.add.image(0, 0, 'detector')
-                        .setOrigin(0.5)
-                        .setScale(0.2)
-                        .setDepth(Depth.detector);
-                    detector.setPosition(x, y)
 
-                    gameScene.waveForm.overviewSvgArr.forEach((d, i) => {
-                        let dy, scaleY;
-                        if (d.svgName == 'xAxis') {
-                            dy = y + 70;
-                            scaleY = 1;
-                        }
-                        else {
-                            dy = y + (35 * i) - 65;
-                            scaleY = 0.6;
+                    var initDetector = () => {
+                        let detector = this.add.image(0, 0, 'detector')
+                            .setOrigin(0.5)
+                            .setScale(0.2)
+                            .setDepth(Depth.detector);
+                        detector.setPosition(x, y)
+
+                        gameScene.waveForm.overviewSvgArr.forEach((d, i) => {
+                            let dy, scaleY;
+                            if (d.svgName == 'xAxis') {
+                                dy = y + 70;
+                                scaleY = 1;
+                            }
+                            else {
+                                dy = y + (35 * i) - 65;
+                                scaleY = 0.6;
+                            };
+
+                            this.add.image(x + 1, dy, 'overview_' + d.svgName)
+                                .setScale(1, scaleY)
+                                .setDepth(Depth.detector + 1);
+                        });
+                    };
+                    var initBrushs = () => {
+                        //==brush
+                        const rectX = x - 94, rectY = y - 88;
+                        const rectW = 191, rectH = 130;
+                        const handleW = 10,
+                            handleXMin = rectX - handleW * 0.5,
+                            handleXMax = rectX + rectW - handleW * 0.5;
+                        const scaleFun = gameScene.waveForm.overviewSvgArr.find(d => d.svgName == 'xAxis').x
+                            .range([handleXMin, handleXMax]);
+
+                        // console.debug(scaleFun.domain(), scaleFun.range());
+
+                        const stationData = gameScene.gameData.stationData;
+
+                        let brushRect = this.add.rectangle(rectX, rectY, rectW, rectH, 0xEA7500)
+                            .setDepth(Depth.detector + 2)
+                            .setOrigin(0)
+                            .setAlpha(.3);
+
+                        let brushHandle1 = this.add.rectangle(handleXMin, rectY, handleW, rectH, 0xffffff)
+                            .setDepth(Depth.detector + 3)
+                            .setOrigin(0)
+                            .setAlpha(.1);
+
+                        let brushHandle2 = this.add.rectangle(handleXMax, rectY, handleW, rectH, 0xffffff)
+                            .setDepth(Depth.detector + 3)
+                            .setOrigin(0)
+                            .setAlpha(.1);
+                        // console.debug(brushHandle1);
+
+                        var dragBehavior = (brush) => {
+                            brush.setInteractive({ draggable: true, cursor: 'col-resize' })
+                                .on('drag', function (pointer, dragX, dragY) {
+
+                                    let newX;
+                                    if (dragX < handleXMin)
+                                        newX = handleXMin;
+                                    else if (dragX > handleXMax)
+                                        newX = handleXMax;
+                                    else
+                                        newX = dragX;
+                                    this.x = newX;
+                                    updateBrushRect();
+
+                                    let domain = [scaleFun.invert(brushHandle1.x), scaleFun.invert(brushHandle2.x)]
+                                        .sort((a, b) => a - b);
+
+                                    updateWave(domain);
+                                    gameScene.waveForm.domain = domain;
+
+                                });
+                        };
+                        var updateBrushRect = () => {
+                            let newRectW = Phaser.Math.Distance.BetweenPoints(brushHandle1, brushHandle2);
+                            brushRect.x = Math.min(brushHandle1.x, brushHandle2.x) + handleW * 0.5;
+                            brushRect.width = newRectW;
+                        };
+                        var updateWave = (domain = null) => {
+
+                            var action = () => {
+                                gameScene.waveForm.getWaveImg(stationData, domain).then(success => {
+
+                                    let promises = success.map(d =>
+                                        new Promise((resolve, reject) => {
+                                            let key = d.svgName;
+                                            this.textures.removeKey(key);
+                                            this.load.svg(key, d.svg, { scale: 1 });
+                                            resolve();
+                                        })
+                                    );
+                                    //==避免波形沒更新到
+                                    Promise.all(promises).then(() => this.load.start());
+
+                                    gameScene.waveForm.svgArr = success;
+                                    gameScene.orbGroup.children.iterate(child => child.laserUpdateFlag = true);
+
+                                });
+                            };
+                            updateHandler(action, waveUpdateObj);
                         };
 
-                        this.add.image(x + 1, dy, 'overview_' + d.svgName)
-                            .setScale(1, scaleY)
-                            .setDepth(Depth.detector + 1);
-                    });
+                        //==避免頻繁刷新
+                        var waveUpdateObj = { updateFlag: true, updateTimeOut: null, updateDelay: 20 };
+                        var updateHandler = (action, updateObj = waveUpdateObj, parameter = null, mustDone = false) => {
 
-                    //==brush
-                    const rectX = x - 94, rectY = y - 88;
-                    const rectW = 191, rectH = 130;
-                    const handleW = 10,
-                        handleXMin = rectX - handleW * 0.5,
-                        handleXMax = rectX + rectW - handleW * 0.5;
-                    const scaleFun = gameScene.waveForm.overviewSvgArr.find(d => d.svgName == 'xAxis')
-                        .x.range([rectX, rectX + rectW]);
-
-                    const stationData = gameScene.gameData.stationData;
-
-                    let brushRect = this.add.rectangle(rectX, rectY, rectW, rectH, 0xEA7500)
-                        .setDepth(Depth.detector + 2)
-                        .setOrigin(0)
-                        .setAlpha(.3);
-
-                    let brushHandle1 = this.add.rectangle(handleXMin, rectY, handleW, rectH, 0xffffff)
-                        .setDepth(Depth.detector + 3)
-                        .setOrigin(0)
-                        .setAlpha(.1);
-
-                    let brushHandle2 = this.add.rectangle(handleXMax, rectY, handleW, rectH, 0xffffff)
-                        .setDepth(Depth.detector + 3)
-                        .setOrigin(0)
-                        .setAlpha(.1);
-
-                    // console.debug(brushHandle1);
+                            if (!updateObj.updateFlag)
+                                clearTimeout(updateObj.updateTimeOut);
 
 
+                            updateObj.updateTimeOut = setTimeout(() => {
+                                parameter ? action(...parameter) : action();
+                                updateObj.updateFlag = true;
+                            }, updateObj.updateDelay);
+
+                            updateObj.updateFlag = mustDone;
+
+                        };
+
+                        dragBehavior(brushHandle1);
+                        dragBehavior(brushHandle2);
+
+                        //==保留上次選取範圍
+                        let xAxisDomain = gameScene.waveForm.domain ? gameScene.waveForm.domain : null;
+                        if (xAxisDomain) {
+                            brushHandle1.x = scaleFun(xAxisDomain[0]);
+                            brushHandle2.x = scaleFun(xAxisDomain[1]);
+                            updateBrushRect();
+                        };
 
 
-                    var dragBehavior = (rect) => {
-                        rect.setInteractive({ draggable: true, cursor: 'col-resize' })
-                            .on('drag', function (pointer, dragX, dragY) {
-                                // console.debug(this);
-                                let newX;
-                                if (dragX < handleXMin)
-                                    newX = handleXMin;
-                                else if (dragX > handleXMax)
-                                    newX = handleXMax;
-                                else
-                                    newX = dragX;
-                                this.x = newX;
-                                updateBrushRect();
+                        //===按鈕
 
-                                let domain = [scaleFun.invert(brushHandle1.x), scaleFun.invert(brushHandle2.x)]
-                                    .sort((a, b) => a - b);
-                                // console.debug(domain);
-                                updateWave(domain);
-                                gameScene.waveForm.domain = domain;
+                        var buttonBehavior = (button) => {
 
-                            });
-                    };
-                    var updateBrushRect = () => {
-                        let newRectW = Phaser.Math.Distance.BetweenPoints(brushHandle1, brushHandle2);
-                        brushRect.x = Math.min(brushHandle1.x, brushHandle2.x) + handleW * 0.5;
-                        brushRect.width = newRectW;
-                    };
-                    var updateWave = (domain) => {
+                            let dy = 0, burshMove = null;
+                            switch (button.name) {
+                                case 'reset':
+                                    dy = 0;
+                                    burshMove = () => {
+                                        brushHandle1.x = handleXMin;
+                                        brushHandle2.x = handleXMax;
+                                    };
+                                    break;
+                                default:
+                                    dy = 13;
+                                    burshMove = () => {
+                                        if (button.name == 'changeSide') {
+                                            button.leftSide = !button.leftSide;
+                                        }
+                                        else {
+                                            let brushHandle =
+                                                detectorButtons.find(btn => btn.name == 'changeSide').leftSide ?
+                                                    brushHandle1 : brushHandle2;
+                                            let dir = button.name == 'shiftLeft' ? -1 : 1;
 
-                        var action = () => {
-                            gameScene.waveForm.getWaveImg(stationData, domain).then(success => {
+                                            let newX = brushHandle.x + 5 * dir;
+
+                                            if (newX < handleXMin)
+                                                newX = handleXMin;
+                                            else if (newX > handleXMax)
+                                                newX = handleXMax;
+
+                                            brushHandle.x = newX;
+                                        }
+                                    };
+                                    break;
+                            };
 
 
-
-                                let promises = success.map(d =>
-                                    new Promise((resolve, reject) => {
-                                        let key = d.svgName;
-                                        gameScene.textures.removeKey(key);
-                                        gameScene.load.svg(key, d.svg, { scale: 1 });
-                                        resolve();
+                            button.setInteractive({ cursor: 'pointer' })
+                                .on('pointerover', function () {
+                                    tooltipHandler(true, {
+                                        obj: this,
+                                        dy: dy,
+                                        text: this.name,
+                                        img: 'tooltip_button',
                                     })
-                                );
-                                //==避免波形沒更新到
-                                Promise.all(promises).then(() => gameScene.load.start());
-
-                                gameScene.waveForm.svgArr = success;
-                                gameScene.orbGroup.children.iterate(child => child.laserUpdateFlag = true);
-
-                            });
+                                })
+                                .on('pointerout', function () {
+                                    tooltipHandler(false);
+                                })
+                                .on('pointerdown', function () {
+                                    burshMove();
+                                    updateBrushRect();
+                                    let domain = [scaleFun.invert(brushHandle1.x), scaleFun.invert(brushHandle2.x)]
+                                        .sort((a, b) => a - b);
+                                    updateWave(domain);
+                                    gameScene.waveForm.domain = domain;
+                                });
                         };
-                        updateHandler(action, waveUpdateObj);
+
+                        let resetButton = this.add.circle(x + 60, y + 74, 18, 0xffffff)
+                            .setDepth(Depth.detector + 3)
+                            .setOrigin(0)
+                            .setAlpha(.01)
+                            .setName('reset');
+
+
+
+                        let detectorButtons = [resetButton];
+
+                        const handleButtonName = ['shiftLeft', 'changeSide', 'shiftRight'];
+                        const handle1BtnX = x - 91, handle1BtnY = y + 86;
+                        handleButtonName.forEach((d, i) => {
+                            let handleButton = this.add.rectangle(handle1BtnX + i * 51, handle1BtnY, 32, 11, 0xffffff)
+                                .setDepth(Depth.detector + 3)
+                                .setOrigin(0)
+                                .setAlpha(.01)
+                                .setName(d);
+
+                            if (d == 'changeSide') handleButton.leftSide = true;
+
+                            detectorButtons.push(handleButton);
+                        });
+
+
+
+
+
+                        detectorButtons.forEach(button => buttonBehavior(button));
+
                     };
-
-
-                    //==避免頻繁刷新
-                    var waveUpdateObj = { updateFlag: true, updateTimeOut: null, updateDelay: 20 };
-                    var updateHandler = (action, updateObj = waveUpdateObj, parameter = null, mustDone = false) => {
-
-                        if (!updateObj.updateFlag)
-                            clearTimeout(updateObj.updateTimeOut);
-
-
-                        updateObj.updateTimeOut = setTimeout(() => {
-                            parameter ? action(...parameter) : action();
-                            updateObj.updateFlag = true;
-                        }, updateObj.updateDelay);
-
-                        updateObj.updateFlag = mustDone;
-
+                    var initUpdateListener = () => {
+                        const keys = gameScene.waveForm.svgArr.map(d => d.svgName);
+                        this.load.on('filecomplete', (key) => {
+                            let i = keys.indexOf(key);
+                            gameScene.waveForm.gameObjs[i].setTexture(key);
+                        });
                     };
+                    initDetector();
+                    initBrushs();
+                    initUpdateListener();
 
-                    dragBehavior(brushHandle1);
-                    dragBehavior(brushHandle2);
-
-                    //==保留上次選取範圍
-                    let xAxisDomain = gameScene.waveForm.domain ? gameScene.waveForm.domain : null;
-                    if (xAxisDomain) {
-                        brushHandle1.x = scaleFun(xAxisDomain[0]);
-                        brushHandle2.x = scaleFun(xAxisDomain[1]);
-                        updateBrushRect();
-                    };
 
 
                 };
@@ -310,11 +426,84 @@ class UIScene extends Phaser.Scene {
                 create = () => { };
                 update = () => { };
                 break;
-        }
+            case 'a':
+                preload = () => { };
+                create = () => { };
+                update = () => { };
+                break;
+            case 'cursors'://==避免暫停後按鍵沒反應
+                preload = () => { };
+                create = () => {
+                    let keys = Object.values(controllCursor).join();
+                    this.cursors = this.input.keyboard.addKeys(keys);
+                };
+                update = () => { };
+                break;
+            default:
+                preload = () => { };
+                create = () => { console.debug('undefine UI: ' + key); };
+                update = () => { };
+                break;
+        };
+        let tooltip = {
+            tooltipHandler: (create = true, data = null) => {
 
-        this.preload = preload;
-        this.create = create;
-        this.update = update;
+                if (create) {
+                    let obj = data.obj;
+                    let x = obj.x + (obj.width * obj.scaleX) * 0.5;
+                    let y = obj.y + (obj.height * obj.scaleY) + 18 + (data.dy ? data.dy : 0);
+                    let tweensDuration = 200;
+                    console.debug(obj);
+                    //===tooltip
+                    let tooltip = this.add.text(x, y, data.text, {
+                        font: '30px sans-serif',
+                        fill: '#000000',
+                    })
+                        .setOrigin(0.5)
+                        .setDepth(Depth.tooltip)
+                        .setAlpha(0);
+
+                    this.tweens.add({
+                        targets: tooltip,
+                        repeat: 0,
+                        ease: 'Back.easeInOut',
+                        duration: tweensDuration * 2,
+                        alpha: 1,
+                    });
+
+                    //===background img
+                    let img = this.add.image(x, y + 1, data.img)
+                        .setOrigin(0.5)
+                        .setDepth(Depth.tooltip - 1);
+
+                    img.setScale(tooltip.width * 0.1 / img.width, tooltip.height / img.height);
+                    this.tweens.add({
+                        targets: img,
+                        repeat: 0,
+                        ease: 'Circ.easeInOut',
+                        duration: tweensDuration,
+                        scaleX: tooltip.width * 1.5 / img.width,
+                    });
+
+                    this.tooltip.tooltipGroup = [tooltip, img];
+
+                }
+                else {
+                    this.tooltip.tooltipGroup.forEach(obj => obj.destroy());
+                }
+
+            },
+            tooltipGroup: null,
+        };
+
+        Object.assign(this, {
+            preload: preload,
+            create: create,
+            update: update,
+            tooltip: tooltip,
+        });
+
+
     }
     preload() {
         this.preload();
@@ -329,21 +518,21 @@ class UIScene extends Phaser.Scene {
 };
 
 class DefendScene extends Phaser.Scene {
-    constructor(stationData, playerData, other) {
+    constructor(stationData, GameData, other) {
         super({ key: 'gameScene' });
+        // console.debug(stationData, GameData);
 
-        // console.debug(other);
         Object.assign(this, {
             name: 'defend',
             player: null,
             enemy: null,
-            cursors: null,
             orbGroup: null,
             platforms: null,
             gameTimer: null,
+            cursors: null,
             waveForm: {
-                overviewSvgArr: other.overviewSvgArr,
-                svgArr: other.waveSvgArr,
+                overviewSvgArr: null,
+                svgArr: null,
                 gameObjs: [],
                 getWaveImg: other.getWaveImg,
                 domain: stationData.stationStats.orbStats ? stationData.stationStats.orbStats.xAxisDomain : null,
@@ -352,10 +541,7 @@ class DefendScene extends Phaser.Scene {
                 flag: false,
                 resolve: other.resolve,
             },
-            gameData: {
-                stationData: stationData,
-                playerData: playerData,
-            },
+            gameData: Object.assign({ stationData: stationData }, GameData),
             getTimePoint: function (x) {
 
                 let xAxisObj = this.waveForm.svgArr.find(svg => svg.svgName == 'xAxis');
@@ -385,13 +571,11 @@ class DefendScene extends Phaser.Scene {
 
         });
 
-
         let stationStats = stationData.stationStats;
         let enemyStats = stationStats.enemyStats;
 
         this.aliveEnemy = Object.keys(enemyStats).filter(enemy => enemyStats[enemy].HP > 0);
         this.background = stationStats.background;
-
 
         console.debug(this);
     }
@@ -436,8 +620,19 @@ class DefendScene extends Phaser.Scene {
                 );
 
             };
-            var wave = () => {
-                this.waveForm.svgArr.forEach(d => this.load.svg(d.svgName, d.svg, { scale: 1 }));
+            var wave = async () => {
+                let stationData = this.gameData.stationData;
+                let xAxisDomain = stationData.stationStats.orbStats ? stationData.stationStats.orbStats.xAxisDomain : null;
+
+                //==getWaveSVG
+                this.waveForm.getWaveImg(stationData, xAxisDomain).then(success => {
+                    success.forEach(d => this.load.svg(d.svgName, d.svg, { scale: 1 }));
+                    this.waveForm.svgArr = success;
+                });
+
+                //==getOverviewSVG
+                this.waveForm.getWaveImg(stationData).then(success => this.waveForm.overviewSvgArr = success);
+
             };
             background();
             platform();
@@ -469,11 +664,15 @@ class DefendScene extends Phaser.Scene {
 
 
         };
+        var tooltip = () => {
+            const uiDir = assetsDir + 'ui/';
+            this.load.image('tooltip_button', uiDir + 'tooltip_button.png');
+        };
 
         environment();
         player();
         enemy();
-
+        tooltip();
 
     };
     create() {
@@ -483,14 +682,12 @@ class DefendScene extends Phaser.Scene {
 
         const stationStats = this.gameData.stationData.stationStats;
 
-
         const Depth = {
             platform: 3,
             station: 4,
             laser: 5,
             wave: 6,
             orbs: 7,
-            // detector: 8,
             enemy: 9,
             player: 10,
             pickUpObj: 11,
@@ -737,6 +934,7 @@ class DefendScene extends Phaser.Scene {
             var wave = () => {
 
                 const keys = this.waveForm.svgArr.map(d => d.svgName);
+
                 this.waveForm.gameObjs = keys.map((key, i) => {
                     let y = key == 'xAxis' ? height * 1.15 : height * (0.15 + 0.25 * i);
 
@@ -744,13 +942,6 @@ class DefendScene extends Phaser.Scene {
                         .setDepth(Depth.wave)
                         .setAlpha(.7);
                 });
-
-
-                this.load.on('filecomplete', (key) => {
-                    // console.debug(this.waveForm.svgArr);
-                    let i = keys.indexOf(key);
-                    this.waveForm.gameObjs[i].setTexture(key);
-                }, this);
 
             };
             var overview = () => {
@@ -803,10 +994,6 @@ class DefendScene extends Phaser.Scene {
 
 
             this.physics.add.collider(this.player, this.platforms);
-            // cursors = this.input.keyboard.createCursorKeys();
-
-            //===init cursors
-            this.cursors = this.input.keyboard.addKeys('w,s,a,d,space,p,q,e');
 
             //===init attack
             var bullets = this.physics.add.group({
@@ -817,8 +1004,9 @@ class DefendScene extends Phaser.Scene {
             });
 
             //======custom
+
             Object.assign(this.player, {
-                stats: Object.assign({}, this.gameData.playerData.playerStats),
+                stats: Object.assign({}, this.gameData.playerStats),
                 stopCursorsFlag: false,
                 invincibleFlag: false,//無敵時間
                 playerTurnLeft: false,//==判斷子彈方向
@@ -842,13 +1030,14 @@ class DefendScene extends Phaser.Scene {
                     if (this.stopCursorsFlag) return;
 
                     let cursors = scene.cursors;
+                    let controllCursor = scene.gameData.controllCursor;
 
-                    if (cursors.a.isDown) {
+                    if (cursors[controllCursor['left']].isDown) {
                         this.setVelocityX(-this.stats.movementSpeed);
                         this.anims.play('player_left', true);
                         this.playerTurnLeft = true;
                     }
-                    else if (cursors.d.isDown) {
+                    else if (cursors[controllCursor['right']].isDown) {
                         this.setVelocityX(this.stats.movementSpeed);
                         this.anims.play('player_right', true);
                         this.playerTurnLeft = false;
@@ -859,7 +1048,7 @@ class DefendScene extends Phaser.Scene {
                     };
 
                     //==跳
-                    if (cursors.w.isDown && this.body.touching.down) {
+                    if (cursors[controllCursor['up']].isDown && this.body.touching.down) {
                         this.setVelocityY(-this.stats.jumpingPower);
                     };
 
@@ -867,7 +1056,10 @@ class DefendScene extends Phaser.Scene {
                 //==撿起
                 pickingHadler: function (scene) {
 
-                    if (Phaser.Input.Keyboard.JustDown(scene.cursors.s)) {
+                    let cursors = scene.cursors;
+                    let controllCursor = scene.gameData.controllCursor;
+
+                    if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['down']])) {
 
                         // console.debug(orbStats);
                         if (this.pickUpObj) {  //==put down
@@ -908,7 +1100,10 @@ class DefendScene extends Phaser.Scene {
                 //==攻擊
                 attackHandler: function (scene) {
 
-                    if (Phaser.Input.Keyboard.JustDown(scene.cursors.space)) {
+                    let cursors = scene.cursors;
+                    let controllCursor = scene.gameData.controllCursor;
+
+                    if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['attack']])) {
                         if (this.stats.MP < this.stats.manaCost) return;
 
                         var bullet = bullets.get();
@@ -919,7 +1114,6 @@ class DefendScene extends Phaser.Scene {
                             // bullet.setMass(1);
                             bullet.body.setSize(30, 40);
                             this.statsChangeHandler({ MP: this.stats.MP -= this.stats.manaCost }, this);
-                            // console.debug(this.stats);
                         }
                     };
                 },
@@ -1037,7 +1231,7 @@ class DefendScene extends Phaser.Scene {
         };
         var initTimer = () => {
             //==計時,時間到進入結算
-            let timeRemain = this.gameData.playerData.timeRemain;
+            let timeRemain = this.gameData.timeRemain;
             this.gameTimer = this.time.delayedCall(timeRemain, () => this.gameOver.flag = true, [], this);
             this.gameTimer.timerText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#000' }).setDepth(Depth.UI);
 
@@ -1046,12 +1240,22 @@ class DefendScene extends Phaser.Scene {
         var initIconBar = () => {
             this.scene.add(null, new UIScene('iconBar', this), true);
         };
+        var initCursors = () => {
+            //===init cursors
+            this.cursors = this.scene.add(null, new UIScene('cursors', this), true).cursors;
 
+        };
+
+        //==UI
+        initCursors();
+        initIconBar();
+
+        //==gameScene
         initEnvironment();
         initEnemy();
         initPlayer();
         initTimer();
-        initIconBar();
+
 
 
 
@@ -1067,7 +1271,6 @@ class DefendScene extends Phaser.Scene {
             this.player.pickingHadler(this);
             this.player.attackHandler(this);
 
-            // let cursors = this.cursors;
             let playerStats = this.player.stats;
             if (playerStats.MP < playerStats.maxMP)
                 this.player.statsChangeHandler({ MP: playerStats.MP += playerStats.manaRegen }, this);//自然回魔
@@ -1103,7 +1306,7 @@ class DefendScene extends Phaser.Scene {
         var updateTimer = () => {
 
             let gameTimer = this.gameTimer;
-            let timeRemain = this.gameData.playerData.timeRemain;
+            let timeRemain = this.gameData.timeRemain;
             let timeVal = parseInt(timeRemain - gameTimer.getElapsed());
             let text = 'TimeLeft : ' + timeVal + ' ms';
             gameTimer.timeVal = timeVal;
@@ -1143,7 +1346,11 @@ class DefendScene extends Phaser.Scene {
                 //==更新角色資料(剩餘時間、能力值...)
                 playerInfo: {
                     timeRemain: this.gameTimer.timeVal,
-                    playerStats: this.player.stats,
+                    playerStats: Object.assign(this.gameData.playerStats, {
+                        HP: this.player.stats.HP,
+                        MP: this.player.stats.MP,
+                    }),
+                    controllCursor: this.gameData.controllCursor,
                 },
                 //==更新測站資料(半徑情報....)
                 stationInfo: {

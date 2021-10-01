@@ -157,7 +157,6 @@ function locatingGame() {
     async function game() {
 
         const chartContainerJQ = $(selector);
-        const chartContainerD3 = d3.select(selector);
 
         //===append map,gameDiv..etc
         function initForm() {
@@ -371,9 +370,10 @@ function locatingGame() {
                         pause: 'p',
                         backpack: 'i',
                         detector: 'o',
-                        detectorLeft: 'q',
-                        detectorRight: 'e',
-
+                        shiftLeft: 'q',
+                        shiftRight: 'e',
+                        changeSide: 'c',
+                        reset: 'r',
 
                     },
                     playerStats: GameObjectStats.player['mage'],
@@ -461,8 +461,8 @@ function locatingGame() {
 
                     data.forEach((d, i) => {
                         // console.debug(d);
-                        // let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
-                        let enemy = [];//==之後隨機抽敵人組
+                        let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
+                        // let enemy = [];//==之後隨機抽敵人組
                         let enemyStats = {};
 
 

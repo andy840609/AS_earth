@@ -766,20 +766,16 @@ function locatingGame() {
                         let allOrbActived = orbStats.every(d => d.isInRange == true);
                         // console.debug(allOrbActived);
 
-                        if (allOrbActived) {
-                            let timeGap = Math.abs(orbStats[0].time - orbStats[1].time);
 
-                            //距離=時間*速度(目前先用7.5),km換算成m;
-                            let radius = timeGap * 7.5 * 1000;
+                        let timeGap = Math.abs(orbStats[0].time - orbStats[1].time);
 
-                            //==半徑跟之前一樣不作動畫
-                            let pre_radius = stationMarker.options.data.circleObj.getRadius();
-                            if (radius != pre_radius)
-                                updateStation(stationMarker, { circleRadius: radius });
-                        }
-                        else {
-                            updateStation(stationMarker, { circleRadius: 0 });
-                        }
+                        //距離=時間*速度(目前先用7.5),km換算成m;
+                        let radius = timeGap * 7.5 * 1000;
+
+                        //==半徑跟之前相差大於1不作動畫
+                        let pre_radius = stationMarker.options.data.circleObj.getRadius();
+                        if (Math.abs(radius - pre_radius) > 1)
+                            updateStation(stationMarker, { circleRadius: radius });
 
 
 

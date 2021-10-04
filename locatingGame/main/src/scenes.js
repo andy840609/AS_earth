@@ -124,7 +124,7 @@ class UIScene extends Phaser.Scene {
                 create = () => {
                     // =menu
                     const menuH_scale = 0.9;
-                    const tweensDuration = 1000;
+                    const tweensDuration = 500;
 
                     let menu = this.add.image(width * 0.5, height * 0.5, 'menu');
                     menu.scaleX = width * 0.5 / menu.width;
@@ -148,12 +148,26 @@ class UIScene extends Phaser.Scene {
                         let y = menuY + buttonGap * (i + 1);
                         let menuButton = this.add.image(menu.x, y, 'menuButton');
                         let buttonText = this.add.text(menu.x, y, button, { font: '40px Arial', fill: '#ffffff' })
-                            .setOrigin(0.5);
+                            .setOrigin(0.5).setAlpha(0);
+                        let buttonScale = buttonText.height * 2 / menuButton.height;
 
                         menuButton
-                            .setScale(0, buttonText.height * 2 / menuButton.height)//menu.width / 4 / menuButton.width
-                            .setInteractive()
-                            .on('pointerdown', (pointer) => {
+                            .setScale(0, buttonScale)//menu.width / 4 / menuButton.width
+                            .setInteractive({ cursor: 'pointer' })
+                            .on('pointerover', function () {
+                                let scale = 1.2;
+                                this.setScale(buttonScale * scale);
+                                buttonText
+                                    .setScale(scale)
+                                    .setTint(0xFFFF37);
+                            })
+                            .on('pointerout', function () {
+                                this.setScale(buttonScale);
+                                buttonText
+                                    .setScale(1)
+                                    .clearTint();
+                            })
+                            .on('pointerdown', () => {
                                 switch (button) {
                                     case 'resume':
                                         // console.debug(gameScene);
@@ -182,22 +196,16 @@ class UIScene extends Phaser.Scene {
 
                     });
 
-                    console.debug(buttonGroup);
-
 
                     this.tweens.add({
                         targets: buttonGroup.map(g => g.button),
                         repeat: 0,
                         ease: 'linear',
-                        duration: 300,
+                        duration: tweensDuration * 0.2,
                         delay: tweensDuration * 0.5,
-                        // x: { from: 0, to: 1 },
+                        x: { from: menu.x - menu.displayWidth * 0.3, to: menu.x },
                         scaleX: {
-                            from: 0, to: (target) => {
-                                // buttonText.height * 2 / menuButton.height
-                                console.debug(target.scale)
-                                return buttonGroup[0].text.height * 2 / target.height;
-                            }
+                            from: 0, to: (target) => buttonGroup[0].text.height * 2 / target.height
                         },
 
                     });
@@ -207,7 +215,7 @@ class UIScene extends Phaser.Scene {
                         targets: buttonGroup.map(g => g.text),
                         repeat: 0,
                         ease: 'linear',
-                        duration: tweensDuration * 2,
+                        duration: tweensDuration,
                         delay: tweensDuration * 0.5,
                         alpha: { from: 0, to: 1 },
                     });
@@ -222,9 +230,11 @@ class UIScene extends Phaser.Scene {
                 break;
             case 'detectorUI':
                 let detectorButtons;
+                const orbs = gameScene.orbGroup.getChildren();
                 preload = () => {
                     const dir = assetsDir + 'gameObj/environment/overview/';
                     this.load.image('detector', dir + 'detector.png');
+                    this.load.image('detectorScreen', dir + 'detectorScreen.png');
                     gameScene.waveForm.overviewSvgArr.forEach(d => this.load.svg('overview_' + d.svgName, d.svg, {
                         // scale: 0.3
                         width: 208,
@@ -237,40 +247,55 @@ class UIScene extends Phaser.Scene {
                     const tooltipHandler = tooltip.tooltipHandler;
 
                     const x = width - 140, y = 185;
+                    //==brush
+                    const rectX = x - 94, rectY = y - 88;
+                    const rectW = 191, rectH = 130;
+                    const handleW = 10,
+                        handleXMin = rectX - handleW * 0.5,
+                        handleXMax = rectX + rectW - handleW * 0.5;
+                    const scaleFun = gameScene.waveForm.overviewSvgArr.find(d => d.svgName == 'xAxis').x
+                        .range([handleXMin, handleXMax]);
 
                     var initDetector = () => {
-                        let detector = this.add.image(0, 0, 'detector')
-                            .setOrigin(0.5)
-                            .setScale(0.2)
-                            .setDepth(Depth.detector);
-                        detector.setPosition(x, y)
+                        var detector = () => {
+                            let scale = 0.2;
+                            this.add.image(x, y, 'detector')
+                                .setOrigin(0.5)
+                                .setScale(scale)
+                                .setDepth(Depth.detector + 5);
 
-                        gameScene.waveForm.overviewSvgArr.forEach((d, i) => {
-                            let dy, scaleY;
-                            if (d.svgName == 'xAxis') {
-                                dy = y + 70;
-                                scaleY = 1;
-                            }
-                            else {
-                                dy = y + (35 * i) - 65;
-                                scaleY = 0.6;
-                            };
+                            this.add.image(x + 0.5, y - 22, 'detectorScreen')
+                                .setOrigin(0.5)
+                                .setScale(scale)
+                                .setDepth(Depth.detector);
+                        };
+                        var wave = () => {
+                            gameScene.waveForm.overviewSvgArr.forEach((d, i) => {
+                                let dy, scaleY;
+                                if (d.svgName == 'xAxis') {
+                                    dy = y + 70;
+                                    scaleY = 1;
+                                }
+                                else {
+                                    dy = y + (35 * i) - 65;
+                                    scaleY = 0.6;
+                                };
 
-                            this.add.image(x + 1, dy, 'overview_' + d.svgName)
-                                .setScale(1, scaleY)
-                                .setDepth(Depth.detector + 1);
-                        });
+                                this.add.image(x + 1, dy, 'overview_' + d.svgName)
+                                    .setScale(1, scaleY)
+                                    .setDepth(Depth.detector + 1);
+                            });
+
+                        };
+
+                        detector();
+                        wave();
+
                     };
-                    var initBrushs = () => {
-                        //==brush
-                        const rectX = x - 94, rectY = y - 88;
-                        const rectW = 191, rectH = 130;
-                        const handleW = 10,
-                            handleXMin = rectX - handleW * 0.5,
-                            handleXMax = rectX + rectW - handleW * 0.5;
-                        const scaleFun = gameScene.waveForm.overviewSvgArr.find(d => d.svgName == 'xAxis').x
-                            .range([handleXMin, handleXMax]);
+                    var initBrushes = () => {
 
+                        const getTimePoint = gameScene.getTimePoint;
+                        const groundY = gameScene.platforms.getChildren()[0].y - 40;
                         // console.debug(scaleFun.domain(), scaleFun.range());
 
                         const stationData = gameScene.gameData.stationData;
@@ -334,8 +359,23 @@ class UIScene extends Phaser.Scene {
                                     //==避免波形沒更新到
                                     Promise.all(promises).then(() => this.load.start());
 
+
+                                    //==更新寶珠位置（在固定時間點）
                                     gameScene.waveForm.svgArr = success;
-                                    gameScene.orbGroup.children.iterate(child => child.laserUpdateFlag = true);
+
+                                    orbs.forEach(orb => {
+                                        if (orb.beholdingFlag) return;
+
+                                        let orbStats = getTimePoint(orb.orbStats.time, true);
+                                        orb.setPosition(orbStats.position, groundY);
+                                        orb.orbStats = orbStats;
+                                        orb.laserUpdateFlag = true;
+
+                                        // console.debug(gameScene.waveForm.svgArr[3].x.domain());
+                                        orb.statusHadler(null, false, orbStats.isInRange);
+
+                                    });
+
 
                                 });
                             };
@@ -437,8 +477,6 @@ class UIScene extends Phaser.Scene {
                             .setAlpha(.01)
                             .setName('reset');
 
-
-
                         detectorButtons = [resetButton];
 
                         const handleButtonName = ['shiftLeft', 'changeSide', 'shiftRight'];
@@ -455,10 +493,6 @@ class UIScene extends Phaser.Scene {
                             detectorButtons.push(handleButton);
                         });
 
-
-
-
-
                         detectorButtons.forEach(button => buttonBehavior(button));
 
                     };
@@ -469,23 +503,61 @@ class UIScene extends Phaser.Scene {
                             gameScene.waveForm.gameObjs[i].setTexture(key);
                         });
                     };
+                    var initMapIcon = () => {
+
+                        // console.debug(scaleFun.range(), scaleFun.domain());
+
+                        this.orbIcons = orbs.map(orb => {
+
+                            let orbStats = orb.orbStats;
+                            let orbX = scaleFun(orbStats.time) + handleW * 0.5;
+
+                            let orbIcon = this.add.sprite(orbX, y + 25, 'instrument')
+                                .setOrigin(0.5)
+                                .setScale(0.1)
+                                .setDepth(Depth.detector + 2)
+                                .anims.play('orb_inactive', true);
+
+                            orbIcon.anims.msPerFrame = 600;
+
+                            orbIcon.updatePos = function () {
+                                // console.debug('updatePos');
+                                let x = scaleFun(orb.orbStats.time) + handleW * 0.5;
+                                this.x = x;
+                                let isInScreen = x > handleXMin && x < (handleXMax + handleW);
+                                this.setVisible(isInScreen);
+                            };
+
+                            return orbIcon;
+                        });
+
+
+                    };
                     initDetector();
-                    initBrushs();
+                    initBrushes();
                     initUpdateListener();
+                    initMapIcon();
 
 
 
                 };
                 update = () => {
-
-                    let cursors = gameScene.cursors;
-                    detectorButtons.forEach(button => {
-
-                        if (cursors[controllCursor[button.name]].isDown) {
-                            button.emit('pointerdown');
-                        };
-
-                    });
+                    var updateButton = () => {
+                        let cursors = gameScene.cursors;
+                        detectorButtons.forEach(button => {
+                            if (cursors[controllCursor[button.name]].isDown) {
+                                button.emit('pointerdown');
+                            };
+                        });
+                    };
+                    var updateIcon = () => {
+                        orbs.forEach((orb, i) => {
+                            if (orb.beholdingFlag)
+                                this.orbIcons[i].updatePos();
+                        });
+                    };
+                    updateButton();
+                    updateIcon();
                 };
                 break;
             case 'c':
@@ -517,11 +589,10 @@ class UIScene extends Phaser.Scene {
 
                 if (create) {
                     let obj = data.obj;
-                    let x = obj.x + (obj.width * obj.scaleX) * (0.5 - obj.originX);
-                    let y = obj.y + (obj.height * obj.scaleY) * (1 - obj.originY) + 18 + (data.dy ? data.dy : 0);
+                    let x = obj.x + obj.displayWidth * (0.5 - obj.originX);
+                    let y = obj.y + obj.displayHeight * (1 - obj.originY) + 18 + (data.dy ? data.dy : 0);
                     let hotKeyString = controllCursor[obj.name];
                     let text = obj.name + (hotKeyString ? `(${hotKeyString})` : '');
-
                     let tweensDuration = 200;
 
                     //===tooltip
@@ -614,13 +685,13 @@ class DefendScene extends Phaser.Scene {
                 resolve: other.resolve,
             },
             gameData: Object.assign({ stationData: stationData }, GameData),
-            getTimePoint: function (x) {
-
+            getTimePoint: (x, getPosition = false) => {
+                // console.debug(this);
                 let xAxisObj = this.waveForm.svgArr.find(svg => svg.svgName == 'xAxis');
                 let scaleFun = xAxisObj.x;
 
                 let width = this.sys.game.canvas.width;
-                let waveObjWidth = this.waveForm.gameObjs[0].width;
+                let waveObjWidth = this.waveForm.gameObjs[0].displayWidth;
                 let margin = xAxisObj.margin;
 
                 let xAxisRange = [
@@ -628,16 +699,33 @@ class DefendScene extends Phaser.Scene {
                     (width + waveObjWidth) * 0.5 - margin.left,
                 ];
                 scaleFun.range(xAxisRange);
-                // console.debug(scaleFun.range());
+                if (scaleFun.domain()[0] == scaleFun.domain()[1])
+                    scaleFun.domain([scaleFun.domain()[0] - 1, scaleFun.domain()[0] + 1]);
 
-                let time = scaleFun.invert(x);
-                let isInRange = (x >= xAxisRange[0] && x <= xAxisRange[1]);
+                // console.debug(scaleFun.domain());
 
-                return {
-                    time: time,
-                    isInRange: isInRange,
-                    position: x,
+                let statsObj;
+                if (getPosition) {
+                    let position = scaleFun(x);
+                    let isInRange = (position >= xAxisRange[0] && position <= xAxisRange[1]);
+                    statsObj = {
+                        time: x,
+                        isInRange: isInRange,
+                        position: position,
+                    };
+                }
+                else {
+                    let time = scaleFun.invert(x);
+                    let isInRange = (x >= xAxisRange[0] && x <= xAxisRange[1]);
+                    statsObj = {
+                        time: time,
+                        isInRange: isInRange,
+                        position: x,
+                    };
                 };
+
+
+                return statsObj;
 
             },
 
@@ -784,11 +872,10 @@ class DefendScene extends Phaser.Scene {
             // console.debug()
             var station = () => {
                 let station = this.gameData.stationData.station;
-                this.add.image(width * 0.92, height * 0.53, 'station')
-                    .setScale(1, 0.63)
+                let img = this.add.image(width * 0.92, height * 0.53, 'station')
                     .setDepth(Depth.station);
-                // this.add.image(width * 0.12, height * 0.53, 'title')
-                //     .setScale(0.1, 0.15).setRotation(0.1).setPosition(width * 0.12, height * 0.53, 100, 100);
+                img.setScale(1, height / img.height);
+
                 this.add.text(width * 0.88, height * 0.46, station, { fontSize: '32px', fill: '#000' })
                     .setRotation(-0.1).setOrigin(0.5, 0.5).setDepth(Depth.station);
             };
@@ -889,17 +976,19 @@ class DefendScene extends Phaser.Scene {
                 animsCreate();
 
                 let orbStats = stationStats.orbStats;
-                // console.debug(this.waveForm);
+                // console.debug(orbStats);
                 this.orbGroup.children.iterate((child, i) => {
 
                     let activate, orbPosition;
                     if (orbStats) {
                         activate = orbStats[i].isInRange;
                         orbPosition = orbStats[i].position;
+                        child.orbStats = orbStats[i];
                     }
                     else {
                         activate = false;
-                        orbPosition = width * 0.89 + i * 15;
+                        orbPosition = width * 0.85;
+                        child.orbStats = this.getTimePoint(orbPosition);
                     };
 
                     child.setPosition(orbPosition, height * 0.8);
@@ -932,9 +1021,9 @@ class DefendScene extends Phaser.Scene {
                         beholdingFlag: false,
                         activateFlag: activate,
                         statusHadler: function (pickUper = null, beholding = false, activate = true) {
-                            // console.debug(this);
+                            // console.debug('statusHadler');
 
-
+                            //===改變被撿放寶珠屬性
                             if (beholding) {//pick up                         
                                 this.body.setMaxVelocityY(0);
                                 this.setDepth(Depth.pickUpObj);
@@ -947,6 +1036,8 @@ class DefendScene extends Phaser.Scene {
                                 this.laserUpdateFlag = true;
                             };
 
+
+                            //===改變撿起者屬性
                             if (pickUper) {
                                 let newCharacterStats;
                                 if (beholding) {
@@ -969,16 +1060,14 @@ class DefendScene extends Phaser.Scene {
                             };
 
 
+                            //===改變雷射和時間標籤
                             if (activate) {
                                 this.laserObj
                                     .enableBody(false, 0, 0, true, true)
                                     // .setPosition(child.x, child.y + 20)
                                     .anims.play('orb_laser', true);
 
-                                this.timeText
-                                    .setVisible(true)
-                                    .setPosition(child.x, 650);
-
+                                this.timeText.setVisible(true);
                             }
                             else {
                                 this.laserObj.disableBody(true, true);
@@ -1029,8 +1118,8 @@ class DefendScene extends Phaser.Scene {
             platform();
             station();
             wave();
-            // overview();
             instrument();
+            overview();
 
         };
         var initPlayer = () => {
@@ -1142,10 +1231,7 @@ class DefendScene extends Phaser.Scene {
                         // console.debug(orbStats);
                         if (this.pickUpObj) {  //==put down
 
-                            // console.debug(this.pickUpObj.laserObj.body);
-                            // console.debug(timePoint.isInRange);
-                            let timePoint = scene.getTimePoint(this.pickUpObj.x);
-                            this.pickUpObj.statusHadler(this, false, timePoint.isInRange);
+                            this.pickUpObj.statusHadler(this, false, this.pickUpObj.orbStats.isInRange);
                             this.pickUpObj = null;
 
                         }
@@ -1356,17 +1442,20 @@ class DefendScene extends Phaser.Scene {
             this.orbGroup.children.iterate(child => {
 
                 if (child.beholdingFlag || (child.laserUpdateFlag && child.body.touching.down)) {
+                    // console.debug('update orb');
+                    child.orbStats = this.getTimePoint(child.x);
                     let laserObj = child.laserObj;
 
                     laserObj.setPosition(child.x, child.y + 20);
 
+                    let groundObj = this.platforms.getChildren()[0];
                     if (child.activateFlag)
                         child.timeText
-                            .setPosition(child.x, 650)
-                            .setText(this.getTimePoint(child.x).time.toFixed(2));
+                            .setPosition(child.x, groundObj.y - groundObj.displayHeight * 0.15)
+                            .setText(child.orbStats.time.toFixed(2));
 
                     child.laserUpdateFlag = false;
-                }
+                };
 
 
             });
@@ -1408,7 +1497,7 @@ class DefendScene extends Phaser.Scene {
             this.gameTimer.remove();
 
             //===get gameResult 
-            let orbStats = this.orbGroup.getChildren().map(orb => this.getTimePoint(orb.x));
+            let orbStats = this.orbGroup.getChildren().map(orb => orb.orbStats);
 
             let enemyStats = this.gameData.stationData.stationStats.enemyStats;
             let gameResult = {

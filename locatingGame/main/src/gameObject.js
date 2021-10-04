@@ -5,7 +5,7 @@ const GameObjectStats = {
         dog: {
             HP: 100000,
             attackPower: 10,
-            movementSpeed: 300,
+            movementSpeed: 200,
             jumpingPower: 0,
         },
         cat: {
@@ -314,7 +314,7 @@ const Enemy = new Phaser.Class({
                                 this.anims.play('dog_Walk', true);
                                 // ==== accelerateToObject(gameObject, destination, acceleration, xSpeedMax, ySpeedMax);
                                 let speed = this.stats.movementSpeed;
-                                scene.physics.accelerateToObject(this, player, speed, speed * 1.3);
+                                scene.physics.accelerateToObject(this, player, speed, speed * 1.1);
                                 // this.physics.moveToObject(this, player, 500, chasingDuration);
 
                                 //==時間到後休息restFlag= true        

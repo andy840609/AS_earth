@@ -14,14 +14,17 @@ class UIScene extends Phaser.Scene {
             tooltip: 30,
         };
         const controllCursor = gameScene.gameData.controllCursor;
+        const UItextJSON = gameScene.gameData.languageJSON.UI;
 
         let preload, create, update;
         switch (key) {
             case 'iconBar':
                 let buttonArr;
+                const eachButtonW = 85;
+                this.orbs = gameScene.orbGroup.getChildren();
                 switch (gameScene.name) {
                     case 'defend':
-                        buttonArr = ['pause', 'backpack', 'detector'];
+                        buttonArr = ['detector', 'backpack', 'pause', 'exit'];
                         // buttonArr = ['pause', 'detector'];
                         break;
                     case 'dig':
@@ -42,28 +45,36 @@ class UIScene extends Phaser.Scene {
                     const tooltip = this.tooltip;
                     const tooltipHandler = tooltip.tooltipHandler;
 
-                    const barWidth = buttonArr.length * 85;
+                    this.gameClear = gameScene.gameData.stationData.stationStats.clear;//==判斷離開出現在bar上
+                    const buttonCount = buttonArr.length - !this.gameClear;
+
+
+                    const barWidth = buttonCount * eachButtonW;
                     const barHeight = 50;
                     const barX = width - 15 - barWidth;
                     const barY = 5;
                     const barRadius = 25;
                     const iconWidth = 40;
                     //== Create background bar
+                    // console.debug(this.children.list);
 
-                    let graphics = this.add.graphics();
+                    let graphics = this.add.graphics()
+                        .setPosition(barX, barY)
+                        .setDepth(Depth.UI)
+                        .setName('iconBar');
+
                     graphics.fillStyle(0xE0E0E0, .5);
                     graphics.lineStyle(4, 0xffffff, .5);
 
-                    graphics.fillRoundedRect(barX, barY, barWidth, barHeight, barRadius)
-                        .setDepth(Depth.UI)
-
-                    graphics.strokeRoundedRect(barX, barY, barWidth, barHeight, barRadius)
-                        .setDepth(Depth.UI);
+                    graphics.fillRoundedRect(0, 0, barWidth, barHeight, barRadius);
+                    graphics.strokeRoundedRect(0, 0, barWidth, barHeight, barRadius);
 
 
-                    buttonArr.forEach((button, i) => {
+
+
+                    this.iconButtons = buttonArr.map((button, i) => {
                         let key = button + '_icon';
-                        let iconButton = this.add.image(barX + barWidth * ((i + 1) / (buttonArr.length + 1)), barY + barHeight * 0.5, key)
+                        let iconButton = this.add.image(barX + barWidth * (1 - (i + 1) / (buttonCount + 1)), barY + barHeight * 0.5, key)
                             .setDepth(Depth.UI)
                             .setName(button);
 
@@ -71,11 +82,10 @@ class UIScene extends Phaser.Scene {
                         iconButton.setScale(scale);
                         iconButton.setInteractive({ cursor: 'pointer' })
                             .on('pointerover', function () {
-
                                 iconButton.setScale(scale * 1.3);
                                 tooltipHandler(true, {
                                     obj: this,
-                                    img: 'tooltip_button',
+                                    img: 'tooltipButton',
                                 });
                             })
                             .on('pointerout', function () {
@@ -92,21 +102,87 @@ class UIScene extends Phaser.Scene {
                                 // this.scene.resume();
                             });
 
+                        if (!this.gameClear && button == 'exit')
+                            iconButton.setVisible(false);
+
+                        return iconButton;
                     });
 
                 };
                 update = () => {
 
-                    let cursors = gameScene.cursors;
+                    var updateBar = () => {
+                        if (this.gameClear) return;
 
-                    buttonArr.forEach(button => {
-                        if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor[button]])) {
-                            let iconButton = this.children.getByName(button);
-                            iconButton.emit('pointerdown');
+                        let orb1 = this.orbs[0];
+                        let orb2 = this.orbs[1];
+                        let isAllActive = orb1.laserObj.active && !orb1.beholdingFlag &&
+                            orb2.laserObj.active && !orb2.beholdingFlag;
+                        let isDiffPos = orb1.x != orb2.x;
+
+                        if (isAllActive && isDiffPos) {
+                            // if (true) {
+                            let exitButton = this.children.getByName('exit');
+                            let iconBar = this.children.getByName('iconBar');
+
+                            const tweensDuration = 1000;
+
+
+                            //===iconBar 伸長
+                            this.tweens.add({
+                                targets: iconBar,
+                                repeat: 0,
+                                ease: 'Expo.easeInOut',
+                                duration: tweensDuration,
+                                scaleX: { from: 1, to: buttonArr.length / (buttonArr.length - 1) },
+                                x: { from: iconBar.x, to: iconBar.x - eachButtonW },
+                            });
+
+                            //===iconButtons 調整位置
+                            this.tweens.add({
+                                targets: this.iconButtons,
+                                repeat: 0,
+                                ease: 'Expo.easeInOut',
+                                duration: tweensDuration,
+                                x: {
+                                    from: (target) => target.x,
+                                    to: (target, key, value, i, length) =>
+                                        iconBar.x + eachButtonW * (length * (1 - (i + 1) / (length + 1)) - 1)
+                                },
+                            });
+
+                            //===exitButton 動畫
+                            let iconButtonScale = this.iconButtons[0].scale;
+
+                            this.tweens.add({
+                                targets: exitButton,
+                                repeat: 0,
+                                ease: 'Circ',
+                                duration: tweensDuration * 0.2,
+                                delay: tweensDuration * 0.6,
+                                yoyo: true,
+                                scale: { from: iconButtonScale, to: iconButtonScale * 1.5 },
+                                onStart: () => exitButton.setVisible(true),
+                            });
+
+                            this.gameClear = true;
                         };
 
-                    });
 
+                    };
+                    var hotkeyPress = () => {
+                        let cursors = gameScene.cursors;
+                        buttonArr.forEach(button => {
+                            if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor[button]])) {
+                                if (button == 'exit' && !this.gameClear) return;
+                                let iconButton = this.children.getByName(button);
+                                iconButton.emit('pointerdown');
+                            };
+
+                        });
+                    };
+                    hotkeyPress();
+                    updateBar();
                 };
                 break;
             case 'pauseUI':
@@ -147,7 +223,7 @@ class UIScene extends Phaser.Scene {
                     let buttonGroup = buttons.map((button, i) => {
                         let y = menuY + buttonGap * (i + 1);
                         let menuButton = this.add.image(menu.x, y, 'menuButton');
-                        let buttonText = this.add.text(menu.x, y, button, { font: '40px Arial', fill: '#ffffff' })
+                        let buttonText = this.add.text(menu.x, y, UItextJSON[button], { font: '40px Arial', fill: '#ffffff' })
                             .setOrigin(0.5).setAlpha(0);
                         let buttonScale = buttonText.height * 2 / menuButton.height;
 
@@ -181,8 +257,7 @@ class UIScene extends Phaser.Scene {
                                         break;
 
                                     case 'exit':
-                                        gameScene.gameOver.flag = true;
-                                        gameScene.scene.resume();
+                                        this.scene.add(null, new UIScene('exitUI', this), true);
                                         this.scene.remove();
                                         break;
                                 }
@@ -230,7 +305,7 @@ class UIScene extends Phaser.Scene {
                 break;
             case 'detectorUI':
                 let detectorButtons;
-                const orbs = gameScene.orbGroup.getChildren();
+                this.orbs = gameScene.orbGroup.getChildren();
                 preload = () => {
                     const dir = assetsDir + 'gameObj/environment/overview/';
                     this.load.image('detector', dir + 'detector.png');
@@ -293,12 +368,11 @@ class UIScene extends Phaser.Scene {
 
                     };
                     var initBrushes = () => {
+                        const stationData = gameScene.gameData.stationData;
 
                         const getTimePoint = gameScene.getTimePoint;
-                        const groundY = gameScene.platforms.getChildren()[0].y - 40;
-                        // console.debug(scaleFun.domain(), scaleFun.range());
+                        const groundObj = gameScene.platforms.getChildren()[0];
 
-                        const stationData = gameScene.gameData.stationData;
 
                         let brushRect = this.add.rectangle(rectX, rectY, rectW, rectH, 0xEA7500)
                             .setDepth(Depth.detector + 2)
@@ -363,16 +437,15 @@ class UIScene extends Phaser.Scene {
                                     //==更新寶珠位置（在固定時間點）
                                     gameScene.waveForm.svgArr = success;
 
-                                    orbs.forEach(orb => {
+                                    this.orbs.forEach(orb => {
                                         if (orb.beholdingFlag) return;
 
-                                        let orbStats = getTimePoint(orb.orbStats.time, true);
-                                        orb.setPosition(orbStats.position, groundY);
-                                        orb.orbStats = orbStats;
+                                        orb.orbStats = getTimePoint(orb.orbStats.time, true);
+                                        orb.setPosition(orb.orbStats.position, groundObj.y - 40);
                                         orb.laserUpdateFlag = true;
 
                                         // console.debug(gameScene.waveForm.svgArr[3].x.domain());
-                                        orb.statusHadler(null, false, orbStats.isInRange);
+                                        orb.statusHadler(null, false, orb.orbStats.isInRange);
 
                                     });
 
@@ -455,7 +528,7 @@ class UIScene extends Phaser.Scene {
                                     tooltipHandler(true, {
                                         obj: this,
                                         dy: dy,
-                                        img: 'tooltip_button',
+                                        img: 'tooltipButton',
                                     })
                                 })
                                 .on('pointerout', function () {
@@ -507,7 +580,7 @@ class UIScene extends Phaser.Scene {
 
                         // console.debug(scaleFun.range(), scaleFun.domain());
 
-                        this.orbIcons = orbs.map(orb => {
+                        this.orbIcons = this.orbs.map(orb => {
 
                             let orbStats = orb.orbStats;
                             let orbX = scaleFun(orbStats.time) + handleW * 0.5;
@@ -515,19 +588,33 @@ class UIScene extends Phaser.Scene {
                             let orbIcon = this.add.sprite(orbX, y + 25, 'instrument')
                                 .setOrigin(0.5)
                                 .setScale(0.1)
-                                .setDepth(Depth.detector + 2)
-                                .anims.play('orb_inactive', true);
+                                .setDepth(Depth.detector + 2);
 
-                            orbIcon.anims.msPerFrame = 600;
 
                             orbIcon.updatePos = function () {
-                                // console.debug('updatePos');
+
                                 let x = scaleFun(orb.orbStats.time) + handleW * 0.5;
+                                // console.debug(x);
                                 this.x = x;
                                 let isInScreen = x > handleXMin && x < (handleXMax + handleW);
                                 this.setVisible(isInScreen);
-                            };
 
+                            };
+                            orbIcon.statsHandler = function () {
+
+                                let frameRate, animsKey;
+                                if (orb.laserObj.active) {
+                                    frameRate = 300;
+                                    animsKey = 'orb_activate';
+                                }
+                                else {
+                                    frameRate = 600;
+                                    animsKey = 'orb_inactive';
+                                }
+
+                                orbIcon.anims.msPerFrame = frameRate;
+                                this.anims.play(animsKey, true);
+                            };
                             return orbIcon;
                         });
 
@@ -551,18 +638,32 @@ class UIScene extends Phaser.Scene {
                         });
                     };
                     var updateIcon = () => {
-                        orbs.forEach((orb, i) => {
+                        this.orbs.forEach((orb, i) => {
+                            this.orbIcons[i].statsHandler();
                             if (orb.beholdingFlag)
                                 this.orbIcons[i].updatePos();
                         });
                     };
                     updateButton();
                     updateIcon();
+
                 };
                 break;
-            case 'c':
+            case 'exitUI':
                 preload = () => { };
-                create = () => { };
+                create = () => {
+                    var levelUp = () => {
+
+                    };
+                    var exit = () => {
+                        gameScene.gameOver.flag = true;
+                        gameScene.scene.resume();
+                        this.scene.remove();
+                    };
+
+                    exit();
+
+                };
                 update = () => { };
                 break;
             case 'a':
@@ -576,7 +677,33 @@ class UIScene extends Phaser.Scene {
                     let keys = Object.values(controllCursor).join();
                     this.cursors = this.input.keyboard.addKeys(keys);
                 };
-                update = () => { };
+                update = () => {
+
+                    //==update orb(when pause gameScene wont do update funtion)
+                    var updateOrb = () => {
+                        gameScene.orbGroup.children.iterate(child => {
+
+                            if (child.beholdingFlag || (child.laserUpdateFlag && child.body.touching.down)) {
+                                // console.debug('update orb');
+                                child.orbStats = gameScene.getTimePoint(child.x);
+                                let laserObj = child.laserObj;
+
+                                laserObj.setPosition(child.x, child.y + 20);
+
+                                let groundObj = gameScene.platforms.getChildren()[0];
+                                if (child.activateFlag)
+                                    child.timeText
+                                        .setPosition(child.x, groundObj.y - groundObj.displayHeight * 0.15)
+                                        .setText(child.orbStats.time.toFixed(2));
+
+                                child.laserUpdateFlag = false;
+                            };
+
+                        });
+                    };
+                    updateOrb();
+
+                };
                 break;
             default:
                 preload = () => { };
@@ -592,7 +719,7 @@ class UIScene extends Phaser.Scene {
                     let x = obj.x + obj.displayWidth * (0.5 - obj.originX);
                     let y = obj.y + obj.displayHeight * (1 - obj.originY) + 18 + (data.dy ? data.dy : 0);
                     let hotKeyString = controllCursor[obj.name];
-                    let text = obj.name + (hotKeyString ? `(${hotKeyString})` : '');
+                    let text = UItextJSON[obj.name] + (hotKeyString ? `(${hotKeyString})` : '');
                     let tweensDuration = 200;
 
                     //===tooltip
@@ -663,7 +790,7 @@ class UIScene extends Phaser.Scene {
 class DefendScene extends Phaser.Scene {
     constructor(stationData, GameData, other) {
         super({ key: 'gameScene' });
-        // console.debug(stationData, GameData);
+        // console.debug(stationData);
 
         Object.assign(this, {
             name: 'defend',
@@ -678,7 +805,8 @@ class DefendScene extends Phaser.Scene {
                 svgArr: null,
                 gameObjs: [],
                 getWaveImg: other.getWaveImg,
-                domain: stationData.stationStats.orbStats ? stationData.stationStats.orbStats.xAxisDomain : null,
+                domain: stationData.stationStats.orbStats ?
+                    stationData.stationStats.orbStats.xAxisDomain : null,
             },
             gameOver: {
                 flag: false,
@@ -826,7 +954,7 @@ class DefendScene extends Phaser.Scene {
         };
         var tooltip = () => {
             const uiDir = assetsDir + 'ui/';
-            this.load.image('tooltip_button', uiDir + 'tooltip_button.png');
+            this.load.image('tooltipButton', uiDir + 'tooltipButton.png');
         };
 
         environment();
@@ -1112,7 +1240,9 @@ class DefendScene extends Phaser.Scene {
 
             };
             var overview = () => {
-                this.scene.add(null, new UIScene('detectorUI', this), true);
+                if (!stationStats.clear)
+                    this.scene.add(null, new UIScene('detectorUI', this), true);
+
             };
             background();
             platform();
@@ -1379,7 +1509,6 @@ class DefendScene extends Phaser.Scene {
                 // foe.anims.play('dog_Attack', true);
             };
 
-            // console.debug(stars.children.entries[0].active);
             this.physics.add.collider(this.enemy, this.platforms);
 
 
@@ -1401,9 +1530,7 @@ class DefendScene extends Phaser.Scene {
 
         };
 
-        //==UI
-        initCursors();
-        initIconBar();
+
 
         //==gameScene
         initEnvironment();
@@ -1411,15 +1538,15 @@ class DefendScene extends Phaser.Scene {
         initPlayer();
         initTimer();
 
+        //==UI
+        initCursors();
+        initIconBar();
 
 
 
     };
     update() {
         // return;
-
-
-
         var updatePlayer = () => {
 
             this.player.movingHadler(this);
@@ -1438,28 +1565,6 @@ class DefendScene extends Phaser.Scene {
 
             if (pickUpObj)
                 pickUpObj.setPosition(this.player.x, this.player.y + 10);
-
-            this.orbGroup.children.iterate(child => {
-
-                if (child.beholdingFlag || (child.laserUpdateFlag && child.body.touching.down)) {
-                    // console.debug('update orb');
-                    child.orbStats = this.getTimePoint(child.x);
-                    let laserObj = child.laserObj;
-
-                    laserObj.setPosition(child.x, child.y + 20);
-
-                    let groundObj = this.platforms.getChildren()[0];
-                    if (child.activateFlag)
-                        child.timeText
-                            .setPosition(child.x, groundObj.y - groundObj.displayHeight * 0.15)
-                            .setText(child.orbStats.time.toFixed(2));
-
-                    child.laserUpdateFlag = false;
-                };
-
-
-            });
-
         }
         var updateTimer = () => {
 
@@ -1499,7 +1604,9 @@ class DefendScene extends Phaser.Scene {
             //===get gameResult 
             let orbStats = this.orbGroup.getChildren().map(orb => orb.orbStats);
 
-            let enemyStats = this.gameData.stationData.stationStats.enemyStats;
+            let stationStats = this.gameData.stationData.stationStats;
+            let enemyStats = stationStats.enemyStats;
+
             let gameResult = {
                 //==更新角色資料(剩餘時間、能力值...)
                 playerInfo: {
@@ -1517,6 +1624,7 @@ class DefendScene extends Phaser.Scene {
                     }),
                     enemyStats: enemyStats,
                     liberate: !(Object.keys(enemyStats).filter(enemy => enemyStats[enemy].HP > 0).length > 0),
+                    clear: this.game.scene.getScene('iconBar').gameClear,
                 },
             };
 
@@ -1526,3 +1634,139 @@ class DefendScene extends Phaser.Scene {
     };
 
 };
+
+class StartScene extends Phaser.Scene {
+    constructor(GameData, resolve) {
+        super({ key: 'startScene' });
+
+        Object.assign(this, {
+            GameData: GameData,
+            resolve: resolve,
+        });
+    }
+    preload() {
+        const UIDir = assetsDir + 'ui/';
+        this.load.image('startScene', UIDir + 'startScene.jpg');
+        this.load.image('startButton', UIDir + 'startButton.png');
+
+    };
+    create() {
+        const canvas = this.sys.game.canvas;
+        const width = canvas.width;
+        const height = canvas.height;
+        const languageJSON = this.GameData.languageJSON;
+
+        // console.debug(languageJSON);
+        var background = () => {
+            let img = this.add.image(width * 0.5, height * 0.5, 'startScene');
+            img.setScale(width / img.width, height / img.height);
+        };
+
+        var button = () => {
+            // =menu buttons
+            const buttons = ['startGame', 'setting', 'rank'];
+
+            const buttonGap = height * 0.5 / (buttons.length + 1);
+            const x = width * 0.5;
+
+            let buttonGroup = buttons.map((button, i) => {
+                let y = height * 0.5 + buttonGap * (i + 1);
+                let menuButton = this.add.image(x, y, 'startButton');
+                let buttonText = this.add.text(x, y, languageJSON.UI[button], { font: '40px Arial', fill: '#ffffff' })
+                    .setOrigin(0.5);
+                let buttonScale = buttonText.height * 2 / menuButton.height;
+
+                menuButton
+                    .setScale(buttonScale)//menu.width / 4 / menuButton.width
+                    .setInteractive({ cursor: 'pointer' })
+                    .on('pointerover', function () {
+                        let scale = 1.2;
+                        this.setScale(buttonScale * scale);
+                        buttonText
+                            .setScale(scale)
+                            .setTint(0xFFFF37);
+                    })
+                    .on('pointerout', function () {
+                        this.setScale(buttonScale);
+                        buttonText
+                            .setScale(1)
+                            .clearTint();
+                    })
+                    .on('pointerdown', () => {
+                        // console.debug(button);
+                        switch (button) {
+                            case 'startGame':
+
+                                this.game.destroy(true, false);
+                                this.resolve(this.GameData);
+
+                                break;
+
+                            case 'setting':
+                                // this.setting
+
+                                break;
+
+                            case 'rank':
+
+                                break;
+                        }
+                    });
+
+
+                return {
+                    button: menuButton,
+                    text: buttonText,
+                }
+
+            });
+
+
+            // const tweensDuration = 100;
+
+            // this.tweens.add({
+            //     targets: buttonGroup.map(g => g.button),
+            //     repeat: 0,
+            //     ease: 'linear',
+            //     duration: tweensDuration * 0.2,
+            //     delay: tweensDuration * 0.5,
+            //     x: { from: menu.x - menu.displayWidth * 0.3, to: menu.x },
+            //     scaleX: {
+            //         from: 0, to: (target) => buttonGroup[0].text.height * 2 / target.height
+            //     },
+
+            // });
+
+
+            // this.tweens.add({
+            //     targets: buttonGroup.map(g => g.text),
+            //     repeat: 0,
+            //     ease: 'linear',
+            //     duration: tweensDuration,
+            //     delay: tweensDuration * 0.5,
+            //     alpha: { from: 0, to: 1 },
+            // });
+        }
+        background();
+        button();
+    };
+    update() {
+
+    };
+};
+
+
+// class DefendScene extends Phaser.Scene {
+//     constructor() {
+//         super({ key: 'gameScene' });
+//     }
+//     preload() {
+
+//     };
+//     create() {
+
+//     };
+//     update() {
+
+//     };
+// }

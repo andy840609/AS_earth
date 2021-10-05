@@ -1,0 +1,22 @@
+{
+    "UI": {
+        "startGame": "開始遊戲",
+        "setting": "設定",
+        "rank": "排行榜",
+        "exit": "存檔離開",
+        "pause": "暫停",
+        "backpack": "道具",
+        "detector": "探測器",
+        "timeRemain": "剩餘時間",
+        "shiftLeft": "把手左移",
+        "changeSide": "換把手",
+        "shiftRight": "把手右移",
+        "reset": "重置",
+        "resume": "繼續",
+        "tutorial": "教學",
+        "aaa": "sss",
+        "aaa": "sss",
+        "aaa": "sss",
+        "aaa": "sss"
+    }
+}

@@ -158,15 +158,12 @@ function locatingGame() {
 
         const chartContainerJQ = $(selector);
 
-        //===append map,gameDiv..etc
+        //===append map,gameInnerDiv..etc
         function initForm() {
 
             chartContainerJQ.append(`
                 <form id="form-game">
-                <div class="form-group" id="gameUI" style="display: inline;">
-                    TimeLeft : <font size="5" class='timer'>0</font> ms
-                </div> 
-               
+
                 <div class="form-group row" id="gameGroup">
 
                   
@@ -348,12 +345,16 @@ function locatingGame() {
 
         function gameGenerate() {
             const gameOuterDiv = document.querySelector('#gameOuter');
-            const gameDiv = gameOuterDiv.querySelector('#gameMain');
-            const gameUI = document.querySelector('#gameUI');
+            const gameInnerDiv = gameOuterDiv.querySelector('#gameMain');
+            const width = window.innerWidth, height = window.innerHeight;
 
             var mapObj;
             var geoJSON;//===location data
             var GameData = null;
+            var gameDisplay = (display) => {
+                let value = display ? 'inline' : 'none';
+                gameOuterDiv.style.display = value;
+            };
 
             var testArr;//==get markerData for debug
 
@@ -374,11 +375,65 @@ function locatingGame() {
                         shiftRight: 'e',
                         changeSide: 'c',
                         reset: 'r',
+                        exit: 'esc',
 
                     },
+                    language: 'zh-TW',
                     playerStats: GameObjectStats.player['mage'],
+                };
+            };
+            function initStartScene() {
+
+                var getLanguageJSON = () => {
+                    return $.ajax({
+                        url: "../data/language/" + GameData.language + ".json",
+                        dataType: "json",
+                        async: false,
+                        success: function (d) { console.debug(d); },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            console.error(jqXHR, textStatus, errorThrown);
+                        },
+                    });
+                };
+
+                var startScene = async () => {
+
+
+                    GameData.languageJSON = await getLanguageJSON();
+                    // gameDisplay(true);
+                    // let newGameData = await new Promise((resolve, reject) => {
+                    //     const config = {
+                    //         parent: 'gameMain',
+                    //         type: Phaser.AUTO,
+                    //         width: width,
+                    //         height: height,
+                    //         physics: {
+                    //             default: 'arcade',
+                    //             arcade: {
+                    //                 gravity: { y: 300 },
+                    //                 debug: true,
+                    //             }
+                    //         },
+                    //         scene: new StartScene(GameData, resolve),
+                    //     };
+                    //     new Phaser.Game(config);
+                    // });
+                    // if (GameData.language != newGameData.language)
+                    //      GameData.languageJSON = await getLanguageJSON();
+                    // Object.assign(GameData, newGameData);
+                    // gameDisplay(false);
+                    // initMap();
+
+
+                    //==test
+                    initMap();
+                    // gameStart('defend');
 
                 };
+
+
+                startScene();
+
             };
             function initMap() {
 
@@ -461,8 +516,8 @@ function locatingGame() {
 
                     data.forEach((d, i) => {
                         // console.debug(d);
-                        let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
-                        // let enemy = [];//==之後隨機抽敵人組
+                        // let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
+                        let enemy = [];//==之後隨機抽敵人組
                         let enemyStats = {};
 
 
@@ -480,7 +535,8 @@ function locatingGame() {
                         // console.debug(background);
 
                         d['stationStats'] = {
-                            liberate: false,
+                            liberate: false,//==敵人死亡
+                            clear: false,//==寶珠移動過
                             enemyStats: enemyStats,
                             background: background,
                         };//==遊戲資料：liberate用來判斷是否已經贏過
@@ -513,7 +569,7 @@ function locatingGame() {
 
                         markerArr.push(marker);
                         circleArr.push(circle);
-                        updateStation(marker, { icon: 'foe' });
+                        updateStation(marker, { icon: 'default' });
 
                         // console.debug(d);
                     });
@@ -548,6 +604,12 @@ function locatingGame() {
                 };
                 async function addUI() {
 
+                    chartContainerJQ.children('#form-game').append(`
+                    <div class="form-group" id="gameUI" style="display: inline;">
+                        ${GameData.languageJSON.UI['timeRemain']} : <font size="5" class='timer'>0</font> ms
+                    </div>
+                    `);
+
                     updateMapUI({ timeRemain: GameData.timeRemain }, 800);
 
                 };
@@ -575,8 +637,8 @@ function locatingGame() {
                         className: 'station-icon',
                     }
                 });
-                const foeIconUrl = '../data/assets/icon/home.png';
-                const playerIconUrl = '../data/assets/icon/playerIcon.png';
+                const defaultIconUrl = '../data/assets/icon/home.png';
+                const clearIconUrl = '../data/assets/icon/playerIcon.png';
                 var circleAnime = (circleObj, originalRadius, duration = 500) => {
                     // console.debug(circleObj, originalRadius);
                     const delay = 10;
@@ -646,17 +708,15 @@ function locatingGame() {
 
                 };
 
-                liberate = false, radius = 0
-
                 if (stationMarker) {
                     if (updateObj.icon) {
                         let icon;
                         switch (updateObj.icon) {
-                            case 'foe':
-                                icon = foeIconUrl;
+                            case 'default':
+                                icon = defaultIconUrl;
                                 break;
-                            case 'player':
-                                icon = playerIconUrl;
+                            case 'clear':
+                                icon = clearIconUrl;
                                 break;
                         };
                         iconAnime(stationMarker, icon);
@@ -680,7 +740,7 @@ function locatingGame() {
                 GameData.playerStats = Object.assign(GameData.playerStats, playerStats);
                 if (controllCursor) GameData.controllCursor = controllCursor;
 
-                const timer = gameUI.querySelector('.timer');
+                const timer = document.querySelector('#gameUI .timer');
                 const start = parseInt(timer.innerHTML),
                     end = parseInt(timeRemain);
                 const increase = start > end ? false : true;
@@ -711,15 +771,12 @@ function locatingGame() {
             async function gameStart(gameMode, stationMarker = null) {
                 // console.debug(gameMode, stationMarker);
 
-                var gameDisplay = (display) => {
-                    let value = display ? 'inline' : 'none';
-                    gameOuterDiv.style.display = value;
-                };
 
 
                 gameDisplay(true);
-                const gameBox = gameDiv.getBoundingClientRect();
-                const width = gameBox.width, height = gameBox.height;
+                // const gameBox = gameInnerDiv.getBoundingClientRect();
+                // const width = gameBox.width, height = gameBox.height;
+                // const width = gameBox.width, height = gameBox.height;
 
                 let gameResult;
 
@@ -733,8 +790,8 @@ function locatingGame() {
                             const config = {
                                 parent: 'gameMain',
                                 type: Phaser.AUTO,
-                                width: width,
-                                height: height,
+                                width: width * 0.9,
+                                height: height * 0.95,
                                 physics: {
                                     default: 'arcade',
                                     arcade: {
@@ -756,28 +813,23 @@ function locatingGame() {
                         let playerInfo = gameResult.playerInfo;
 
                         //===update icon
-                        if (stationInfo.liberate && !stationData.stationStats.liberate)
-                            updateStation(stationMarker, { icon: 'player' });
-                        else if (!stationInfo.liberate)
-                            updateStation(stationMarker, { icon: 'foe' });
+                        // console.debug(stationInfo.clear, !stationData.stationStats.clear)
+                        if (stationInfo.clear && !stationData.stationStats.clear)
+                            updateStation(stationMarker, { icon: 'clear' });
 
                         //===update circle
-                        let orbStats = stationInfo.orbStats;
-                        let allOrbActived = orbStats.every(d => d.isInRange == true);
-                        // console.debug(allOrbActived);
+                        if (stationInfo.clear) {
+                            let orbStats = stationInfo.orbStats;
+                            let timeGap = Math.abs(orbStats[0].time - orbStats[1].time);
+                            //距離=時間*速度(目前先用7.5),km換算成m;
+                            let radius = timeGap * 7.5 * 1000;
 
+                            //==半徑跟之前相差大於1不作動畫
+                            let pre_radius = stationMarker.options.data.circleObj.getRadius();
+                            if (Math.abs(radius - pre_radius) > 1)
+                                updateStation(stationMarker, { circleRadius: radius });
 
-                        let timeGap = Math.abs(orbStats[0].time - orbStats[1].time);
-
-                        //距離=時間*速度(目前先用7.5),km換算成m;
-                        let radius = timeGap * 7.5 * 1000;
-
-                        //==半徑跟之前相差大於1不作動畫
-                        let pre_radius = stationMarker.options.data.circleObj.getRadius();
-                        if (Math.abs(radius - pre_radius) > 1)
-                            updateStation(stationMarker, { circleRadius: radius });
-
-
+                        };
 
                         //===更新測站情報
                         Object.assign(stationData.stationStats, stationInfo);
@@ -796,9 +848,10 @@ function locatingGame() {
 
 
             initGameData();
-            initMap();
-            // console.debug(data);
-            gameStart('defend');
+            initStartScene();
+
+
+
         };
         //===init once
 

@@ -3,13 +3,13 @@ const assetsDir = '../data/assets/';
 const GameObjectStats = {
     creature: {
         dog: {
-            HP: 100000,
+            HP: 1000,
             attackPower: 10,
             movementSpeed: 200,
             jumpingPower: 0,
         },
         cat: {
-            HP: 80000,
+            HP: 800,
             attackPower: 20,
             movementSpeed: 200,
             jumpingPower: 200,
@@ -199,16 +199,14 @@ const Enemy = new Phaser.Class({
             // this.body.collideWorldBounds = true;
 
             //==HP bar
-            this.lifeBar = scene.add.text(0, 0, '', { fontSize: '25px', fill: 'red' })
-                .setOrigin(0.5)
-                .setVisible(false)
-                .setDepth(20);
+            this.HPbar = scene.scene.add(null, new UIScene('statsBar', scene, this), true).HPbar;
+
 
             //==stats
             this.stats = stats;
 
             // this.setCollideWorldBounds(true);
-            // console.debug(stats);
+            // console.debug(this);
         },
 
     //=處理轉向
@@ -233,20 +231,34 @@ const Enemy = new Phaser.Class({
     //==血條顯示
     statsChangeCallback: null, //為了計時器不重複註冊多個
     statsChangeHandler: function (statsObj, scene) {
-        // console.debug(scene);
+        const tweensDuration = 150;
 
-        if ('HP' in statsObj) {
-            let hpString = parseInt(statsObj.HP) + ' / ' + this.stats.maxHP;
-
-            this.lifeBar
-                .setText(hpString)
-                .setVisible(true);
-
-            if (this.statsChangeCallback) this.statsChangeCallback.remove();
-            this.statsChangeCallback = scene.time.delayedCall(1500, () => this.lifeBar.setVisible(false), [], scene);
-
+        this.HPbar.updateFlag = true;
+        //==已經出現就重新消失計時,否則播放出現動畫
+        if (this.statsChangeCallback) this.statsChangeCallback.remove();
+        else {
+            scene.tweens.add({
+                targets: this.HPbar,
+                repeat: 0,
+                ease: 'Bounce.easeInOut',
+                duration: tweensDuration,
+                alpha: { from: 0, to: .7 },
+            });
         };
-        this.stats = Object.assign(this.stats, statsObj);
+
+        this.statsChangeCallback = scene.time.delayedCall(1500, () => {
+            scene.tweens.add({
+                targets: this.HPbar,
+                repeat: 0,
+                ease: 'Bounce.easeInOut',
+                duration: tweensDuration,
+                alpha: { from: this.HPbar.alpha, to: 0 },
+            });
+            this.statsChangeCallback = null;
+        }, [], scene);
+
+
+
     },
 
     //==行爲動畫控制
@@ -417,7 +429,6 @@ const Enemy = new Phaser.Class({
                             break;
                         case 'chasing':
                             if (scene.physics.overlap(this, player)) {
-
                                 this.behavior = 'scratch';
                             }
                             else {
@@ -446,7 +457,7 @@ const Enemy = new Phaser.Class({
                                 };
 
 
-                            }
+                            };
                             break;
                         case 'cruising':
                             //==遊走到隨機位置
@@ -503,9 +514,11 @@ const Enemy = new Phaser.Class({
                 if (this.stats.HP <= 0) {
                     // console.debug('cat_Death');
                     this.knockBackCallback.remove();
-                    this.behavior = 'Death';
-                    this.body.reset(this.x, this.y);
-                    this.body.enable = false;
+                    if (this.body.touching.down) {
+                        this.behavior = 'Death';
+                        this.body.reset(this.x, this.y);
+                        this.body.enable = false;
+                    };
                     this.anims.play('cat_Death', true);
 
                 }

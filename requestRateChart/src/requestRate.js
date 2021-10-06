@@ -56,14 +56,48 @@ function requestRate() {
         return chart;
     }
     function chart() {
+
+        const chartContainerJQ = $(selector);
+        const chartContainerD3 = d3.select(selector);
+
         function init() {
-            $(selector).append(`
+            chartContainerJQ.append(`
             <form id="form-chart">
             <div class="form-group" id="chartsOptions" style="display: inline;">
             <div class="row">
-                         
+
+                <!-- ... xAxis ... -->    
+                <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
+                    <label for="xAxisOptionButton" class="col-form-label col-4" >Xaxis</label>
+                    <div class="btn-group btn-group-toggle col-8" role="group">
+                        <button id="xAxisOptionButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            select
+                        </button>
+                        <div class="dropdown-menu" id="xAxisMenu" aria-labelledby="xAxisOptionButton">
+                            <div id="xAxisDropDownMenu" >
+                            
+                            </div>
+                        </div>
+                    </div>
+                </div>  
+                
+                <!-- ... yAxis ... -->    
+                <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
+                    <label for="yAxisOptionButton" class="col-form-label col-4" >Yaxis</label>
+                    <div class="btn-group btn-group-toggle col-8" role="group">
+                        <button id="yAxisOptionButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            select
+                        </button>
+                        <div class="dropdown-menu" id="yAxisMenu" aria-labelledby="yAxisOptionButton">
+                            <div id="yAxisDropDownMenu" >
+                            
+                            </div>
+                        </div>
+                    </div>
+                </div>  
+            
                 <!-- ... display selector ... -->    
-                <div class="form-group col-lg-4 col-md-4 col-sm-6 d-flex flex-row align-items-start">
+                <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
                     <label for="displaySelectButton" class="col-form-label col-4" >Display</label>
                     <div class="btn-group btn-group-toggle col-8" role="group">
                         <button id="displaySelectButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -78,7 +112,7 @@ function requestRate() {
                 </div>  
 
                 <!-- ... show info ... -->    
-                <div class="form-group col-lg-4 col-md-4 col-sm-6 d-flex flex-row align-items-start">
+                <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
                     <label for="showInfoButton" class="col-form-label col-4" >Show</label>
                     <div class="btn-group btn-group-toggle col-8" role="group">
                         <button id="showInfoButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -104,7 +138,7 @@ function requestRate() {
 
                 <!-- ... rate unit ... -->    
                 <!--
-                <div class="form-group col-lg-4 col-md-4 col-sm-6 d-flex flex-row align-items-start">
+                <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
                     <label for="rateUnit" class="col-form-label col-4" >Rate unit</label>
                     <div class="form-group col-8">
                         <select class="form-control" id="rateUnit">
@@ -119,22 +153,31 @@ function requestRate() {
 
             </div>
 
-            </div>
+            
+            <div class="form-group"  id="chartMain">
 
-                <div class="form-group" id="charts"></div>          
+                <div class="form-group" id="charts"></div>        
+                 
                 <div id="outerdiv"
-                    style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:999;width:100%;height:100%;display:none;">
-                    <div id="innerdiv" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
-                        <img id="bigimg" style=" background-color: rgb(255, 255, 255);" src="" />
-                    </div>
+                    style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:10;width:100%;height:100%;display:none;">
+                    <div id="innerdiv" style=" background-color: rgb(255, 255, 255);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div>                      
                 </div>
+
+                <div id='loading'>
+                    <div class="spinner-border"role="status">
+                        <span class="sr-only" >Loading...</span>
+                    </div>
+                    Loading...
+                </div>
+            </div>
+            
             </form>
 
            
             `);
             //================dropdown-menu內元素被點擊不關閉menu
 
-            let All_dropdownMenu = $('.dropdown-menu');
+            let All_dropdownMenu = chartContainerJQ.find('.dropdown-menu');
 
             All_dropdownMenu.on("click.bs.dropdown", function (e) {
                 // console.debug(this)
@@ -611,7 +654,7 @@ function requestRate() {
                     }
 
                     //===displayDrop
-                    d3.select('#displayDropDownMenu')
+                    chartContainerD3.select('#displayDropDownMenu')
                         .selectAll('div')
                         .data(rateDataKeys)
                         .join('div')
@@ -737,7 +780,7 @@ function requestRate() {
                             .attr("transform", `translate(${margin.left},0)`)
                             .call(d3.axisLeft(y)
                                 .ticks(height / 30))
-                            .call(g => g.select(".domain").remove())
+                            // .call(g => g.select(".domain").remove())
                             .call(g => g.selectAll("g.yAxis g.tick line")
                                 .attr("x2", d => width - margin.left - margin.right)
                                 .attr("stroke-opacity", 0.2)
@@ -856,7 +899,7 @@ function requestRate() {
                 var xSelected_domain = null, ySelected_domain = null;
 
                 function chartEvent() {
-                    const tooltip = d3.select("#charts").append("div")
+                    const tooltip = chartContainerD3.select("#charts").append("div")
                         .attr("id", "tooltip")
                         .style('position', 'absolute')
                         .style('z-index', '1')
@@ -1198,13 +1241,13 @@ function requestRate() {
                         });
                     //=====show info
 
-                    d3.select('#showPath').on('change', e =>
+                    chartContainerD3.select('#showPath').on('change', e =>
                         d3.selectAll('.orderPath').attr("display", e.target.checked ? 'inline' : 'none'));
-                    d3.select('#showLegend').on('change', e =>
+                    chartContainerD3.select('#showLegend').on('change', e =>
                         d3.selectAll('.legend').attr("display", e.target.checked ? 'inline' : 'none'));
                     //=====rate unit
 
-                    d3.select('#rateUnit').on('change', e => {
+                    chartContainerD3.select('#rateUnit').on('change', e => {
                         console.debug(e.target.value);
 
 
@@ -1244,9 +1287,9 @@ function requestRate() {
         }
 
         function printChart() {
-            $('#charts').children().remove();
-            // $('.tooltip').remove();
-            var getChartMenu = (title) => {
+            chartContainerJQ.find('#charts').children().remove();
+            // chartContainerJQ.find('.tooltip').remove();
+            var getChartMenu = () => {
                 // console.log(d.data);
                 var div = document.createElement("div");
                 div.setAttribute("id", "chart" + i);
@@ -1281,18 +1324,19 @@ function requestRate() {
                         item.innerHTML = "檢視圖片";
 
                     item.addEventListener("click", (e, a) => {
-                        let chartIDArr = [];
-                        chartIDArr.push("#" + $(e.target).parents('.chart')[0].id + " svg");
-                        // console.log(chartIDArr);
-                        downloadSvg(chartIDArr, title, option);
+                        let svgArr = [];
+                        let svg = chartContainerJQ.find("#" + $(e.target).parents('.chart')[0].id).children('svg')[0];
+                        svgArr.push(svg);
+                        let fileName = 'AAA';
+                        downloadSvg(svgArr, fileName, option);
                     });
 
                     li.append(item);
                     ul.append(li);
                 });
-                $('#charts').append(div);
-                $('#chart' + i).append(nav);
-            }
+                document.querySelector('#charts').append(div);
+                document.querySelector('#chart' + i).append(nav);
+            };
             var MenuEvents = () => {
                 var charts = document.getElementById('charts');
                 var stopPropagation = (e) => {
@@ -1313,8 +1357,8 @@ function requestRate() {
                     }
                 }
 
-                $('.toggle-nav').off('click');
-                $('.toggle-nav').click(function (e) {
+                chartContainerJQ.find('.toggle-nav').off('click');
+                chartContainerJQ.find('.toggle-nav').click(function (e) {
                     // console.debug(e.target === this);//e.target===this
 
                     $(this).toggleClass('active');
@@ -1329,10 +1373,10 @@ function requestRate() {
 
 
                 });
-                // console.debug($(".toggle-nav"));
+                // console.debug(chartContainerJQ.find(".toggle-nav"));
                 $('body').off('click');
                 $('body').click(function (e) {
-                    $(".toggle-nav").each((i, d) => {
+                    chartContainerJQ.find(".toggle-nav").each((i, d) => {
                         // console.debug(e.target == d);
                         // console.debug(e.target);
                         if (e.target != d && $(d).hasClass('active')) {
@@ -1343,8 +1387,8 @@ function requestRate() {
                         }
                     });
                 });
-            }
-            var downloadSvg = (chartQueryStrs, fileName, option) => {
+            };
+            var downloadSvg = (svgArr, fileName, option) => {
 
                 function getSvgUrl(svgNode) {
                     var svgData = (new XMLSerializer()).serializeToString(svgNode);
@@ -1357,15 +1401,14 @@ function requestRate() {
                     let canvas = document.createElement('canvas');
                     let context = canvas.getContext('2d');
 
-                    var svgWidth = $(chartQueryStrs[0])[0].viewBox.baseVal.width;
-                    var svgHeight = $(chartQueryStrs[0])[0].viewBox.baseVal.height * chartQueryStrs.length;
+                    var svgWidth = svgArr[0].viewBox.baseVal.width;
+                    var svgHeight = svgArr[0].viewBox.baseVal.height * svgArr.length;
                     var canvasWidth, canvasHeight;
                     //檢視時縮放,下載時放大
                     if (resize) {
-                        var windowW = $(window).width();//获取当前窗口宽度 
-                        var windowH = $(window).height();//获取当前窗口高度 
-                        // console.debug(windowW, windowH);
-                        // console.debug(svgW, svgH);
+                        var windowW = window.innerWidth;//获取当前窗口宽度 
+                        var windowH = window.innerHeight;//获取当前窗口高度 
+
                         var width, height;
                         var scale = 0.9;//缩放尺寸
                         height = windowH * scale;
@@ -1399,21 +1442,43 @@ function requestRate() {
                     downloadLink.click();
                     document.body.removeChild(downloadLink);
                 }
-                function show(img) {
-                    $('#bigimg').attr("src", img);//设置#bigimg元素的src属性 
-                    $('#outerdiv').fadeIn("fast");//淡入显示#outerdiv及.pimg 
-                    $('#outerdiv').off('click');
-                    $('#outerdiv').click(function () {//再次点击淡出消失弹出层 
+                function show(width, height) {
+                    // $('#bigimg').attr("src", img);//设置#bigimg元素的src属性 
+                    // $('#outerdiv').fadeIn("fast");//淡入显示#outerdiv及.pimg 
+                    // $('#outerdiv').off('click');
+                    // $('#outerdiv').click(function () {//再次点击淡出消失弹出层 
+                    //     $(this).fadeOut("fast");
+                    // });
+                    let outerdiv = $('#outerdiv');
+
+                    outerdiv.fadeIn("fast");//淡入显示#outerdiv及.pimg 
+                    outerdiv.off('click');
+                    outerdiv.click(function (e) {//再次点击淡出消失弹出层 
+                        if (e.target.id != 'outerdiv') return;
                         $(this).fadeOut("fast");
+                        $(originParent).children('svg').remove();
+                        originSvg.removeAttribute('width');
+                        originSvg.removeAttribute('height');
+                        originParent.append(originSvg);
                     });
+
+                    let originSvg = svgArr[0];
+                    let originParent = originSvg.parentNode;
+                    let cloneSvg = originSvg.cloneNode(true);
+                    originSvg.setAttribute('width', width);
+                    originSvg.setAttribute('height', height);
+                    document.querySelector('#innerdiv').append(originSvg);
+                    originParent.append(cloneSvg);
+
                 }
+
 
                 if (option == 'svg') {
                     //==============merge svg
                     var newSvg = document.createElement('svg');
 
 
-                    chartQueryStrs.forEach(queryStr => {
+                    svgArr.forEach(queryStr => {
                         var svgjQobj = $(queryStr);
                         svgjQobj.clone().appendTo(newSvg);
                     });
@@ -1428,10 +1493,10 @@ function requestRate() {
                     var canvas = CanvasObjArr[0];
                     var context = CanvasObjArr[1];
                     var imageWidth = canvas.width;
-                    var imageHeight = canvas.height / chartQueryStrs.length;
+                    var imageHeight = canvas.height / svgArr.length;
 
 
-                    chartQueryStrs.forEach((queryStr, index) => {
+                    svgArr.forEach((queryStr, index) => {
                         var svgNode = $(queryStr)[0];
                         var svgUrl = getSvgUrl(svgNode);
                         var image = new Image();
@@ -1440,11 +1505,10 @@ function requestRate() {
                             context.drawImage(image, 0, index * imageHeight, imageWidth, imageHeight);
 
                             //done drawing and output
-                            if (index == chartQueryStrs.length - 1) {
+                            if (index == svgArr.length - 1) {
                                 var imgUrl;
                                 if (option == 'bigimg') {
-                                    imgUrl = canvas.toDataURL();// default png
-                                    show(imgUrl);
+                                    show(imageWidth, imageHeight);
                                 }
                                 else {
                                     imgUrl = canvas.toDataURL('image/' + option);
@@ -1455,18 +1519,18 @@ function requestRate() {
                     });
                 }
 
-            }
+            };
 
             var i = 1;
             let chartNode = RQRchart();
             // console.debug(chartNode);
             getChartMenu('A');
-            $('#chart' + i).append(chartNode);
+            chartContainerJQ.find('#chart' + i).append(chartNode);
             // console.debug(i);
             MenuEvents();
         }
 
-        if (!($('#form-chart').length >= 1)) {
+        if (!(chartContainerJQ.find('#form-chart').length >= 1)) {
             init();
             if (dataPath)
                 getFileData();

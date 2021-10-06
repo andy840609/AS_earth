@@ -2571,7 +2571,7 @@ function waveXdist() {
                 });
                 document.querySelector('#charts').append(div);
                 document.querySelector('#chart' + i).append(nav);
-            }
+            };
             var MenuEvents = () => {
                 var charts = document.getElementById('charts');
                 var stopPropagation = (e) => {
@@ -2622,7 +2622,7 @@ function waveXdist() {
                         }
                     });
                 });
-            }
+            };
             var downloadSvg = (svgArr, fileName, option) => {
 
                 function getSvgUrl(svgNode) {
@@ -2754,7 +2754,7 @@ function waveXdist() {
                     });
                 }
 
-            }
+            };
             let xAxisName = document.querySelector('input[name ="xAxisName"]:checked').value;
             let xAxisScale = document.querySelector('input[name ="xAxisScale"]:checked').value;
 

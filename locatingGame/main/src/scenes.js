@@ -1,7 +1,8 @@
 class UIScene extends Phaser.Scene {
 
-    constructor(key, preScene) {
-        super({ key: key });
+    constructor(UIkey, preScene, gameObj = null) {
+        super({ key: gameObj ? gameObj.name + "UI" : UIkey });
+        // console.debug(preScene);
         const gameScene = preScene.game.scene.getScene('gameScene');
 
         const canvas = gameScene.sys.game.canvas;
@@ -17,7 +18,7 @@ class UIScene extends Phaser.Scene {
         const UItextJSON = gameScene.gameData.languageJSON.UI;
 
         let preload, create, update;
-        switch (key) {
+        switch (UIkey) {
             case 'iconBar':
                 let buttonArr;
                 const eachButtonW = 85;
@@ -671,6 +672,157 @@ class UIScene extends Phaser.Scene {
                 create = () => { };
                 update = () => { };
                 break;
+            case 'b':
+                preload = () => { };
+                create = () => { };
+                update = () => { };
+                break;
+            case 'statsBar':
+                // console.debug();
+                if (gameObj.name == 'player') {
+                    //===讀取會讓player statsBar取得undefine(之後解決)
+
+                    preload = () => {
+                        // const uiDir = assetsDir + 'ui/';
+
+                        // this.load.image('UIbar_HPlabel', uiDir + 'UIbar_HPlabel.png');
+                        // this.load.image('UIbar_MPlabel', uiDir + 'UIbar_MPlabel.png');
+                        // this.load.image('UIbar_head', uiDir + 'UIbar_head.png');
+                        // this.load.image('UIbar_bar', uiDir + 'UIbar_bar.png');
+                    };
+                    create = () => {
+                        var makeBar = (stats) => {
+
+                            const barW = 80, barH = 16;
+                            const barMargin = 2;
+
+
+                            let bar = this.add.graphics()
+                                .setDepth(Depth.UI)
+                                .setName(stats);
+
+                            switch (stats) {
+                                case 'HP':
+                                    bar.setPosition(16, 50);
+                                    Object.assign(bar, {
+                                        updateFlag: false,
+                                        updateBar: () => {
+
+                                            bar.clear();
+                                            //  Health               
+                                            let p = gameObj.stats.HP / gameObj.stats.maxHP;
+                                            // console.debug(p);
+
+                                            if (p < 0) p = 0;
+                                            else if (p <= 0.3) bar.fillStyle(0xff0000);
+                                            else if (p <= 0.5) bar.fillStyle(0xEAC100);
+                                            else bar.fillStyle(0x00ff00);
+
+                                            let healthW = (barW - barMargin * 2) * p;
+                                            bar.fillRect(barMargin, barMargin, healthW, barH - barMargin * 2);
+
+                                        },
+                                    });
+                                    break;
+                                case 'MP':
+                                    bar.setPosition(16, 80);
+                                    Object.assign(bar, {
+                                        updateFlag: false,
+                                        updateBar: () => {
+
+                                            bar.clear();
+
+
+                                            //  Health               
+                                            let p = gameObj.stats.MP / gameObj.stats.maxMP;
+                                            // console.debug(p);
+
+                                            if (p < 0) p = 0;
+                                            else if (p <= 0.3) bar.fillStyle(0xff0000);
+                                            else if (p <= 0.5) bar.fillStyle(0xEAC100);
+                                            else bar.fillStyle(0x00ff00);
+
+                                            let healthW = (barW - barMargin * 2) * p;
+                                            bar.fillRect(barMargin, barMargin, healthW, barH - barMargin * 2);
+
+                                        },
+                                    });
+                                    break;
+                            };
+
+                            bar.updateBar();
+                            return bar;
+                        };
+                        this.HPbar = makeBar('HP');
+                        this.MPbar = makeBar('MP');
+                        // console.debug(this.HPbar, this.MPbar);
+                    };
+                    update = () => {
+                        let HPbar = this.HPbar;
+                        let MPbar = this.MPbar;
+
+                        if (HPbar.updateFlag) {
+                            // console.debug('HPbar update');
+                            HPbar.updateBar();
+                            HPbar.updateFlag = false;
+                        };
+                        if (MPbar.updateFlag) {
+                            // console.debug('MPbar update');
+                            MPbar.updateBar();
+                            MPbar.updateFlag = false;
+                        };
+                    };
+                }
+                else {
+                    preload = () => { };
+                    create = () => {
+
+                        const barW = 80, barH = 16;
+                        const barMargin = 2;
+
+                        this.HPbar = this.add.graphics()
+                            .setDepth(Depth.UI);
+
+                        Object.assign(this.HPbar, {
+                            updateFlag: false,
+                            updateBar: () => {
+
+                                this.HPbar.clear();
+
+                                //  stroke
+                                this.HPbar.fillStyle(0x000000);
+                                this.HPbar.fillRect(-barW * 0.5, 0, barW, barH);
+
+                                //  BG
+                                this.HPbar.fillStyle(0xffffff);
+                                this.HPbar.fillRect(-barW * 0.5 + barMargin, barMargin, barW - barMargin * 2, barH - barMargin * 2);
+
+                                //  Health               
+                                let p = gameObj.stats.HP / gameObj.stats.maxHP;
+                                // console.debug(p);
+
+                                if (p < 0) p = 0;
+                                else if (p <= 0.3) this.HPbar.fillStyle(0xff0000);
+                                else if (p <= 0.5) this.HPbar.fillStyle(0xEAC100);
+                                else this.HPbar.fillStyle(0x00ff00);
+
+                                let healthW = (barW - barMargin * 2) * p;
+                                this.HPbar.fillRect(-barW * 0.5 + barMargin, barMargin, healthW, barH - barMargin * 2);
+
+                            },
+                        });
+                    };
+                    update = () => {
+                        let HPbar = this.HPbar;
+
+                        if (!HPbar.updateFlag) return;
+                        // console.debug('HPbar update');
+                        HPbar.updateBar();
+                        HPbar.updateFlag = false;
+                    };
+                };
+
+                break;
             case 'cursors'://==避免暫停後按鍵沒反應
                 preload = () => { };
                 create = () => {
@@ -707,7 +859,7 @@ class UIScene extends Phaser.Scene {
                 break;
             default:
                 preload = () => { };
-                create = () => { console.debug('undefine UI: ' + key); };
+                create = () => { console.debug('undefine UI: ' + UIkey); };
                 update = () => { };
                 break;
         };
@@ -1301,16 +1453,19 @@ class DefendScene extends Phaser.Scene {
             });
 
             //======custom
+            this.player.stats = Object.assign({}, this.gameData.playerStats);
+            let statsBarUI = this.scene.add(null, new UIScene('statsBar', this, this.player), true);
+            // console.debug(statsBarUI);
 
             Object.assign(this.player, {
-                stats: Object.assign({}, this.gameData.playerStats),
+                // stats: Object.assign({}, this.gameData.playerStats),
                 stopCursorsFlag: false,
                 invincibleFlag: false,//無敵時間
                 playerTurnLeft: false,//==判斷子彈方向
 
-                //==HP/MP                
-                hpText: this.add.text(16, 50, '', { fontSize: '32px', fill: '#000' }).setDepth(Depth.UI),
-                mpText: this.add.text(16, 80, '', { fontSize: '32px', fill: '#000' }).setDepth(Depth.UI),
+                //==HP/MP
+                HPbar: statsBarUI.HPbar,
+                MPbar: statsBarUI.MPbar,
 
                 playerAttack: (bullet, enemy) => {
                     // console.debug(bullet, enemy);
@@ -1413,35 +1568,20 @@ class DefendScene extends Phaser.Scene {
                 },
                 //==HP/MP
                 statsChangeHandler: function (statsObj) {
-                    if ('HP' in statsObj) {
-                        let hpString = 'HP : ' + parseInt(statsObj.HP) + ' / ' + this.stats.maxHP;
-                        this.hpText.setText(hpString);
-                    };
-                    if ('MP' in statsObj) {
-                        let mpString = 'MP : ' + parseInt(statsObj.MP) + ' / ' + this.stats.maxMP;
-                        this.mpText.setText(mpString);
-                    };
 
-                    this.stats = Object.assign(this.stats, statsObj);
+                    Object.keys(statsObj).forEach(stats => this[stats + 'bar'].updateFlag = true);
 
+                    // this.stats = Object.assign(this.stats, statsObj);
+                    // console.debug(statsObj);
                 },
             });
-
-
-
-
-            this.player.statsChangeHandler({ HP: this.player.stats.HP, MP: this.player.stats.MP }, this);
-
-            // console.debug(player);
-
-
 
 
             //==敵人玩家相關碰撞
             if (!stationStats.liberate) {
                 this.physics.add.collider(bullets, this.enemy, this.player.playerAttack, null, this);
                 this.physics.add.overlap(this.enemy, this.player, this.enemy.enemyAttack, null, this);
-            }
+            };
 
 
         };
@@ -1527,7 +1667,6 @@ class DefendScene extends Phaser.Scene {
         var initCursors = () => {
             //===init cursors
             this.cursors = this.scene.add(null, new UIScene('cursors', this), true).cursors;
-
         };
 
 
@@ -1581,13 +1720,10 @@ class DefendScene extends Phaser.Scene {
             this.enemy.children.iterate((child) => {
                 if (child.behavior == 'Death') return;
                 // console.debug('alive');
-                // console.debug(child.behaviorHandler);
                 child.behaviorHandler(this.player, this);
-                child.lifeBar.setPosition(child.x, child.y - 20);
+                child.HPbar.setPosition(child.x, child.y - 25);
             });
 
-            // player.body
-            // enemy.anims.play('dog_Attack');
         };
 
         updatePlayer();

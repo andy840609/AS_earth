@@ -1052,7 +1052,7 @@ function waveXdist() {
                     dataBeenReset = true;
                     // console.debug(newData);
                     return newData;
-                }
+                };
                 var get_newTimeArr_and_update_newData = (yAxis_domain) => {
                     let newTimeArr;
 
@@ -1077,7 +1077,7 @@ function waveXdist() {
 
                     }
                     return newTimeArr;
-                }
+                };
 
                 newData = get_newData(xAxis_domainObj);
                 newTimeArr = get_newTimeArr_and_update_newData(yAxis_domain);
@@ -1234,7 +1234,7 @@ function waveXdist() {
 
                 };
                 function render() {
-                    // console.debug(newDataObj);
+                    console.debug(newDataObj);
                     //==物件依照xAxisName的值由小排到大
                     const sort_newData = (data, sortingKey) => {
                         // console.debug(data, sortingKey)
@@ -1401,7 +1401,7 @@ function waveXdist() {
                                             while (isNaN(d.data[firstPointIndex]))
                                                 firstPointIndex++;
                                             return firstPointIndex;
-                                        }
+                                        };
 
                                         //===1.
                                         let translate_x = {
@@ -1415,7 +1415,7 @@ function waveXdist() {
                                         // console.debug(shiftMean);
 
                                         return translate_x + shiftMean;
-                                    }
+                                    };
 
                                     g.attr("transform", `translate(${getTransX()},${0})`);
 

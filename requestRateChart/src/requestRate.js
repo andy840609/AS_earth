@@ -11,15 +11,15 @@ function requestRate() {
     chart.selector = (vaule) => {
         selector = vaule;
         return chart;
-    }
+    };
     chart.dataPath = (vaule) => {
         dataPath = vaule;
         return chart;
-    }
+    };
     chart.typeNamePath = (vaule) => {
         typeNamePath = vaule;
         return chart;
-    }
+    };
     chart.dataObj = (vaule) => {
         // console.log(vaule);
         // test = vaule;
@@ -38,7 +38,7 @@ function requestRate() {
         data.column = column;
         console.log(data);
         return chart;
-    }
+    };
     chart.typeNameObj = (vaule) => {
         typeName = vaule.map(v => {
             v.id = !isNaN(v.id) ? parseInt(v.id) : v.id;
@@ -49,12 +49,12 @@ function requestRate() {
         typeName.column = column;
         console.log(typeName);
         return chart;
-    }
+    };
     chart.typesOfException = (vaule) => {
         typesOfException = vaule.map(v => !isNaN(v) ? parseInt(v) : v);
         console.log('typesOfException=' + typesOfException);
         return chart;
-    }
+    };
     function chart() {
 
         const chartContainerJQ = $(selector);
@@ -68,14 +68,35 @@ function requestRate() {
 
                 <!-- ... xAxis ... -->    
                 <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
-                    <label for="xAxisOptionButton" class="col-form-label col-4" >Xaxis</label>
-                    <div class="btn-group btn-group-toggle col-8" role="group">
+                    <label for="xAxisOptionButton" class="col-form-label col-5" >Xaxis</label>
+                    <div class="btn-group btn-group-toggle col-7" role="group">
                         <button id="xAxisOptionButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            select
+                            date
                         </button>
                         <div class="dropdown-menu" id="xAxisMenu" aria-labelledby="xAxisOptionButton">
-                            <div id="xAxisDropDownMenu" >
+                            <div class="form-group col-12 d-flex flex-row flex-wrap align-items-start justify-content-between" id="xAxisDropDownMenu" >
                             
+
+                            <label class="font-weight-bold" for="">Metric</label>                    
+                            <div class="col-12 d-flex flex-row">
+                                <div class="form-check col-6 d-flex align-items-start" style="text-align: center;">
+                                    <input class="form-check-input col-3" type="checkbox" id="xAxis_date" name="xAxisMetric" value="date" checked>
+                                    <label class="" for="xAxis_date">date</label>
+                                </div>
+                                <div class="form-check col-6 d-flex align-items-start" style="text-align: center;">
+                                    <input class="form-check-input col-3" type="checkbox" id="xAxis_fileSize" name="xAxisMetric" value="fileSize">
+                                    <label for="xAxis_fileSize">fileSize</label>
+                                </div>
+                            </div>
+
+                            <label class="font-weight-bold" for="">Scale</label>
+                            <div class="col-12 d-flex flex-row">
+                                <div class="col-6 form-check d-flex align-items-start" style="text-align: center;">
+                                    <input class="form-check-input col-3" type="checkbox" id="xAxis_log" name="xAxisScale" value="log" disabled>
+                                    <label class="" for="xAxis_log">logrithmic</label>
+                                </div>
+                            </div>
+
                             </div>
                         </div>
                     </div>
@@ -83,14 +104,39 @@ function requestRate() {
                 
                 <!-- ... yAxis ... -->    
                 <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
-                    <label for="yAxisOptionButton" class="col-form-label col-4" >Yaxis</label>
-                    <div class="btn-group btn-group-toggle col-8" role="group">
+                    <label for="yAxisOptionButton" class="col-form-label col-5" >Yaxis</label>
+                    <div class="btn-group btn-group-toggle col-7" role="group">
                         <button id="yAxisOptionButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            select
+                            MB/s
                         </button>
                         <div class="dropdown-menu" id="yAxisMenu" aria-labelledby="yAxisOptionButton">
-                            <div id="yAxisDropDownMenu" >
-                            
+                            <div class="form-group col-12 d-flex flex-row flex-wrap align-items-start justify-content-between" id="yAxisDropDownMenu" >
+
+                            <label class="font-weight-bold" for="">Metric</label>                    
+                            <div class="col-12 d-flex flex-row">
+                                <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
+                                    <input class="form-check-input col-3" type="checkbox" id="yAxis_KB" name="yAxisMetric" value="KB">
+                                    <label class="" for="yAxis_KB">KB/s</label>
+                                </div>
+                                <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
+                                    <input class="form-check-input col-3" type="checkbox" id="yAxis_MB" name="yAxisMetric" value="MB" checked>
+                                    <label for="yAxis_MB">MB/s</label>
+                                </div>
+                                <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
+                                    <input class="form-check-input col-3" type="checkbox" id="yAxis_GB" name="yAxisMetric" value="GB">
+                                    <label for="yAxis_GB">GB/s</label>
+                                </div>
+                            </div>
+
+                            <label class="font-weight-bold" for="">Scale</label>
+                            <div class="col-12 d-flex flex-row">
+                                <div class="col-4 form-check d-flex align-items-start" style="text-align: center;">
+                                    <input class="form-check-input col-3" type="checkbox" id="yAxis_log" name="yAxisScale" value="log">
+                                    <label class="" for="yAxis_log">logrithmic</label>
+                                </div>
+                            </div>                          
+
+
                             </div>
                         </div>
                     </div>
@@ -98,8 +144,8 @@ function requestRate() {
             
                 <!-- ... display selector ... -->    
                 <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
-                    <label for="displaySelectButton" class="col-form-label col-4" >Display</label>
-                    <div class="btn-group btn-group-toggle col-8" role="group">
+                    <label for="displaySelectButton" class="col-form-label col-5" >Display</label>
+                    <div class="btn-group btn-group-toggle col-7" role="group">
                         <button id="displaySelectButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             select
                         </button>
@@ -113,8 +159,8 @@ function requestRate() {
 
                 <!-- ... show info ... -->    
                 <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
-                    <label for="showInfoButton" class="col-form-label col-4" >Show</label>
-                    <div class="btn-group btn-group-toggle col-8" role="group">
+                    <label for="showInfoButton" class="col-form-label col-5" >Show</label>
+                    <div class="btn-group btn-group-toggle col-7" role="group">
                         <button id="showInfoButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             select
                         </button>
@@ -180,26 +226,10 @@ function requestRate() {
             let All_dropdownMenu = chartContainerJQ.find('.dropdown-menu');
 
             All_dropdownMenu.on("click.bs.dropdown", function (e) {
-                // console.debug(this)
-                // console.debug(e.target.previousSibling)
-                // console.debug(e.target.tagName)
                 e.stopPropagation();
-                // let target = d3.select(e.target).select();
-                // console.debug(target.node());
-                // let checkbox = e.target.tagName == 'svg' ? e.target.previousSibling : e.target.parentNode.previousSibling;
-
-                // if (this.id == 'displayMenu') {
-                //     // console.debug(checkbox.checked);
-                //     let p_count = checkbox.value;
-                //     let check = checkbox.checked;
-                //     checkbox.checked = !check;
-                //     d3.select("#display_p" + p_count).dispatch("change");
-                // }
-
-
-
-
             });
+
+
         };
 
         function getFileData() {
@@ -273,8 +303,7 @@ function requestRate() {
             console.log(data);
             console.log("typeName=");
             console.log(typeName);
-        }
-
+        };
 
         function RQRchart() {
             // console.debug(data);
@@ -309,7 +338,7 @@ function requestRate() {
                 }
 
                 return color;
-            }
+            };
             const getString = (value) => {
                 let string = '';
                 switch (value) {
@@ -325,16 +354,99 @@ function requestRate() {
                     case 'global_reaction_rate':
                         string = '總反應速率';
                         break;
+                    case 'date':
+                        string = 'Date';
+                        break;
+                    case 'fileSize':
+                        string = 'File size ( KB )';
+                        break;
                     default:
                         string = value;
                         break;
-                }
+                };
                 return string;
+            };
+            const convert_download_unit = (value, unitBefore, unitAfter = undefined) => {
+                let newValue, newUnit;
+                const unit1 = ['b', 'B'];
+                const unit2 = ['', 'K', 'M', 'G', 'T'];
+
+
+                var getUnit = (unit) => {
+                    let unit1, unit2;
+
+                    if (unit.length > 1) {
+                        unit1 = unit[1];
+                        unit2 = unit[0];
+                    }
+                    else if (unit.length == 1) {
+                        unit1 = unit;
+                        unit2 = '';
+                    }
+
+                    return {
+                        unit1: unit1,
+                        unit2: unit2,
+                    }
+                }
+                var getRatio = (unitA, unitB, unitArr, powerBase) => {
+                    let ratio;
+                    let A_index = unitArr.indexOf(unitA);
+                    let B_index = unitArr.indexOf(unitB);
+
+                    if (A_index != -1 && B_index != -1) {
+                        let power = A_index - B_index;
+                        ratio = Math.pow(powerBase, power);
+                    }
+                    else {
+                        ratio = 1;
+                    }
+                    return ratio;
+                }
+
+                let unitBefore_obj = getUnit(unitBefore);
+
+                if (unitAfter) {//unitBefore 單位轉換到 unitAfter
+                    let unitAfter_obj = getUnit(unitAfter);
+                    let ratio1 = getRatio(unitBefore_obj.unit1, unitAfter_obj.unit1, unit1, 8);
+                    let ratio2 = getRatio(unitBefore_obj.unit2, unitAfter_obj.unit2, unit2, 1024);
+                    // console.debug(unitBefore_obj, unitAfter_obj);
+                    // console.debug(ratio1, ratio2);
+                    newValue = value * ratio1 * ratio2;
+                    newUnit = unitAfter;
+                }
+                else {//unitBefore 單位轉換到 value>=1或單位已是最小(b)為止 ,並給newUnit
+
+                    let unit1_index = unit1.indexOf(unitBefore_obj.unit1);
+                    let unit2_index = unit2.indexOf(unitBefore_obj.unit2);
+                    newValue = value;
+                    // let newUnit1 = unitBefore_unit1, newUnit2 = unitBefore_unit2;
+
+                    while (newValue < 1 && (unit1_index != 0 || unit2_index != 0)) {
+                        //先轉unit2,不夠才轉unit1
+                        if (unit2_index > 0) {
+                            unit2_index -= 1;
+                            newValue *= 1024;
+                        } else {
+                            unit1_index -= 1;
+                            newValue *= 8;
+                        }
+
+                    }
+                    newUnit = unit2[unit2_index] + unit1[unit1_index];
+
+                }
+
+                return {
+                    value: newValue,
+                    unit: newUnit,
+                };
             };
 
             const dataKeys = data.column;
             const typeNameKeys = typeName.column;
             const rateDataKeys = ['processing_speed', 'internal_transmission_rate', 'external_transmission_rate', 'global_reaction_rate'];
+            const originUnit = 'KB';
 
             {      //刪掉不需要的type ＆ 算rateData
                 // const type_dont_show = [6, 7];
@@ -362,7 +474,7 @@ function requestRate() {
                     })
                     return rateData;
                 }();
-
+                console.log(rateData);
             }
 
             // ==比較rateData速率與原始資料異同
@@ -403,12 +515,14 @@ function requestRate() {
                 .attr("viewBox", [0, 0, width, height]);
             const xAxis = svg.append("g").attr("class", "xAxis");
             const yAxis = svg.append("g").attr("class", "yAxis");
-            const focusGroup = svg.append("g").attr('class', 'focus').attr("clip-path", "url(#clip)");
+            const focusGroup = svg.append("g").attr('class', 'focus');
             const legendGroup = svg.append("g").attr('class', 'legendGroup');
 
             var x, y;
             var newDataObj;
             var display_timming_index = d3.range(rateDataKeys.length);
+
+
 
             function updateChart(trans = false) {
                 const circle_r = 3;
@@ -417,6 +531,8 @@ function requestRate() {
                 const star_corner = 5, star_r1 = 4, star_r2 = 2;
                 // const fillColor = dots.attr('stroke');
                 const fillColor = 'none';
+
+
                 const makeShape = (d3Selection, shapeIndex, centre, dataObj = null) => {
                     // console.debug(shapeIndex, dataIndex);
                     // console.debug(dataObj);
@@ -432,7 +548,7 @@ function requestRate() {
                             a += alpha;
                         }
                         return points;
-                    }
+                    };
                     let shape = { 0: 'circle', 1: 'rect', 2: 'polygon', 3: 'polygon' }[shapeIndex];
                     let display_class = rateDataKeys[shapeIndex];
                     let shapeSelection = dataObj ?
@@ -498,9 +614,10 @@ function requestRate() {
                             break;
                     }
 
-                }
+                };
                 function init() {
 
+                    //==title
                     let title = 'GDMS系統負載監測';
 
                     svg
@@ -513,7 +630,11 @@ function requestRate() {
                         .attr("alignment-baseline", "text-after-edge")
                         .attr("font-weight", "bold")
                         .attr("font-size", "15")
+                        .attr("x", width / 2)
+                        .attr("y", margin.top / 2)
                         .text(title);
+
+
 
                     //==mask
                     svg
@@ -535,7 +656,9 @@ function requestRate() {
                         .attr("fill", "black")
                         .attr("font-weight", "bold")
                         .attr("font-size", "12")
-                        .text('Date');
+                        .attr('x', width / 2)
+                        .attr("y", margin.bottom - 10);
+
 
                     yAxis
                         .append('text')
@@ -546,7 +669,8 @@ function requestRate() {
                         .style("text-anchor", "middle")
                         .attr("alignment-baseline", "text-before-edge")
                         .attr("transform", "rotate(-90)")
-                        .text('Rate ( KB / s )');
+                        .attr('x', -(height - margin.top - margin.bottom) / 2 - margin.top)
+                        .attr("y", -margin.left + 2);
 
                     //==legendGroup
                     {
@@ -658,7 +782,7 @@ function requestRate() {
                         .selectAll('div')
                         .data(rateDataKeys)
                         .join('div')
-                        .attr('class', 'form-check  col-12')
+                        .attr('class', 'form-check col-12 d-flex flex-nowrap')
                         .style("padding-left", '35px')
                         .style("position", 'static')
                         .call(menu => {
@@ -678,8 +802,7 @@ function requestRate() {
                                     .append('label')
                                     .attr('class', 'form-check-label')
                                     .attr('for', 'display_' + i)
-                                    // .style("display", "block")
-                                    // .style("text-indent", "30px")
+                                    .style("white-space", "nowrap")
                                     .text(getString(d));
 
                                 let svg_width = 20;
@@ -694,7 +817,7 @@ function requestRate() {
                             });
                         });
 
-                }
+                };
                 function render() {
 
                     var newData = newDataObj.newData;
@@ -702,6 +825,7 @@ function requestRate() {
                     var display_DataKeys = dataKeys.slice(2).filter((key, i) => display_timming_index.includes(i));
                     var display_rateDataKeys = rateDataKeys.filter((key, i) => display_timming_index.includes(i));
                     // console.debug(display_DataKeys, display_rateDataKeys);
+                    // console.debug(dataKeys[1]);
 
                     var getNiceDomain = (domain, addRate = 0.1) => {
                         let min = domain[0];
@@ -712,83 +836,81 @@ function requestRate() {
                         min -= addRange;
 
                         return [min, max];
-                    }
+                    };
 
                     var xAxisDomain = newDataObj.xSelected_domain ?
-                        newDataObj.xSelected_domain :
-                        // getNiceDomain([data[0][dataKeys[2]], data[data.length - 1][dataKeys[dataKeys.length - 1]]], 0.01);
-                        getNiceDomain(d3.extent([].concat(...newData.map(d => d3.extent([display_DataKeys[0], display_DataKeys[display_DataKeys.length - 1]], key => d[key])))), 0.01)
-                    // getNiceDomain([data[0][display_DataKeys[0]], data[data.length - 1][display_DataKeys[display_DataKeys.length - 1]]], 0.01);
-                    // console.debug(xAxisDomain);
-                    // console.debug(new Date(xAxisDomain[0]).toISOString(), new Date(xAxisDomain[1]).toISOString());
-                    // console.debug(dataKeys[2]);
+                        newDataObj.xSelected_domain : newDataObj.xAxisOption.metric == 'date' ?
+                            d3.extent([].concat(...newData.map(d => d3.extent([display_DataKeys[0], display_DataKeys[display_DataKeys.length - 1]], key => d[key])))) :
+                            d3.extent([].concat(...newData.map(d => d[dataKeys[1]])));//  key=file_size
+
+                    var yAxisDomain =
+                        display_rateDataKeys.length == 0 ?
+                            d3.extent([].concat(...newRateData.map(rd => d3.extent(rateDataKeys, key => rd[key])))) :
+                            [1, d3.max([].concat(...newRateData.map(rd => d3.max(display_rateDataKeys, key => rd[key]))))];
 
 
-                    var yAxisDomain = newDataObj.ySelected_domain ?
-                        newDataObj.ySelected_domain :
-                        (
-                            display_rateDataKeys.length == 0 ?
-                                d3.extent([].concat(...newRateData.map(rd => d3.extent(rateDataKeys, key => rd[key])))) :
-                                getNiceDomain([0, d3.max([].concat(...newRateData.map(rd => d3.max(display_rateDataKeys, key => rd[key]))))], 0.01)
-                        )
-                    // console.debug(yAxisDomain);
+                    // console.debug(xAxisOption);
+                    x = d3[{ date: 'scaleUtc', fileSize: xAxisOption.logScale ? 'scaleLog' : 'scaleLinear' }[xAxisOption.metric]]()
+                        .domain({ date: getNiceDomain(xAxisDomain, 0.01), fileSize: xAxisOption.logScale ? xAxisDomain : getNiceDomain(xAxisDomain, 0.01) }[xAxisOption.metric])
+                        .range([margin.left, width - margin.right]);
+                    if (xAxisOption.logScale) x.nice();
 
-                    x = d3.scaleUtc()
-                        .domain(xAxisDomain)
-                        .range([margin.left, width - margin.right])
-                    // .nice();
-                    // console.debug(x.domain());
-
-                    y = d3.scaleLinear()
-                        .domain(yAxisDomain)
+                    // console.debug(yAxisDomain = [1, 17247]);
+                    y = d3[yAxisOption.logScale ? 'scaleLog' : 'scaleLinear']()
+                        .domain(getNiceDomain(yAxisDomain.map(d => convert_download_unit(d, originUnit, yAxisOption.metric).value), yAxisOption.logScale ? 0 : 0.01))
                         .range([height - margin.bottom, margin.top]);
+                    if (yAxisOption.logScale) x.nice();
+                    // console.debug(y.domain());
 
                     var refreshText = () => {
                         xAxis
                             .select('.axis_name')
-                            .attr('x', width / 2)
-                            .attr("y", margin.bottom - 10);
+                            .text(getString(xAxisOption.metric));
 
 
                         yAxis
                             .select('.axis_name')
-                            .attr('x', -(height - margin.top - margin.bottom) / 2 - margin.top)
-                            .attr("y", -margin.left + 2);
+                            .text(`Rate ( ${yAxisOption.metric} / s )`);
 
-                        //==title
-                        svg
-                            .select('.title text')
-                            .attr("x", width / 2)
-                            .attr("y", margin.top / 2);
 
-                    }
+                    };
                     var updateAxis = () => {
+                        function formatPower(x) {
+                            const e = Math.log10(x);
+                            if (e !== Math.floor(e)) return; // Ignore non-exact power of ten.
+                            return `10${(e + "").replace(/./g, c => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c] || "⁻")}`;
+                        };
+
                         var makeXAxis = g => g
                             .attr("transform", `translate(0,${height - margin.bottom})`)
-                            .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0))
                             .call(g => {
-                                // if (xAxisScale == 'band')
-                                //     g.selectAll("g.xAxis g.tick text")
-                                //         .attr('x', 9)
-                                //         .attr("y", 0)
-                                //         .attr("dy", ".35em")
-                                //         .attr("text-anchor", "start")
-                                //         .attr("transform", "rotate(90)");
+                                let axisFun = d3.axisBottom(x).tickSizeOuter(0);
+                                xAxisOption.metric == 'date' ?
+                                    axisFun.ticks(width / 80) :
+                                    xAxisOption.logScale ?
+                                        axisFun.ticks(Math.log10(x.domain()[1] / x.domain()[0]) + 1, formatPower) :
+                                        axisFun.ticks(width / 80);
+                                axisFun(g);
                             });
 
                         var makeYAxis = g => g
                             .attr("transform", `translate(${margin.left},0)`)
-                            .call(d3.axisLeft(y)
-                                .ticks(height / 30))
-                            // .call(g => g.select(".domain").remove())
-                            .call(g => g.selectAll("g.yAxis g.tick line")
-                                .attr("x2", d => width - margin.left - margin.right)
-                                .attr("stroke-opacity", 0.2)
+                            .call(g => {
+                                let axisFun = d3.axisLeft(y);
+                                yAxisOption.logScale ?
+                                    axisFun.ticks(Math.log10(y.domain()[1] / y.domain()[0]) + 1, formatPower) :
+                                    axisFun.ticks(height / 30);
+                                axisFun(g);
+                            })
+                            .call(g =>
+                                g.selectAll("g.yAxis g.tick line")
+                                    .attr("x2", d => width - margin.left - margin.right)
+                                    .attr("stroke-opacity", 0.2)
                             );
 
                         xAxis.call(makeXAxis);
                         yAxis.call(makeYAxis);
-                    }
+                    };
                     var updateFocus = () => {
                         var makeDots = focusGroup => focusGroup
                             .selectAll("g")
@@ -801,9 +923,15 @@ function requestRate() {
                                 focusGroup.selectAll(".dots").each(function (d, i) {
                                     // console.debug([d]);
                                     let dots = d3.select(this);
-                                    let timingArr = display_DataKeys.map(key => d[key]);
-                                    let rateDataObj = newRateData[i];
-                                    let rateArr = display_rateDataKeys.map(key => rateDataObj[key]);
+
+                                    let rateArr = display_rateDataKeys.map(key =>
+                                        convert_download_unit(newRateData[i][key], originUnit, yAxisOption.metric).value);
+                                    let xdataArr = {
+                                        date: display_DataKeys.map(key => d[key]),
+                                        fileSize: rateArr.map(() => d[dataKeys[1]]),
+                                    }[xAxisOption.metric];
+
+
                                     let line = d3.line()
                                         .defined((d, i) => !isNaN(rateArr[i]))
                                         .x(d => x(d))
@@ -817,58 +945,66 @@ function requestRate() {
                                         .attr("stroke-width", 1.2)
                                         .attr("fill", fillColor)
                                         .attr("stroke-opacity", .5)
-                                        .attr("d", line(timingArr));
-
-
+                                        .attr("d", line(xdataArr));
 
 
                                     display_timming_index.forEach((shapeIndex, dataIndex) => {
                                         if (rateArr[dataIndex]) {
-                                            let centre = { x: x(timingArr[dataIndex]), y: y(rateArr[dataIndex]) };
+                                            let centre = { x: x(xdataArr[dataIndex]), y: y(rateArr[dataIndex]) };
                                             makeShape(dots, shapeIndex, centre, d);
-                                        }
+                                        };
                                     });
 
 
                                 }));
 
                         focusGroup.call(makeDots);
-                    }
+                    };
 
                     refreshText();
                     updateAxis();
                     updateFocus();
 
-                }
-
+                };
 
                 if (!newDataObj) {
-                    newDataObj = getNewData();
+                    newDataObj = getNewData
+                        (
+                            // xAxisOption = {
+                            //     metric: chartContainerD3.selectAll('input[name=xAxisMetric]:checked').property("value"),
+                            //     logScale: false,
+                            // },
+
+                            xAxisOption = {
+                                metric: 'fileSize',
+                                logScale: true,
+                            },
+                            yAxisOption = {
+                                metric: chartContainerD3.selectAll('input[name=yAxisMetric]:checked').property("value"),
+                                logScale: false,
+                            }
+                        );
                     init();
-                }
+                };
                 render();
 
 
 
             };
-            function getNewData(xSelected_domain = null, ySelected_domain = null, rateUnit) {
+            function getNewData(xAxisOption = null, yAxisOption = null, xSelected_domain = null) {
                 let newData, newRateData;
                 // newDataObj.rateUnit != rateUnit
                 var update_newData_and_newRateData = () => {
-                    if (!newDataObj) {
+                    if (!xSelected_domain) {
                         newData = data;
                         newRateData = rateData;
-                    }
-                    else if (!xSelected_domain) {
-                        newData = newDataObj.newData;
-                        newRateData = newDataObj.newRateData;
                     }
                     else {
                         // let i1 = d3.bisectCenter(newDataObj.newTimeArr, xSelected_domain[0]);
                         // let i2 = d3.bisectCenter(newDataObj.newTimeArr, xSelected_domain[1]) + 1;//包含最大範圍
                         // newData = (getRateData ? newDataObj.newRateData : newDataObj.newData).slice(i1, i2);
-                    }
-                }
+                    };
+                };
                 var update_newRateData_by_rateUnit = () => {
                     if (!newDataObj) {
                         newData = data;
@@ -878,17 +1014,17 @@ function requestRate() {
                         newData = newDataObj.newData;
                         newRateData = newDataObj.newRateData;
                     }
-                }
+                };
                 update_newData_and_newRateData();
-                update_newRateData_by_rateUnit();
+                // update_newRateData_by_rateUnit();
                 let tmpObj = {
                     newData: newData,
                     newRateData: newRateData,
                     xSelected_domain: xSelected_domain,
-                    ySelected_domain: ySelected_domain,
-                    rateUnit: rateUnit,
+                    xAxisOption: xAxisOption,
+                    yAxisOption: yAxisOption,
                 };
-                // console.debug(tmpObj);
+                console.debug(tmpObj);
                 return tmpObj;
 
             };
@@ -896,7 +1032,11 @@ function requestRate() {
 
 
             function events(svg) {
-                var xSelected_domain = null, ySelected_domain = null;
+                // console.debug(newDataObj);
+
+                var xSelected_domain = null,
+                    xAxisOption = newDataObj.xAxisOption,
+                    yAxisOption = newDataObj.yAxisOption;
 
                 function chartEvent() {
                     const tooltip = chartContainerD3.select("#charts").append("div")
@@ -1215,12 +1355,88 @@ function requestRate() {
 
                     event_rect.call(dragBehavior);
 
-                }
+                };
                 function chartOptionEvent() {
                     var updateFlag = true;
+                    //=====xaxis option
+                    let xAxisMetric = chartContainerD3.selectAll('input[name ="xAxisMetric"]');
+                    let xAxisMetricText = chartContainerD3.select('#xAxisOptionButton');
+                    let xAxisLog = chartContainerD3.select('#xAxis_log');
+                    // console.debug(xAxisLog);
 
+                    xAxisMetric
+                        .on('change', e => {
+                            let value = e.target.value;
+                            let checked = e.target.checked;
+                            //＝＝＝單選,其他勾拿掉
+                            xAxisMetric.nodes().filter(chkbox => chkbox !== e.target).forEach(chkbox => chkbox.checked = false);
+
+                            //＝＝＝被點擊的勾不能拿掉
+                            if (!checked) {
+                                e.target.checked = true;
+                                return;
+                            };
+
+                            //===改變按鈕text
+                            xAxisMetricText.text(value);
+
+
+
+                            //==date不能log scale
+                            let metricIsDate = value == 'date';
+                            xAxisOption.logScale = metricIsDate ? false : xAxisLog.property('checked');
+                            xAxisLog.property('disabled', metricIsDate);
+
+                            //===更新圖表
+                            xAxisOption.metric = value;
+                            getNewData(xAxisOption, yAxisOption);
+                            updateChart();
+
+                        });
+
+                    xAxisLog
+                        .on('change', e => {
+                            xAxisOption.logScale = e.target.checked;
+                            getNewData(xAxisOption, yAxisOption);
+                            updateChart();
+                        });
+
+                    //=====yaxis option
+                    let yAxisMetric = chartContainerD3.selectAll('input[name ="yAxisMetric"]');
+                    let yAxisMetricText = chartContainerD3.select('#yAxisOptionButton');
+                    let yAxisLog = chartContainerD3.select('#yAxis_log');
+
+                    yAxisMetric
+                        .on('change', e => {
+                            let value = e.target.value;
+                            let checked = e.target.checked;
+                            //＝＝＝單選,其他勾拿掉
+                            yAxisMetric.nodes().filter(chkbox => chkbox !== e.target).forEach(chkbox => chkbox.checked = false);
+
+                            //＝＝＝被點擊的勾不能拿掉
+                            if (!checked) {
+                                e.target.checked = true;
+                                return;
+                            };
+
+                            //===改變按鈕text
+                            yAxisMetricText.text(value);
+
+
+                            //===更新圖表
+                            yAxisOption.metric = value;
+                            getNewData(xAxisOption, yAxisOption);
+                            updateChart();
+                        });
+
+                    yAxisLog
+                        .on('change', e => {
+                            yAxisOption.logScale = e.target.checked;
+                            getNewData(xAxisOption, yAxisOption);
+                            updateChart();
+                        });
                     //=====change display
-                    d3.selectAll('input[name ="display"]')
+                    chartContainerD3.selectAll('input[name ="display"]')
                         .on('change', e => {
                             let display_index = parseInt(e.target.value);
                             let check = e.target.checked;
@@ -1240,20 +1456,12 @@ function requestRate() {
                             updateChart(true);
                         });
                     //=====show info
-
                     chartContainerD3.select('#showPath').on('change', e =>
                         d3.selectAll('.orderPath').attr("display", e.target.checked ? 'inline' : 'none'));
                     chartContainerD3.select('#showLegend').on('change', e =>
                         d3.selectAll('.legend').attr("display", e.target.checked ? 'inline' : 'none'));
-                    //=====rate unit
 
-                    chartContainerD3.select('#rateUnit').on('change', e => {
-                        console.debug(e.target.value);
-
-
-                    });
-
-                }
+                };
                 function legendEvent() {
                     var x_fixed = 0, y_fixed = 0;
                     var legend_dragBehavior = d3.drag()
@@ -1275,7 +1483,7 @@ function requestRate() {
                         .selectAll('.legend')
                         .call(legend_dragBehavior);
 
-                }
+                };
                 // chartEvent();
                 chartOptionEvent();
                 legendEvent();
@@ -1284,7 +1492,7 @@ function requestRate() {
             svg.call(events);
 
             return svg.node();
-        }
+        };
 
         function printChart() {
             chartContainerJQ.find('#charts').children().remove();
@@ -1528,13 +1736,13 @@ function requestRate() {
             chartContainerJQ.find('#chart' + i).append(chartNode);
             // console.debug(i);
             MenuEvents();
-        }
+        };
 
         if (!(chartContainerJQ.find('#form-chart').length >= 1)) {
             init();
             if (dataPath)
                 getFileData();
-        }
+        };
 
         printChart();
     }

@@ -533,9 +533,10 @@ function requestRate() {
                 const fillColor = 'none';
 
 
-                const makeShape = (d3Selection, shapeIndex, centre, dataObj = null) => {
+                const makeShape = (d3Selection, shapeIndex, centre, rateData = null) => {
                     // console.debug(shapeIndex, dataIndex);
-                    // console.debug(dataObj);
+                    // console.debug(rateData);
+
                     const polygonPoints = (cx, cy, r, n, invert = false) => {
                         let alpha = 2 * Math.PI / n;
                         let a = Math.PI / 2 + (invert ? alpha : alpha / 2);
@@ -549,18 +550,18 @@ function requestRate() {
                         }
                         return points;
                     };
+
                     let shape = { 0: 'circle', 1: 'rect', 2: 'polygon', 3: 'polygon' }[shapeIndex];
                     let display_class = rateDataKeys[shapeIndex];
-                    let shapeSelection = dataObj ?
+                    let shapeSelection = rateData ?//==沒有rateData的是legend上或是display menu的範例圖形
                         d3Selection.selectAll("." + display_class)
-                            .data([dataObj])
+                            .data([rateData])
                             .join(shape)
-                            .attr("class", display_class)
-                        :
-                        d3Selection.append(shape)
+                            .attr("class", display_class) :
+                        d3Selection
+                            .append(shape)
                             .attr("stroke", 'grey');
 
-                    // console.debug(shapeSelection.node());
                     switch (shapeIndex) {
                         case 0:
                             // console.debug('circle');
@@ -612,7 +613,9 @@ function requestRate() {
                             // // console.debug(star_radian)    
 
                             break;
-                    }
+                    };
+
+
 
                 };
                 function init() {
@@ -634,21 +637,6 @@ function requestRate() {
                         .attr("y", margin.top / 2)
                         .text(title);
 
-
-
-                    //==mask
-                    svg
-                        .append("defs")
-                        .append("clipPath")
-                        .attr("id", "clip")
-                        .append("rect")
-                        .attr("id", "chartRenderRange")
-                        .attr('x', margin.left)
-                        .attr('y', margin.top)
-                        .attr('width', width - margin.right - margin.left)
-                        .attr('height', height - margin.top - margin.bottom)
-                        .attr('fill', 'none')
-                        .attr('pointer-events', 'all');
 
                     xAxis
                         .append('text')
@@ -822,6 +810,10 @@ function requestRate() {
 
                     var newData = newDataObj.newData;
                     var newRateData = newDataObj.newRateData;
+                    var xAxisOption = newDataObj.xAxisOption;
+                    var yAxisOption = newDataObj.yAxisOption;
+                    var xAxis_domain = newDataObj.xAxis_domain;
+
                     var display_DataKeys = dataKeys.slice(2).filter((key, i) => display_timming_index.includes(i));
                     var display_rateDataKeys = rateDataKeys.filter((key, i) => display_timming_index.includes(i));
                     // console.debug(display_DataKeys, display_rateDataKeys);
@@ -838,29 +830,29 @@ function requestRate() {
                         return [min, max];
                     };
 
-                    var xAxisDomain = newDataObj.xSelected_domain ?
-                        newDataObj.xSelected_domain : newDataObj.xAxisOption.metric == 'date' ?
+                    var xAxisDomain = xAxis_domain ?
+                        xAxis_domain : xAxisOption.metric == 'date' ?
                             d3.extent([].concat(...newData.map(d => d3.extent([display_DataKeys[0], display_DataKeys[display_DataKeys.length - 1]], key => d[key])))) :
                             d3.extent([].concat(...newData.map(d => d[dataKeys[1]])));//  key=file_size
 
                     var yAxisDomain =
                         display_rateDataKeys.length == 0 ?
                             d3.extent([].concat(...newRateData.map(rd => d3.extent(rateDataKeys, key => rd[key])))) :
-                            [1, d3.max([].concat(...newRateData.map(rd => d3.max(display_rateDataKeys, key => rd[key]))))];
+                            d3.extent([].concat(...newRateData.map(rd => d3.extent(display_rateDataKeys, key => rd[key]))));
 
-
-                    // console.debug(xAxisOption);
+                    // console.debug(xAxisDomain);
                     x = d3[{ date: 'scaleUtc', fileSize: xAxisOption.logScale ? 'scaleLog' : 'scaleLinear' }[xAxisOption.metric]]()
-                        .domain({ date: getNiceDomain(xAxisDomain, 0.01), fileSize: xAxisOption.logScale ? xAxisDomain : getNiceDomain(xAxisDomain, 0.01) }[xAxisOption.metric])
+                        .domain(xAxisDomain)
                         .range([margin.left, width - margin.right]);
-                    if (xAxisOption.logScale) x.nice();
+                    if (xAxisOption.logScale && !xAxis_domain) x.nice();
 
-                    // console.debug(yAxisDomain = [1, 17247]);
+                    // console.debug(yAxisDomain);
                     y = d3[yAxisOption.logScale ? 'scaleLog' : 'scaleLinear']()
                         .domain(getNiceDomain(yAxisDomain.map(d => convert_download_unit(d, originUnit, yAxisOption.metric).value), yAxisOption.logScale ? 0 : 0.01))
                         .range([height - margin.bottom, margin.top]);
-                    if (yAxisOption.logScale) x.nice();
-                    // console.debug(y.domain());
+                    if (yAxisOption.logScale) y.nice();
+
+                    // console.debug(x.domain());
 
                     var refreshText = () => {
                         xAxis
@@ -947,12 +939,19 @@ function requestRate() {
                                         .attr("stroke-opacity", .5)
                                         .attr("d", line(xdataArr));
 
-
                                     display_timming_index.forEach((shapeIndex, dataIndex) => {
-                                        if (rateArr[dataIndex]) {
+                                        // console.debug(shapeIndex, dataIndex)
+                                        // console.debug(rateArr)
+
+                                        //有rateData就更新圖形
+                                        if (!isNaN(rateArr[dataIndex])) {
                                             let centre = { x: x(xdataArr[dataIndex]), y: y(rateArr[dataIndex]) };
-                                            makeShape(dots, shapeIndex, centre, d);
-                                        };
+                                            makeShape(dots, shapeIndex, centre, rateArr[dataIndex]);
+                                        }
+                                        //否則刪除（不然會遺留之前group裡的圖形）
+                                        else
+                                            dots.select("." + rateDataKeys[shapeIndex]).remove();
+
                                     });
 
 
@@ -970,16 +969,11 @@ function requestRate() {
                 if (!newDataObj) {
                     newDataObj = getNewData
                         (
-                            // xAxisOption = {
-                            //     metric: chartContainerD3.selectAll('input[name=xAxisMetric]:checked').property("value"),
-                            //     logScale: false,
-                            // },
-
-                            xAxisOption = {
-                                metric: 'fileSize',
-                                logScale: true,
+                            {
+                                metric: chartContainerD3.selectAll('input[name=xAxisMetric]:checked').property("value"),
+                                logScale: false,
                             },
-                            yAxisOption = {
+                            {
                                 metric: chartContainerD3.selectAll('input[name=yAxisMetric]:checked').property("value"),
                                 logScale: false,
                             }
@@ -991,36 +985,41 @@ function requestRate() {
 
 
             };
-            function getNewData(xAxisOption = null, yAxisOption = null, xSelected_domain = null) {
+            function getNewData(xAxisOption = null, yAxisOption = null, xAxis_domain = null) {
                 let newData, newRateData;
-                // newDataObj.rateUnit != rateUnit
+
+                xAxisOption = xAxisOption ? xAxisOption : newDataObj.xAxisOption;
+                yAxisOption = yAxisOption ? yAxisOption : newDataObj.yAxisOption;
+
+                // console.debug(xAxis_domain);
+
                 var update_newData_and_newRateData = () => {
-                    if (!xSelected_domain) {
-                        newData = data;
-                        newRateData = rateData;
+
+                    if (xAxis_domain) {
+                        let dataKeys_idx = newDataObj.xAxisOption.metric == 'date' ? 2 : 1;
+                        newRateData = [];//==挑到的資料索引值用來挑rate陣列的資料(沒有排序不能直接i1 i2切割)
+                        newData = newDataObj.newData.filter((d, i) => {
+                            let data = d[dataKeys[dataKeys_idx]];
+                            if (data >= xAxis_domain[0] && data <= xAxis_domain[1]) {
+                                newRateData.push(newDataObj.newRateData[i]);
+                                return true;
+                            };
+                        });
+
+
                     }
                     else {
-                        // let i1 = d3.bisectCenter(newDataObj.newTimeArr, xSelected_domain[0]);
-                        // let i2 = d3.bisectCenter(newDataObj.newTimeArr, xSelected_domain[1]) + 1;//包含最大範圍
-                        // newData = (getRateData ? newDataObj.newRateData : newDataObj.newData).slice(i1, i2);
-                    };
-                };
-                var update_newRateData_by_rateUnit = () => {
-                    if (!newDataObj) {
+                        // if ()
                         newData = data;
                         newRateData = rateData;
-                    }
-                    else if (!xSelected_domain) {
-                        newData = newDataObj.newData;
-                        newRateData = newDataObj.newRateData;
-                    }
+                    };
                 };
                 update_newData_and_newRateData();
-                // update_newRateData_by_rateUnit();
+
                 let tmpObj = {
                     newData: newData,
                     newRateData: newRateData,
-                    xSelected_domain: xSelected_domain,
+                    xAxis_domain: xAxis_domain,
                     xAxisOption: xAxisOption,
                     yAxisOption: yAxisOption,
                 };
@@ -1034,330 +1033,247 @@ function requestRate() {
             function events(svg) {
                 // console.debug(newDataObj);
 
-                var xSelected_domain = null,
+                var xAxis_domain = null,
                     xAxisOption = newDataObj.xAxisOption,
                     yAxisOption = newDataObj.yAxisOption;
 
                 function chartEvent() {
-                    const tooltip = chartContainerD3.select("#charts").append("div")
-                        .attr("id", "tooltip")
-                        .style('position', 'absolute')
-                        .style('z-index', '1')
-                        .style("background-color", "#D3D3D3")
-                        .style('padding', '20px 20px 20px 20px')
-                        .style("opacity", " .9")
-                        .style('display', 'none');
+                    const defs = svg.append("defs")
+                        .append("clipPath")
+                        .attr("id", "clip")
+                        .append("rect")
+                        .attr("id", "chartRenderRange")
+                        .attr('x', margin.left)
+                        .attr('y', margin.top)
+                        .attr('width', width - margin.right - margin.left)
+                        .attr('height', height - margin.top - margin.bottom)
+                        .attr('fill', 'none')
+                        .attr('pointer-events', 'all');
 
-                    //====================================for mouse move==================================================
+                    const eventRect = svg.append("g")
+                        .attr("class", "eventRect")
+                        .append("use").attr('xlink:href', "#chartRenderRange");
 
-                    const mouseG = svg.append("g")
-                        .attr("class", "mouse-over-effects");
+                    const tooltip = chartContainerD3.select("#charts")
+                        .append("div")
+                        .attr("id", "tooltip");
 
-                    // const lineStroke = "2px";
-                    // const lineStroke2 = "0.5px";
+                    //==zoom
+                    var mouseDrag = () => {
+                        const selectionRect = {
+                            element: null,
+                            previousElement: null,
+                            currentY: 0,
+                            currentX: 0,
+                            originX: 0,
+                            originY: 0,
+                            setElement: function (ele) {
+                                this.previousElement = this.element;
+                                this.element = ele;
+                            },
+                            getNewAttributes: function () {
+                                var x = this.currentX < this.originX ? this.currentX : this.originX;
+                                var y = this.currentY < this.originY ? this.currentY : this.originY;
+                                var width = Math.abs(this.currentX - this.originX);
+                                var height = Math.abs(this.currentY - this.originY);
+                                return {
+                                    x: x,
+                                    y: y,
+                                    width: width,
+                                    height: height
+                                };
+                            },
+                            getCurrentAttributes: function () {
+                                // use plus sign to convert string into number
+                                var x = +this.element.attr("x");
+                                var y = +this.element.attr("y");
+                                var width = +this.element.attr("width");
+                                var height = +this.element.attr("height");
+                                return {
+                                    x1: x,
+                                    y1: y,
+                                    x2: x + width,
+                                    y2: y + height
+                                };
+                            },
+                            // getCurrentAttributesAsText: function () {
+                            //     var attrs = this.getCurrentAttributes();
+                            //     return "x1: " + attrs.x1 + " x2: " + attrs.x2 + " y1: " + attrs.y1 + " y2: " + attrs.y2;
+                            // },
+                            init: function (newX, newY) {
+                                var rectElement = svg
+                                    .append("rect")
+                                    .attr('rx', 0)
+                                    .attr('ry', 0)
+                                    .attr('x', 0)
+                                    .attr('y', 0)
+                                    .attr('width', 0)
+                                    .attr('height', 0)
+                                    // .attr('stroke', '#545454')
+                                    // .attr('stroke-width', ' 2px')
+                                    .attr('stroke-opacity', 1)
+                                    .attr('fill', '#97CBFF')
+                                    .attr('fill-opacity', 0.5);
+                                this.setElement(rectElement);
+                                this.originX = newX;
+                                this.originY = newY;
+                                this.update(newX, newY);
+                            },
+                            update: function (newX, newY) {
+                                this.currentX = newX;
+                                this.currentY = newY;
 
-                    // const mouseLine = mouseG.append("path") // create vertical line to follow mouse
-                    //     .attr("class", "mouse-line")
-                    //     .style("stroke", "#A9A9A9")
-                    //     .style("stroke-width", lineStroke)
-                    //     .style("opacity", "0");
-
-                    // const mousePerLineCollection = mouseG.selectAll('.mouse-per-line')
-                    //     .data(dvv_dataKey_index)
-                    //     .join("g")
-                    //     .attr("class", "mouse-per-line");
-                    // // console.debug(mousePerLineCollection)
-
-                    // const circleAmount = 3;
-                    // mousePerLineCollection
-                    //     .selectAll('circle')
-                    //     .data(d3.range(circleAmount))
-                    //     .join("circle")
-                    //     .call(() => {
-                    //         mouseG.selectAll("circle").each(function (d, i) {
-                    //             // console.debug(d, i)
-
-                    //             let circle = d3.select(this);
-                    //             let mainCircle = (d % 2 != 0);
-
-                    //             circle
-                    //                 .attr("r", d + 3)
-                    //                 .style("stroke", mainCircle ? getColor((i - 1) / 3) : "white")
-                    //                 .style("fill", "none")
-                    //                 .style("stroke-width", mainCircle ? lineStroke : lineStroke2)
-                    //                 .style("opacity", "0");
-
-                    //         });
-                    //     });
-
-
-                    // append a rect to catch mouse movements on canvas
-                    const event_rect = mouseG
-                        .append("use")
-                        .attr('class', "eventRect")
-                        .attr('xlink:href', "#chartRenderRange");
-
-                    // //====================================for zoom==================================================
-
-                    const selectionGroup = svg.append('g').attr('class', 'selectionGroup');
-                    const selectionRect = {
-                        element: null,
-                        previousElement: null,
-                        currentY: 0,
-                        currentX: 0,
-                        originX: 0,
-                        originY: 0,
-                        setElement: function (ele) {
-                            this.previousElement = this.element;
-                            this.element = ele;
-                        },
-                        getNewAttributes: function () {
-                            var x = this.currentX < this.originX ? this.currentX : this.originX;
-                            var y = this.currentY < this.originY ? this.currentY : this.originY;
-                            var width = Math.abs(this.currentX - this.originX);
-                            var height = Math.abs(this.currentY - this.originY);
-                            return {
-                                x: x,
-                                y: y,
-                                width: width,
-                                height: height
-                            };
-                        },
-                        getCurrentAttributes: function () {
-                            // use plus sign to convert string into number
-                            var x = +this.element.attr("x");
-                            var y = +this.element.attr("y");
-                            var width = +this.element.attr("width");
-                            var height = +this.element.attr("height");
-                            return {
-                                x1: x,
-                                y1: y,
-                                x2: x + width,
-                                y2: y + height
-                            };
-                        },
-                        // getCurrentAttributesAsText: function () {
-                        //     var attrs = this.getCurrentAttributes();
-                        //     return "x1: " + attrs.x1 + " x2: " + attrs.x2 + " y1: " + attrs.y1 + " y2: " + attrs.y2;
-                        // },
-                        init: function (newX, newY) {
-                            var rectElement = selectionGroup
-                                .append("rect")
-                                .attr('rx', 0)
-                                .attr('ry', 0)
-                                .attr('x', 0)
-                                .attr('y', 0)
-                                .attr('width', 0)
-                                .attr('height', 0)
-                                // .attr('stroke', '#545454')
-                                // .attr('stroke-width', ' 2px')
-                                .attr('stroke-opacity', 1)
-                                .attr('fill', '#97CBFF')
-                                .attr('fill-opacity', 0.5);
-                            this.setElement(rectElement);
-                            this.originX = newX;
-                            this.originY = newY;
-                            this.update(newX, newY);
-                        },
-                        update: function (newX, newY) {
-                            this.currentX = newX;
-                            this.currentY = newY;
-
-                            let newAttr = this.getNewAttributes();
-                            this.element
-                                .attr('x', newAttr.x)
-                                .attr('y', newAttr.y)
-                                .attr('width', newAttr.width)
-                                .attr('height', newAttr.height);
-                        },
-                        // focus: function () {
-                        //     this.element
-                        //         .style("stroke", "#DE695B")
-                        //         .style("stroke-width", "2.5");
-                        // },
-                        remove: function () {
-                            this.element.remove();
-                            this.element = null;
-                        },
-                        removePrevious: function () {
-                            if (this.previousElement) {
-                                this.previousElement.remove();
+                                let newAttr = this.getNewAttributes();
+                                this.element
+                                    .attr('x', newAttr.x)
+                                    .attr('y', newAttr.y)
+                                    .attr('width', newAttr.width)
+                                    .attr('height', newAttr.height);
+                            },
+                            // focus: function () {
+                            //     this.element
+                            //         .style("stroke", "#DE695B")
+                            //         .style("stroke-width", "2.5");
+                            // },
+                            remove: function () {
+                                this.element.remove();
+                                this.element = null;
+                            },
+                            removePrevious: function () {
+                                if (this.previousElement) {
+                                    this.previousElement.remove();
+                                }
                             }
-                        }
-                    };
+                        };
 
-                    const SC_width = 150, SC_height = 50;
-                    const selectionController = selectionGroup
-                        .append('g')
-                        .attr("display", 'none');
-
-                    selectionController
-                        .append('rect')
-                        .attr("width", SC_width)
-                        .attr("height", SC_height)
-                        .attr("fill", "#D3D3D3")
-                        .attr('rx', 5)
-                        .attr('ry', 5)
-                        .attr('stroke', '#000000')
-                        .attr("stroke-width", "1")
-                        .attr('fill', '#D3D3D3')
-                        .attr('opacity', .9);
-
-                    // const SC_buttonAmount = 2;
-                    // const SC_buttonText = ['zoom', 'remove'];
-                    const SC_buttonAmount = 1;
-                    const SC_buttonText = ['remove'];
-                    const SC_buttonWidth = 60, SC_buttonHeight = 30;
-
-                    selectionController
-                        .selectAll('.buttonGroup')
-                        .data(d3.range(SC_buttonAmount))
-                        .join('g')
-                        .attr('class', 'buttonGroup')
-                        .attr('id', d => 'SC_' + SC_buttonText[d])
-                        .call(buttonGroupCollection =>
-                            buttonGroupCollection.each(function (i) {
-                                let bg = d3.select(this);
-                                let translateX = SC_width / SC_buttonAmount * i + (SC_width / SC_buttonAmount - SC_buttonWidth) * 0.5
-                                let translateY = (SC_height - SC_buttonHeight) * 0.5;
-                                bg.attr("transform", `translate(${translateX},${translateY})`);
-
-                                let button = bg.append('rect')
-                                    .attr("width", SC_buttonWidth)
-                                    .attr("height", SC_buttonHeight)
-                                    .attr('rx', 5)
-                                    .attr('ry', 5)
-                                    .attr('stroke', '#000000')
-                                    .attr("stroke-width", "0.3")
-                                    .attr('fill', '#9D9D9D');
-
-                                let buttonText = bg.append('text')
-                                    .attr("class", "axis_name")
-                                    .attr("fill", "black")
-                                    .attr("font-weight", "bold")
-                                    .attr("font-size", "12")
-                                    .style("text-anchor", "middle")
-                                    .attr("alignment-baseline", "middle")
-                                    .attr('x', SC_buttonWidth * 0.5)
-                                    .attr('y', SC_buttonHeight * 0.5)
-                                    .text(SC_buttonText[i]);
-
-
-                                bg
-                                    .on('click', function () {
-                                        // console.debug(buttonText.text());
-
-                                        if (buttonText.text() == 'remove') {
-                                            // console.debug(removeData);
-                                            removeData_backup = JSON.parse(JSON.stringify(removeData));
-
-                                            buttonText.text('undo');
-                                            // console.debug(xSelected_domain, ySelected_domain);
-                                            let i1 = d3.bisectCenter(dataTimeArr, xSelected_domain[0]);
-                                            let i2 = d3.bisectCenter(dataTimeArr, xSelected_domain[1]) + 1;//包含最大範圍
-                                            let tmpData = data.slice(i1, i2);
-                                            tmpData.forEach(d =>
-                                                dvv_dataKey_index.forEach(dki => {
-                                                    if (d[dataKeys[dki]] >= ySelected_domain[0] && d[dataKeys[dki]] <= ySelected_domain[1]) {
-                                                        // console.debug(d[dataKeys[dki]]);
-                                                        let index = d3.bisectCenter(dataTimeArr, d[dataKeys[0]]);
-                                                        // console.debug(index);                                                      
-                                                        if (!removeData[index])//==undefine or null 
-                                                            removeData[index] = [];
-                                                        if (removeData[index].indexOf(dki) == -1)//==不放入重複元素
-                                                            removeData[index].push(dki);
-                                                    }
-
-                                                })
-                                            );
-                                            // console.debug(removeData);
-                                        }
-                                        else if (buttonText.text() == 'undo') {
-                                            buttonText.text('remove');
-                                            removeData = removeData_backup;
-                                        }
-                                        updateChart();
-                                    })
-                                    .on('mouseover', function () {
-                                        // console.debug(this)
-                                        button.attr('fill', '#E0E0E0');
-                                    })
-                                    .on('mouseout', function () {
-                                        // console.debug(this)
-                                        button.attr('fill', '#9D9D9D');
-                                    });
+                        const dragBehavior = d3.drag()
+                            .on("start", () => {
+                                // console.log("dragStart");
+                                const p = d3.pointer(event, eventRect.node());
+                                selectionRect.init(p[0], margin.top);
+                                selectionRect.removePrevious();
+                                d3.select(window).dispatch("click");//關閉dropdown
+                                // eventRect.dispatch('mouseleave');//tooltip取消
                             })
-                        );
+                            .on("drag", () => {
+                                // console.log("dragMove");
+                                const p = d3.pointer(event, eventRect.node());
+
+                                if (p[0] < margin.left)
+                                    p[0] = margin.left;
+                                else if (p[0] > width - margin.right)
+                                    p[0] = width - margin.right;
+
+                                selectionRect.update(p[0], height - margin.bottom);
+                            })
+                            .on("end", () => {
+                                // console.log("dragEnd");
+                                const finalAttributes = selectionRect.getCurrentAttributes();
+                                // console.debug(finalAttributes);
+
+                                if (finalAttributes.x2 - finalAttributes.x1 > 1)
+                                    xAxis_domain = [x.invert(finalAttributes.x1), x.invert(finalAttributes.x2)];
+                                else          //-------- reset zoom
+                                    xAxis_domain = null;
+
+                                newDataObj = getNewData(null, null, xAxis_domain);
+                                updateChart();
+                                selectionRect.remove();
 
 
-                    const dragBehavior = d3.drag()
-                        .on("start", () => {
-                            // console.log("dragStart");
-                            const p = d3.pointer(event, event_rect.node());
-                            selectionRect.init(p[0], p[1]);
-                            selectionRect.removePrevious();
-                        })
-                        .on("drag", () => {
-                            // console.log("dragMove");
-                            const p = d3.pointer(event, event_rect.node());
-                            // console.debug(p);
-                            if (p[1] < margin.top)
-                                p[1] = margin.top;
-                            else if (p[1] > height - margin.bottom)
-                                p[1] = height - margin.bottom;
-
-                            if (p[0] < margin.left)
-                                p[0] = margin.left;
-                            else if (p[0] > width - margin.right)
-                                p[0] = width - margin.right;
-                            selectionRect.update(p[0], p[1]);
-                        })
-                        .on("end", () => {
-                            // console.log("dragEnd");
-                            const finalAttributes = selectionRect.getCurrentAttributes();
-                            // console.debug(finalAttributes);
+                            });
 
 
-                            let selectionRect_width = finalAttributes.x2 - finalAttributes.x1;
-                            let selectionRect_height = finalAttributes.y2 - finalAttributes.y1;
-                            if (selectionRect_width > 1 && selectionRect_height > 1) {
-                                // console.log("range selected");
-                                // range selected
-                                event.preventDefault();
+                        eventRect.call(dragBehavior);
+                    };
+                    //==show tooltip
+                    var mouseMove = () => {
 
-                                xSelected_domain = [x.invert(finalAttributes.x1), x.invert(finalAttributes.x2)];
-                                ySelected_domain = [y.invert(finalAttributes.y2), y.invert(finalAttributes.y1)];
-                                // console.debug(xSelected_domain, ySelected_domain);
+                        //用來判斷tooltip應該在滑鼠哪邊
+                        const chart_center = [x.range().reduce((a, b) => a + b) * 0.5, y.range().reduce((a, b) => a + b) * 0.5];
+                        const tooltipMouseGap = 50;//tooltip與滑鼠距離
+
+                        //讓NodeList能使用map
+                        NodeList.prototype.map = Array.prototype.map;
+
+                        var updateTooltip = () => {
+
+                            tooltip.selectAll('div')
+                                .data()
+                                .join('div')
+                                .style('color', (d, i) => 'black')
+                                .style('font-size', 10)
+                                .html((child, i) => {
+                                    let shape = d3.select(child);
+
+                                    let data = shape.data()[0];
+                                    // console.debug(dot.attr('class'));
+                                    // console.debug(shape.data()[0]);
+                                    // console.debug(d, i);
+                                    // let y = data[idx][dataKeys[d]];
+                                    let value = i == 0 ?
+                                        data[dataKeys[newDataObj.xAxisOption.metric == 'date' ? 2 : 1]] :
+                                        data;
+
+                                    let html = `<font size='5'>${parseFloat(value.toFixed(2))}</font>`;
+                                    return html;
+                                });
+                        };
+                        focusGroup.raise()
+                            .on('mouseout', function (e) {
+                                tooltip.style("display", "none")
+                            })
+                            .on('mouseover', function (e) {
+                                const pointer = d3.pointer(e, this);
 
 
-                                let translateX = finalAttributes.x1 + (selectionRect_width - SC_width) * 0.5;
-                                if (translateX + SC_width > width) translateX = width - SC_width;//超出svg右邊界
-                                else if (translateX < 0) translateX = 0;//超出svg左邊界
-                                let translateY = finalAttributes.y1 - SC_height - 10;
+                                let mouseX = e.offsetX, mouseY = e.offsetY;
+                                let fullWidth = svg.property('clientWidth');
+                                //==show tooltip and set position
+                                tooltip.style("display", "inline")
+                                    .call(tooltip => {
+                                        //tooltip換邊
+                                        let left, right, top;
 
-                            }
-                            else {
-                                //-------- reset zoom
-                                // console.log("single point");
-                                xSelected_domain = null;
-                                ySelected_domain = null;
-                                selectionController
-                                    .attr("display", 'none')
-                                // console.debug(removeData);
-                            }
-                            newDataObj = getNewData(xSelected_domain, ySelected_domain);
-                            // updateChart();
-                            selectionRect.remove();
+                                        if (pointer[0] < chart_center[0]) {//滑鼠未過半,tooltip在右
+                                            left = (mouseX + tooltipMouseGap) + 'px';
+                                            right = null;
+                                        } else {//tooltip在左
+                                            left = null;
+                                            right = (fullWidth - mouseX + tooltipMouseGap) + 'px';
+                                        }
 
+                                        if (pointer[1] < chart_center[1]) //tooltip在下
+                                            top = (mouseY + tooltipMouseGap) + 'px';
+                                        else //tooltip在上
+                                            top = (mouseY - tooltip.property('clientHeight') - tooltipMouseGap) + 'px';
 
-                        });
+                                        tooltip
+                                            .style("top", top)
+                                            .style("left", left)
+                                            .style("right", right);
+                                    });
 
+                                let dotGroup = e.target.parentNode;
+                                // dotGroup.map(dot).map(child => child.__data__)
+                                let dataArr = dotGroup.childNodes.map((child, i) => {
+                                    let key = i == 0 ?
+                                        newDataObj.xAxisOption.metric :
+                                        child.classList[0];
+                                    // child.__data__
 
-                    event_rect.call(dragBehavior);
+                                    return {
 
+                                    }
+                                })
+                                console.debug(dataArr)
+                                // updateTooltip();
+                            });
+                    };
+                    mouseDrag();
+                    mouseMove();
                 };
                 function chartOptionEvent() {
-                    var updateFlag = true;
                     //=====xaxis option
                     let xAxisMetric = chartContainerD3.selectAll('input[name ="xAxisMetric"]');
                     let xAxisMetricText = chartContainerD3.select('#xAxisOptionButton');
@@ -1463,31 +1379,59 @@ function requestRate() {
 
                 };
                 function legendEvent() {
-                    var x_fixed = 0, y_fixed = 0;
-                    var legend_dragBehavior = d3.drag()
-                        .on('start', function (e) {
-                            // console.log('drag start');
-                            let matrix = this.transform.baseVal[0].matrix;
-                            x_fixed = e.x - matrix.e;
-                            y_fixed = e.y - matrix.f;
-                        })
-                        .on('drag', function (e) {
-                            d3.select(this).attr("transform", `translate(${e.x - x_fixed}, ${e.y - y_fixed})`)
-                        })
-                        .on('end', e => {
-                            // console.log('drag end');
-                        });
 
-                    svg.select('.legendGroup')
-                        .call(lg => lg.raise())//把legend拉到最上層(比zoom的選取框優先)
-                        .selectAll('.legend')
-                        .call(legend_dragBehavior);
+                    var raiseAndDrag = (d3_selection) => {
+                        let x_fixed = 0, y_fixed = 0;
+                        let legend_dragBehavior = d3.drag()
+                            .on('start', function (e) {
+                                // console.log('drag start');
+                                let matrix = this.transform.baseVal[0].matrix;
+                                x_fixed = e.x - matrix.e;
+                                y_fixed = e.y - matrix.f;
+                            })
+                            .on('drag end', function (e) {
+                                // console.log('drag');
+                                let translateX = e.x - x_fixed;
+                                let translateY = e.y - y_fixed;
+
+                                let targetSVGRect = this.getBBox();
+                                let targetWidth = targetSVGRect.width;
+                                let targetHeight = targetSVGRect.height;
+                                let targetFix = this.classList.contains('overview') ? 20 : 0;//overview要算上toolbar高
+
+                                // console.debug(targetSVGRect);
+                                let range_margin = 5;
+                                let xRange = [0 + range_margin, width - targetWidth - range_margin];
+                                let yRange = [targetFix + range_margin, height - targetHeight + targetFix - range_margin];
+                                //不能拉出svg範圍
+
+                                if (translateX < xRange[0])
+                                    translateX = xRange[0];
+                                else if (translateX > xRange[1])
+                                    translateX = xRange[1];
+                                // console.debug(width)
+                                if (translateY < yRange[0])
+                                    translateY = yRange[0];
+                                else if (translateY > yRange[1])
+                                    translateY = yRange[1];
+
+                                d3.select(this).attr("transform", `translate(${translateX}, ${translateY})`);
+                            })
+
+                        d3_selection
+                            .attr("cursor", 'grab')
+                            .call(g => g.raise())//把選中元素拉到最上層(比zoom的選取框優先)
+                            .call(g => g.selectAll('.legend').call(legend_dragBehavior));
+
+                    };
+                    svg.select('.legendGroup').call(raiseAndDrag);
 
                 };
-                // chartEvent();
+                chartEvent();
                 chartOptionEvent();
                 legendEvent();
-            }
+
+            };
 
             svg.call(events);
 

@@ -1520,7 +1520,6 @@ function waveXdist() {
 
                 //===分開updateObj讓圖表更新不受到mousemove...事件影響
                 var chartUpdateObj = { updateFlag: true, updateTimeOut: null, updateDelay: 10 };
-
                 var updateHandler = (action, updateObj = chartUpdateObj, parameter = null, mustDone = false) => {
                     // console.debug(parameter)
                     // console.debug(chartUpdateObj.updateFlag);
@@ -1543,16 +1542,8 @@ function waveXdist() {
                 //====================================tooltip==================================================
                 const tooltip = chartContainerD3.selectAll("#charts")
                     .append("div")
-                    // .attr("class", "container-sm")
-                    .attr("id", "tooltip")
-                    .style('position', 'absolute')
-                    // .style("top", '100px')
-                    .style('z-index', '999')
-                    .style("background-color", "#D3D3D3")
-                    .style('padding', '20px 20px 20px 20px')
-                    .style("opacity", " .9")
-                    // .style("width", "300px")
-                    .style('display', 'none');
+                    .attr("id", "tooltip");
+
 
                 //== tooltip init 分區好控制css
                 tooltip.call(div => {
@@ -1599,21 +1590,17 @@ function waveXdist() {
 
                         });
 
-                })
+                });
 
                 //===tooltip分頁控制
                 const NumOfEachPage = 4;//一頁顯示筆數
                 var totalPages, currentPage = 0;//當前頁數
                 var startIndex, endIndex, pageData;//當前頁的i1,i2和資料(用來畫mousemove的圈圈)
                 var mouseOnIdx = 0;//資料陣列的索引(滑鼠移動控制)
-                const chart_edgeV = [x.range()[0], x.range()[1]];
-                const chart_edgeH = [y.range()[1], y.range()[0]];
-                const chart_center = [//用來判斷tooltip應該在滑鼠哪邊
-                    (chart_edgeV[1] - chart_edgeV[0]) * 0.5,
-                    (chart_edgeH[1] - chart_edgeH[0]) * 0.5];
-                const tooltipMouseGap = 50;//tooltip與滑鼠距離
 
-                // console.debug(chart_edgeV, chart_edgeH)
+                //用來判斷tooltip應該在滑鼠哪邊
+                const chart_center = [x.range().reduce((a, b) => a + b) * 0.5, y.range().reduce((a, b) => a + b) * 0.5];
+                const tooltipMouseGap = 50;//tooltip與滑鼠距離
 
                 var tooltipUpdateObj = { updateFlag: true, updateTimeOut: null, updateDelay: 10 };
                 //===更新tooltip和圓圈
@@ -1811,8 +1798,8 @@ function waveXdist() {
                                         .attr("d", () => {
                                             // let yPos = y(newTimeArr[mouseOnIdx]);
                                             let yPos = pointer[1];
-                                            let p1 = chart_edgeV[1] + "," + yPos;
-                                            let p2 = chart_edgeV[0] + "," + yPos;
+                                            let p1 = x.range()[1] + "," + yPos;
+                                            let p2 = x.range()[0] + "," + yPos;
                                             let d = "M" + p1 + " L" + p2;
                                             return d;
                                         });
@@ -1979,7 +1966,7 @@ function waveXdist() {
                                 const finalAttributes = selectionRect.getCurrentAttributes();
                                 // console.debug(finalAttributes);
 
-                                if (finalAttributes.y2 - finalAttributes.y1 > 1 && finalAttributes.y2 - finalAttributes.y1 > 1) {
+                                if (finalAttributes.y2 - finalAttributes.y1 > 1) {
                                     // console.log("range selected");
                                     // range selected
                                     // e.preventDefault();

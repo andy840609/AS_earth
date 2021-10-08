@@ -286,7 +286,7 @@ function DatexDVV() {
                         break;
                 }
                 return color;
-            }
+            };
             const dataKeys = data.columns;
             const dvv_dataKey_index = [1, 3, 5];
             const dataTimeArr = data.map(d => d[dataKeys[0]]);

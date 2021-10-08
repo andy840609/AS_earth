@@ -96,3 +96,12 @@ a {
 .yAxis .domain {
     stroke: none;
 }
+
+#tooltip {
+    position: absolute;
+    z-index: 999;
+    background-color: #D3D3D3;
+    padding: 20px 20px 20px 20px;
+    opacity: .9;
+    display: none;
+}

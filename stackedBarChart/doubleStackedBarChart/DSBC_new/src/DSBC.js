@@ -375,7 +375,7 @@ function DSBC() {
             //TSMIP放第一, CWBSN第二
             const sortDataKeys = (array) => {
                 array.sort(function (a, b) {
-                    // console.debug(a, b);
+                    console.debug(a, b);
 
                     // if (a > b) {
                     //     return 1;
@@ -1344,7 +1344,7 @@ function DSBC() {
             svg.call(events);
 
             return svg.node();
-        }
+        };
         function printChart() {
             chartContainerJQ.find('#charts').children().remove();
             var i = 1;
@@ -1633,7 +1633,7 @@ function DSBC() {
                 // console.debug(i);
             })
             MenuEvents();
-        }
+        };
 
         if (!(chartContainerJQ.find('#form-chart').length >= 1))
             init();

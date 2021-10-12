@@ -188,7 +188,7 @@ function locatingGame() {
             if (data === undefined)
                 game.dataDir();
         };
-        //==之後作
+        //==取得波形svg圖
         async function getWaveImg(stationData, timeDomain = null) {
 
             let waveData = await (stationData.waveData ? stationData.waveData : data[0].waveData);
@@ -231,6 +231,39 @@ function locatingGame() {
                     const xAxis = svg.append("g").attr("class", "xAxis");
                     // const yAxis = svg.append("g").attr("class", "yAxis");
                     const pathGroup = svg.append("g").attr('class', 'paths');
+
+                    //==陰影
+                    ~function initShadowDefs() {
+                        svg.append("defs")
+                            .append("filter")
+                            .attr("id", "pathShadow")
+                            .attr("x", "-0.5")
+                            .attr("y", "-0.5")
+                            .attr("width", "300%")
+                            .attr("height", "300%")
+                            .call(filter => {
+                                filter
+                                    .append("feOffset")
+                                    .attr("result", "offOut")
+                                    .attr("in", "SourceAlpha")
+                                    .attr("dx", "1")
+                                    .attr("dy", "1");
+
+                                filter
+                                    .append("feGaussianBlur")
+                                    .attr("result", "blurOut")
+                                    .attr("in", "offOut")
+                                    .attr("stdDeviation", "2")
+
+                                filter
+                                    .append("feBlend")
+                                    .attr("in", "SourceGraphic")
+                                    .attr("in2", "blurOut")
+                                    .attr("mode", "normal");
+
+                            });
+
+                    }();
 
                     function getChart() {
                         function getNewData(timeDomain) {
@@ -296,6 +329,7 @@ function locatingGame() {
 
 
                             var makePaths = pathGroup => pathGroup
+                                .attr("filter", "url(#pathShadow)")
                                 .append("path")
                                 .style("mix-blend-mode", "luminosity")
                                 .attr("fill", "none")

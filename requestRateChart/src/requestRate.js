@@ -61,174 +61,6 @@ function requestRate() {
         const chartContainerD3 = d3.select(selector);
 
         function init() {
-            chartContainerJQ.append(`
-            <form id="form-chart">
-            <div class="form-group" id="chartsOptions" style="display: inline;">
-            <div class="row">
-
-                <!-- ... xAxis ... -->    
-                <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
-                    <label for="xAxisOptionButton" class="col-form-label col-5" >Xaxis</label>
-                    <div class="btn-group btn-group-toggle col-7" role="group">
-                        <button id="xAxisOptionButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            date
-                        </button>
-                        <div class="dropdown-menu" id="xAxisMenu" aria-labelledby="xAxisOptionButton">
-                            <div class="form-group col-12 d-flex flex-row flex-wrap align-items-start justify-content-between" id="xAxisDropDownMenu" >
-                            
-
-                            <label class="font-weight-bold" for="">Metric</label>                    
-                            <div class="col-12 d-flex flex-row">
-                                <div class="form-check col-6 d-flex align-items-start" style="text-align: center;">
-                                    <input class="form-check-input col-3" type="checkbox" id="xAxis_date" name="xAxisMetric" value="date" checked>
-                                    <label class="" for="xAxis_date">date</label>
-                                </div>
-                                <div class="form-check col-6 d-flex align-items-start" style="text-align: center;">
-                                    <input class="form-check-input col-3" type="checkbox" id="xAxis_fileSize" name="xAxisMetric" value="fileSize">
-                                    <label for="xAxis_fileSize">fileSize</label>
-                                </div>
-                            </div>
-
-                            <label class="font-weight-bold" for="">Scale</label>
-                            <div class="col-12 d-flex flex-row">
-                                <div class="col-6 form-check d-flex align-items-start" style="text-align: center;">
-                                    <input class="form-check-input col-3" type="checkbox" id="xAxis_log" name="xAxisScale" value="log" disabled>
-                                    <label class="" for="xAxis_log">logrithmic</label>
-                                </div>
-                            </div>
-
-                            </div>
-                        </div>
-                    </div>
-                </div>  
-                
-                <!-- ... yAxis ... -->    
-                <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
-                    <label for="yAxisOptionButton" class="col-form-label col-5" >Yaxis</label>
-                    <div class="btn-group btn-group-toggle col-7" role="group">
-                        <button id="yAxisOptionButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            MB/s
-                        </button>
-                        <div class="dropdown-menu" id="yAxisMenu" aria-labelledby="yAxisOptionButton">
-                            <div class="form-group col-12 d-flex flex-row flex-wrap align-items-start justify-content-between" id="yAxisDropDownMenu" >
-
-                            <label class="font-weight-bold" for="">Metric</label>                    
-                            <div class="col-12 d-flex flex-row">
-                                <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
-                                    <input class="form-check-input col-3" type="checkbox" id="yAxis_KB" name="yAxisMetric" value="KB">
-                                    <label class="" for="yAxis_KB">KB/s</label>
-                                </div>
-                                <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
-                                    <input class="form-check-input col-3" type="checkbox" id="yAxis_MB" name="yAxisMetric" value="MB" checked>
-                                    <label for="yAxis_MB">MB/s</label>
-                                </div>
-                                <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
-                                    <input class="form-check-input col-3" type="checkbox" id="yAxis_GB" name="yAxisMetric" value="GB">
-                                    <label for="yAxis_GB">GB/s</label>
-                                </div>
-                            </div>
-
-                            <label class="font-weight-bold" for="">Scale</label>
-                            <div class="col-12 d-flex flex-row">
-                                <div class="col-4 form-check d-flex align-items-start" style="text-align: center;">
-                                    <input class="form-check-input col-3" type="checkbox" id="yAxis_log" name="yAxisScale" value="log">
-                                    <label class="" for="yAxis_log">logrithmic</label>
-                                </div>
-                            </div>                          
-
-
-                            </div>
-                        </div>
-                    </div>
-                </div>  
-            
-                <!-- ... display selector ... -->    
-                <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
-                    <label for="displaySelectButton" class="col-form-label col-5" >Display</label>
-                    <div class="btn-group btn-group-toggle col-7" role="group">
-                        <button id="displaySelectButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            select
-                        </button>
-                        <div class="dropdown-menu" id="displayMenu" aria-labelledby="displaySelectButton">
-                            <div id="displayDropDownMenu" >
-                            
-                            </div>
-                        </div>
-                    </div>
-                </div>  
-
-                <!-- ... show info ... -->    
-                <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
-                    <label for="showInfoButton" class="col-form-label col-5" >Show</label>
-                    <div class="btn-group btn-group-toggle col-7" role="group">
-                        <button id="showInfoButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            select
-                        </button>
-                        <div class="dropdown-menu" id="showInfoMenu" aria-labelledby="showInfoButton">
-                            <div  id="showInfoDropDownMenu">
-                                <div class="form-check col-12 ">
-                                    <input class="form-check-input  col-3" type="checkbox" id="showPath" name="show" value="0" checked>
-                                    <label class="form-check-label  col-12" for="showPath">request path</label>
-                                </div>
-
-                                <div class="form-check col-12">
-                                    <input class="form-check-input  col-3" type="checkbox" id="showLegend" name="show" value="0" checked>
-                                    <label class="form-check-label  col-12" for="showLegend">legend</label>
-                                </div>
-
-
-                            </div>
-                        </div>
-                    </div>
-                </div>  
-
-                <!-- ... rate unit ... -->    
-                <!--
-                <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
-                    <label for="rateUnit" class="col-form-label col-4" >Rate unit</label>
-                    <div class="form-group col-8">
-                        <select class="form-control" id="rateUnit">
-                            <option value="KB">KB/s</option>
-                            <option value="MB">MB/s</option>
-                            <option value="GB">GB/s</option>
-                        </select>
-                    </div>
-                </div>  
-                -->
-
-
-            </div>
-
-            
-            <div class="form-group"  id="chartMain">
-
-                <div class="form-group" id="charts"></div>        
-                 
-                <div id="outerdiv"
-                    style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:10;width:100%;height:100%;display:none;">
-                    <div id="innerdiv" style=" background-color: rgb(255, 255, 255);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div>                      
-                </div>
-
-                <div id='loading'>
-                    <div class="spinner-border"role="status">
-                        <span class="sr-only" >Loading...</span>
-                    </div>
-                    Loading...
-                </div>
-            </div>
-            
-            </form>
-
-           
-            `);
-            //================dropdown-menu內元素被點擊不關閉menu
-
-            let All_dropdownMenu = chartContainerJQ.find('.dropdown-menu');
-
-            All_dropdownMenu.on("click.bs.dropdown", function (e) {
-                e.stopPropagation();
-            });
-
 
         };
 
@@ -308,6 +140,177 @@ function requestRate() {
         function RQRchart() {
             // console.debug(data);
             // console.debug(rateData);
+            ~function init() {
+                chartContainerJQ.append(`
+                <form id="form-chart">
+                <div class="form-group" id="chartsOptions" style="display: inline;">
+                <div class="row">
+    
+                    <!-- ... xAxis ... -->    
+                    <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
+                        <label for="xAxisOptionButton" class="col-form-label col-5" >Xaxis</label>
+                        <div class="btn-group btn-group-toggle col-7" role="group">
+                            <button id="xAxisOptionButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                date
+                            </button>
+                            <div class="dropdown-menu" id="xAxisMenu" aria-labelledby="xAxisOptionButton">
+                                <div class="form-group col-12 d-flex flex-row flex-wrap align-items-start justify-content-between" id="xAxisDropDownMenu" >
+                                
+    
+                                <label class="font-weight-bold" for="">Metric</label>                    
+                                <div class="col-12 d-flex flex-row">
+                                    <div class="form-check col-6 d-flex align-items-start" style="text-align: center;">
+                                        <input class="form-check-input col-3" type="checkbox" id="xAxis_date" name="xAxisMetric" value="date" checked>
+                                        <label class="" for="xAxis_date">date</label>
+                                    </div>
+                                    <div class="form-check col-6 d-flex align-items-start" style="text-align: center;">
+                                        <input class="form-check-input col-3" type="checkbox" id="xAxis_fileSize" name="xAxisMetric" value="fileSize">
+                                        <label for="xAxis_fileSize">fileSize</label>
+                                    </div>
+                                </div>
+    
+                                <label class="font-weight-bold" for="">Scale</label>
+                                <div class="col-12 d-flex flex-row">
+                                    <div class="col-6 form-check d-flex align-items-start" style="text-align: center;">
+                                        <input class="form-check-input col-3" type="checkbox" id="xAxis_log" name="xAxisScale" value="log" disabled>
+                                        <label class="" for="xAxis_log">logrithmic</label>
+                                    </div>
+                                </div>
+    
+                                </div>
+                            </div>
+                        </div>
+                    </div>  
+                    
+                    <!-- ... yAxis ... -->    
+                    <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
+                        <label for="yAxisOptionButton" class="col-form-label col-5" >Yaxis</label>
+                        <div class="btn-group btn-group-toggle col-7" role="group">
+                            <button id="yAxisOptionButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                MB/s
+                            </button>
+                            <div class="dropdown-menu" id="yAxisMenu" aria-labelledby="yAxisOptionButton">
+                                <div class="form-group col-12 d-flex flex-row flex-wrap align-items-start justify-content-between" id="yAxisDropDownMenu" >
+    
+                                <label class="font-weight-bold" for="">Metric</label>                    
+                                <div class="col-12 d-flex flex-row">
+                                    <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
+                                        <input class="form-check-input col-3" type="checkbox" id="yAxis_KB" name="yAxisMetric" value="KB">
+                                        <label class="" for="yAxis_KB">KB/s</label>
+                                    </div>
+                                    <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
+                                        <input class="form-check-input col-3" type="checkbox" id="yAxis_MB" name="yAxisMetric" value="MB" checked>
+                                        <label for="yAxis_MB">MB/s</label>
+                                    </div>
+                                    <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
+                                        <input class="form-check-input col-3" type="checkbox" id="yAxis_GB" name="yAxisMetric" value="GB">
+                                        <label for="yAxis_GB">GB/s</label>
+                                    </div>
+                                </div>
+    
+                                <label class="font-weight-bold" for="">Scale</label>
+                                <div class="col-12 d-flex flex-row">
+                                    <div class="col-4 form-check d-flex align-items-start" style="text-align: center;">
+                                        <input class="form-check-input col-3" type="checkbox" id="yAxis_log" name="yAxisScale" value="log">
+                                        <label class="" for="yAxis_log">logrithmic</label>
+                                    </div>
+                                </div>                          
+    
+    
+                                </div>
+                            </div>
+                        </div>
+                    </div>  
+                
+                    <!-- ... display selector ... -->    
+                    <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
+                        <label for="displaySelectButton" class="col-form-label col-5" >Display</label>
+                        <div class="btn-group btn-group-toggle col-7" role="group">
+                            <button id="displaySelectButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                select
+                            </button>
+                            <div class="dropdown-menu" id="displayMenu" aria-labelledby="displaySelectButton">
+                                <div id="displayDropDownMenu" >
+                                
+                                </div>
+                            </div>
+                        </div>
+                    </div>  
+    
+                    <!-- ... show info ... -->    
+                    <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
+                        <label for="showInfoButton" class="col-form-label col-5" >Show</label>
+                        <div class="btn-group btn-group-toggle col-7" role="group">
+                            <button id="showInfoButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                select
+                            </button>
+                            <div class="dropdown-menu" id="showInfoMenu" aria-labelledby="showInfoButton">
+                                <div  id="showInfoDropDownMenu">
+                                    <div class="form-check col-12 ">
+                                        <input class="form-check-input  col-3" type="checkbox" id="showPath" name="show" value="0" checked>
+                                        <label class="form-check-label  col-12" for="showPath">order path</label>
+                                    </div>
+    
+                                    <div class="form-check col-12">
+                                        <input class="form-check-input  col-3" type="checkbox" id="showLegend" name="show" value="0" checked>
+                                        <label class="form-check-label  col-12" for="showLegend">legend</label>
+                                    </div>
+    
+    
+                                </div>
+                            </div>
+                        </div>
+                    </div>  
+    
+                    <!-- ... rate unit ... -->    
+                    <!--
+                    <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
+                        <label for="rateUnit" class="col-form-label col-4" >Rate unit</label>
+                        <div class="form-group col-8">
+                            <select class="form-control" id="rateUnit">
+                                <option value="KB">KB/s</option>
+                                <option value="MB">MB/s</option>
+                                <option value="GB">GB/s</option>
+                            </select>
+                        </div>
+                    </div>  
+                    -->
+    
+    
+                </div>
+    
+                
+                <div class="form-group"  id="chartMain">
+    
+                    <div class="form-group" id="charts"></div>        
+                     
+                    <div id="outerdiv"
+                        style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:10;width:100%;height:100%;display:none;">
+                        <div id="innerdiv" style=" background-color: rgb(255, 255, 255);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div>                      
+                    </div>
+    
+                    <div id='loading'>
+                        <div class="spinner-border"role="status">
+                            <span class="sr-only" >Loading...</span>
+                        </div>
+                        Loading...
+                    </div>
+                </div>
+                
+                </form>
+    
+               
+                `);
+                //================dropdown-menu內元素被點擊不關閉menu
+
+                let All_dropdownMenu = chartContainerJQ.find('.dropdown-menu');
+
+                All_dropdownMenu.on("click.bs.dropdown", function (e) {
+                    e.stopPropagation();
+                });
+
+
+            }();
 
             const width = 800;
             const height = 600;
@@ -316,7 +319,7 @@ function requestRate() {
             var colorPalette = {};
             const getColor = (type) => {
                 const allColor = ["red", "purple", "blue", "green", "steelblue", "orange", "pink", "brown", "goldenrod",
-                    "silver", "teal", "aqua", "slategray", "greenyellow", "mediumspringgreen"];
+                    "olive", "teal", "aqua", "slategray", "greenyellow", "mediumspringgreen"];
                 let color;
                 // type = parseInt(type);
                 color = colorPalette[type];
@@ -359,6 +362,13 @@ function requestRate() {
                         break;
                     case 'fileSize':
                         string = 'File size ( KB )';
+                        break;
+                    //==tooltip
+                    case 'datetime':
+                        string = '訂單時間';
+                        break;
+                    case 'file_size':
+                        string = '檔案大小';
                         break;
                     default:
                         string = value;
@@ -518,6 +528,115 @@ function requestRate() {
             const focusGroup = svg.append("g").attr('class', 'focus');
             const legendGroup = svg.append("g").attr('class', 'legendGroup');
 
+
+            const makeShape = (d3Selection, shapeIndex, centre, rateData = null) => {
+                // console.debug(shapeIndex, dataIndex);
+                // console.debug(rateData);
+                const circle_r = 3;
+                const rect_width = 5;
+                const triangle_corner = 3, triangle_r = 3.5;
+                const star_corner = 5, star_r1 = 4, star_r2 = 2;
+                // const fillColor = dots.attr('stroke');
+
+
+                const fillColor = 'white', fillOpacity = 0;
+                const strokeWidth = 1.5, strokeOpacity = 1;
+
+                const polygonPoints = (cx, cy, r, n, invert = false) => {
+                    let alpha = 2 * Math.PI / n;
+                    let a = Math.PI / 2 + (invert ? alpha : alpha / 2);
+                    let points = [];
+                    for (let i = 0; i < n; i++) {
+                        // console.debug(a);
+                        let x = cx + r * Math.cos(a);
+                        let y = cy + r * Math.sin(a);
+                        points.push([x, y]);
+                        a += alpha;
+                    }
+                    return points;
+                };
+
+                let shape = { 0: 'circle', 1: 'rect', 2: 'polygon', 3: 'polygon' }[shapeIndex];
+                // let shape = { 0: 'circle', 1: 'path', 2: 'polygon', 3: 'polygon' }[shapeIndex];
+                let display_class = rateDataKeys[shapeIndex];
+                let shapeSelection = rateData ?//==沒有rateData的是legend上或是display menu的範例圖形
+                    d3Selection.selectAll("." + display_class)
+                        .data([rateData])
+                        .join(shape)
+                        .attr("class", display_class) :
+                    d3Selection
+                        .append(shape)
+                        .attr("stroke", 'grey');
+
+                switch (shapeIndex) {
+                    case 0:
+                        // console.debug('circle');
+                        shapeSelection
+                            .attr("stroke-width", strokeWidth)
+                            .attr("fill", fillColor)
+                            .attr("cx", centre.x)
+                            .attr("cy", centre.y)
+                            .attr("r", circle_r)
+                            .attr("fill-opacity", fillOpacity)
+                            .attr("stroke-opacity", strokeOpacity);
+                        break;
+                    case 1:
+                        // console.debug('rect');
+                        shapeSelection
+                            .attr("stroke-width", strokeWidth)
+                            .attr("fill", fillColor)
+                            .attr("x", centre.x - rect_width * 0.5)
+                            .attr("y", centre.y - rect_width * 0.5)
+                            .attr("width", rect_width)
+                            .attr("height", rect_width)
+                            .attr("fill-opacity", fillOpacity)
+                            .attr("stroke-opacity", strokeOpacity);
+
+                        // shapeSelection
+                        //     .attr("transform", `translate(${centre.x}, ${centre.y})`)
+                        //     .attr("stroke-width", strokeWidth)
+                        //     .attr("fill", 'none')
+                        //     .attr("stroke-opacity", strokeOpacity)
+                        //     .attr("d", "m 4 0 A 1 1 0 0 0 -4 0 A 1 1 0 0 1 -2 0 A 1 1 0 0 1 -0.137 -0.547 V 4.574 Q -0.594 5.214 -1.112 4.574 Q -1.387 4.452 -1.234 4.757 Q -0.594 5.58 0.137 4.696 V -0.547 A 1 1 0 0 1 2 0 A 1 1 0 0 1 4 0");
+
+                        break;
+                    case 2:
+                        // console.debug('triangle');
+                        let triangle_points = polygonPoints(centre.x, centre.y, triangle_r, triangle_corner, false);
+                        shapeSelection
+                            .attr("stroke-width", strokeWidth)
+                            .attr("fill", fillColor)
+                            .attr("points", triangle_points.join(','))
+                            .attr("fill-opacity", fillOpacity)
+                            .attr("stroke-opacity", strokeOpacity);
+                        break;
+                    case 3:
+                        // console.debug('star');
+                        let star_r1_points = polygonPoints(centre.x, centre.y, star_r1, star_corner, false);
+                        let star_r2_points = polygonPoints(centre.x, centre.y, star_r2, star_corner, true);
+                        shapeSelection
+                            .attr("stroke-width", strokeWidth)
+                            .attr("fill", fillColor)
+                            .attr("points", d3.range(star_corner).map(i =>
+                                star_r1_points[i].join(',') + ' ' + star_r2_points[i].join(',')
+                            ))
+                            .attr("fill-opacity", fillOpacity)
+                            .attr("stroke-opacity", strokeOpacity);
+
+                        // var star_centre = [100, 100];
+                        // //弧度 = 角度 × π / 180
+                        // var star_radian = d3.range(star_corner).map(i => (360 * i / star_corner) * Math.PI / 180);
+                        // var star_r1_points = star_radian.map(rad => [star_centre[0] + star_r1 * Math.cos(rad), star_centre[1] + star_r1 * Math.sin(rad)]);
+                        // var star_r2_points = star_radian.map(rad => [star_centre[0] + star_r2 * Math.cos(rad), star_centre[1] + star_r2 * Math.sin(rad)]);
+                        // // console.debug(star_radian)    
+
+                        break;
+                };
+
+
+
+            };
+
             var x, y;
             var newDataObj;
             var display_timming_index = d3.range(rateDataKeys.length);
@@ -525,99 +644,9 @@ function requestRate() {
 
 
             function updateChart(trans = false) {
-                const circle_r = 3;
-                const rect_width = 5;
-                const triangle_corner = 3, triangle_r = 3.5;
-                const star_corner = 5, star_r1 = 4, star_r2 = 2;
-                // const fillColor = dots.attr('stroke');
-                const fillColor = 'none';
-
-
-                const makeShape = (d3Selection, shapeIndex, centre, rateData = null) => {
-                    // console.debug(shapeIndex, dataIndex);
-                    // console.debug(rateData);
-
-                    const polygonPoints = (cx, cy, r, n, invert = false) => {
-                        let alpha = 2 * Math.PI / n;
-                        let a = Math.PI / 2 + (invert ? alpha : alpha / 2);
-                        let points = [];
-                        for (let i = 0; i < n; i++) {
-                            // console.debug(a);
-                            let x = cx + r * Math.cos(a);
-                            let y = cy + r * Math.sin(a);
-                            points.push([x, y]);
-                            a += alpha;
-                        }
-                        return points;
-                    };
-
-                    let shape = { 0: 'circle', 1: 'rect', 2: 'polygon', 3: 'polygon' }[shapeIndex];
-                    let display_class = rateDataKeys[shapeIndex];
-                    let shapeSelection = rateData ?//==沒有rateData的是legend上或是display menu的範例圖形
-                        d3Selection.selectAll("." + display_class)
-                            .data([rateData])
-                            .join(shape)
-                            .attr("class", display_class) :
-                        d3Selection
-                            .append(shape)
-                            .attr("stroke", 'grey');
-
-                    switch (shapeIndex) {
-                        case 0:
-                            // console.debug('circle');
-                            shapeSelection
-                                .attr("stroke-width", 1.5)
-                                .attr("fill", fillColor)
-                                .attr("cx", centre.x)
-                                .attr("cy", centre.y)
-                                .attr("r", circle_r)
-                                .style('opacity', 1);
-                            break;
-                        case 1:
-                            // console.debug('rect');
-                            shapeSelection
-                                .attr("stroke-width", 1.5)
-                                .attr("fill", fillColor)
-                                .attr("x", centre.x - rect_width * 0.5)
-                                .attr("y", centre.y - rect_width * 0.5)
-                                .attr("width", rect_width)
-                                .attr("height", rect_width)
-                                .style('opacity', 1);
-                            break;
-                        case 2:
-                            // console.debug('triangle');
-                            let triangle_points = polygonPoints(centre.x, centre.y, triangle_r, triangle_corner, false);
-                            shapeSelection
-                                .attr("stroke-width", 1.5)
-                                .attr("fill", fillColor)
-                                .attr("points", triangle_points.join(','))
-                                .style('opacity', 1);
-                            break;
-                        case 3:
-                            // console.debug('star');
-                            let star_r1_points = polygonPoints(centre.x, centre.y, star_r1, star_corner, false);
-                            let star_r2_points = polygonPoints(centre.x, centre.y, star_r2, star_corner, true);
-                            shapeSelection
-                                .attr("stroke-width", 1.5)
-                                .attr("fill", fillColor)
-                                .attr("points", d3.range(star_corner).map(i =>
-                                    star_r1_points[i].join(',') + ' ' + star_r2_points[i].join(',')
-                                ))
-                                .style('opacity', 1);
-
-                            // var star_centre = [100, 100];
-                            // //弧度 = 角度 × π / 180
-                            // var star_radian = d3.range(star_corner).map(i => (360 * i / star_corner) * Math.PI / 180);
-                            // var star_r1_points = star_radian.map(rad => [star_centre[0] + star_r1 * Math.cos(rad), star_centre[1] + star_r1 * Math.sin(rad)]);
-                            // var star_r2_points = star_radian.map(rad => [star_centre[0] + star_r2 * Math.cos(rad), star_centre[1] + star_r2 * Math.sin(rad)]);
-                            // // console.debug(star_radian)    
-
-                            break;
-                    };
 
 
 
-                };
                 function init() {
 
                     //==title
@@ -813,10 +842,11 @@ function requestRate() {
                     var xAxisOption = newDataObj.xAxisOption;
                     var yAxisOption = newDataObj.yAxisOption;
                     var xAxis_domain = newDataObj.xAxis_domain;
+                    // console.debug(xAxis_domain);
 
                     var display_DataKeys = dataKeys.slice(2).filter((key, i) => display_timming_index.includes(i));
                     var display_rateDataKeys = rateDataKeys.filter((key, i) => display_timming_index.includes(i));
-                    // console.debug(display_DataKeys, display_rateDataKeys);
+                    // console.debug(display_rateDataKeys);
                     // console.debug(dataKeys[1]);
 
                     var getNiceDomain = (domain, addRate = 0.1) => {
@@ -841,6 +871,7 @@ function requestRate() {
                             d3.extent([].concat(...newRateData.map(rd => d3.extent(display_rateDataKeys, key => rd[key]))));
 
                     // console.debug(xAxisDomain);
+
                     x = d3[{ date: 'scaleUtc', fileSize: xAxisOption.logScale ? 'scaleLog' : 'scaleLinear' }[xAxisOption.metric]]()
                         .domain(xAxisDomain)
                         .range([margin.left, width - margin.right]);
@@ -935,8 +966,8 @@ function requestRate() {
                                         .join("path")
                                         .attr("class", "orderPath")
                                         .attr("stroke-width", 1.2)
-                                        .attr("fill", fillColor)
-                                        .attr("stroke-opacity", .5)
+                                        .attr("fill", 'none')
+                                        .attr("stroke-opacity", 1)
                                         .attr("d", line(xdataArr));
 
                                     display_timming_index.forEach((shapeIndex, dataIndex) => {
@@ -1009,7 +1040,6 @@ function requestRate() {
 
                     }
                     else {
-                        // if ()
                         newData = data;
                         newRateData = rateData;
                     };
@@ -1038,7 +1068,9 @@ function requestRate() {
                     yAxisOption = newDataObj.yAxisOption;
 
                 function chartEvent() {
-                    const defs = svg.append("defs")
+                    const defs = svg.append("defs");
+                    //===遮罩
+                    defs
                         .append("clipPath")
                         .attr("id", "clip")
                         .append("rect")
@@ -1049,6 +1081,36 @@ function requestRate() {
                         .attr('height', height - margin.top - margin.bottom)
                         .attr('fill', 'none')
                         .attr('pointer-events', 'all');
+
+                    //===製造hover時陰影
+                    defs
+                        .append("filter")
+                        .attr("id", "pathShadow")
+                        .attr("x", "-0.5")
+                        .attr("y", "-0.5")
+                        .attr("width", "300%")
+                        .attr("height", "300%")
+                        .call(filter => {
+                            filter
+                                .append("feOffset")
+                                .attr("result", "offOut")
+                                .attr("in", "SourceAlpha")
+                                .attr("dx", "1")
+                                .attr("dy", "1");
+
+                            filter
+                                .append("feGaussianBlur")
+                                .attr("result", "blurOut")
+                                .attr("in", "offOut")
+                                .attr("stdDeviation", "2")
+
+                            filter
+                                .append("feBlend")
+                                .attr("in", "SourceGraphic")
+                                .attr("in2", "blurOut")
+                                .attr("mode", "normal");
+
+                        });
 
                     const eventRect = svg.append("g")
                         .attr("class", "eventRect")
@@ -1196,78 +1258,171 @@ function requestRate() {
                         //讓NodeList能使用map
                         NodeList.prototype.map = Array.prototype.map;
 
-                        var updateTooltip = () => {
+                        var updateTooltip = (dataArr) => {
 
-                            tooltip.selectAll('div')
-                                .data()
+                            let svg_width = 20;
+                            let dataKey = dataKeys[newDataObj.xAxisOption.metric == 'date' ? 2 : 1];
+                            var display_rateDataKeys = rateDataKeys.filter((key, i) => display_timming_index.includes(i));
+
+                            // console.debug(rateDataKeys);
+                            // console.debug(display_rateDataKeys);
+
+                            tooltip
+                                .call(div => div
+                                    .selectAll('.tooltipTitle')
+                                    .data([0])
+                                    .join('text')
+                                    .style('font-size', '18px')
+                                    .attr('class', 'tooltipTitle')
+                                    .text(`${getString(dataKey)} ： `)
+                                    .append('br')
+                                )
+                                .selectAll('div')
+                                .data(dataArr)
                                 .join('div')
-                                .style('color', (d, i) => 'black')
-                                .style('font-size', 10)
-                                .html((child, i) => {
-                                    let shape = d3.select(child);
+                                // .style('color', (d, i) => 'black')
+                                // .style('font-size', 10)
+                                .call(divCollection => divCollection.each(function (obj, i) {
+                                    let div = d3.select(this);
 
-                                    let data = shape.data()[0];
-                                    // console.debug(dot.attr('class'));
-                                    // console.debug(shape.data()[0]);
-                                    // console.debug(d, i);
-                                    // let y = data[idx][dataKeys[d]];
-                                    let value = i == 0 ?
-                                        data[dataKeys[newDataObj.xAxisOption.metric == 'date' ? 2 : 1]] :
-                                        data;
+                                    let key = i == 0 ? dataKey : Object.keys(obj)[0];
+                                    let value = obj[key];
 
-                                    let html = `<font size='5'>${parseFloat(value.toFixed(2))}</font>`;
-                                    return html;
-                                });
+                                    if (i != 0) {
+                                        div
+                                            .style('display', display_rateDataKeys.includes(key) ? 'block' : 'none')
+                                            .selectAll('svg')
+                                            .data([0])
+                                            .join('svg')
+                                            .attr("viewBox", [0, 2, svg_width, svg_width])
+                                            .style("position", 'relative')
+                                            // .style("left", '20px')
+                                            .attr("width", svg_width)
+                                            .attr("height", svg_width)
+                                            .attr("stroke", () => getColor(dataArr[0][dataKeys[0]]))
+                                            .call(displaySvg => {
+                                                displaySvg.selectAll("*").remove();
+                                                makeShape(displaySvg, rateDataKeys.indexOf(key), { x: svg_width * 0.5, y: svg_width * 0.5 }, 1);
+                                            });
+                                    };
+
+                                    let unit = newDataObj.yAxisOption.metric;
+
+                                    let text = i == 0 ?
+                                        key == dataKeys[2] ?//==datetime
+                                            new Date(value).toISOString().split('.')[0] :
+                                            convert_download_unit(value, originUnit, unit).value + `  ${unit} ` :
+                                        parseFloat(value.toFixed(unit == 'GB' ? 5 : 2)) + `  ${unit}/s `;
+
+
+                                    div
+                                        .selectAll('.value')
+                                        .data([0])
+                                        .join('text')
+                                        .style('font-size', '18px')
+                                        .attr('class', 'value ')
+                                        .text(text);
+
+
+
+                                }));
+
                         };
+
+                        var hover = (target) => {
+                            // console.debug(target);
+
+                            //==改變其他g透明度
+                            focusGroup.selectAll('g')
+                                .call(g =>
+                                    g.each(function (d, i) {
+                                        let g = d3.select(this);
+                                        let hover = (g.data()[0] === target.__data__);
+                                        // console.debug(hover)
+                                        let opacity = hover ? 1 : .3;
+
+                                        g.selectAll('*').attr("stroke-opacity", opacity);
+
+                                        //===加陰影和上移圖層
+                                        if (hover)
+                                            g.attr("filter", "url(#pathShadow)").raise();
+                                    })
+                                );
+                        };
+
+                        var leave = () => {
+                            //==恢復所有g透明度
+                            focusGroup.selectAll('g')
+                                .attr("filter", null)//陰影都取消
+                                .call(g => g.selectAll('*').attr("stroke-opacity", 1));
+                        };
+
                         focusGroup.raise()
                             .on('mouseout', function (e) {
-                                tooltip.style("display", "none")
+                                tooltip.style("display", "none");
+                                leave();
                             })
                             .on('mouseover', function (e) {
-                                const pointer = d3.pointer(e, this);
+                                let dotGroup = e.target.parentNode;
+
+                                var makeTooltip = () => {
+                                    const pointer = d3.pointer(e, this);
+
+                                    let mouseX = e.offsetX, mouseY = e.offsetY;
+                                    let fullWidth = svg.property('clientWidth');
+                                    //==show tooltip and set position
+                                    tooltip.style("display", "inline")
+                                        .call(tooltip => {
+                                            //tooltip換邊
+                                            let left, right, top;
+
+                                            if (pointer[0] < chart_center[0]) {//滑鼠未過半,tooltip在右
+                                                left = (mouseX + tooltipMouseGap) + 'px';
+                                                right = null;
+                                            } else {//tooltip在左
+                                                left = null;
+                                                right = (fullWidth - mouseX + tooltipMouseGap) + 'px';
+                                            }
+
+                                            if (pointer[1] < chart_center[1]) //tooltip在下
+                                                top = (mouseY + tooltipMouseGap) + 'px';
+                                            else //tooltip在上
+                                                top = (mouseY - tooltip.property('clientHeight') - tooltipMouseGap) + 'px';
+
+                                            tooltip
+                                                .style("top", top)
+                                                .style("left", left)
+                                                .style("right", right);
+                                        });
 
 
-                                let mouseX = e.offsetX, mouseY = e.offsetY;
-                                let fullWidth = svg.property('clientWidth');
-                                //==show tooltip and set position
-                                tooltip.style("display", "inline")
-                                    .call(tooltip => {
-                                        //tooltip換邊
-                                        let left, right, top;
+                                    let dataArr = dotGroup.childNodes.map((child, i) => {
+                                        let obj = {};
+                                        // console.debug(child.__data__);
 
-                                        if (pointer[0] < chart_center[0]) {//滑鼠未過半,tooltip在右
-                                            left = (mouseX + tooltipMouseGap) + 'px';
-                                            right = null;
-                                        } else {//tooltip在左
-                                            left = null;
-                                            right = (fullWidth - mouseX + tooltipMouseGap) + 'px';
-                                        }
+                                        if (i == 0) obj = child.__data__;
+                                        else obj[child.classList[0]] = child.__data__;
 
-                                        if (pointer[1] < chart_center[1]) //tooltip在下
-                                            top = (mouseY + tooltipMouseGap) + 'px';
-                                        else //tooltip在上
-                                            top = (mouseY - tooltip.property('clientHeight') - tooltipMouseGap) + 'px';
-
-                                        tooltip
-                                            .style("top", top)
-                                            .style("left", left)
-                                            .style("right", right);
+                                        return obj;
                                     });
 
-                                let dotGroup = e.target.parentNode;
-                                // dotGroup.map(dot).map(child => child.__data__)
-                                let dataArr = dotGroup.childNodes.map((child, i) => {
-                                    let key = i == 0 ?
-                                        newDataObj.xAxisOption.metric :
-                                        child.classList[0];
-                                    // child.__data__
 
-                                    return {
+                                    dataArr.sort(function (a, b) {
+                                        // console.debug();
 
-                                    }
-                                })
-                                console.debug(dataArr)
-                                // updateTooltip();
+                                        if (Object.keys(b).length > 1)
+                                            return 1;
+                                        else
+                                            return Object.values(b) - Object.values(a);
+
+                                    });
+
+
+                                    // console.debug(dataArr);
+                                    updateTooltip(dataArr);
+                                };
+                                makeTooltip();
+                                hover(dotGroup);
                             });
                     };
                     mouseDrag();
@@ -1305,7 +1460,7 @@ function requestRate() {
 
                             //===更新圖表
                             xAxisOption.metric = value;
-                            getNewData(xAxisOption, yAxisOption);
+                            newDataObj = getNewData(xAxisOption, null, null);
                             updateChart();
 
                         });
@@ -1313,7 +1468,7 @@ function requestRate() {
                     xAxisLog
                         .on('change', e => {
                             xAxisOption.logScale = e.target.checked;
-                            getNewData(xAxisOption, yAxisOption);
+                            newDataObj = getNewData(xAxisOption);
                             updateChart();
                         });
 
@@ -1341,14 +1496,14 @@ function requestRate() {
 
                             //===更新圖表
                             yAxisOption.metric = value;
-                            getNewData(xAxisOption, yAxisOption);
+                            newDataObj = getNewData(null, yAxisOption, xAxis_domain);
                             updateChart();
                         });
 
                     yAxisLog
                         .on('change', e => {
                             yAxisOption.logScale = e.target.checked;
-                            getNewData(xAxisOption, yAxisOption);
+                            newDataObj = getNewData(null, yAxisOption, xAxis_domain);
                             updateChart();
                         });
                     //=====change display
@@ -1689,7 +1844,7 @@ function requestRate() {
         };
 
         printChart();
-    }
+    };
     return chart;
 
 

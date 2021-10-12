@@ -2161,7 +2161,7 @@ function waveXdist() {
                                                             g.attr("filter", "url(#pathShadow)").raise();
                                                     })
                                                 );
-                                        }
+                                        };
 
                                         var leave = () => {
                                             //==恢復所有除了未選中path透明度
@@ -2175,7 +2175,7 @@ function waveXdist() {
                                                     g.select('text').attr("fill-opacity", 1);
 
                                                 });
-                                        }
+                                        };
 
                                     }
                                     else {

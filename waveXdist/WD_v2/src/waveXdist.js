@@ -668,7 +668,7 @@ function waveXdist() {
                 .on('click', function (e) {
                     // console.debug($(e.target).siblings().filter('.dropdown-menu'));
                     $(e.target).siblings().filter('.dropdown-menu').addClass('show');
-                })
+                });
 
             xAxisName_radioGroup.children('label')
                 .on('mouseover', function (e) {

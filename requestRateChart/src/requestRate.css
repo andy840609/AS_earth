@@ -93,10 +93,6 @@ a {
     display: none;
 }
 
-.yAxis .domain {
-    stroke: none;
-}
-
 #tooltip {
     position: absolute;
     z-index: 999;
@@ -104,4 +100,42 @@ a {
     padding: 20px 20px 20px 20px;
     opacity: .9;
     display: none;
+}
+
+
+:root {
+    --w: 150px;
+    --sidePadding: 2px;
+    --list-length: 4;
+}
+
+#gapScaleRange {
+    width: var(--w);
+}
+
+#gapScaleList {
+    display: block;
+    /* margin-top: 0px; */
+}
+
+#gapScaleList option {
+    display: inline-block;
+    width: calc((var(--w) - var(--sidePadding)) /((var(--list-length) - 1)));
+    text-align: center;
+    text-anchor: middle;
+    /* alignment-baseline: text-before-edge; */
+    /* font-weight: bold; */
+    /* font-size: 100; */
+}
+
+#gapScaleList option:first-child {
+    width: calc((var(--w) - var(--sidePadding)) /((var(--list-length) - 1) * 2));
+    text-align: left;
+    padding-left: 3px;
+}
+
+#gapScaleList option:last-child {
+    width: calc((var(--w) - var(--sidePadding)) /((var(--list-length) - 1) * 2));
+    text-align: right;
+    padding-left: 12px;
 }

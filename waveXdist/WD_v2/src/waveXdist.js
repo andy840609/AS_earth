@@ -529,10 +529,10 @@ function waveXdist() {
                 <div class="form-group col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start">
                 <label for="xAxisScale" class="col-form-label col-4" >Order</label>
                 <div class="btn-group btn-group-toggle col-8" data-toggle="buttons">
-                    <label class="btn btn-secondary">
+                    <label class="btn btn-secondary active">
                         <input type="radio" name ="xAxisScale" id="linear" value="linear" checked> Linear
                     </label>
-                    <label class="btn btn-secondary active">
+                    <label class="btn btn-secondary">
                         <input type="radio" name ="xAxisScale" id="band" value="band"> Station
                     </label>
                 </div>
@@ -600,7 +600,7 @@ function waveXdist() {
                     e.stopPropagation();
                     if (this.getAttribute('aria-labelledby') == 'xAxisName')//防止改變範圍也同時改變radio按鈕選擇
                         e.preventDefault();
-                })
+                });
             // .on("shown.bs.dropdown", function (e) {
             //     console.debug(e.target);
             // })
@@ -2298,7 +2298,6 @@ function waveXdist() {
                             const rangeObj = { 'dist': dist_domain, 'az': az_domain };
 
                             // console.debug(dist_domain, az_domain);
-
                             // range drag
                             xAxisName_radioGroup.selectAll('input[name ="xAxisRange"]')
                                 .on('input', e => {
@@ -2389,8 +2388,8 @@ function waveXdist() {
                                     parentNode.querySelector('#' + key + 'Range_max').value = rangeData[1];
                                     chartContainerD3.selectAll('#' + key + 'Range_min').dispatch("input");
 
-                                })
-                        })
+                                });
+                        });
 
 
                     //=====change normalize

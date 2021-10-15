@@ -3133,7 +3133,7 @@ function sacPlots() {
             MenuEvents();
 
 
-        }
+        };
 
         if (!($('#form-chart').length >= 1))
             init();

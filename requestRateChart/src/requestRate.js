@@ -180,6 +180,25 @@ function requestRate() {
                 unit: newUnit,
             };
         };
+        //==浮點數精度問題（二進制下的循環小數會有誤差）
+        //==先把所有要計算的數轉成整數最後在除回小數位數
+        const floatTimes = (...args) => {
+            var isFloat = (x) => x.toString().indexOf('.') >= 0;
+            let intArr = [], powerArr = [];
+            args.forEach(x => {
+                let power = 0, int = x;
+                if (isFloat(x)) {
+                    power = x.toString().split('.')[1].length;
+                    int = parseInt(x.toString().replace('.', ''));
+                };
+                intArr.push(int);
+                powerArr.push(power);
+            });
+
+            let result = intArr.reduce((a, b) => a * b) / Math.pow(10, powerArr.reduce((a, b) => a + b));
+            return result;
+        };
+
         const makeShape = (d3Selection, shapeIndex, centre, rateData = null, color = null) => {
             // console.debug(shapeIndex, dataIndex);
             // console.debug(rateData);
@@ -187,8 +206,6 @@ function requestRate() {
             const rect_width = 5;
             const triangle_corner = 3, triangle_r = 3.5;
             const star_corner = 5, star_r1 = 4, star_r2 = 2;
-            // const fillColor = dots.attr('stroke');
-
 
             const fillColor = 'white', fillOpacity = 0;
             const strokeWidth = 1.5, strokeOpacity = 1;
@@ -283,7 +300,6 @@ function requestRate() {
 
                     break;
             };
-
 
 
         };
@@ -930,9 +946,7 @@ function requestRate() {
             var newDataObj;
             var display_timming_index = d3.range(rateDataKeys.length);
 
-
-
-            function updateChart(trans = false) {
+            function updateChart(trans = true) {
 
                 function init() {
 
@@ -1223,6 +1237,11 @@ function requestRate() {
                         yAxis.call(makeYAxis);
                     };
                     var updateFocus = () => {
+                        const transDuration = 500;
+                        const transDelay = 3;
+                        const displayPath = chartContainerD3.select('#showPath').property('checked') ?
+                            'inline' : 'none';//==join後display被清掉造成某些顯示出來BUG
+
                         var makeDots = focusGroup => focusGroup
                             // .style("mix-blend-mode", "hard-light")
                             .selectAll("g")
@@ -1257,7 +1276,9 @@ function requestRate() {
                                         .attr("stroke-width", 1.2)
                                         .attr("fill", 'none')
                                         .attr("stroke-opacity", 1)
-                                        .attr("d", line(xdataArr));
+                                        .attr("d", line(xdataArr))
+                                        .attr("display", displayPath);
+
 
                                     display_timming_index.forEach((shapeIndex, dataIndex) => {
                                         // console.debug(shapeIndex, dataIndex)
@@ -1273,6 +1294,17 @@ function requestRate() {
                                             dots.select("." + rateDataKeys[shapeIndex]).remove();
 
                                     });
+
+                                    //==動畫
+                                    if (!trans) return;
+
+                                    dots
+                                        .selectAll('*')
+                                        .attr("opacity", 0)
+                                        .interrupt().transition().duration(trans ? transDuration : 0) //.interrupt()前次動畫
+                                        .ease(d3.easeBounceIn)
+                                        .delay((d, childIdx) => transDelay * i + childIdx * 50)
+                                        .attr("opacity", 1);
 
 
                                 }));
@@ -1545,7 +1577,7 @@ function requestRate() {
                         const tooltipMouseGap = 50;//tooltip與滑鼠距離
 
                         //讓NodeList能使用map
-                        NodeList.prototype.map = Array.prototype.map;
+                        // NodeList.prototype.map = Array.prototype.map;
 
                         var updateTooltip = (dataArr) => {
 
@@ -1690,8 +1722,10 @@ function requestRate() {
                                                 .style("right", right);
                                         });
 
-
-                                    let dataArr = dotGroup.childNodes.map((child, i) => {
+                                    //
+                                    // console.debug(dotGroup.childNodes);
+                                    // console.debug(dotGroup.children);
+                                    let dataArr = Array.from(dotGroup.children).map((child, i) => {
                                         let obj = {};
                                         // console.debug(child.__data__);
 
@@ -2016,7 +2050,7 @@ function requestRate() {
                 let linearScale_dropdownMenu = linearScale_group.find('.dropdown-menu');
 
                 var gapScale = Array.from(new Array(5), (d, i) => i);
-                console.debug(gapScale);
+                // console.debug(gapScale);
 
                 linearScale_group
                     .on('mouseover', function (e) {
@@ -2028,10 +2062,17 @@ function requestRate() {
                         linearScale_dropdownMenu.removeClass('show');
                     });
 
+                //==輸入框blur自動切換到linear scale
+                linearScale_dropdownMenu.find('#gapScale_multiplier')
+                    .on('blur', () => linearScale_group.find('input').trigger('click'));
+
+
                 linearScale_dropdownMenu.find('#gapScaleRange')
                     .attr("min", gapScale[0])
                     .attr("max", gapScale[gapScale.length - 1])
                     .attr("value", 0)
+                    //==條拉動自動切換到linear scale
+                    .on('input', () => linearScale_group.find('input').trigger('click'));
 
                 let gapScaleList_html = gapScale.map((d, i) => `<option value="${i}">${d}</option>`).join('');
                 linearScale_dropdownMenu.find('#gapScaleList').append(gapScaleList_html);
@@ -2046,6 +2087,7 @@ function requestRate() {
             const yAxis = svg.append("g").attr("class", "yAxis");
             const legendGroup = svg.append("g").attr('class', 'legendGroup');
 
+            const barOriginalColor = 'steelblue';
 
             var x, y;
             var newDataObj;
@@ -2055,71 +2097,140 @@ function requestRate() {
                     metric = chartOption.hasOwnProperty('metric') ? chartOption.metric : newDataObj.metric,
                     gapScale = chartOption.hasOwnProperty('gapScale') ? chartOption.gapScale : newDataObj.gapScale,
                     logScale = chartOption.hasOwnProperty('logScale') ? chartOption.logScale : newDataObj.logScale;
+                console.debug(chartOption, logScale);
 
                 let gapGroupData, rateOptionData;
-                var updateScaleMenu = (gap_multiplicand) => {
-                    //==rateOption,metric改變時menu的乘數被乘數要更新
-                    chartContainerD3.select('#gapScale_multiplicand').text(gap_multiplicand);
-                    chartContainerD3.select('#gapScale_multiplier').property('value', 1);
-                    chartContainerD3.select('#gapScaleRange')
-                        // .attr("min", 0)
-                        // .attr("max", normalizeScale.length - 1)
 
-                        .property('value', 0);
-                };
-
-                var getMultiplicand = () => {
-                    const maxTicks = 20;
-
-                    //==把選中的速率拉出來並轉換MB,GB
-                    // rateOptionData = rateData.map(d => (d[rateDataKeys[rateOption]]));
-
-                    rateOptionData = [];
+                var getRateOptionData = (rateOption, metric) => {
+                    let rateOptionData = [];
                     rateData.forEach(d => {
                         let val = d[rateDataKeys[rateOption]];
                         if (val)
                             rateOptionData.push(metric == 'KB' ? val : convert_download_unit(val, originUnit, metric).value);
                     });
-
+                    // console.debug(rateOptionData);
 
                     let maxDomain = d3.max(rateOptionData);
-                    //==最小間隔(使總組數不超過maxTicks)
-                    let gap_multiplicand = Math.ceil(maxDomain / maxTicks);//==之後改漂亮的數字
-
-                    console.debug(gap_multiplicand + '*' + maxTicks + '=' + gap_multiplicand * maxTicks);
-                    // console.debug(maxDomain);
                     rateOptionData.maxDomain = maxDomain;
-                    updateScaleMenu(gap_multiplicand);
 
-                    return gap_multiplicand;
+                    return rateOptionData;
                 };
 
-                var getGapGroupData = (multiplicand) => {
-                    rateOptionData = rateOptionData ? rateOptionData : newDataObj.rateOptionData;
+                //==用不同方法計算分組陣列
+                if (logScale) {
+                    rateOptionData = getRateOptionData(rateOption, metric);
+                    gapGroupData = newDataObj.gapGroupData;
+                }
+                else {
+                    var updateScaleMenu = (gap_multiplicand) => {
+                        //==rateOption,metric改變時menu的乘數被乘數要更新
+                        let linearScale_group = chartContainerD3.select('#linearScale_group');
+                        let gapScaleOptions = linearScale_group.selectAll('#gapScaleList>option');
 
-                    let gap = multiplicand * gapScale;
-                    let groupCount = Math.ceil(rateOptionData.maxDomain / gap);
+                        linearScale_group.select('#gapScale_multiplicand').text(gap_multiplicand);
+                        linearScale_group.select('#gapScale_multiplier').property('value', 1);
+                        linearScale_group.select('#gapScaleRange').property('value', 0);
+                        linearScale_group.select('sub').text(`gap = ${gap_multiplicand}`);
 
-                    console.debug(gap + '*' + groupCount + '=' + gap * groupCount);
+                        let maxDomain = rateOptionData.maxDomain;
+                        let optionsMaxIdx = gapScaleOptions.nodes().length - 1;
+                        let maxScale = Math.ceil(maxDomain / gap_multiplicand);
+                        let gap = Math.ceil(maxScale / optionsMaxIdx);
+                        // console.debug(maxScale, gap);
+
+                        gapScaleOptions.text((d, i) => {
+                            let text;
+                            if (i == 0) text = 1;
+                            else if (i == optionsMaxIdx) text = maxScale;
+                            else text = (gap * i) > maxScale ? maxScale : gap * i;
+                            return text;
+                        });
+
+                        gapScale = 1;
+                    };
+
+                    //===abs(x)<1 時,非0的小數位數不等於1,2,5,0時取成大於x,漂亮位數的數
+                    var getNiceCeil = (x) => {
+                        const niceNum = [1, 2, 5, 10];
+                        let sign = x < 0 ? -1 : 1;
+                        let newX = Math.abs(x);
+
+                        if (newX < 1) {
+                            let power = 0;
+                            while (newX < 1) {
+                                newX *= 10;
+                                power++;
+                            };
+                            // console.log(power)
+                            newX = Math.ceil(newX);
+                            // console.log(newX)
+                            newX = niceNum.includes(newX) ? newX : newX > 5 ? 10 : 5;
+                            newX /= Math.pow(10, power);
+
+                            // console.log(Math.pow(10, power))
+                        }
+                        else {
+                            let remainder = 0;
+                            newX = Math.ceil(newX);
+                            remainder = newX % 10;
+                            newX -= remainder;
+                            // console.log(remainder)
+                            remainder = niceNum.includes(remainder) ? remainder : remainder > 5 ? 10 : 5;
+                            // console.log(remainder)
+                            newX += remainder;
+                        }
 
 
-                    gapGroupData = Array.from(new Array(groupCount), () => 0);
-                    // console.debug(gapGroupData);
+                        console.log(`before:\n${x}\nafter:\n${newX}`,);
+                        return newX * sign;
+                    };
 
-                    rateOptionData.forEach(rate => {
-                        let groupIndex = Math.ceil(rate / gap) - 1;
-                        // console.debug(groupIndex);
-                        gapGroupData[groupIndex < 0 ? 0 : groupIndex]++;//==rate是0時index會是-1
-                    });
-                    gapGroupData.multiplicand = multiplicand;//==最小間隔
+                    var getMultiplicand = () => {
+                        const maxTicks = 20;
 
-                    console.debug('總個數=' + gapGroupData.reduce((pre, cur) => pre + cur));
+                        //==把選中的速率拉出來並轉換MB,GB
+                        // rateOptionData = rateData.map(d => (d[rateDataKeys[rateOption]]));
+
+                        rateOptionData = getRateOptionData(rateOption, metric);
+                        let maxDomain = rateOptionData.maxDomain;
+                        //==最小間隔(使總組數不超過maxTicks)
+                        let gap_multiplicand = getNiceCeil(maxDomain / maxTicks);//==之後改漂亮的數字
+
+                        // console.debug(gap_multiplicand + '*' + maxTicks + '=' + gap_multiplicand * maxTicks);
+                        // console.debug(maxDomain);
+
+                        updateScaleMenu(gap_multiplicand);
+
+                        return gap_multiplicand;
+                    };
+
+                    var getGapGroupData = (multiplicand) => {
+                        rateOptionData = rateOptionData ? rateOptionData : newDataObj.rateOptionData;
+
+                        let gap = floatTimes(multiplicand, gapScale);
+                        let groupCount = Math.ceil(rateOptionData.maxDomain / gap);
+
+                        console.debug(gap + '*' + groupCount + '=' + floatTimes(gap, groupCount));
+
+
+                        gapGroupData = Array.from(new Array(groupCount), () => 0);
+                        // console.debug(gapGroupData);
+
+                        rateOptionData.forEach(rate => {
+                            let groupIndex = Math.ceil(rate / gap) - 1;
+                            // console.debug(groupIndex);
+                            gapGroupData[groupIndex < 0 ? 0 : groupIndex]++;//==rate是0時index會是-1
+                        });
+                        gapGroupData.multiplicand = multiplicand;//==最小間隔
+
+                        console.debug('總個數=' + gapGroupData.reduce((pre, cur) => pre + cur));
+                    };
+                    //==改變rateOption或metric要重新計算最小間隔(multiplicand:被乘數 指最小間隔)
+                    let multiplicand = (chartOption.hasOwnProperty('rateOption') || chartOption.hasOwnProperty('metric')) ?
+                        getMultiplicand() : newDataObj.gapGroupData.multiplicand;
+
+                    getGapGroupData(multiplicand);
                 };
-                //==改變rateOption或metric要重新計算最小間隔(multiplicand:被乘數 指最小間隔)
-                let multiplicand = (chartOption.hasOwnProperty('rateOption') || chartOption.hasOwnProperty('metric')) ?
-                    getMultiplicand() : newDataObj.gapGroupData.multiplicand;
-
-                getGapGroupData(multiplicand);
 
                 return {
                     gapGroupData: gapGroupData,
@@ -2131,7 +2242,7 @@ function requestRate() {
                 };
             };
             function updateChart(trans = true) {
-                const transDuration = 1000;
+                const transDuration = 600;
 
                 function init() {
 
@@ -2161,8 +2272,8 @@ function requestRate() {
                             .attr("font-weight", "bold")
                             .attr("font-size", "12")
                             .attr('x', width / 2)
-                            .attr("y", margin.bottom - 10);
-
+                            .attr("y", margin.bottom - 10)
+                            .text('Count');
 
                         yAxis
                             .append('text')
@@ -2229,80 +2340,39 @@ function requestRate() {
                                     .call(displaySvg => makeShape(displaySvg, rateOption, { x: svg_width * 0.5, y: svg_width * 0.5 }, null, 'white'));
                             });
 
-                        return
-                        //===rate DropDown
-                        var normalizeScale = [1, 2, 5, 10];
 
-                        var default_normalizeScaleIdx = 1;
-
-                        chartContainerJQ.find('#normalizeScale')
-                            .val(normalizeScale[default_normalizeScaleIdx])
-                            .on('input', function (e) {
-                                // console.debug('normalizeScale input');
-                                // console.debug(e.target.value);
-                                let inputVal = parseFloat(e.target.value);
-                                if (normalizeScale.includes(inputVal))
-                                    chartContainerJQ.find('#NSRange').attr("value", normalizeScale.indexOf(inputVal));
-                                else
-                                    chartContainerJQ.find('#NSRange').attr("value", 0);
-                            });
-
-                        // let 
-                        chartContainerJQ.find('#NSRange')
-                            .attr("min", 0)
-                            .attr("max", normalizeScale.length - 1)
-                            .attr("value", default_normalizeScaleIdx)
-                            .on("input propertychange", function (e) {
-                                // console.debug('NSRange change');
-                                let NSIndex = e.target.value;
-                                let scale = normalizeScale[NSIndex];
-                                chartContainerJQ.find('#normalizeScale').val(scale);
-                                chartContainerD3.selectAll('#normalizeScale').dispatch("input");
-                            });
-
-                        // normalizeScale.forEach((d, i) => {
-                        //     chartContainerJQ.find('#NSList').append($("<option></option>").attr("value", i).text(d));
-                        // });
-
-                        let normalizeScale_html = normalizeScale.map((d, i) => `<option value="${i}">${d}</option>`).join('');
-                        chartContainerJQ.find('#NSList').append(normalizeScale_html);
                     };
                     initChart();
                     initOption();
                 };
                 function render() {
                     let gapGroupData = newDataObj.gapGroupData,
-                        rateOptionData = newDataObj.rateOptionData,
+                        // rateOptionData = newDataObj.rateOptionData,
                         rateOption = newDataObj.rateOption,
                         metric = newDataObj.metric,
                         gapScale = newDataObj.gapScale,
                         logScale = newDataObj.logScale;
 
-                    let gap = gapGroupData.multiplicand * gapScale;
+                    let gap = floatTimes(gapGroupData.multiplicand, gapScale);
+                    // console.debug(logScale);
 
                     x = d3['scaleLinear']()
                         .domain([0, d3.max(gapGroupData)])
-                        .range([margin.left, width - margin.right]);
-                    // if (xAxisOption.logScale && !xAxis_domain) x.nice();
+                        .range([margin.left, width - margin.right])
+                        .nice();
+
 
                     // console.debug(newDataObj);gapGroupData.map((d, i) => gap * (i + 1))
-                    y = d3['scaleLinear']()
-                        .domain([0, gap * gapGroupData.length])
-                        // .range([height - margin.bottom, margin.top]);
+                    y = d3[logScale ? 'scaleLog' : 'scaleLinear']()
+                        .domain(d3.extent([logScale ? 1 : 0, gap * gapGroupData.length]))
                         .range([height - margin.bottom, margin.top]);
-                    // if (yAxisOption.logScale) y.nice();
+                    if (logScale) y.nice();
 
 
                     var refreshText = () => {
-                        xAxis
-                            .select('.axis_name')
-                            .text();
-
-
                         yAxis
                             .select('.axis_name')
-                            .text();
-
+                            .text(`${getString(rateDataKeys[rateOption])} ( ${metric} / s )`);
 
                     };
                     var updateAxis = () => {
@@ -2316,9 +2386,7 @@ function requestRate() {
                             .attr("transform", `translate(0,${height - margin.bottom})`)
                             .call(g => {
                                 let axisFun = d3.axisBottom(x).tickSizeOuter(0);
-
                                 axisFun.ticks(width / 80);
-
                                 axisFun(g);
                             });
 
@@ -2326,14 +2394,33 @@ function requestRate() {
                             .attr("transform", `translate(${margin.left},0)`)
                             .call(g => {
                                 let axisFun = d3.axisLeft(y);
+                                // console.log(y.domain());
+                                if (logScale) {
+                                    axisFun.ticks(Math.log10(y.domain()[1] / y.domain()[0]) + 1, formatPower);
 
-                                axisFun.tickValues([0].concat(gapGroupData.map((d, i) => gap * (i + 1))));
+                                }
+                                else {
+                                    let tickValues = [0].concat(gapGroupData.map((d, i) => floatTimes(gap, (i + 1))));
+                                    // console.debug(tickValues);
+                                    //===gap是小數時要讓每個tick小數位數一樣(ex:0.010會變成0.01)
+                                    if (gap.toString().indexOf('.') >= 0) {
+                                        let gapDecimal = gap.toString().split('.')[1].length;
+                                        // console.debug(gapDecimal);
+                                        tickValues = tickValues.map(val => val.toFixed(gapDecimal));
+                                    };
+
+                                    axisFun
+                                        .tickValues(tickValues)
+                                        .tickFormat(d => d);//==不然小數會被轉整數
+                                }
+
                                 axisFun(g);
                             })
                             .call(g =>
                                 g.selectAll("g.yAxis g.tick line")
                                     .attr("x2", d => width - margin.left - margin.right)
                                     .attr("stroke-opacity", 0.2)
+                                // .call(d => console.debug(d))
                             );
 
                         xAxis.call(makeXAxis);
@@ -2341,28 +2428,29 @@ function requestRate() {
                     };
                     var updateFocus = () => {
 
-                        const height = (y(0) - y(gap)) * 0.5;
+                        const height = logScale ? 10 : (y(0) - y(gap)) * 0.5;
 
                         focusGroup
                             .selectAll("rect")
                             .data(gapGroupData)
                             .join("rect")
                             .attr("class", "bar")
-                            .attr("fill", 'steelblue')
-                            // .attr("stroke", "#D3D3D3")
-                            // .attr("stroke-width", 3)
-                            // .attr('stroke-opacity', 0)
+                            .attr("fill", barOriginalColor)
+                            .attr("stroke", "#79FF79")
+                            .attr("stroke-width", 3)
+                            .attr('stroke-opacity', 0)
                             .attr("x", margin.left)
                             .attr("y", (d, i) => y((i + 1) * gap) + height * 0.5)
                             .attr("height", height)
                             .attr("width", 0)
-                            .interrupt().transition().duration(trans ? transDuration : 0)//.interrupt()前次動畫
+                            .interrupt().transition().duration(trans ? transDuration : 0) //.interrupt()前次動畫
+                            .ease(d3.easeBounceOut)
                             .attr("width", d => x(d) - margin.left);
 
                         // console.debug(y.domain())
 
                     };
-                    // refreshText();
+                    refreshText();
                     updateAxis();
                     updateFocus();
 
@@ -2384,6 +2472,147 @@ function requestRate() {
 
             function events(svg) {
 
+                const tooltip = chartContainerD3.select("#charts")
+                    .append("div")
+                    .attr("id", "tooltip");
+
+                function chartEvent() {
+                    var mouseMove = () => {
+
+                        //用來判斷tooltip應該在滑鼠哪邊
+                        const chart_center = [x.range().reduce((a, b) => a + b) * 0.5, y.range().reduce((a, b) => a + b) * 0.5];
+                        const tooltipMouseGap = 50;//tooltip與滑鼠距離
+                        const transDuration = 100;
+
+                        var updateTooltip = (groupIndex, data) => {
+
+                            tooltip
+                                .selectAll('div')
+                                .data([groupIndex, data])
+                                .join('div')
+                                .attr('class', 'd-flex flex-wrap justify-content-center align-items-end')
+                                .call(divC => divC.each(function (d, i) {
+                                    let div = d3.select(this);
+                                    let html;
+                                    if (i == 0) {
+                                        let gap = floatTimes(newDataObj.gapScale, newDataObj.gapGroupData.multiplicand);
+                                        html = `${floatTimes(gap, d)} - ${floatTimes(gap, (d + 1))} ( ${newDataObj.metric} / s ) : `;
+                                    }
+                                    else {
+                                        html = `<h1 style='font-weight:bold;'>${d}</h1>&nbsp;<h6>筆</h6> `;
+                                    }
+
+                                    div
+                                        .style('font-size', '30px')
+                                        .html(html);
+
+                                }));
+
+
+
+
+                        };
+
+                        var hover = (target) => {
+                            // console.debug(target);
+
+                            //==改變其他bar透明度
+
+                            focusGroup.selectAll('.bar')
+                                .call(barC =>
+                                    barC.each(function (d, i) {
+                                        let bar = d3.select(this);
+                                        let hover = (this == target);
+                                        // console.debug(hover);
+                                        // console.debug(d, i);
+                                        bar
+                                            .attr("opacity", hover ? 1 : .5);
+
+                                        //===加陰影和上移圖層
+                                        if (hover)
+                                            bar
+                                                .attr("fill", 'red')
+                                                .attr("stroke-opacity", 1)
+                                        // .attr("filter", "url(#pathShadow)");
+                                    })
+                                );
+
+                        };
+
+                        var leave = (target) => {
+                            //==恢復所有g透明度
+                            focusGroup.selectAll('.bar')
+                                .attr("filter", null)//陰影都取消
+                                .call(barC =>
+                                    barC.each(function (d, i) {
+                                        let bar = d3.select(this);
+
+                                        bar
+                                            .attr("fill", barOriginalColor)
+                                            .attr("stroke-opacity", 0)
+                                            .attr("opacity", 1);
+
+                                    })
+
+                                );
+                        };
+
+
+                        focusGroup
+                            .on('mouseout', function (e) {
+                                let bar = e.target;
+
+                                tooltip.style("display", "none");
+                                leave(bar);
+                            })
+                            .on('mouseover', function (e) {
+                                let bar = e.target;
+                                // console.debug(bar)
+                                var makeTooltip = () => {
+                                    const pointer = d3.pointer(e, this);
+
+                                    let mouseX = e.offsetX, mouseY = e.offsetY;
+                                    let fullWidth = svg.property('clientWidth');
+                                    //==show tooltip and set position
+                                    tooltip.style("display", "inline")
+                                        .call(tooltip => {
+                                            //tooltip換邊
+                                            let left, right, top;
+
+                                            if (pointer[0] < chart_center[0]) {//滑鼠未過半,tooltip在右
+                                                left = (mouseX + tooltipMouseGap) + 'px';
+                                                right = null;
+                                            } else {//tooltip在左
+                                                left = null;
+                                                right = (fullWidth - mouseX + tooltipMouseGap) + 'px';
+                                            }
+
+                                            if (pointer[1] < chart_center[1]) //tooltip在下
+                                                top = (mouseY + tooltipMouseGap) + 'px';
+                                            else //tooltip在上
+                                                top = (mouseY - tooltip.property('clientHeight') - tooltipMouseGap) + 'px';
+
+                                            tooltip
+                                                .style("top", top)
+                                                .style("left", left)
+                                                .style("right", right);
+                                        });
+
+
+                                    let groupIndex = Array.from(bar.parentNode.children).indexOf(bar);
+                                    let data = bar.__data__;
+                                    console.debug()
+                                    updateTooltip(groupIndex, data);
+                                };
+                                makeTooltip();
+                                hover(bar);
+                            });
+
+
+
+                    };
+                    mouseMove();
+                };
                 function chartOptionEvent() {
                     //=====rateOption
                     let rateOption = chartContainerD3.selectAll('input[name ="rateOption"]');
@@ -2431,114 +2660,91 @@ function requestRate() {
                     let scale = chartContainerD3.selectAll('input[name ="scale"]');
                     scale.on('click', e => {
                         let value = parseInt(e.target.value);
+                        if (value == newDataObj.logScale) return;
 
-                        newDataObj = getNewData({ logScale: value });
+                        newDataObj = getNewData({ logScale: value ? true : false });
+                        // console.debug(newDataObj);
                         updateChart();
                     });
 
-                    //====change xAxisRange
-                    chartContainerD3.select('#linearScale_group .dropdown-menu')
+                    //====change gapRange
+
+                    let linearScale_group = chartContainerD3.select('#linearScale_group');
+                    linearScale_group.select('.dropdown-menu')
                         .call(menu => {
-                            return
-                            console.debug(menu);
-                            // range drag
-                            menu.select('#gapScaleRange')
+
+                            // console.debug(menu);
+
+                            let gapScaleTextBox = menu.select('#gapScale_multiplier');
+                            let gapScaleRange = menu.select('#gapScaleRange');
+                            let gapScaleOption_nodes = menu.selectAll('#gapScaleList>option').nodes();
+
+                            gapScaleRange
                                 .on('input', e => {
+                                    //==========================同步textBox =================================
 
-                                    //     .on("input propertychange", function (e) {
-                                    //     // console.debug('NSRange change');
-                                    //     let NSIndex = e.target.value;
-                                    //     let scale = normalizeScale[NSIndex];
-                                    //     chartContainerJQ.find('#normalizeScale').val(scale);
-                                    //     chartContainerD3.selectAll('#normalizeScale').dispatch("input");
-                                    // });
+                                    let optionsIdx = e.target.value;
+                                    let times = parseInt(gapScaleOption_nodes[optionsIdx].text);
+                                    gapScaleTextBox
+                                        .property('value', times)
+                                        .dispatch("input");
+                                });
+
+                            // range drag
+
+                            // console.debug(floatTimes(1.1, 1.2, 1.5))
+                            gapScaleTextBox
+                                .on('input', e => {
                                     //==========================target vaule check=================================
-                                    let eleID = (e.target.id).split('_');
-                                    let name = eleID[0];
-                                    let rangeIndex = eleID[1] == 'min' ? 0 : 1;
-                                    let key = name.substring(0, name.indexOf('Range'));
-                                    let rangeData = rangeObj[key];
-                                    let rangeMin = rangeData[0];
-                                    let rangeMax = rangeData[1];
 
+                                    let inputVal = e.target.value;
+                                    let fixedVal = inputVal;
+
+                                    let maxGapScale = parseInt(gapScaleOption_nodes[gapScaleOption_nodes.length - 1].text);
                                     //======textBox空值或超過限制範圍處理
-                                    if (isNaN(e.target.value) || e.target.value == '')
-                                        e.target.value = xAxis_domainObj[key] ? xAxis_domainObj[key][rangeIndex] : [rangeMin, rangeMax][rangeIndex];
+                                    if (isNaN(inputVal) || inputVal == '' || inputVal < 1)
+                                        fixedVal = 1;
                                     // else if ([e.target.value < rangeMin, e.target.value > rangeMax][rangeIndex])
-                                    else if (e.target.value < rangeMin || e.target.value > rangeMax)
-                                        e.target.value = [rangeMin, rangeMax][rangeIndex];
+                                    else if (inputVal > maxGapScale)
+                                        fixedVal = maxGapScale;
 
-                                    //======textBox最小最大輸入相反處理===================================
-                                    let parentNode = e.target.parentNode;
-                                    let minRange = parentNode.querySelector('#' + name + '_min').value;
-                                    let maxRange = parentNode.querySelector('#' + name + '_max').value;
-                                    // console.debug(minRange, maxRange);
-
-                                    minRange = parseFloat(minRange);
-                                    maxRange = parseFloat(maxRange);
-
-                                    if (minRange > maxRange) {
-                                        let tmp = minRange;
-                                        minRange = maxRange;
-                                        maxRange = tmp;
-                                    }
-
-                                    //==========================同步slider=================================
-                                    let domain = [minRange, maxRange];
-
-
-                                    switch (name) {
-                                        case 'distRange':
-                                            distRange_slider.setValue(domain);
-                                            break;
-                                        case 'azRange':
-                                            azRange_slider.setValue(domain);
-                                            break;
-                                    }
-
-                                    let inRangeMin = (minRange == rangeMin);
-                                    let inRangeMax = (maxRange == rangeMax);
-
-
-                                    // if (inRangeMin && inRangeMax)
-                                    //     delete xAxis_domainObj[key];
-                                    // else
-                                    xAxis_domainObj[key] = domain;
-
-
+                                    e.target.value = fixedVal;
                                     //==========================更新按鈕文字=================================                             
-                                    let sub = xAxisName_radioGroup.select(`sub[class =${key}]`);
-                                    //在最大範圍時不顯示文字
-                                    let text = (inRangeMin && inRangeMax) ?
-                                        '' : `( ${minRange} - ${maxRange} )`;
+                                    let sub = linearScale_group.select('sub');
+                                    let multiplicand = newDataObj.gapGroupData.multiplicand;
+
+
+                                    let text = `gap = ${floatTimes(multiplicand, fixedVal)}`;
                                     sub.text(text);
 
 
-                                    //避免更新太頻繁LAG
-                                    var action = () => {
-                                        newDataObj = getNewData({ normalize: normalize, yAxis_domain: yAxis_domain, xAxis_domainObj: xAxis_domainObj });
-                                        updateChart();
-                                        updateStaionDropDownMenu();
-                                    }
-                                    updateHandler(action);
+                                    newDataObj = getNewData({ gapScale: fixedVal });
+                                    updateChart();
 
                                 });
-                            // reset button
-                            menu.select('button[name ="rangeReset"]')
+
+                            //==reset button
+                            menu.select('#scaleReset')
                                 .on('click', e => {
-                                    menu.select('#gapScale_multiplier').value = 1;
-                                    menu.select('#gapScaleRange').dispatch("input");
+                                    gapScaleRange.property('value', 0);
+                                    gapScaleTextBox
+                                        .property('value', 1)
+                                        .dispatch("input");
                                 });
                         });
 
                 };
+                chartEvent();
                 chartOptionEvent();
+
             };
             svg.call(events);
 
 
             return svg.node();
         };
+
+        //=========not yet
         function rateChart() {
 
 
@@ -2667,7 +2873,201 @@ function requestRate() {
             };
             updateChart();
 
-            function events(svg) { };
+            function events(svg) {
+                const eventRect = svg.append("g")
+                    .attr("class", "eventRect")
+                    .append("use").attr('xlink:href', "#chartRenderRange");
+
+                const tooltip = chartContainerD3.select("#charts")
+                    .append("div")
+                    .attr("id", "tooltip");
+
+                function chartEvent() {
+                    var mouseMove = () => {
+
+                        //用來判斷tooltip應該在滑鼠哪邊
+                        const chart_center = [x.range().reduce((a, b) => a + b) * 0.5, y.range().reduce((a, b) => a + b) * 0.5];
+                        const tooltipMouseGap = 50;//tooltip與滑鼠距離
+
+
+
+                        var updateTooltip = (dataArr) => {
+
+                            let svg_width = 20;
+                            let dataKey = dataKeys[newDataObj.xAxisOption.metric == 'date' ? 2 : 1];
+                            var display_rateDataKeys = rateDataKeys.filter((key, i) => display_timming_index.includes(i));
+
+                            // console.debug(rateDataKeys);
+                            // console.debug(display_rateDataKeys);
+
+                            tooltip
+                                .call(div => div
+                                    .selectAll('.tooltipTitle')
+                                    .data([0])
+                                    .join('text')
+                                    .style('font-size', '18px')
+                                    .attr('class', 'tooltipTitle')
+                                    .text(`${getString(dataKey)} ： `)
+                                    .append('br')
+                                )
+                                .selectAll('div')
+                                .data(dataArr)
+                                .join('div')
+                                // .style('color', (d, i) => 'black')
+                                // .style('font-size', 10)
+                                .call(divCollection => divCollection.each(function (obj, i) {
+                                    let div = d3.select(this);
+
+                                    let key = i == 0 ? dataKey : Object.keys(obj)[0];
+                                    let value = obj[key];
+
+                                    if (i != 0) {
+                                        div
+                                            .style('display', display_rateDataKeys.includes(key) ? 'block' : 'none')
+                                            .selectAll('svg')
+                                            .data([0])
+                                            .join('svg')
+                                            .attr("viewBox", [0, 2, svg_width, svg_width])
+                                            .style("position", 'relative')
+                                            // .style("left", '20px')
+                                            .attr("width", svg_width)
+                                            .attr("height", svg_width)
+                                            .attr("stroke", () => getColor(dataArr[0][dataKeys[0]]))
+                                            .call(displaySvg => {
+                                                displaySvg.selectAll("*").remove();
+                                                makeShape(displaySvg, rateDataKeys.indexOf(key), { x: svg_width * 0.5, y: svg_width * 0.5 }, 1);
+                                            });
+                                    };
+
+                                    let unit = newDataObj.yAxisOption.metric;
+
+                                    let text = i == 0 ?
+                                        key == dataKeys[2] ?//==datetime
+                                            new Date(value).toISOString().split('.')[0] :
+                                            convert_download_unit(value, originUnit, unit).value + `  ${unit} ` :
+                                        parseFloat(value.toFixed(unit == 'GB' ? 5 : 2)) + `  ${unit}/s `;
+
+
+                                    div
+                                        .selectAll('.value')
+                                        .data([0])
+                                        .join('text')
+                                        .style('font-size', '18px')
+                                        .attr('class', 'value ')
+                                        .text(text);
+
+
+
+                                }));
+
+                        };
+
+                        var hover = (target) => {
+                            // console.debug(target);
+
+                            //==改變其他g透明度
+                            focusGroup.selectAll('g')
+                                .call(g =>
+                                    g.each(function (d, i) {
+                                        let g = d3.select(this);
+                                        let hover = (g.data()[0] === target.__data__);
+                                        // console.debug(hover)
+
+                                        g
+                                            .attr("stroke", hover ? d => getColor(d[dataKeys[0]]) : 'grey')
+                                            .selectAll('*')
+                                            .attr("stroke-opacity", hover ? 1 : .5);
+
+                                        //===加陰影和上移圖層
+                                        if (hover)
+                                            g.attr("filter", "url(#pathShadow)").raise();
+                                    })
+                                );
+                        };
+
+                        var leave = () => {
+                            //==恢復所有g透明度
+                            focusGroup.selectAll('g')
+                                .attr("filter", null)//陰影都取消
+                                .call(g => g
+                                    .attr("stroke", d => getColor(d[dataKeys[0]]))
+                                    .selectAll('*')
+                                    .attr("stroke-opacity", 1)
+                                );
+                        };
+
+                        focusGroup.raise()
+                            .on('mouseout', function (e) {
+                                tooltip.style("display", "none");
+                                leave();
+                            })
+                            .on('mouseover', function (e) {
+                                let dotGroup = e.target.parentNode;
+
+                                var makeTooltip = () => {
+                                    const pointer = d3.pointer(e, this);
+
+                                    let mouseX = e.offsetX, mouseY = e.offsetY;
+                                    let fullWidth = svg.property('clientWidth');
+                                    //==show tooltip and set position
+                                    tooltip.style("display", "inline")
+                                        .call(tooltip => {
+                                            //tooltip換邊
+                                            let left, right, top;
+
+                                            if (pointer[0] < chart_center[0]) {//滑鼠未過半,tooltip在右
+                                                left = (mouseX + tooltipMouseGap) + 'px';
+                                                right = null;
+                                            } else {//tooltip在左
+                                                left = null;
+                                                right = (fullWidth - mouseX + tooltipMouseGap) + 'px';
+                                            }
+
+                                            if (pointer[1] < chart_center[1]) //tooltip在下
+                                                top = (mouseY + tooltipMouseGap) + 'px';
+                                            else //tooltip在上
+                                                top = (mouseY - tooltip.property('clientHeight') - tooltipMouseGap) + 'px';
+
+                                            tooltip
+                                                .style("top", top)
+                                                .style("left", left)
+                                                .style("right", right);
+                                        });
+
+
+                                    let dataArr = dotGroup.childNodes.map((child, i) => {
+                                        let obj = {};
+                                        // console.debug(child.__data__);
+
+                                        if (i == 0) obj = child.__data__;
+                                        else obj[child.classList[0]] = child.__data__;
+
+                                        return obj;
+                                    });
+
+
+                                    dataArr.sort(function (a, b) {
+                                        // console.debug();
+
+                                        if (Object.keys(b).length > 1)
+                                            return 1;
+                                        else
+                                            return Object.values(b) - Object.values(a);
+
+                                    });
+
+
+                                    // console.debug(dataArr);
+                                    updateTooltip(dataArr);
+                                };
+                                makeTooltip();
+                                hover(dotGroup);
+                            });
+                    };
+                };
+
+
+            };
             svg.call(events);
 
 

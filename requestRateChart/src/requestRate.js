@@ -126,7 +126,7 @@ function requestRate() {
                     unit1: unit1,
                     unit2: unit2,
                 }
-            }
+            };
             var getRatio = (unitA, unitB, unitArr, powerBase) => {
                 let ratio;
                 let A_index = unitArr.indexOf(unitA);
@@ -140,7 +140,7 @@ function requestRate() {
                     ratio = 1;
                 }
                 return ratio;
-            }
+            };
 
             let unitBefore_obj = getUnit(unitBefore);
 
@@ -173,7 +173,7 @@ function requestRate() {
                 }
                 newUnit = unit2[unit2_index] + unit1[unit1_index];
 
-            }
+            };
 
             return {
                 value: newValue,
@@ -198,7 +198,6 @@ function requestRate() {
             let result = intArr.reduce((a, b) => a * b) / Math.pow(10, powerArr.reduce((a, b) => a + b));
             return result;
         };
-
         const makeShape = (d3Selection, shapeIndex, centre, rateData = null, color = null) => {
             // console.debug(shapeIndex, dataIndex);
             // console.debug(rateData);
@@ -1922,6 +1921,7 @@ function requestRate() {
             return svg.node();
         };
         function barChart() {
+            const gapMultiplicandArr = [1, 2, 5, 10];
             ~function init() {
                 chartContainerJQ.append(`
                 <form id="form-chart">
@@ -1975,20 +1975,13 @@ function requestRate() {
 
                                 <div class="dropdown-menu dropdown-menu-right" aria-labelledby="scale">
                                     <div class="form-group col-12 d-flex flex-row flex-wrap align-items-start justify-content-between" >       
-                                        <label class="">gap scale</label>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="scaleReset" value="1">reset</button>
-
+                                        <label class="">bin width</label>
+   
                                         <div class="d-flex flex-column  align-items-center">
-
-
-                                            <div class="d-flex flex-row  flex-nowrap justify-content-around align-items-stretch"  style="margin-top: 15px;">
-                                                <label class="col-form-label" id="gapScale_multiplicand">1</label> 
-                                                <label class="col-form-label" >x</label>    
-                                                <input class="form-control col-5" type="text" id="gapScale_multiplier" value="1">       
-                                            </div>     
-
-                                            <input class="" type="range" id="gapScaleRange" list="gapScaleList" style="width: 200px;margin-top: 15px;"/>                                       
-                                            <datalist  class="d-flex flex-row flex-wrap" id="gapScaleList">
+                 
+                                            <input class="form-control col-5" type="text" id="gapNumber" value="1">    
+                                            <input class="" type="range" id="gapOptionRange" list="gapOptionList" style="width: 200px;margin-top: 15px;"/>                                       
+                                            <datalist  class="d-flex flex-row flex-wrap" id="gapOptionList">
                                             
                                             </datalist>
 
@@ -2049,8 +2042,9 @@ function requestRate() {
                 let linearScale_group = chartContainerJQ.find('#linearScale_group');
                 let linearScale_dropdownMenu = linearScale_group.find('.dropdown-menu');
 
-                var gapScale = Array.from(new Array(5), (d, i) => i);
-                // console.debug(gapScale);
+                // var gapOption = Array.from(new Array(4), (d, i) => i);
+                // var gapOption = [1, 2, 5, 10];
+                // console.debug(gapOption);
 
                 linearScale_group
                     .on('mouseover', function (e) {
@@ -2063,19 +2057,19 @@ function requestRate() {
                     });
 
                 //==輸入框blur自動切換到linear scale
-                linearScale_dropdownMenu.find('#gapScale_multiplier')
+                linearScale_dropdownMenu.find('#gapNumber')
                     .on('blur', () => linearScale_group.find('input').trigger('click'));
 
 
-                linearScale_dropdownMenu.find('#gapScaleRange')
-                    .attr("min", gapScale[0])
-                    .attr("max", gapScale[gapScale.length - 1])
+                linearScale_dropdownMenu.find('#gapOptionRange')
+                    .attr("min", 0)
+                    .attr("max", gapMultiplicandArr.length - 1)
                     .attr("value", 0)
                     //==條拉動自動切換到linear scale
                     .on('input', () => linearScale_group.find('input').trigger('click'));
 
-                let gapScaleList_html = gapScale.map((d, i) => `<option value="${i}">${d}</option>`).join('');
-                linearScale_dropdownMenu.find('#gapScaleList').append(gapScaleList_html);
+                let gapOptionList_html = gapMultiplicandArr.map((d, i) => `<option value="${i}">${d}</option>`).join('');
+                linearScale_dropdownMenu.find('#gapOptionList').append(gapOptionList_html);
 
 
             }();
@@ -2086,7 +2080,6 @@ function requestRate() {
             const xAxis = svg.append("g").attr("class", "xAxis");
             const yAxis = svg.append("g").attr("class", "yAxis");
             const legendGroup = svg.append("g").attr('class', 'legendGroup');
-
             const barOriginalColor = 'steelblue';
 
             var x, y;
@@ -2095,12 +2088,13 @@ function requestRate() {
             function getNewData(chartOption) {
                 let rateOption = chartOption.hasOwnProperty('rateOption') ? chartOption.rateOption : newDataObj.rateOption,
                     metric = chartOption.hasOwnProperty('metric') ? chartOption.metric : newDataObj.metric,
-                    gapScale = chartOption.hasOwnProperty('gapScale') ? chartOption.gapScale : newDataObj.gapScale,
+                    gap = chartOption.hasOwnProperty('gap') ? chartOption.gap : null,
                     logScale = chartOption.hasOwnProperty('logScale') ? chartOption.logScale : newDataObj.logScale;
                 console.debug(chartOption, logScale);
 
                 let gapGroupData, rateOptionData;
 
+                //==把選中的速率拉出來並轉換MB,GB
                 var getRateOptionData = (rateOption, metric) => {
                     let rateOptionData = [];
                     rateData.forEach(d => {
@@ -2122,92 +2116,43 @@ function requestRate() {
                     gapGroupData = newDataObj.gapGroupData;
                 }
                 else {
-                    var updateScaleMenu = (gap_multiplicand) => {
+                    var updateScaleMenu = (multiplier, minMultiplicand) => {
                         //==rateOption,metric改變時menu的乘數被乘數要更新
                         let linearScale_group = chartContainerD3.select('#linearScale_group');
-                        let gapScaleOptions = linearScale_group.selectAll('#gapScaleList>option');
+                        let gapOptions = linearScale_group.selectAll('#gapOptionList>option');
 
-                        linearScale_group.select('#gapScale_multiplicand').text(gap_multiplicand);
-                        linearScale_group.select('#gapScale_multiplier').property('value', 1);
-                        linearScale_group.select('#gapScaleRange').property('value', 0);
-                        linearScale_group.select('sub').text(`gap = ${gap_multiplicand}`);
+                        let gap = floatTimes(multiplier * minMultiplicand);
+                        linearScale_group.select('#gapNumber').property('value', gap);
+                        linearScale_group.select('#gapOptionRange').property('value', gapMultiplicandArr.indexOf(minMultiplicand));
+                        linearScale_group.select('sub').text(`binWidth = ${gap}`);
 
-                        let maxDomain = rateOptionData.maxDomain;
-                        let optionsMaxIdx = gapScaleOptions.nodes().length - 1;
-                        let maxScale = Math.ceil(maxDomain / gap_multiplicand);
-                        let gap = Math.ceil(maxScale / optionsMaxIdx);
-                        // console.debug(maxScale, gap);
-
-                        gapScaleOptions.text((d, i) => {
-                            let text;
-                            if (i == 0) text = 1;
-                            else if (i == optionsMaxIdx) text = maxScale;
-                            else text = (gap * i) > maxScale ? maxScale : gap * i;
-                            return text;
+                        gapOptions.text((d, i) => {
+                            return floatTimes(gapMultiplicandArr[i] * multiplier);
                         });
 
-                        gapScale = 1;
+                        // gap = 1;
                     };
-
-                    //===abs(x)<1 時,非0的小數位數不等於1,2,5,0時取成大於x,漂亮位數的數
-                    var getNiceCeil = (x) => {
-                        const niceNum = [1, 2, 5, 10];
-                        let sign = x < 0 ? -1 : 1;
-                        let newX = Math.abs(x);
-
-                        if (newX < 1) {
-                            let power = 0;
-                            while (newX < 1) {
-                                newX *= 10;
-                                power++;
-                            };
-                            // console.log(power)
-                            newX = Math.ceil(newX);
-                            // console.log(newX)
-                            newX = niceNum.includes(newX) ? newX : newX > 5 ? 10 : 5;
-                            newX /= Math.pow(10, power);
-
-                            // console.log(Math.pow(10, power))
-                        }
-                        else {
-                            let remainder = 0;
-                            newX = Math.ceil(newX);
-                            remainder = newX % 10;
-                            newX -= remainder;
-                            // console.log(remainder)
-                            remainder = niceNum.includes(remainder) ? remainder : remainder > 5 ? 10 : 5;
-                            // console.log(remainder)
-                            newX += remainder;
-                        }
-
-
-                        console.log(`before:\n${x}\nafter:\n${newX}`,);
-                        return newX * sign;
-                    };
-
-                    var getMultiplicand = () => {
-                        const maxTicks = 20;
-
-                        //==把選中的速率拉出來並轉換MB,GB
-                        // rateOptionData = rateData.map(d => (d[rateDataKeys[rateOption]]));
+                    var getMultiplier = () => {
+                        const maxTicks = 10;
 
                         rateOptionData = getRateOptionData(rateOption, metric);
                         let maxDomain = rateOptionData.maxDomain;
-                        //==最小間隔(使總組數不超過maxTicks)
-                        let gap_multiplicand = getNiceCeil(maxDomain / maxTicks);//==之後改漂亮的數字
 
-                        // console.debug(gap_multiplicand + '*' + maxTicks + '=' + gap_multiplicand * maxTicks);
-                        // console.debug(maxDomain);
+                        let power = Math.floor(Math.log10(maxDomain)) - 1;//==新公式
+                        let multiplier = Math.pow(10, power);
+                        console.debug('power = ' + power);
 
-                        updateScaleMenu(gap_multiplicand);
+                        let minMultiplicand = gapMultiplicandArr.find(multiplicand => maxDomain / (multiplicand * multiplier) <= maxTicks);
+                        console.debug('minMultiplicand = ' + minMultiplicand);
+                        gap = gap ? gap : floatTimes(minMultiplicand, multiplier);
 
-                        return gap_multiplicand;
+                        updateScaleMenu(multiplier, minMultiplicand);
+                        return multiplier;
                     };
-
-                    var getGapGroupData = (multiplicand) => {
+                    var getGapGroupData = (gap, multiplier) => {
+                        console.log(gap, multiplier);
                         rateOptionData = rateOptionData ? rateOptionData : newDataObj.rateOptionData;
 
-                        let gap = floatTimes(multiplicand, gapScale);
                         let groupCount = Math.ceil(rateOptionData.maxDomain / gap);
 
                         console.debug(gap + '*' + groupCount + '=' + floatTimes(gap, groupCount));
@@ -2221,23 +2166,133 @@ function requestRate() {
                             // console.debug(groupIndex);
                             gapGroupData[groupIndex < 0 ? 0 : groupIndex]++;//==rate是0時index會是-1
                         });
-                        gapGroupData.multiplicand = multiplicand;//==最小間隔
+                        gapGroupData.multiplier = multiplier;
 
                         console.debug('總個數=' + gapGroupData.reduce((pre, cur) => pre + cur));
                     };
-                    //==改變rateOption或metric要重新計算最小間隔(multiplicand:被乘數 指最小間隔)
-                    let multiplicand = (chartOption.hasOwnProperty('rateOption') || chartOption.hasOwnProperty('metric')) ?
-                        getMultiplicand() : newDataObj.gapGroupData.multiplicand;
+                    //==改變rateOption或metric要重新計算power
+                    let multiplier = (chartOption.hasOwnProperty('rateOption') || chartOption.hasOwnProperty('metric')) ?
+                        getMultiplier() : newDataObj.gapGroupData.multiplier;
 
-                    getGapGroupData(multiplicand);
-                };
+                    getGapGroupData(gap, multiplier);
+
+                }
+                // else {
+                //     var updateScaleMenu = (gap_multiplicand) => {
+                //         //==rateOption,metric改變時menu的乘數被乘數要更新
+                //         let linearScale_group = chartContainerD3.select('#linearScale_group');
+                //         let gapScaleOptions = linearScale_group.selectAll('#gapOptionList>option');
+
+                //         linearScale_group.select('#gapScale_multiplicand').text(gap_multiplicand);
+                //         linearScale_group.select('#gapScale_multiplier').property('value', 1);
+                //         linearScale_group.select('#gapOptionRange').property('value', 0);
+                //         linearScale_group.select('sub').text(`gap = ${gap_multiplicand}`);
+
+                //         let maxDomain = rateOptionData.maxDomain;
+                //         let optionsMaxIdx = gapScaleOptions.nodes().length - 1;
+                //         let maxScale = Math.ceil(maxDomain / gap_multiplicand);
+                //         let gap = Math.ceil(maxScale / optionsMaxIdx);
+                //         // console.debug(maxScale, gap);
+
+                //         gapScaleOptions.text((d, i) => {
+                //             let text;
+                //             if (i == 0) text = 1;
+                //             else if (i == optionsMaxIdx) text = maxScale;
+                //             else text = (gap * i) > maxScale ? maxScale : gap * i;
+                //             return text;
+                //         });
+
+                //         gapScale = 1;
+                //     };
+
+                //     // === abs(x) < 1 時, 非0的小數位數不等於1, 2, 5, 0時取成大於x, 漂亮位數的數
+
+                //     var getNiceCeil = (x) => {
+                //         const niceNum = [1, 2, 5, 10];
+                //         let sign = x < 0 ? -1 : 1;
+                //         let newX = Math.abs(x);
+
+                //         if (newX < 1) {
+                //             let power = 0;
+                //             while (newX < 1) {
+                //                 newX *= 10;
+                //                 power++;
+                //             };
+                //             // console.log(power)
+                //             newX = Math.ceil(newX);
+                //             // console.log(newX)
+                //             newX = niceNum.includes(newX) ? newX : newX > 5 ? 10 : 5;
+                //             newX /= Math.pow(10, power);
+
+                //             // console.log(Math.pow(10, power))
+                //         }
+                //         else {
+                //             let remainder = 0;
+                //             newX = Math.ceil(newX);
+                //             remainder = newX % 10;
+                //             newX -= remainder;
+                //             // console.log(remainder)
+                //             remainder = niceNum.includes(remainder) ? remainder : remainder > 5 ? 10 : 5;
+                //             // console.log(remainder)
+                //             newX += remainder;
+                //         }
+
+
+                //         console.log(`before:\n${x}\nafter:\n${newX}`,);
+                //         return newX * sign;
+                //     };
+                //     //===由最大範圍取得power再將1,2,5,10乘上10的power次方當作gap選項
+
+                //     var getMultiplicand = () => {
+                //         const maxTicks = 30;
+
+                //         rateOptionData = getRateOptionData(rateOption, metric);
+                //         let maxDomain = rateOptionData.maxDomain;
+                //         //==最小間隔(使總組數不超過maxTicks)
+                //         let gap_multiplicand = getNiceCeil(maxDomain / maxTicks);//==之後改漂亮的數字
+
+                //         // console.debug(gap_multiplicand + '*' + maxTicks + '=' + gap_multiplicand * maxTicks);
+                //         // console.debug(maxDomain);
+
+                //         updateScaleMenu(gap_multiplicand);
+
+                //         return gap_multiplicand;
+                //     };
+
+                //     var getGapGroupData = (multiplicand) => {
+                //         rateOptionData = rateOptionData ? rateOptionData : newDataObj.rateOptionData;
+
+                //         let gap = floatTimes(multiplicand, gapScale);
+                //         let groupCount = Math.ceil(rateOptionData.maxDomain / gap);
+
+                //         console.debug(gap + '*' + groupCount + '=' + floatTimes(gap, groupCount));
+
+
+                //         gapGroupData = Array.from(new Array(groupCount), () => 0);
+                //         // console.debug(gapGroupData);
+
+                //         rateOptionData.forEach(rate => {
+                //             let groupIndex = Math.ceil(rate / gap) - 1;
+                //             // console.debug(groupIndex);
+                //             gapGroupData[groupIndex < 0 ? 0 : groupIndex]++;//==rate是0時index會是-1
+                //         });
+                //         gapGroupData.multiplicand = multiplicand;//==最小間隔
+
+                //         console.debug('總個數=' + gapGroupData.reduce((pre, cur) => pre + cur));
+                //     };
+                //     //==改變rateOption或metric要重新計算最小間隔(multiplicand:被乘數 指最小間隔)
+                //     let multiplicand = (chartOption.hasOwnProperty('rateOption') || chartOption.hasOwnProperty('metric')) ?
+                //         getMultiplicand() : newDataObj.gapGroupData.multiplicand;
+
+                //     getGapGroupData(multiplicand);
+                // };
 
                 return {
                     gapGroupData: gapGroupData,
                     rateOptionData: rateOptionData,
                     rateOption: rateOption,
                     metric: metric,
-                    gapScale: gapScale,
+                    gap: gap,
                     logScale: logScale,
                 };
             };
@@ -2350,10 +2405,9 @@ function requestRate() {
                         // rateOptionData = newDataObj.rateOptionData,
                         rateOption = newDataObj.rateOption,
                         metric = newDataObj.metric,
-                        gapScale = newDataObj.gapScale,
+                        gap = newDataObj.gap,
                         logScale = newDataObj.logScale;
 
-                    let gap = floatTimes(gapGroupData.multiplicand, gapScale);
                     // console.debug(logScale);
 
                     x = d3['scaleLinear']()
@@ -2460,7 +2514,7 @@ function requestRate() {
                     newDataObj = getNewData({
                         rateOption: 0,
                         metric: chartContainerD3.selectAll('input[name=metric]:checked').property("value"),
-                        gapScale: 1,
+                        // gap: gapMultiplicandArr[0],
                         logScale: false,
                     });
                     init();
@@ -2495,7 +2549,7 @@ function requestRate() {
                                     let div = d3.select(this);
                                     let html;
                                     if (i == 0) {
-                                        let gap = floatTimes(newDataObj.gapScale, newDataObj.gapGroupData.multiplicand);
+                                        let gap = newDataObj.gap;
                                         html = `${floatTimes(gap, d)} - ${floatTimes(gap, (d + 1))} ( ${newDataObj.metric} / s ) : `;
                                     }
                                     else {
@@ -2675,19 +2729,27 @@ function requestRate() {
 
                             // console.debug(menu);
 
-                            let gapScaleTextBox = menu.select('#gapScale_multiplier');
-                            let gapScaleRange = menu.select('#gapScaleRange');
-                            let gapScaleOption_nodes = menu.selectAll('#gapScaleList>option').nodes();
+                            let gapScaleTextBox = menu.select('#gapNumber');
+                            let gapOptionRange = menu.select('#gapOptionRange');
 
-                            gapScaleRange
+                            gapOptionRange
                                 .on('input', e => {
                                     //==========================同步textBox =================================
 
                                     let optionsIdx = e.target.value;
-                                    let times = parseInt(gapScaleOption_nodes[optionsIdx].text);
+
+                                    // if (optionsIdx == 3) {
+                                    //     e.target.value = 1;
+                                    //     return;
+                                    //     // console.debug(optionsIdx)
+                                    // };
+
+
+                                    let gap = floatTimes(gapMultiplicandArr[optionsIdx], newDataObj.gapGroupData.multiplier);
                                     gapScaleTextBox
-                                        .property('value', times)
+                                        .property('value', gap)
                                         .dispatch("input");
+
                                 });
 
                             // range drag
@@ -2700,37 +2762,32 @@ function requestRate() {
                                     let inputVal = e.target.value;
                                     let fixedVal = inputVal;
 
-                                    let maxGapScale = parseInt(gapScaleOption_nodes[gapScaleOption_nodes.length - 1].text);
                                     //======textBox空值或超過限制範圍處理
-                                    if (isNaN(inputVal) || inputVal == '' || inputVal < 1)
-                                        fixedVal = 1;
-                                    // else if ([e.target.value < rangeMin, e.target.value > rangeMax][rangeIndex])
-                                    else if (inputVal > maxGapScale)
-                                        fixedVal = maxGapScale;
+                                    if (isNaN(inputVal) || inputVal == '')
+                                        fixedVal = newDataObj.gapGroupData.multiplier;
 
                                     e.target.value = fixedVal;
                                     //==========================更新按鈕文字=================================                             
                                     let sub = linearScale_group.select('sub');
-                                    let multiplicand = newDataObj.gapGroupData.multiplicand;
 
 
-                                    let text = `gap = ${floatTimes(multiplicand, fixedVal)}`;
+                                    let text = `binWidth = ${fixedVal}`;
                                     sub.text(text);
 
 
-                                    newDataObj = getNewData({ gapScale: fixedVal });
+                                    newDataObj = getNewData({ gap: fixedVal });
                                     updateChart();
 
                                 });
 
                             //==reset button
-                            menu.select('#scaleReset')
-                                .on('click', e => {
-                                    gapScaleRange.property('value', 0);
-                                    gapScaleTextBox
-                                        .property('value', 1)
-                                        .dispatch("input");
-                                });
+                            // menu.select('#scaleReset')
+                            //     .on('click', e => {
+                            //         gapOptionRange.property('value', 0);
+                            //         gapScaleTextBox
+                            //             .property('value', 1)
+                            //             .dispatch("input");
+                            //     });
                         });
 
                 };

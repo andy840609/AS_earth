@@ -104,21 +104,21 @@ a {
 
 
 :root {
-    --w: 150px;
+    --w: 200px;
     --sidePadding: 2px;
     --list-length: 4;
 }
 
-#gapScaleRange {
+#gapOptionRange {
     width: var(--w);
 }
 
-#gapScaleList {
+#gapOptionList {
     display: block;
     /* margin-top: 0px; */
 }
 
-#gapScaleList option {
+#gapOptionList option {
     display: inline-block;
     width: calc((var(--w) - var(--sidePadding)) /((var(--list-length) - 1)));
     text-align: center;
@@ -128,13 +128,13 @@ a {
     /* font-size: 100; */
 }
 
-#gapScaleList option:first-child {
+#gapOptionList option:first-child {
     width: calc((var(--w) - var(--sidePadding)) /((var(--list-length) - 1) * 2));
     text-align: left;
     padding-left: 3px;
 }
 
-#gapScaleList option:last-child {
+#gapOptionList option:last-child {
     width: calc((var(--w) - var(--sidePadding)) /((var(--list-length) - 1) * 2));
     text-align: right;
     padding-left: 12px;

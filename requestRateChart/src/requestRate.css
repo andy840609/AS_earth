@@ -100,6 +100,7 @@ a {
     padding: 20px 20px 20px 20px;
     opacity: .9;
     display: none;
+    pointer-events: none;
 }
 
 
@@ -114,7 +115,10 @@ a {
 }
 
 #gapOptionList {
-    display: block;
+    position: absolute;
+    bottom: -25px;
+    /* display: flex; */
+    /* flex-wrap: nowrap; */
     /* margin-top: 0px; */
 }
 
@@ -123,19 +127,9 @@ a {
     width: calc((var(--w) - var(--sidePadding)) /((var(--list-length) - 1)));
     text-align: center;
     text-anchor: middle;
-    /* alignment-baseline: text-before-edge; */
-    /* font-weight: bold; */
-    /* font-size: 100; */
 }
 
-#gapOptionList option:first-child {
-    width: calc((var(--w) - var(--sidePadding)) /((var(--list-length) - 1) * 2));
-    text-align: left;
-    padding-left: 3px;
-}
-
-#gapOptionList option:last-child {
-    width: calc((var(--w) - var(--sidePadding)) /((var(--list-length) - 1) * 2));
-    text-align: right;
-    padding-left: 12px;
+#minGap {
+    font-size: 15px;
+    margin-bottom: 0rem;
 }

@@ -638,17 +638,6 @@ function waveXdist() {
             //         // $(e.target).trigger('blur');
             //     });
 
-
-            // //====================channel 產生各組選項
-
-            // let channelCKB_html = channelGroups.map((d, i) =>
-            //     `<div class="form-check col-4" style="text-align: center;">
-            //         <input class="form-check-input col-3" type="checkbox" id="channel_group${i}" name="channel" value="${i}" ${i == 0 ? 'checked' : ''}>
-            //         <label  for="channel_group${i}">${d}</label>
-            //     </div>`).join('');
-
-            // chartContainerJQ.find('#channelDropDownMenu').append(channelCKB_html);
-
             //====================xAxisName
             let xAxisName_radioGroup = chartContainerJQ.find('#xAxisName_radioGroup');
             let xAxisName_dropdownMenu = xAxisName_radioGroup.find('.dropdown-menu');

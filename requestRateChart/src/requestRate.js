@@ -66,9 +66,10 @@ function requestRate() {
 
         const dataKeys = data.column;
         const typeNameKeys = typeName.column;
+        const timeDataKeys = ['processing_time', 'internal_transmission_time', 'external_transmission_time', 'global_reaction_time'];
         const rateDataKeys = ['processing_speed', 'internal_transmission_rate', 'external_transmission_rate', 'global_reaction_rate'];
         const originUnit = 'KB';
-        var rateData;
+        var timeIntervalData, rateData;
 
         const getString = (value) => {
             let string = '';
@@ -97,6 +98,19 @@ function requestRate() {
                     break;
                 case 'file_size':
                     string = '檔案大小';
+                    break;
+                //==time chart
+                case 'processing_time':
+                    string = '處理時間';
+                    break;
+                case 'internal_transmission_time':
+                    string = '內部傳輸時間';
+                    break;
+                case 'external_transmission_time':
+                    string = '外部傳輸時間';
+                    break;
+                case 'global_reaction_time':
+                    string = '總反應時間';
                     break;
                 default:
                     string = value;
@@ -320,10 +334,10 @@ function requestRate() {
                                         <input type="radio" name ="chartType" value="1" > 1
                                     </label>
                                     <label class="btn btn-secondary">
-                                        <input type="radio" name ="chartType" value="2" checked> 2
+                                        <input type="radio" name ="chartType" value="2"> 2
                                     </label>
                                     <label class="btn btn-secondary">
-                                        <input type="radio" name ="chartType" value="3"> 3
+                                        <input type="radio" name ="chartType" value="3" checked> 3
                                     </label>
     
                                 </div>
@@ -350,27 +364,65 @@ function requestRate() {
                     // console.debug(typesOfException);
                     data = data.filter(d => !typesOfException.includes(d[dataKeys[0]]));
                     typeName = typeName.filter(tn => !typesOfException.includes(tn[typeNameKeys[0]]));
-                    rateData = function () {
-                        let rateData;
-                        let getRate = (fileSize, date1, date2) => {
-                            let time_interval = date2 - date1;
-                            let rate = time_interval > 0 ? parseFloat((fileSize / (time_interval / 1000)).toFixed(2)) : undefined;
-                            return rate;
-                        };
-                        rateData = data.map(d => {
-                            let fileSize = d[dataKeys[1]];
+                    timeIntervalData = function () {//==原資料爲ms所以除1000轉s
+                        let timeIntervals = data.map(d => {
+                            let getTimeInterval = (date1, date2) => {
+                                let time_interval = date2 - date1;
+                                time_interval = time_interval > 0 ? (time_interval / 1000) : undefined;
+                                return time_interval;
+                            };
                             let t1 = d[dataKeys[2]], t2 = d[dataKeys[3]], t3 = d[dataKeys[4]], t4 = d[dataKeys[5]];
 
                             let obj = {};
-                            obj[rateDataKeys[0]] = getRate(fileSize, t1, t2);
-                            obj[rateDataKeys[1]] = getRate(fileSize, t2, t3);
-                            obj[rateDataKeys[2]] = getRate(fileSize, t3, t4);
-                            obj[rateDataKeys[3]] = getRate(fileSize, t1, t4);
+                            obj[timeDataKeys[0]] = getTimeInterval(t1, t2);
+                            obj[timeDataKeys[1]] = getTimeInterval(t2, t3);
+                            obj[timeDataKeys[2]] = getTimeInterval(t3, t4);
+                            obj[timeDataKeys[3]] = getTimeInterval(t1, t4);
+                            return obj;
+                        })
+                        return timeIntervals;
+                    }();
+                    rateData = function () {
+                        let getRate = (fileSize, ti) => {
+                            let rate = ti > 0 ? parseFloat((fileSize / ti).toFixed(2)) : undefined;
+                            return rate;
+                        };
+                        let rateData = timeIntervalData.map((d, i) => {
+                            let fileSize = data[i][dataKeys[1]];
+                            let ti1 = d[timeDataKeys[0]], ti2 = d[timeDataKeys[1]], ti3 = d[timeDataKeys[2]], ti4 = d[timeDataKeys[3]];
+
+                            let obj = {};
+                            obj[rateDataKeys[0]] = getRate(fileSize, ti1);
+                            obj[rateDataKeys[1]] = getRate(fileSize, ti2);
+                            obj[rateDataKeys[2]] = getRate(fileSize, ti3);
+                            obj[rateDataKeys[3]] = getRate(fileSize, ti4);
                             return obj;
                         })
                         return rateData;
                     }();
+                    console.log(timeIntervalData);
                     console.log(rateData);
+
+                    // rateData = function () {
+                    //     let rateData;
+                    //     let getRate = (fileSize, date1, date2) => {
+                    //         let time_interval = date2 - date1;
+                    //         let rate = time_interval > 0 ? parseFloat((fileSize / (time_interval / 1000)).toFixed(2)) : undefined;
+                    //         return rate;
+                    //     };
+                    //     rateData = data.map(d => {
+                    //         let fileSize = d[dataKeys[1]];
+                    //         let t1 = d[dataKeys[2]], t2 = d[dataKeys[3]], t3 = d[dataKeys[4]], t4 = d[dataKeys[5]];
+
+                    //         let obj = {};
+                    //         obj[rateDataKeys[0]] = getRate(fileSize, t1, t2);
+                    //         obj[rateDataKeys[1]] = getRate(fileSize, t2, t3);
+                    //         obj[rateDataKeys[2]] = getRate(fileSize, t3, t4);
+                    //         obj[rateDataKeys[3]] = getRate(fileSize, t1, t4);
+                    //         return obj;
+                    //     })
+                    //     return rateData;
+                    // }();
                     // ==比較rateData速率與原始資料異同
                     // {
                     //     // console.debug(rateData);
@@ -1922,6 +1974,7 @@ function requestRate() {
         };
         function barChart() {
             const gapMultiplicandArr = [1, 2, 5, 10];
+            const maxGroupCount = 20;
             ~function init() {
                 chartContainerJQ.append(`
                 <form id="form-chart">
@@ -1979,9 +2032,10 @@ function requestRate() {
    
                                         <div class="d-flex flex-column  align-items-center">
                  
-                                            <input class="form-control col-5" type="text" id="gapNumber" value="1">    
-                                            <input class="" type="range" id="gapOptionRange" list="gapOptionList" style="width: 200px;margin-top: 15px;"/>                                       
-                                            <datalist  class="d-flex flex-row flex-wrap" id="gapOptionList">
+                                            <input class="form-control col-5" type="text" id="gapNumber">    
+                                            <label class="" id="minGap"></label>
+                                            <input class="" type="range" id="gapOptionRange" list="gapOptionList" style="width: 200px;"/>                                       
+                                            <datalist  class="d-flex flex-row flex-nowrap" id="gapOptionList">
                                             
                                             </datalist>
 
@@ -2041,25 +2095,41 @@ function requestRate() {
                 //====================linearScale
                 let linearScale_group = chartContainerJQ.find('#linearScale_group');
                 let linearScale_dropdownMenu = linearScale_group.find('.dropdown-menu');
+                let linearScale_textBox = linearScale_dropdownMenu.find('#gapNumber')
 
-                // var gapOption = Array.from(new Array(4), (d, i) => i);
-                // var gapOption = [1, 2, 5, 10];
-                // console.debug(gapOption);
-
+                let menuMouseover = false;
                 linearScale_group
                     .on('mouseover', function (e) {
                         // console.debug(this);
                         linearScale_dropdownMenu.addClass('show');
+                        menuMouseover = true;
                     })
                     .on('mouseleave', function (e) {
-                        // if (!mousedownFlag && !rangeTextBoxFocus)
-                        linearScale_dropdownMenu.removeClass('show');
+                        if (!textBoxFocus)
+                            linearScale_dropdownMenu.removeClass('show');
+                        menuMouseover = false;
                     });
 
                 //==輸入框blur自動切換到linear scale
-                linearScale_dropdownMenu.find('#gapNumber')
-                    .on('blur', () => linearScale_group.find('input').trigger('click'));
+                let textBoxFocus = false;
+                linearScale_textBox
+                    .on('focus', () => textBoxFocus = true)
+                    .on('blur', () => {
+                        textBoxFocus = false;
+                        linearScale_group.find('input').trigger('click');
+                    });
 
+                //==避免按下enter時submit
+                $(window).keydown(e => {
+                    if (e.keyCode == 13) {
+                        e.preventDefault();
+                        if (textBoxFocus) {
+                            if (!menuMouseover) linearScale_dropdownMenu.removeClass('show');
+                            chartContainerD3.select('#gapNumber').dispatch("blur");
+                        };
+                        return false;
+                    }
+                });
 
                 linearScale_dropdownMenu.find('#gapOptionRange')
                     .attr("min", 0)
@@ -2079,7 +2149,7 @@ function requestRate() {
             const focusGroup = svg.append("g").attr('class', 'focus');
             const xAxis = svg.append("g").attr("class", "xAxis");
             const yAxis = svg.append("g").attr("class", "yAxis");
-            const legendGroup = svg.append("g").attr('class', 'legendGroup');
+            // const legendGroup = svg.append("g").attr('class', 'legendGroup');
             const barOriginalColor = 'steelblue';
 
             var x, y;
@@ -2088,9 +2158,9 @@ function requestRate() {
             function getNewData(chartOption) {
                 let rateOption = chartOption.hasOwnProperty('rateOption') ? chartOption.rateOption : newDataObj.rateOption,
                     metric = chartOption.hasOwnProperty('metric') ? chartOption.metric : newDataObj.metric,
-                    gap = chartOption.hasOwnProperty('gap') ? chartOption.gap : null,
+                    gap = chartOption.hasOwnProperty('gap') ? chartOption.gap : newDataObj.gap,
                     logScale = chartOption.hasOwnProperty('logScale') ? chartOption.logScale : newDataObj.logScale;
-                console.debug(chartOption, logScale);
+                // console.debug(chartOption);
 
                 let gapGroupData, rateOptionData;
 
@@ -2104,189 +2174,100 @@ function requestRate() {
                     });
                     // console.debug(rateOptionData);
 
-                    let maxDomain = d3.max(rateOptionData);
-                    rateOptionData.maxDomain = maxDomain;
+                    let domain = d3.extent(rateOptionData);
+                    rateOptionData.domain = domain;
 
                     return rateOptionData;
                 };
+                var updateScaleMenu = (multiplier, minMultiplicand) => {
+                    //==rateOption,metric改變時menu的乘數被乘數要更新
+                    let linearScale_group = chartContainerD3.select('#linearScale_group');
+                    let gapOptions = linearScale_group.selectAll('#gapOptionList>option');
 
-                //==用不同方法計算分組陣列
-                if (logScale) {
+                    let gap = floatTimes(multiplier, minMultiplicand);
+
+
+                    linearScale_group.select('#gapNumber').property('value', gap);
+                    linearScale_group.select('#gapOptionRange').property('value', gapMultiplicandArr.indexOf(minMultiplicand));
+                    linearScale_group.select('sub').text(`B.W. = ${gap}`);
+                    linearScale_group.select('#minGap').text(`(min : ${gap})`);
+
+                    gapOptions
+                        .text((d, i) => floatTimes(gapMultiplicandArr[i], multiplier))
+                        .style("color", (d, i) => gapMultiplicandArr[i] < minMultiplicand ? 'grey' : 'black');
+
+                    // gap = 1;
+                };
+                var getGap = () => {
+
+                    // console.debug('maxGroupCount=' + maxGroupCount);
                     rateOptionData = getRateOptionData(rateOption, metric);
-                    gapGroupData = newDataObj.gapGroupData;
-                }
-                else {
-                    var updateScaleMenu = (multiplier, minMultiplicand) => {
-                        //==rateOption,metric改變時menu的乘數被乘數要更新
-                        let linearScale_group = chartContainerD3.select('#linearScale_group');
-                        let gapOptions = linearScale_group.selectAll('#gapOptionList>option');
+                    let maxDomain = rateOptionData.domain[1];
 
-                        let gap = floatTimes(multiplier * minMultiplicand);
-                        linearScale_group.select('#gapNumber').property('value', gap);
-                        linearScale_group.select('#gapOptionRange').property('value', gapMultiplicandArr.indexOf(minMultiplicand));
-                        linearScale_group.select('sub').text(`binWidth = ${gap}`);
+                    let power = Math.floor(Math.log10(maxDomain)) - 1;//==新公式
+                    let multiplier = Math.pow(10, power);
+                    // console.debug('power = ' + power);
 
-                        gapOptions.text((d, i) => {
-                            return floatTimes(gapMultiplicandArr[i] * multiplier);
+                    let minMultiplicand = gapMultiplicandArr.find(multiplicand => maxDomain / (multiplicand * multiplier) <= maxGroupCount);
+                    // console.debug('minMultiplicand = ' + minMultiplicand);
+
+
+                    rateOptionData.multiplier = multiplier;
+                    rateOptionData.minMultiplicand = minMultiplicand;
+
+                    updateScaleMenu(multiplier, minMultiplicand);
+
+                    let Gap = floatTimes(minMultiplicand, multiplier);
+
+                    return Gap;
+                };
+                var getGapGroupData = (gap) => {
+                    // console.log(gap);
+
+
+                    // console.log(rateOptionData);
+                    rateOptionData = rateOptionData ? rateOptionData : newDataObj.rateOptionData;
+
+                    //==用不同方法計算分組陣列
+                    if (logScale) {
+                        let powerDomain = rateOptionData.domain.map((d, i) => Math[i == 0 ? 'floor' : 'ceil'](Math.log10(d)));
+                        let groupCount = powerDomain.reduce((pre, cur) => Math.abs(pre - cur));
+                        gapGroupData = Array.from(new Array(groupCount), () => 0);
+                        rateOptionData.forEach(rate => {
+                            let groupIndex = Math.floor(Math.log10(rate)) - powerDomain[0];
+                            // console.debug(groupIndex);
+                            gapGroupData[groupIndex]++;
                         });
-
-                        // gap = 1;
-                    };
-                    var getMultiplier = () => {
-                        const maxTicks = 10;
-
-                        rateOptionData = getRateOptionData(rateOption, metric);
-                        let maxDomain = rateOptionData.maxDomain;
-
-                        let power = Math.floor(Math.log10(maxDomain)) - 1;//==新公式
-                        let multiplier = Math.pow(10, power);
-                        console.debug('power = ' + power);
-
-                        let minMultiplicand = gapMultiplicandArr.find(multiplicand => maxDomain / (multiplicand * multiplier) <= maxTicks);
-                        console.debug('minMultiplicand = ' + minMultiplicand);
-                        gap = gap ? gap : floatTimes(minMultiplicand, multiplier);
-
-                        updateScaleMenu(multiplier, minMultiplicand);
-                        return multiplier;
-                    };
-                    var getGapGroupData = (gap, multiplier) => {
-                        console.log(gap, multiplier);
-                        rateOptionData = rateOptionData ? rateOptionData : newDataObj.rateOptionData;
-
-                        let groupCount = Math.ceil(rateOptionData.maxDomain / gap);
-
-                        console.debug(gap + '*' + groupCount + '=' + floatTimes(gap, groupCount));
-
+                        gapGroupData.logDomain = powerDomain.map(p => Math.pow(10, p));
+                        gapGroupData.powerDomain = powerDomain;//==for tooltip
+                        // console.debug(gapGroupData);
+                    }
+                    else {
+                        let groupCount = Math.ceil(rateOptionData.domain[1] / gap);
+                        // console.debug(rateOptionData.domain, gap);
 
                         gapGroupData = Array.from(new Array(groupCount), () => 0);
-                        // console.debug(gapGroupData);
-
                         rateOptionData.forEach(rate => {
                             let groupIndex = Math.ceil(rate / gap) - 1;
                             // console.debug(groupIndex);
                             gapGroupData[groupIndex < 0 ? 0 : groupIndex]++;//==rate是0時index會是-1
                         });
-                        gapGroupData.multiplier = multiplier;
 
-                        console.debug('總個數=' + gapGroupData.reduce((pre, cur) => pre + cur));
+                        // console.debug(gap + '*' + groupCount + '=' + floatTimes(gap, groupCount));
+
                     };
-                    //==改變rateOption或metric要重新計算power
-                    let multiplier = (chartOption.hasOwnProperty('rateOption') || chartOption.hasOwnProperty('metric')) ?
-                        getMultiplier() : newDataObj.gapGroupData.multiplier;
+                    // console.debug('總個數=' + gapGroupData.reduce((pre, cur) => pre + cur));
+                };
+                //==改變rateOption或metric要重新計算power
 
-                    getGapGroupData(gap, multiplier);
+                if (chartOption.hasOwnProperty('rateOption') || chartOption.hasOwnProperty('metric'))
+                    gap = getGap();
 
-                }
-                // else {
-                //     var updateScaleMenu = (gap_multiplicand) => {
-                //         //==rateOption,metric改變時menu的乘數被乘數要更新
-                //         let linearScale_group = chartContainerD3.select('#linearScale_group');
-                //         let gapScaleOptions = linearScale_group.selectAll('#gapOptionList>option');
-
-                //         linearScale_group.select('#gapScale_multiplicand').text(gap_multiplicand);
-                //         linearScale_group.select('#gapScale_multiplier').property('value', 1);
-                //         linearScale_group.select('#gapOptionRange').property('value', 0);
-                //         linearScale_group.select('sub').text(`gap = ${gap_multiplicand}`);
-
-                //         let maxDomain = rateOptionData.maxDomain;
-                //         let optionsMaxIdx = gapScaleOptions.nodes().length - 1;
-                //         let maxScale = Math.ceil(maxDomain / gap_multiplicand);
-                //         let gap = Math.ceil(maxScale / optionsMaxIdx);
-                //         // console.debug(maxScale, gap);
-
-                //         gapScaleOptions.text((d, i) => {
-                //             let text;
-                //             if (i == 0) text = 1;
-                //             else if (i == optionsMaxIdx) text = maxScale;
-                //             else text = (gap * i) > maxScale ? maxScale : gap * i;
-                //             return text;
-                //         });
-
-                //         gapScale = 1;
-                //     };
-
-                //     // === abs(x) < 1 時, 非0的小數位數不等於1, 2, 5, 0時取成大於x, 漂亮位數的數
-
-                //     var getNiceCeil = (x) => {
-                //         const niceNum = [1, 2, 5, 10];
-                //         let sign = x < 0 ? -1 : 1;
-                //         let newX = Math.abs(x);
-
-                //         if (newX < 1) {
-                //             let power = 0;
-                //             while (newX < 1) {
-                //                 newX *= 10;
-                //                 power++;
-                //             };
-                //             // console.log(power)
-                //             newX = Math.ceil(newX);
-                //             // console.log(newX)
-                //             newX = niceNum.includes(newX) ? newX : newX > 5 ? 10 : 5;
-                //             newX /= Math.pow(10, power);
-
-                //             // console.log(Math.pow(10, power))
-                //         }
-                //         else {
-                //             let remainder = 0;
-                //             newX = Math.ceil(newX);
-                //             remainder = newX % 10;
-                //             newX -= remainder;
-                //             // console.log(remainder)
-                //             remainder = niceNum.includes(remainder) ? remainder : remainder > 5 ? 10 : 5;
-                //             // console.log(remainder)
-                //             newX += remainder;
-                //         }
+                getGapGroupData(gap);
 
 
-                //         console.log(`before:\n${x}\nafter:\n${newX}`,);
-                //         return newX * sign;
-                //     };
-                //     //===由最大範圍取得power再將1,2,5,10乘上10的power次方當作gap選項
 
-                //     var getMultiplicand = () => {
-                //         const maxTicks = 30;
-
-                //         rateOptionData = getRateOptionData(rateOption, metric);
-                //         let maxDomain = rateOptionData.maxDomain;
-                //         //==最小間隔(使總組數不超過maxTicks)
-                //         let gap_multiplicand = getNiceCeil(maxDomain / maxTicks);//==之後改漂亮的數字
-
-                //         // console.debug(gap_multiplicand + '*' + maxTicks + '=' + gap_multiplicand * maxTicks);
-                //         // console.debug(maxDomain);
-
-                //         updateScaleMenu(gap_multiplicand);
-
-                //         return gap_multiplicand;
-                //     };
-
-                //     var getGapGroupData = (multiplicand) => {
-                //         rateOptionData = rateOptionData ? rateOptionData : newDataObj.rateOptionData;
-
-                //         let gap = floatTimes(multiplicand, gapScale);
-                //         let groupCount = Math.ceil(rateOptionData.maxDomain / gap);
-
-                //         console.debug(gap + '*' + groupCount + '=' + floatTimes(gap, groupCount));
-
-
-                //         gapGroupData = Array.from(new Array(groupCount), () => 0);
-                //         // console.debug(gapGroupData);
-
-                //         rateOptionData.forEach(rate => {
-                //             let groupIndex = Math.ceil(rate / gap) - 1;
-                //             // console.debug(groupIndex);
-                //             gapGroupData[groupIndex < 0 ? 0 : groupIndex]++;//==rate是0時index會是-1
-                //         });
-                //         gapGroupData.multiplicand = multiplicand;//==最小間隔
-
-                //         console.debug('總個數=' + gapGroupData.reduce((pre, cur) => pre + cur));
-                //     };
-                //     //==改變rateOption或metric要重新計算最小間隔(multiplicand:被乘數 指最小間隔)
-                //     let multiplicand = (chartOption.hasOwnProperty('rateOption') || chartOption.hasOwnProperty('metric')) ?
-                //         getMultiplicand() : newDataObj.gapGroupData.multiplicand;
-
-                //     getGapGroupData(multiplicand);
-                // };
-
+                // console.debug(gap);
                 return {
                     gapGroupData: gapGroupData,
                     rateOptionData: rateOptionData,
@@ -2318,6 +2299,21 @@ function requestRate() {
                             .attr("x", width / 2)
                             .attr("y", margin.top / 2)
                             .text(title);
+
+                        //==total
+                        svg
+                            .append("g")
+                            .attr("class", "total")
+                            .append('text')
+                            .attr("fill", "currentColor")
+                            // .attr("align", "center")
+                            .attr("text-anchor", "end")
+                            .attr("alignment-baseline", "text-after-edge")
+                            .attr("font-weight", "bold")
+                            .attr("font-size", "15")
+                            .attr("x", width - margin.left)
+                            .attr("y", margin.top);
+
 
 
                         xAxis
@@ -2415,19 +2411,18 @@ function requestRate() {
                         .range([margin.left, width - margin.right])
                         .nice();
 
-
-                    // console.debug(newDataObj);gapGroupData.map((d, i) => gap * (i + 1))
                     y = d3[logScale ? 'scaleLog' : 'scaleLinear']()
-                        .domain(d3.extent([logScale ? 1 : 0, gap * gapGroupData.length]))
+                        .domain(logScale ? gapGroupData.logDomain : [0, gap * gapGroupData.length])
                         .range([height - margin.bottom, margin.top]);
-                    if (logScale) y.nice();
-
 
                     var refreshText = () => {
                         yAxis
                             .select('.axis_name')
                             .text(`${getString(rateDataKeys[rateOption])} ( ${metric} / s )`);
 
+                        svg
+                            .select('.total text')
+                            .text(`total = ${gapGroupData.reduce((pre, cur) => pre + cur)}`);
                     };
                     var updateAxis = () => {
                         function formatPower(x) {
@@ -2450,8 +2445,7 @@ function requestRate() {
                                 let axisFun = d3.axisLeft(y);
                                 // console.log(y.domain());
                                 if (logScale) {
-                                    axisFun.ticks(Math.log10(y.domain()[1] / y.domain()[0]) + 1, formatPower);
-
+                                    axisFun.ticks(Math.log10(y.domain()[1] / y.domain()[0]), formatPower);
                                 }
                                 else {
                                     let tickValues = [0].concat(gapGroupData.map((d, i) => floatTimes(gap, (i + 1))));
@@ -2472,9 +2466,14 @@ function requestRate() {
                             })
                             .call(g =>
                                 g.selectAll("g.yAxis g.tick line")
-                                    .attr("x2", d => width - margin.left - margin.right)
-                                    .attr("stroke-opacity", 0.2)
-                                // .call(d => console.debug(d))
+                                    .call(lines => {
+                                        let tickLines = logScale ?
+                                            lines.filter(d => Math.log10(d) % 1 === 0) : lines;
+
+                                        tickLines
+                                            .attr("x2", d => width - margin.left - margin.right)
+                                            .attr("stroke-opacity", 0.2);
+                                    })
                             );
 
                         xAxis.call(makeXAxis);
@@ -2482,7 +2481,9 @@ function requestRate() {
                     };
                     var updateFocus = () => {
 
-                        const height = logScale ? 10 : (y(0) - y(gap)) * 0.5;
+                        const height = (logScale ?
+                            y(gapGroupData.logDomain[0]) - y(gapGroupData.logDomain[0] * 10) :
+                            (y(0) - y(gap))) * 0.5;
 
                         focusGroup
                             .selectAll("rect")
@@ -2494,7 +2495,7 @@ function requestRate() {
                             .attr("stroke-width", 3)
                             .attr('stroke-opacity', 0)
                             .attr("x", margin.left)
-                            .attr("y", (d, i) => y((i + 1) * gap) + height * 0.5)
+                            .attr("y", (d, i) => y(logScale ? gapGroupData.logDomain[0] * Math.pow(10, i + 1) : (i + 1) * gap) + height * 0.5)
                             .attr("height", height)
                             .attr("width", 0)
                             .interrupt().transition().duration(trans ? transDuration : 0) //.interrupt()前次動畫
@@ -2514,7 +2515,7 @@ function requestRate() {
                     newDataObj = getNewData({
                         rateOption: 0,
                         metric: chartContainerD3.selectAll('input[name=metric]:checked').property("value"),
-                        // gap: gapMultiplicandArr[0],
+                        gap: gapMultiplicandArr[0],
                         logScale: false,
                     });
                     init();
@@ -2550,7 +2551,21 @@ function requestRate() {
                                     let html;
                                     if (i == 0) {
                                         let gap = newDataObj.gap;
-                                        html = `${floatTimes(gap, d)} - ${floatTimes(gap, (d + 1))} ( ${newDataObj.metric} / s ) : `;
+                                        let range1, range2;
+                                        if (newDataObj.logScale) {
+                                            let power = newDataObj.gapGroupData.powerDomain[0] + d;
+                                            range1 = power < 0 ?
+                                                1 / Math.pow(10, Math.abs(power)) ://==浮點數精度問題
+                                                Math.pow(10, power);
+                                            range2 = floatTimes(range1, 10);
+                                        }
+                                        else {
+                                            range1 = floatTimes(gap, d);
+                                            range2 = floatTimes(gap, d + 1);
+                                        };
+                                        // console.debug(gap, d)
+
+                                        html = `${range1} - ${range2} ( ${newDataObj.metric} / s ) : `;
                                     }
                                     else {
                                         html = `<h1 style='font-weight:bold;'>${d}</h1>&nbsp;<h6>筆</h6> `;
@@ -2655,7 +2670,7 @@ function requestRate() {
 
                                     let groupIndex = Array.from(bar.parentNode.children).indexOf(bar);
                                     let data = bar.__data__;
-                                    console.debug()
+                                    // console.debug()
                                     updateTooltip(groupIndex, data);
                                 };
                                 makeTooltip();
@@ -2726,9 +2741,7 @@ function requestRate() {
                     let linearScale_group = chartContainerD3.select('#linearScale_group');
                     linearScale_group.select('.dropdown-menu')
                         .call(menu => {
-
                             // console.debug(menu);
-
                             let gapScaleTextBox = menu.select('#gapNumber');
                             let gapOptionRange = menu.select('#gapOptionRange');
 
@@ -2737,41 +2750,38 @@ function requestRate() {
                                     //==========================同步textBox =================================
 
                                     let optionsIdx = e.target.value;
+                                    // console.debug(optionsIdx)
+                                    let minMultiplicandArr_idx = gapMultiplicandArr.indexOf(newDataObj.rateOptionData.minMultiplicand);
+                                    if (optionsIdx < minMultiplicandArr_idx) {
+                                        e.target.value = minMultiplicandArr_idx;
+                                        return;
+                                    };
 
-                                    // if (optionsIdx == 3) {
-                                    //     e.target.value = 1;
-                                    //     return;
-                                    //     // console.debug(optionsIdx)
-                                    // };
+                                    let gap = floatTimes(gapMultiplicandArr[optionsIdx], newDataObj.rateOptionData.multiplier);
+                                    // console.debug(gap)
 
-
-                                    let gap = floatTimes(gapMultiplicandArr[optionsIdx], newDataObj.gapGroupData.multiplier);
                                     gapScaleTextBox
                                         .property('value', gap)
-                                        .dispatch("input");
+                                        .dispatch("blur");
 
                                 });
 
-                            // range drag
-
-                            // console.debug(floatTimes(1.1, 1.2, 1.5))
                             gapScaleTextBox
-                                .on('input', e => {
+                                .on('blur', e => {
                                     //==========================target vaule check=================================
 
-                                    let inputVal = e.target.value;
+                                    let inputVal = parseFloat(e.target.value);
                                     let fixedVal = inputVal;
 
                                     //======textBox空值或超過限制範圍處理
-                                    if (isNaN(inputVal) || inputVal == '')
-                                        fixedVal = newDataObj.gapGroupData.multiplier;
+                                    let minGap = floatTimes(newDataObj.rateOptionData.multiplier, newDataObj.rateOptionData.minMultiplicand);
+                                    if (isNaN(inputVal) || inputVal == '' || inputVal < minGap)
+                                        fixedVal = minGap;
 
                                     e.target.value = fixedVal;
                                     //==========================更新按鈕文字=================================                             
                                     let sub = linearScale_group.select('sub');
-
-
-                                    let text = `binWidth = ${fixedVal}`;
+                                    let text = `B.W. = ${fixedVal}`;
                                     sub.text(text);
 
 
@@ -2780,14 +2790,6 @@ function requestRate() {
 
                                 });
 
-                            //==reset button
-                            // menu.select('#scaleReset')
-                            //     .on('click', e => {
-                            //         gapOptionRange.property('value', 0);
-                            //         gapScaleTextBox
-                            //             .property('value', 1)
-                            //             .dispatch("input");
-                            //     });
                         });
 
                 };
@@ -2800,16 +2802,86 @@ function requestRate() {
 
             return svg.node();
         };
-
-        //=========not yet
         function rateChart() {
-
-
+            const fileSizeData = data.map(d => d[dataKeys[1]]);
+            // console.debug(fileSizeData);
             ~function init() {
                 chartContainerJQ.append(`
                 <form id="form-chart">
                 <div class="form-group" id="chartsOptions" style="display: inline;">
                     <div class="row">
+
+                    <!-- ... xAxis ... -->    
+                    <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
+                        <label for="xAxisOptionButton" class="col-form-label col-5" >Xaxis</label>
+                        <div class="btn-group btn-group-toggle col-7" role="group">
+                            <button id="xAxisOptionButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                
+                            </button>
+                            <div class="dropdown-menu" id="xAxisMenu" aria-labelledby="xAxisOptionButton">
+                                <div class="form-group col-12 d-flex flex-row flex-wrap align-items-start justify-content-between" id="xAxisDropDownMenu" >
+                                
+    
+                                    <label class="font-weight-bold" for="">Metric</label>                 
+                                    <div class="col-12 d-flex flex-column" id="xAxisMetricGroup">
+                                        
+                                    </div>
+        
+                                    <label class="font-weight-bold" for="">Scale</label>
+                                    <div class="col-12 d-flex flex-row">
+                                        <div class="form-check d-flex align-items-start" style="text-align: center;">
+                                            <input class="form-check-input" type="checkbox" id="xAxis_log" name="xAxisScale" value="log">
+                                            <label class="" for="xAxis_log">logrithmic</label>
+                                        </div>
+                                    </div>
+    
+                                </div>
+                            </div>
+                        </div>
+                    </div>  
+                    
+                    <!-- ... yAxis ... -->    
+                    <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
+                        <label for="yAxisOptionButton" class="col-form-label col-5" >Yaxis</label>
+                        <div class="btn-group btn-group-toggle col-7" role="group">
+                            <button id="yAxisOptionButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                MB/s
+                            </button>
+                            <div class="dropdown-menu" id="yAxisMenu" aria-labelledby="yAxisOptionButton">
+                                <div class="form-group col-12 d-flex flex-row flex-wrap align-items-start justify-content-between" id="yAxisDropDownMenu" >
+    
+                                <label class="font-weight-bold" for="">Metric</label>                    
+                                <div class="col-12 d-flex flex-row">
+                                    <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
+                                        <input class="form-check-input col-3" type="checkbox" id="yAxis_KB" name="yAxisMetric" value="KB">
+                                        <label class="" for="yAxis_KB">KB/s</label>
+                                    </div>
+                                    <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
+                                        <input class="form-check-input col-3" type="checkbox" id="yAxis_MB" name="yAxisMetric" value="MB" checked>
+                                        <label for="yAxis_MB">MB/s</label>
+                                    </div>
+                                    <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
+                                        <input class="form-check-input col-3" type="checkbox" id="yAxis_GB" name="yAxisMetric" value="GB">
+                                        <label for="yAxis_GB">GB/s</label>
+                                    </div>
+                                </div>
+    
+                                <label class="font-weight-bold" for="">Scale</label>
+                                <div class="col-12 d-flex flex-row">
+                                    <div class="col-4 form-check d-flex align-items-start" style="text-align: center;">
+                                        <input class="form-check-input col-3" type="checkbox" id="yAxis_log" name="yAxisScale" value="log">
+                                        <label class="" for="yAxis_log">logrithmic</label>
+                                    </div>
+                                </div>                          
+    
+    
+                                </div>
+                            </div>
+                        </div>
+                    </div>  
+                
+
+
                     </div>
                 </div>
     
@@ -2844,6 +2916,9 @@ function requestRate() {
                 });
 
 
+                //================time menu
+                // let timeDropDownMenu = chartContainerJQ.find('#timeDropDownMenu');
+
             }();
 
             const svg = d3.create("svg")
@@ -2857,24 +2932,139 @@ function requestRate() {
             var x, y;
             var newDataObj;
 
-            function getNewData(trans = false) {
+            function getNewData(xAxisOption = null, yAxisOption = null) {
 
+                xAxisOption = xAxisOption ? xAxisOption : newDataObj.xAxisOption;
+                yAxisOption = yAxisOption ? yAxisOption : newDataObj.yAxisOption;
+
+                return {
+                    xAxisOption: xAxisOption,
+                    yAxisOption: yAxisOption,
+                };
             };
             function updateChart(trans = false) {
                 function init() {
 
+                    var initChart = () => {
+                        //==title
+                        let title = 'GDMS系統負載監測';
+
+                        svg
+                            .append("g")
+                            .attr("class", "title")
+                            .append('text')
+                            .attr("fill", "currentColor")
+                            // .attr("align", "center")
+                            .attr("text-anchor", "middle")
+                            .attr("alignment-baseline", "text-after-edge")
+                            .attr("font-weight", "bold")
+                            .attr("font-size", "15")
+                            .attr("x", width / 2)
+                            .attr("y", margin.top / 2)
+                            .text(title);
+
+                        //==total
+                        svg
+                            .append("g")
+                            .attr("class", "total")
+                            .append('text')
+                            .attr("fill", "currentColor")
+                            // .attr("align", "center")
+                            .attr("text-anchor", "end")
+                            .attr("alignment-baseline", "text-after-edge")
+                            .attr("font-weight", "bold")
+                            .attr("font-size", "15")
+                            .attr("x", width - margin.left)
+                            .attr("y", margin.top);
+
+
+
+                        xAxis
+                            .append('text')
+                            .attr("class", "axis_name")
+                            .attr("fill", "black")
+                            .attr("font-weight", "bold")
+                            .attr("font-size", "12")
+                            .attr('x', width / 2)
+                            .attr("y", margin.bottom - 10);
+
+                        yAxis
+                            .append('text')
+                            .attr("class", "axis_name")
+                            .attr("fill", "black")
+                            .attr("font-weight", "bold")
+                            .attr("font-size", "12")
+                            .style("text-anchor", "end")
+                            .attr("alignment-baseline", "text-after-edge")
+                            .attr('x', margin.left)
+                            .attr("y", margin.top * 0.9);
+                        // .attr("transform", "rotate(-90)")
+                        // .attr('x', -(height - margin.top - margin.bottom) / 2 - margin.top)
+                        // .attr("y", -margin.left + 2);
+                    };
+                    var initOption = () => {
+                        //===rate DropDown
+                        chartContainerD3.select('#xAxisMetricGroup')
+                            .selectAll('div')
+                            .data(timeDataKeys)
+                            .join('div')
+                            .attr('class', 'form-check col-12 d-flex align-items-start')
+                            .call(menu => {
+                                menu.each(function (d, i) {
+                                    // console.debug(d);
+                                    let div = d3.select(this);
+                                    div
+                                        .append('input')
+                                        .attr('class', 'form-check-input')
+                                        .attr('type', 'checkbox')
+                                        .attr('id', 'time_' + i)
+                                        .attr('name', 'xAxisMetric')
+                                        .attr('value', i)
+                                        .property('checked', i == 0);
+                                    div
+                                        .append('label')
+                                        .attr('class', 'form-check-label')
+                                        .attr('for', 'time_' + i)
+                                        .style("white-space", "nowrap")
+                                        .text(getString(d));
+                                });
+
+                            });
+
+
+                    };
+                    initChart();
+                    initOption();
                 };
                 function render() {
+
+                    var xAxisOption = newDataObj.xAxisOption;
+                    var yAxisOption = newDataObj.yAxisOption;
+                    console.debug(xAxisOption, yAxisOption);
+
+                    let xDomain = d3.extent(timeIntervalData, d => d[timeDataKeys[xAxisOption.metric]]);
+                    let yDomain = d3.extent(fileSizeData.map(d => convert_download_unit(d, originUnit, yAxisOption.metric).value));
+
+                    x = d3[xAxisOption.logScale ? 'scaleLog' : 'scaleLinear']()
+                        .domain(xAxisOption.logScale ? xDomain : [0, xDomain[1]])
+                        .range([margin.left, width - margin.right]);
+                    if (xAxisOption.logScale) x.nice();
+                    console.debug(x.domain());
+
+                    y = d3[yAxisOption.logScale ? 'scaleLog' : 'scaleLinear']()
+                        .domain(yAxisOption.logScale ? yDomain : [0, yDomain[1]])
+                        .range([height - margin.bottom, margin.top]);
+                    if (yAxisOption.logScale) y.nice();
+                    console.debug(y.domain());
 
                     var refreshText = () => {
                         xAxis
                             .select('.axis_name')
-                            .text();
-
+                            .text(`${getString(timeDataKeys[xAxisOption.metric])} (s) `);
 
                         yAxis
                             .select('.axis_name')
-                            .text();
+                            .text(`File Size ( ${yAxisOption.metric} )`);
 
 
                     };
@@ -2917,29 +3107,50 @@ function requestRate() {
                     };
                     var updateFocus = () => {
 
-                    }
+                    };
 
+                    refreshText();
+                    updateAxis();
+                    updateFocus();
 
                 };
 
                 if (!newDataObj) {
-                    newDataObj = getNewData();
                     init();
+                    newDataObj = getNewData
+                        (
+                            {
+                                metric: chartContainerD3.selectAll('input[name=xAxisMetric]:checked').property("value"),
+                                logScale: false,
+                            },
+                            {
+                                metric: chartContainerD3.selectAll('input[name=yAxisMetric]:checked').property("value"),
+                                logScale: false,
+                            }
+                        );
+
                 };
                 render();
             };
             updateChart();
 
             function events(svg) {
-                const eventRect = svg.append("g")
-                    .attr("class", "eventRect")
-                    .append("use").attr('xlink:href', "#chartRenderRange");
 
-                const tooltip = chartContainerD3.select("#charts")
-                    .append("div")
-                    .attr("id", "tooltip");
+
+
+                var xAxisOption = newDataObj.xAxisOption,
+                    yAxisOption = newDataObj.yAxisOption;
+
 
                 function chartEvent() {
+                    const eventRect = svg.append("g")
+                        .attr("class", "eventRect")
+                        .append("use").attr('xlink:href', "#chartRenderRange");
+
+                    const tooltip = chartContainerD3.select("#charts")
+                        .append("div")
+                        .attr("id", "tooltip");
+
                     var mouseMove = () => {
 
                         //用來判斷tooltip應該在滑鼠哪邊
@@ -3122,8 +3333,89 @@ function requestRate() {
                             });
                     };
                 };
+                function chartOptionEvent() {
+                    //=====xaxis option
+                    let xAxisMetric = chartContainerD3.selectAll('input[name ="xAxisMetric"]');
+                    let xAxisMetricText = chartContainerD3.select('#xAxisOptionButton');
+                    let xAxisLog = chartContainerD3.select('#xAxis_log');
+                    // console.debug(xAxisLog);
+
+                    xAxisMetric
+                        .on('change', e => {
+                            let value = e.target.value;
+                            let checked = e.target.checked;
+                            //＝＝＝單選,其他勾拿掉
+                            xAxisMetric.nodes().filter(chkbox => chkbox !== e.target).forEach(chkbox => chkbox.checked = false);
+
+                            //＝＝＝被點擊的勾不能拿掉
+                            if (!checked) {
+                                e.target.checked = true;
+                                return;
+                            };
+
+                            //===改變按鈕text
+                            let text = getString(timeDataKeys[value]);
+                            xAxisMetricText.text(text.substring(0,));//==太長拿掉時間
 
 
+
+                            //==date不能log scale
+                            let metricIsDate = value == 'date';
+                            xAxisOption.logScale = metricIsDate ? false : xAxisLog.property('checked');
+                            xAxisLog.property('disabled', metricIsDate);
+
+                            //===更新圖表
+                            xAxisOption.metric = value;
+                            newDataObj = getNewData(xAxisOption, null);
+                            updateChart();
+
+                        });
+
+                    xAxisLog
+                        .on('change', e => {
+                            xAxisOption.logScale = e.target.checked;
+                            newDataObj = getNewData(xAxisOption);
+                            updateChart();
+                        });
+
+                    //=====yaxis option
+                    let yAxisMetric = chartContainerD3.selectAll('input[name ="yAxisMetric"]');
+                    let yAxisMetricText = chartContainerD3.select('#yAxisOptionButton');
+                    let yAxisLog = chartContainerD3.select('#yAxis_log');
+
+                    yAxisMetric
+                        .on('change', e => {
+                            let value = e.target.value;
+                            let checked = e.target.checked;
+                            //＝＝＝單選,其他勾拿掉
+                            yAxisMetric.nodes().filter(chkbox => chkbox !== e.target).forEach(chkbox => chkbox.checked = false);
+
+                            //＝＝＝被點擊的勾不能拿掉
+                            if (!checked) {
+                                e.target.checked = true;
+                                return;
+                            };
+
+                            //===改變按鈕text
+                            yAxisMetricText.text(value);
+
+
+                            //===更新圖表
+                            yAxisOption.metric = value;
+                            newDataObj = getNewData(null, yAxisOption);
+                            updateChart();
+                        });
+
+                    yAxisLog
+                        .on('change', e => {
+                            yAxisOption.logScale = e.target.checked;
+                            newDataObj = getNewData(null, yAxisOption);
+                            updateChart();
+                        });
+
+                };
+                // chartEvent();
+                chartOptionEvent();
             };
             svg.call(events);
 

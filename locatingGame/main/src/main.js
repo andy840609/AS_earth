@@ -435,36 +435,35 @@ function locatingGame() {
 
                     GameData.languageJSON = await getLanguageJSON();
                     gameDisplay(true);
-                    let newGameData = await new Promise((resolve, reject) => {
-                        const config = {
-                            parent: 'gameMain',
-                            type: Phaser.AUTO,
-                            width: width,
-                            height: height,
-                            physics: {
-                                default: 'arcade',
-                                arcade: {
-                                    gravity: { y: 300 },
-                                    debug: true,
-                                }
-                            },
-                            scene: new StartScene(GameData, resolve),
-                        };
-                        new Phaser.Game(config);
-                    });
-                    if (GameData.language != newGameData.language)
-                        GameData.languageJSON = await getLanguageJSON();
-                    Object.assign(GameData, newGameData);
-                    gameDisplay(false);
-                    initMap();
+                    // let newGameData = await new Promise((resolve, reject) => {
+                    //     const config = {
+                    //         parent: 'gameMain',
+                    //         type: Phaser.AUTO,
+                    //         width: width,
+                    //         height: height,
+                    //         physics: {
+                    //             default: 'arcade',
+                    //             arcade: {
+                    //                 gravity: { y: 300 },
+                    //                 debug: true,
+                    //             }
+                    //         },
+                    //         scene: new StartScene(GameData, resolve),
+                    //     };
+                    //     new Phaser.Game(config);
+                    // });
+                    // if (GameData.language != newGameData.language)
+                    //     GameData.languageJSON = await getLanguageJSON();
+                    // Object.assign(GameData, newGameData);
+                    // gameDisplay(false);
+                    // initMap();
 
 
                     //==test
-                    // initMap();
-                    // gameStart('defend');
+                    initMap();
+                    gameStart('defend');
 
                 };
-
 
                 startScene();
 

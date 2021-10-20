@@ -1303,6 +1303,7 @@ function waveXdist() {
                         var makeYAxis = g => g
                             .attr("transform", `translate(${margin.left},0)`)
                             .call(d3.axisLeft(y).ticks(height / 30))
+                            .call(g => g.select(".domain").attr('display', 'none'))
                             .call(g => g.selectAll("g.yAxis g.tick line")
                                 .attr("x2", d => width - margin.left - margin.right)
                                 .attr("stroke-opacity", 0.2)

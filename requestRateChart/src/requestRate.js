@@ -212,9 +212,9 @@ function requestRate() {
             let result = intArr.reduce((a, b) => a * b) / Math.pow(10, powerArr.reduce((a, b) => a + b));
             return result;
         };
-        const makeShape = (d3Selection, shapeIndex, centre, rateData = null, color = null) => {
+        const makeShape = (d3Selection, shapeIndex, centre, data = null, color = null) => {
             // console.debug(shapeIndex, dataIndex);
-            // console.debug(rateData);
+            // console.debug(data);
             const circle_r = 3;
             const rect_width = 5;
             const triangle_corner = 3, triangle_r = 3.5;
@@ -240,9 +240,9 @@ function requestRate() {
             let shape = { 0: 'circle', 1: 'rect', 2: 'polygon', 3: 'polygon' }[shapeIndex];
             // let shape = { 0: 'circle', 1: 'path', 2: 'polygon', 3: 'polygon' }[shapeIndex];
             let display_class = rateDataKeys[shapeIndex];
-            let shapeSelection = rateData ?//==沒有rateData的是legend上或是display menu的範例圖形
+            let shapeSelection = data ?//==沒有data的是legend上或是display menu的範例圖形
                 d3Selection.selectAll("." + display_class)
-                    .data([rateData])
+                    .data([data])
                     .join(shape)
                     .attr("class", display_class) :
                 d3Selection
@@ -334,7 +334,7 @@ function requestRate() {
                                         <input type="radio" name ="chartType" value="1" > 1
                                     </label>
                                     <label class="btn btn-secondary">
-                                        <input type="radio" name ="chartType" value="2"> 2
+                                        <input type="radio" name ="chartType" value="2" > 2
                                     </label>
                                     <label class="btn btn-secondary">
                                         <input type="radio" name ="chartType" value="3" checked> 3
@@ -504,7 +504,8 @@ function requestRate() {
                         let svgArr = [];
                         let svg = chartContainerJQ.find("#" + $(e.target).parents('.chart')[0].id).children('svg')[0];
                         svgArr.push(svg);
-                        let fileName = 'AAA';
+                        let chartVal = chartContainerJQ.find("input[name=chartType]:checked").val();
+                        let fileName = 'GDMS系統負載監測_chart' + chartVal;
                         downloadSvg(svgArr, fileName, option);
                     });
 
@@ -1277,7 +1278,7 @@ function requestRate() {
                                     axisFun.ticks(height / 30);
                                 axisFun(g);
                             })
-                            .call(g => g.select(".domain").remove())
+                            .call(g => g.select(".domain").attr('display', 'none'))
                             .call(g =>
                                 g.selectAll("g.yAxis g.tick line")
                                     .attr("x2", d => width - margin.left - margin.right)
@@ -1430,7 +1431,6 @@ function requestRate() {
 
             };
             updateChart();
-
 
             function events(svg) {
                 // console.debug(newDataObj);
@@ -2592,8 +2592,7 @@ function requestRate() {
                                     barC.each(function (d, i) {
                                         let bar = d3.select(this);
                                         let hover = (this == target);
-                                        // console.debug(hover);
-                                        // console.debug(d, i);
+
                                         bar
                                             .attr("opacity", hover ? 1 : .5);
 
@@ -2813,7 +2812,7 @@ function requestRate() {
 
                     <!-- ... xAxis ... -->    
                     <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
-                        <label for="xAxisOptionButton" class="col-form-label col-5" >Xaxis</label>
+                        <label for="xAxisOptionButton" class="col-form-label col-5" >Time</label>
                         <div class="btn-group btn-group-toggle col-7" role="group">
                             <button id="xAxisOptionButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 
@@ -2842,7 +2841,7 @@ function requestRate() {
                     
                     <!-- ... yAxis ... -->    
                     <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
-                        <label for="yAxisOptionButton" class="col-form-label col-5" >Yaxis</label>
+                        <label for="yAxisOptionButton" class="col-form-label col-5" >FileSize</label>
                         <div class="btn-group btn-group-toggle col-7" role="group">
                             <button id="yAxisOptionButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 MB/s
@@ -2880,7 +2879,24 @@ function requestRate() {
                         </div>
                     </div>  
                 
-
+                    <!-- ... show info 
+                    <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
+                        <label for="showInfoButton" class="col-form-label col-5" >Show</label>
+                        <div class="btn-group btn-group-toggle col-7" role="group">
+                            <button id="showInfoButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                select
+                            </button>
+                            <div class="dropdown-menu" id="showInfoMenu" aria-labelledby="showInfoButton">
+                                <div  id="showInfoDropDownMenu">
+                                    <div class="form-check col-12 ">
+                                        <input class="form-check-input  col-3" type="checkbox" id="showPath" name="show" value="0" checked>
+                                        <label class="form-check-label  col-12" for="showPath">rate line</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>  
+                    ... -->    
 
                     </div>
                 </div>
@@ -2925,24 +2941,96 @@ function requestRate() {
                 .attr("viewBox", [0, 0, width, height]);
             const xAxis = svg.append("g").attr("class", "xAxis");
             const yAxis = svg.append("g").attr("class", "yAxis");
-            const focusGroup = svg.append("g").attr('class', 'focus');
-            const legendGroup = svg.append("g").attr('class', 'legendGroup');
+            const focusGroup = svg.append("g").attr('class', 'focus').attr("clip-path", "url(#clip)");
+            // const legendGroup = svg.append("g").attr('class', 'legendGroup');
 
 
             var x, y;
             var newDataObj;
 
-            function getNewData(xAxisOption = null, yAxisOption = null) {
+            // var transPromises = [];//==避免mouseover中斷rateLine動畫造成線斷在中間
 
-                xAxisOption = xAxisOption ? xAxisOption : newDataObj.xAxisOption;
-                yAxisOption = yAxisOption ? yAxisOption : newDataObj.yAxisOption;
+            function getNewData(xAxisOption = null, yAxisOption = null, selectedDomain = null) {
+
+                // if (newDataObj)
+                // console.debug(xAxisOption, newDataObj.xAxisOption)
+                // console.debug(timeIntervalData)
+
+                xAxisOption = xAxisOption ? { ...xAxisOption } : newDataObj.xAxisOption;
+                yAxisOption = yAxisOption ? { ...yAxisOption } : newDataObj.yAxisOption;
+
+                // if (xAxis_domain) {
+                //     let dataKeys_idx = newDataObj.xAxisOption.metric == 'date' ? 2 : 1;
+                //     newRateData = [];//==挑到的資料索引值用來挑rate陣列的資料(沒有排序不能直接i1 i2切割)
+                //     newData = newDataObj.newData.filter((d, i) => {
+                //         let data = d[dataKeys[dataKeys_idx]];
+                //         if (data >= xAxis_domain[0] && data <= xAxis_domain[1]) {
+                //             newRateData.push(newDataObj.newRateData[i]);
+                //             return true;
+                //         };
+                //     });
+                // }
+
+                var getDataArr = (key) => {
+
+                    let newDataArr = [];
+                    // console.debug(selectedDomain);
+
+                    if (selectedDomain) {
+
+                        //==t軸單位轉換
+                        selectedDomain.yDomain = selectedDomain.yDomain.map(d => convert_download_unit(d, yAxisOption.metric, originUnit).value);
+
+
+                        let xDomain = selectedDomain.xDomain,
+                            yDomain = selectedDomain.yDomain;
+
+                        // console.debug(xDomain, yDomain);
+                        timeIntervalData.forEach((d, i) => {
+                            let time = d[key],
+                                fileSize = fileSizeData[i];
+                            // console.debug(time, fileSize);
+
+                            let isInXDomain = time >= xDomain[0] && time <= xDomain[1],
+                                isInYDomain = fileSize >= yDomain[0] && fileSize <= yDomain[1];
+
+                            if (isInXDomain && isInYDomain)
+                                newDataArr.push({
+                                    typeId: data[i][dataKeys[0]],
+                                    requestTime: data[i][dataKeys[2]],
+                                    time: time,
+                                    fileSize: fileSize,
+                                });
+
+                        });
+
+                    }
+                    else {
+                        newDataArr = timeIntervalData.map((d, i) => new Object({
+                            typeId: data[i][dataKeys[0]],
+                            requestTime: data[i][dataKeys[2]],
+                            time: d[key],
+                            fileSize: fileSizeData[i],
+                        }));
+                    }
+                    return newDataArr;
+                };
+
+                let newDataArr = !newDataObj || (xAxisOption.metric != newDataObj.xAxisOption.metric)
+                    || (selectedDomain || (!selectedDomain && newDataObj.selectedDomain)) ?
+                    getDataArr(timeDataKeys[xAxisOption.metric]) :
+                    newDataObj.newDataArr;
+
+                // console.debug(newDataArr);
 
                 return {
+                    newDataArr: newDataArr,
                     xAxisOption: xAxisOption,
                     yAxisOption: yAxisOption,
+                    selectedDomain: selectedDomain,
                 };
             };
-            function updateChart(trans = false) {
+            function updateChart(trans = true) {
                 function init() {
 
                     var initChart = () => {
@@ -3029,6 +3117,11 @@ function requestRate() {
                                         .text(getString(d));
                                 });
 
+                                //==按鈕上text
+                                let text = getString(timeDataKeys[0]);
+                                chartContainerD3.select('#xAxisOptionButton')
+                                    .text(text.substring(0, text.length - 2));
+
                             });
 
 
@@ -3038,24 +3131,36 @@ function requestRate() {
                 };
                 function render() {
 
+                    var newDataArr = newDataObj.newDataArr;
                     var xAxisOption = newDataObj.xAxisOption;
                     var yAxisOption = newDataObj.yAxisOption;
-                    console.debug(xAxisOption, yAxisOption);
+                    var selectedDomain = newDataObj.selectedDomain;
+                    console.debug(newDataObj);
 
-                    let xDomain = d3.extent(timeIntervalData, d => d[timeDataKeys[xAxisOption.metric]]);
-                    let yDomain = d3.extent(fileSizeData.map(d => convert_download_unit(d, originUnit, yAxisOption.metric).value));
+                    let xDomain = selectedDomain ?
+                        selectedDomain.xDomain.map(d => d == 0 ? (xAxisOption.logScale ? 1 : 0) : d) ://==避免選玩的範圍有0轉log出錯
+                        xAxisOption.logScale ?
+                            d3.extent(timeIntervalData, d => d[timeDataKeys[xAxisOption.metric]]) :
+                            [0, d3.max(timeIntervalData, d => d[timeDataKeys[xAxisOption.metric]])];
+
+                    let yDomain = selectedDomain ?
+                        selectedDomain.yDomain.map(d => d == 0 ? (xAxisOption.logScale ? 1 : 0) : d) :
+                        yAxisOption.logScale ?
+                            d3.extent(fileSizeData.map(d => convert_download_unit(d, originUnit, yAxisOption.metric).value)) :
+                            [0, d3.max(fileSizeData.map(d => convert_download_unit(d, originUnit, yAxisOption.metric).value))]
+
 
                     x = d3[xAxisOption.logScale ? 'scaleLog' : 'scaleLinear']()
-                        .domain(xAxisOption.logScale ? xDomain : [0, xDomain[1]])
+                        .domain(xDomain)
                         .range([margin.left, width - margin.right]);
-                    if (xAxisOption.logScale) x.nice();
-                    console.debug(x.domain());
+                    if (!selectedDomain) x.nice();
+                    // console.debug(x.domain());
 
                     y = d3[yAxisOption.logScale ? 'scaleLog' : 'scaleLinear']()
-                        .domain(yAxisOption.logScale ? yDomain : [0, yDomain[1]])
+                        .domain(yDomain)
                         .range([height - margin.bottom, margin.top]);
-                    if (yAxisOption.logScale) y.nice();
-                    console.debug(y.domain());
+                    if (!selectedDomain) y.nice();
+                    // console.debug(y.domain());
 
                     var refreshText = () => {
                         xAxis
@@ -3106,6 +3211,91 @@ function requestRate() {
                         yAxis.call(makeYAxis);
                     };
                     var updateFocus = () => {
+                        const transDuration = 500;
+                        const transDelay = 5;
+                        // const displayPath = chartContainerD3.select('#showPath').property('checked') ?
+                        //     'inline' : 'none';//==join後display被清掉造成某些顯示出來BUG
+
+
+                        var makeDots = focusGroup => focusGroup
+                            // .style("mix-blend-mode", "hard-light")
+                            .selectAll("g")
+                            .data(newDataArr)
+                            .join("g")
+                            .attr("id", (d, i) => 'group_' + i)
+                            .attr("class", "dots")
+                            .call(() => {
+                                transPromises = [];
+
+                                focusGroup.selectAll(".dots").each(function (d, i) {
+                                    // console.debug(d);
+                                    let dots = d3.select(this);
+                                    let time = d.time;
+
+                                    // 有time就更新圖形
+                                    if (!isNaN(time)) {
+                                        let fileSize = convert_download_unit(d.fileSize, originUnit, yAxisOption.metric).value;
+
+                                        //==原點log= [1,1] , linear= [0,0]
+                                        // let pathData = [{ time: xAxisOption.logScale, fileSize: yAxisOption.logScale }, { time: time, fileSize: fileSize }];
+                                        let point = { x: x(time), y: y(fileSize) };
+
+                                        // let rateLine = dots
+                                        //     .selectAll(".rateLine")
+                                        //     .data([0])
+                                        //     .join("line")
+                                        //     .attr("class", "rateLine")
+                                        //     .attr("stroke-width", 1)
+                                        //     .attr("fill", 'none')
+                                        //     .attr("stroke", 'grey')
+                                        //     .attr("stroke-opacity", 1)
+                                        //     .attr("x1", x(pathData[0].time))
+                                        //     .attr("y1", y(pathData[0].fileSize))
+                                        //     .attr("x2", x(pathData[0].time))
+                                        //     .attr("y2", y(pathData[0].fileSize))
+                                        //     .interrupt().transition().duration(trans ? transDuration : 0) //.interrupt()前次動畫
+                                        //     .ease(d3.easeLinear)
+                                        //     .delay(transDelay * i)
+                                        //     .attr("x1", x(pathData[0].time))
+                                        //     .attr("y1", y(pathData[0].fileSize))
+                                        //     .attr("x2", x(pathData[1].time))
+                                        //     .attr("y2", y(pathData[1].fileSize))
+                                        //     .attr("display", displayPath);
+
+                                        // transPromises.push(rateLine.end());
+
+
+
+
+                                        dots
+                                            .selectAll(".point")
+                                            .data([0])
+                                            .join("circle")
+                                            .attr("class", 'point')
+                                            .attr("stroke-width", .5)
+                                            .attr("fill", 'red')
+                                            .attr("cx", point.x)
+                                            .attr("cy", point.y)
+                                            .attr("r", 3)
+                                            .attr("stroke-opacity", .5)
+                                            .attr("fill-opacity", 0)
+                                            .interrupt().transition().duration(trans ? transDuration : 0) //.interrupt()前次動畫
+                                            .ease(d3.easeLinear)
+                                            .delay(transDelay * i)
+                                            .attr("fill-opacity", 1)
+
+
+
+                                    }
+                                    //否則刪除（不然會遺留之前group裡的圖形）
+                                    else
+                                        dots.selectAll("*").remove();
+
+                                });
+
+                            });
+
+                        focusGroup.call(makeDots);
 
                     };
 
@@ -3135,14 +3325,56 @@ function requestRate() {
             updateChart();
 
             function events(svg) {
-
-
-
-                var xAxisOption = newDataObj.xAxisOption,
-                    yAxisOption = newDataObj.yAxisOption;
-
+                var xAxisOption = { ...newDataObj.xAxisOption },
+                    yAxisOption = { ...newDataObj.yAxisOption },
+                    selectedDomain = null;
 
                 function chartEvent() {
+
+                    const defs = svg.append("defs");
+                    //===遮罩
+                    defs
+                        .append("clipPath")
+                        .attr("id", "clip")
+                        .append("rect")
+                        .attr("id", "chartRenderRange")
+                        .attr('x', margin.left)
+                        .attr('y', margin.top)
+                        .attr('width', width - margin.right - margin.left)
+                        .attr('height', height - margin.top - margin.bottom)
+                        .attr('fill', 'none')
+                        .attr('pointer-events', 'all');
+
+                    //===製造hover時陰影
+                    defs
+                        .append("filter")
+                        .attr("id", "pathShadow")
+                        .attr("x", "-0.5")
+                        .attr("y", "-0.5")
+                        .attr("width", "300%")
+                        .attr("height", "300%")
+                        .call(filter => {
+                            filter
+                                .append("feOffset")
+                                .attr("result", "offOut")
+                                .attr("in", "SourceAlpha")
+                                .attr("dx", "1")
+                                .attr("dy", "1");
+
+                            filter
+                                .append("feGaussianBlur")
+                                .attr("result", "blurOut")
+                                .attr("in", "offOut")
+                                .attr("stdDeviation", "2")
+
+                            filter
+                                .append("feBlend")
+                                .attr("in", "SourceGraphic")
+                                .attr("in2", "blurOut")
+                                .attr("mode", "normal");
+
+                        });
+
                     const eventRect = svg.append("g")
                         .attr("class", "eventRect")
                         .append("use").attr('xlink:href', "#chartRenderRange");
@@ -3151,89 +3383,212 @@ function requestRate() {
                         .append("div")
                         .attr("id", "tooltip");
 
+                    //==zoom
+                    var mouseDrag = () => {
+                        const selectionRect = {
+                            element: null,
+                            previousElement: null,
+                            currentY: 0,
+                            currentX: 0,
+                            originX: 0,
+                            originY: 0,
+                            setElement: function (ele) {
+                                this.previousElement = this.element;
+                                this.element = ele;
+                            },
+                            getNewAttributes: function () {
+                                var x = this.currentX < this.originX ? this.currentX : this.originX;
+                                var y = this.currentY < this.originY ? this.currentY : this.originY;
+                                var width = Math.abs(this.currentX - this.originX);
+                                var height = Math.abs(this.currentY - this.originY);
+                                return {
+                                    x: x,
+                                    y: y,
+                                    width: width,
+                                    height: height
+                                };
+                            },
+                            getCurrentAttributes: function () {
+                                // use plus sign to convert string into number
+                                var x = +this.element.attr("x");
+                                var y = +this.element.attr("y");
+                                var width = +this.element.attr("width");
+                                var height = +this.element.attr("height");
+                                return {
+                                    x1: x,
+                                    y1: y,
+                                    x2: x + width,
+                                    y2: y + height
+                                };
+                            },
+                            // getCurrentAttributesAsText: function () {
+                            //     var attrs = this.getCurrentAttributes();
+                            //     return "x1: " + attrs.x1 + " x2: " + attrs.x2 + " y1: " + attrs.y1 + " y2: " + attrs.y2;
+                            // },
+                            init: function (newX, newY) {
+                                var rectElement = svg
+                                    .append("rect")
+                                    .attr('rx', 0)
+                                    .attr('ry', 0)
+                                    .attr('x', 0)
+                                    .attr('y', 0)
+                                    .attr('width', 0)
+                                    .attr('height', 0)
+                                    // .attr('stroke', '#545454')
+                                    // .attr('stroke-width', ' 2px')
+                                    .attr('stroke-opacity', 1)
+                                    .attr('fill', '#97CBFF')
+                                    .attr('fill-opacity', 0.5);
+                                this.setElement(rectElement);
+                                this.originX = newX;
+                                this.originY = newY;
+                                this.update(newX, newY);
+                            },
+                            update: function (newX, newY) {
+                                this.currentX = newX;
+                                this.currentY = newY;
+
+                                let newAttr = this.getNewAttributes();
+                                this.element
+                                    .attr('x', newAttr.x)
+                                    .attr('y', newAttr.y)
+                                    .attr('width', newAttr.width)
+                                    .attr('height', newAttr.height);
+                            },
+                            // focus: function () {
+                            //     this.element
+                            //         .style("stroke", "#DE695B")
+                            //         .style("stroke-width", "2.5");
+                            // },
+                            remove: function () {
+                                this.element.remove();
+                                this.element = null;
+                            },
+                            removePrevious: function () {
+                                if (this.previousElement) {
+                                    this.previousElement.remove();
+                                }
+                            }
+                        };
+
+                        const dragBehavior = d3.drag()
+                            .on("start", () => {
+                                // console.log("dragStart");
+                                const p = d3.pointer(event, eventRect.node());
+                                selectionRect.init(margin.left, height - margin.bottom);
+                                selectionRect.removePrevious();
+                                // d3.select(window).dispatch("click");//關閉dropdown
+                                // eventRect.dispatch('mouseleave');//tooltip取消
+                            })
+                            .on("drag", () => {
+                                // console.log("dragMove");
+                                const p = d3.pointer(event, eventRect.node());
+
+                                if (p[0] < margin.left)
+                                    p[0] = margin.left;
+                                else if (p[0] > width - margin.right)
+                                    p[0] = width - margin.right;
+
+                                if (p[1] < margin.top)
+                                    p[1] = margin.top;
+                                else if (p[1] > height - margin.bottom)
+                                    p[1] = height - margin.bottom;
+
+                                selectionRect.update(p[0], p[1]);
+                            })
+                            .on("end", () => {
+                                // console.log("dragEnd");
+                                const finalAttributes = selectionRect.getCurrentAttributes();
+                                // console.debug(finalAttributes);
+
+                                let xDomain, yDomain;
+                                if (finalAttributes.x2 - finalAttributes.x1 > 1)
+                                    xDomain = [x.invert(finalAttributes.x1), x.invert(finalAttributes.x2)];
+                                else          //-------- reset zoom
+                                    xDomain = null;
+
+                                if (finalAttributes.y2 - finalAttributes.y1 > 1)
+                                    yDomain = [y.invert(finalAttributes.y2), y.invert(finalAttributes.y1)];
+                                else          //-------- reset zoom
+                                    yDomain = null;
+
+
+                                selectedDomain = xDomain && yDomain ?
+                                    { xDomain: xDomain, yDomain: yDomain, } :
+                                    null;
+
+                                // console.debug(selectedDomain);
+                                newDataObj = getNewData(null, null, selectedDomain);
+                                updateChart();
+                                selectionRect.remove();
+
+
+                            });
+
+
+                        eventRect.call(dragBehavior);
+                    };
+                    //==show tooltip
                     var mouseMove = () => {
 
                         //用來判斷tooltip應該在滑鼠哪邊
                         const chart_center = [x.range().reduce((a, b) => a + b) * 0.5, y.range().reduce((a, b) => a + b) * 0.5];
                         const tooltipMouseGap = 50;//tooltip與滑鼠距離
 
+                        const transDuration = 100;
 
 
-                        var updateTooltip = (dataArr) => {
+                        var updateTooltip = (data) => {
 
-                            let svg_width = 20;
-                            let dataKey = dataKeys[newDataObj.xAxisOption.metric == 'date' ? 2 : 1];
-                            var display_rateDataKeys = rateDataKeys.filter((key, i) => display_timming_index.includes(i));
+                            let unit = newDataObj.yAxisOption.metric;
+                            let fileSize = parseFloat(convert_download_unit(data.fileSize, originUnit, unit).value.toFixed(unit == 'GB' ? 5 : 2));
+                            let time = data.time;
+                            let rate = parseFloat((fileSize / time).toFixed(unit == 'GB' ? 5 : 2));
 
-                            // console.debug(rateDataKeys);
-                            // console.debug(display_rateDataKeys);
+                            let typeString = typeName.find(type => type[typeNameKeys[0]] == data.typeId)[typeNameKeys[1]];
+                            let requestDate = new Date(data.requestTime).toISOString().split('.')[0];
+
+                            // console.debug();
 
                             tooltip
-                                .call(div => div
-                                    .selectAll('.tooltipTitle')
-                                    .data([0])
-                                    .join('text')
-                                    .style('font-size', '18px')
-                                    .attr('class', 'tooltipTitle')
-                                    .text(`${getString(dataKey)} ： `)
-                                    .append('br')
-                                )
                                 .selectAll('div')
-                                .data(dataArr)
+                                .data(d3.range(5))//==1:typeId 2:requestTime 3:fileSize 4:time 5:rate
                                 .join('div')
-                                // .style('color', (d, i) => 'black')
-                                // .style('font-size', 10)
-                                .call(divCollection => divCollection.each(function (obj, i) {
+                                .attr('class', 'd-flex flex-nowrap justify-content-start align-items-end')
+                                .style("white-space", 'nowrap')
+                                .call(divC => divC.each(function (d, i) {
                                     let div = d3.select(this);
+                                    let html;
+                                    switch (i) {
+                                        case 0:
+                                            html = `<h5>Type : ${typeString}</h5>`;
+                                            break;
+                                        case 1:
+                                            html = `<h5>訂單時間 : ${requestDate}</h5>`;
+                                            break;
+                                        case 2:
+                                            html = `<h5>檔案大小 : ${fileSize}</h5>&nbsp;<h6>${unit}</h6>`;
+                                            break;
+                                        case 3:
+                                            html = `<h5>耗時 : ${time}</h5>&nbsp;<h6>秒</h6>`;
+                                            break;
+                                        case 4:
+                                            html = `<h5>速率 : </h5>&nbsp;<h2 style='font-weight:bold;'>${rate}</h2>&nbsp;<h6>${unit} / s</h6> `;
+                                            break;
+                                    }
 
-                                    let key = i == 0 ? dataKey : Object.keys(obj)[0];
-                                    let value = obj[key];
-
-                                    if (i != 0) {
-                                        div
-                                            .style('display', display_rateDataKeys.includes(key) ? 'block' : 'none')
-                                            .selectAll('svg')
-                                            .data([0])
-                                            .join('svg')
-                                            .attr("viewBox", [0, 2, svg_width, svg_width])
-                                            .style("position", 'relative')
-                                            // .style("left", '20px')
-                                            .attr("width", svg_width)
-                                            .attr("height", svg_width)
-                                            .attr("stroke", () => getColor(dataArr[0][dataKeys[0]]))
-                                            .call(displaySvg => {
-                                                displaySvg.selectAll("*").remove();
-                                                makeShape(displaySvg, rateDataKeys.indexOf(key), { x: svg_width * 0.5, y: svg_width * 0.5 }, 1);
-                                            });
-                                    };
-
-                                    let unit = newDataObj.yAxisOption.metric;
-
-                                    let text = i == 0 ?
-                                        key == dataKeys[2] ?//==datetime
-                                            new Date(value).toISOString().split('.')[0] :
-                                            convert_download_unit(value, originUnit, unit).value + `  ${unit} ` :
-                                        parseFloat(value.toFixed(unit == 'GB' ? 5 : 2)) + `  ${unit}/s `;
-
-
-                                    div
-                                        .selectAll('.value')
-                                        .data([0])
-                                        .join('text')
-                                        .style('font-size', '18px')
-                                        .attr('class', 'value ')
-                                        .text(text);
-
-
+                                    div.html(html);
 
                                 }));
 
+
+
+
                         };
-
                         var hover = (target) => {
-                            // console.debug(target);
+                            // await Promise.all(transPromises);
 
-                            //==改變其他g透明度
+                            //==改變其他
                             focusGroup.selectAll('g')
                                 .call(g =>
                                     g.each(function (d, i) {
@@ -3242,26 +3597,46 @@ function requestRate() {
                                         // console.debug(hover)
 
                                         g
-                                            .attr("stroke", hover ? d => getColor(d[dataKeys[0]]) : 'grey')
-                                            .selectAll('*')
+                                            .select('.rateLine')
+                                            .transition().duration(transDuration)
+                                            .attr("stroke", hover ? 'steelblue' : 'grey')
                                             .attr("stroke-opacity", hover ? 1 : .5);
+
+
+                                        g
+                                            .select('.point')
+                                            .transition().duration(transDuration)
+                                            .attr("fill", hover ? 'green' : 'red')
+                                            .attr("fill-opacity", hover ? 1 : .3);
+
 
                                         //===加陰影和上移圖層
                                         if (hover)
                                             g.attr("filter", "url(#pathShadow)").raise();
+
                                     })
                                 );
                         };
 
                         var leave = () => {
-                            //==恢復所有g透明度
+                            // await Promise.all(transPromises);
+
+                            //==恢復所有
                             focusGroup.selectAll('g')
                                 .attr("filter", null)//陰影都取消
-                                .call(g => g
-                                    .attr("stroke", d => getColor(d[dataKeys[0]]))
-                                    .selectAll('*')
-                                    .attr("stroke-opacity", 1)
-                                );
+                                .call(g => {
+                                    g
+                                        .select('.rateLine')
+                                        .transition().duration(transDuration) //.interrupt()前次動畫
+                                        .attr("stroke", 'grey')
+                                        .attr("stroke-opacity", 1);
+
+                                    g
+                                        .select('.point')
+                                        .transition().duration(transDuration)
+                                        .attr("fill", 'red')
+                                        .attr("fill-opacity", 1);
+                                });
                         };
 
                         focusGroup.raise()
@@ -3302,36 +3677,14 @@ function requestRate() {
                                                 .style("right", right);
                                         });
 
-
-                                    let dataArr = dotGroup.childNodes.map((child, i) => {
-                                        let obj = {};
-                                        // console.debug(child.__data__);
-
-                                        if (i == 0) obj = child.__data__;
-                                        else obj[child.classList[0]] = child.__data__;
-
-                                        return obj;
-                                    });
-
-
-                                    dataArr.sort(function (a, b) {
-                                        // console.debug();
-
-                                        if (Object.keys(b).length > 1)
-                                            return 1;
-                                        else
-                                            return Object.values(b) - Object.values(a);
-
-                                    });
-
-
-                                    // console.debug(dataArr);
-                                    updateTooltip(dataArr);
+                                    updateTooltip(dotGroup.__data__);
                                 };
                                 makeTooltip();
                                 hover(dotGroup);
                             });
                     };
+                    mouseDrag();
+                    mouseMove();
                 };
                 function chartOptionEvent() {
                     //=====xaxis option
@@ -3355,7 +3708,7 @@ function requestRate() {
 
                             //===改變按鈕text
                             let text = getString(timeDataKeys[value]);
-                            xAxisMetricText.text(text.substring(0,));//==太長拿掉時間
+                            xAxisMetricText.text(text.substring(0, text.length - 2));//==太長拿掉"時間"
 
 
 
@@ -3366,7 +3719,7 @@ function requestRate() {
 
                             //===更新圖表
                             xAxisOption.metric = value;
-                            newDataObj = getNewData(xAxisOption, null);
+                            newDataObj = getNewData(xAxisOption, null, selectedDomain);
                             updateChart();
 
                         });
@@ -3374,7 +3727,7 @@ function requestRate() {
                     xAxisLog
                         .on('change', e => {
                             xAxisOption.logScale = e.target.checked;
-                            newDataObj = getNewData(xAxisOption);
+                            newDataObj = getNewData(xAxisOption, null, selectedDomain);
                             updateChart();
                         });
 
@@ -3402,23 +3755,26 @@ function requestRate() {
 
                             //===更新圖表
                             yAxisOption.metric = value;
-                            newDataObj = getNewData(null, yAxisOption);
+                            newDataObj = getNewData(null, yAxisOption, selectedDomain);
                             updateChart();
                         });
 
                     yAxisLog
                         .on('change', e => {
                             yAxisOption.logScale = e.target.checked;
-                            newDataObj = getNewData(null, yAxisOption);
+                            newDataObj = getNewData(null, yAxisOption, selectedDomain);
                             updateChart();
                         });
 
+                    //=====show info
+                    // chartContainerD3.select('#showPath').on('change', e =>
+                    //     d3.selectAll('.rateLine').attr("display", e.target.checked ? 'inline' : 'none'));
+
                 };
-                // chartEvent();
+                chartEvent();
                 chartOptionEvent();
             };
             svg.call(events);
-
 
             return svg.node();
         };

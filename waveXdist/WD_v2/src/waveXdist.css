@@ -184,7 +184,7 @@ a {
 }
 
 .yAxis .domain {
-    stroke: none;
+    /* stroke: none; */
 }
 
 

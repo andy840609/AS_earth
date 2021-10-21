@@ -639,3 +639,5 @@ const Enemy = new Phaser.Class({
     },
 
 });
+
+

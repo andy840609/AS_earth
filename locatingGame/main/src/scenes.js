@@ -774,7 +774,9 @@ class UIScene extends Phaser.Scene {
                     };
                 }
                 else {
-                    preload = () => { };
+                    preload = () => {
+
+                    };
                     create = () => {
 
                         const barW = 80, barH = 16;
@@ -1018,7 +1020,7 @@ class DefendScene extends Phaser.Scene {
         this.background = stationStats.background;
 
         console.debug(this);
-    }
+    };
 
 
     preload() {
@@ -1668,7 +1670,6 @@ class DefendScene extends Phaser.Scene {
             //===init cursors
             this.cursors = this.scene.add(null, new UIScene('cursors', this), true).cursors;
         };
-
 
 
         //==gameScene

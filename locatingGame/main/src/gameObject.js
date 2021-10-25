@@ -199,8 +199,8 @@ const Enemy = new Phaser.Class({
             // this.body.collideWorldBounds = true;
 
             //==HP bar
-            this.HPbar = scene.scene.add(null, new UIScene('statsBar', scene, this), true).HPbar;
-
+            // this.HPbar = scene.scene.add(null, new UIScene('statsBar', scene, this), true).HPbar;
+            scene.scene.add(null, new UIScene('statsBar', scene, this), true);
 
             //==stats
             this.stats = stats;

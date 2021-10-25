@@ -648,6 +648,7 @@ class UIScene extends Phaser.Scene {
                     updateButton();
                     updateIcon();
 
+                    // this.scene.remove();
                 };
                 break;
             case 'exitUI':
@@ -680,82 +681,94 @@ class UIScene extends Phaser.Scene {
             case 'statsBar':
                 // console.debug();
                 if (gameObj.name == 'player') {
-                    //===讀取會讓player statsBar取得undefine(之後解決)
+                    //===讀取會讓player statsBar取得undefine(之後解決),
+                    //因為scene執行完preload()就會autoStart,create裡的bar還沒出現
+                    //所以player得到的statsBar是undefine
 
                     preload = () => {
-                        // const uiDir = assetsDir + 'ui/';
+                        const uiDir = assetsDir + 'ui/';
 
-                        // this.load.image('UIbar_HPlabel', uiDir + 'UIbar_HPlabel.png');
-                        // this.load.image('UIbar_MPlabel', uiDir + 'UIbar_MPlabel.png');
-                        // this.load.image('UIbar_head', uiDir + 'UIbar_head.png');
-                        // this.load.image('UIbar_bar', uiDir + 'UIbar_bar.png');
+                        this.load.image('UIbar_HPlabel', uiDir + 'UIbar_HPlabel.png');
+                        this.load.image('UIbar_MPlabel', uiDir + 'UIbar_MPlabel.png');
+                        this.load.image('UIbar_head', uiDir + 'UIbar_head.png');
+                        this.load.image('UIbar_bar', uiDir + 'UIbar_bar.png');
+
                     };
                     create = () => {
-                        var makeBar = (stats) => {
 
-                            const barW = 80, barH = 16;
-                            const barMargin = 2;
+                        var initBar = () => {
+                            var makeBar = (stats) => {
 
-
-                            let bar = this.add.graphics()
-                                .setDepth(Depth.UI)
-                                .setName(stats);
-
-                            switch (stats) {
-                                case 'HP':
-                                    bar.setPosition(16, 50);
-                                    Object.assign(bar, {
-                                        updateFlag: false,
-                                        updateBar: () => {
-
-                                            bar.clear();
-                                            //  Health               
-                                            let p = gameObj.stats.HP / gameObj.stats.maxHP;
-                                            // console.debug(p);
-
-                                            if (p < 0) p = 0;
-                                            else if (p <= 0.3) bar.fillStyle(0xff0000);
-                                            else if (p <= 0.5) bar.fillStyle(0xEAC100);
-                                            else bar.fillStyle(0x00ff00);
-
-                                            let healthW = (barW - barMargin * 2) * p;
-                                            bar.fillRect(barMargin, barMargin, healthW, barH - barMargin * 2);
-
-                                        },
-                                    });
-                                    break;
-                                case 'MP':
-                                    bar.setPosition(16, 80);
-                                    Object.assign(bar, {
-                                        updateFlag: false,
-                                        updateBar: () => {
-
-                                            bar.clear();
+                                const barW = 80, barH = 16;
+                                const barMargin = 2;
 
 
-                                            //  Health               
-                                            let p = gameObj.stats.MP / gameObj.stats.maxMP;
-                                            // console.debug(p);
+                                let bar = this.add.graphics()
+                                    .setDepth(Depth.UI)
+                                    .setName(stats);
 
-                                            if (p < 0) p = 0;
-                                            else if (p <= 0.3) bar.fillStyle(0xff0000);
-                                            else if (p <= 0.5) bar.fillStyle(0xEAC100);
-                                            else bar.fillStyle(0x00ff00);
+                                switch (stats) {
+                                    case 'HP':
+                                        bar.setPosition(16, 50);
+                                        Object.assign(bar, {
+                                            updateFlag: false,
+                                            updateBar: () => {
 
-                                            let healthW = (barW - barMargin * 2) * p;
-                                            bar.fillRect(barMargin, barMargin, healthW, barH - barMargin * 2);
+                                                bar.clear();
+                                                //  Health               
+                                                let p = gameObj.stats.HP / gameObj.stats.maxHP;
+                                                // console.debug(p);
 
-                                        },
-                                    });
-                                    break;
+                                                if (p < 0) p = 0;
+                                                else if (p <= 0.3) bar.fillStyle(0xff0000);
+                                                else if (p <= 0.5) bar.fillStyle(0xEAC100);
+                                                else bar.fillStyle(0x00ff00);
+
+                                                let healthW = (barW - barMargin * 2) * p;
+                                                bar.fillRect(barMargin, barMargin, healthW, barH - barMargin * 2);
+
+                                            },
+                                        });
+                                        break;
+                                    case 'MP':
+                                        bar.setPosition(16, 80);
+                                        Object.assign(bar, {
+                                            updateFlag: false,
+                                            updateBar: () => {
+
+                                                bar.clear();
+
+
+                                                //  Health               
+                                                let p = gameObj.stats.MP / gameObj.stats.maxMP;
+                                                // console.debug(p);
+
+                                                if (p < 0) p = 0;
+                                                else if (p <= 0.3) bar.fillStyle(0xff0000);
+                                                else if (p <= 0.5) bar.fillStyle(0xEAC100);
+                                                else bar.fillStyle(0x00ff00);
+
+                                                let healthW = (barW - barMargin * 2) * p;
+                                                bar.fillRect(barMargin, barMargin, healthW, barH - barMargin * 2);
+
+                                            },
+                                        });
+                                        break;
+                                };
+
+                                bar.updateBar();
+                                return bar;
                             };
+                            this.HPbar = makeBar('HP');
+                            this.MPbar = makeBar('MP');
+                            // console.debug(this.HPbar, this.MPbar);
 
-                            bar.updateBar();
-                            return bar;
+                            //==避免回去拿到undefine
+                            gameObj.HPbar = this.HPbar;
+                            gameObj.MPbar = this.MPbar;
                         };
-                        this.HPbar = makeBar('HP');
-                        this.MPbar = makeBar('MP');
-                        // console.debug(this.HPbar, this.MPbar);
+
+                        initBar();
                     };
                     update = () => {
                         let HPbar = this.HPbar;
@@ -778,41 +791,46 @@ class UIScene extends Phaser.Scene {
 
                     };
                     create = () => {
+                        var makeBar = () => {
+                            const barW = 80, barH = 16;
+                            const barMargin = 2;
 
-                        const barW = 80, barH = 16;
-                        const barMargin = 2;
+                            let bar = this.add.graphics()
+                                .setDepth(Depth.UI);
 
-                        this.HPbar = this.add.graphics()
-                            .setDepth(Depth.UI);
+                            Object.assign(bar, {
+                                updateFlag: false,
+                                updateBar: () => {
 
-                        Object.assign(this.HPbar, {
-                            updateFlag: false,
-                            updateBar: () => {
+                                    bar.clear();
 
-                                this.HPbar.clear();
+                                    //  stroke
+                                    bar.fillStyle(0x000000);
+                                    bar.fillRect(-barW * 0.5, 0, barW, barH);
 
-                                //  stroke
-                                this.HPbar.fillStyle(0x000000);
-                                this.HPbar.fillRect(-barW * 0.5, 0, barW, barH);
+                                    //  BG
+                                    bar.fillStyle(0xffffff);
+                                    bar.fillRect(-barW * 0.5 + barMargin, barMargin, barW - barMargin * 2, barH - barMargin * 2);
 
-                                //  BG
-                                this.HPbar.fillStyle(0xffffff);
-                                this.HPbar.fillRect(-barW * 0.5 + barMargin, barMargin, barW - barMargin * 2, barH - barMargin * 2);
+                                    //  Health               
+                                    let p = gameObj.stats.HP / gameObj.stats.maxHP;
+                                    // console.debug(p);
 
-                                //  Health               
-                                let p = gameObj.stats.HP / gameObj.stats.maxHP;
-                                // console.debug(p);
+                                    if (p < 0) p = 0;
+                                    else if (p <= 0.3) bar.fillStyle(0xff0000);
+                                    else if (p <= 0.5) bar.fillStyle(0xEAC100);
+                                    else bar.fillStyle(0x00ff00);
 
-                                if (p < 0) p = 0;
-                                else if (p <= 0.3) this.HPbar.fillStyle(0xff0000);
-                                else if (p <= 0.5) this.HPbar.fillStyle(0xEAC100);
-                                else this.HPbar.fillStyle(0x00ff00);
+                                    let healthW = (barW - barMargin * 2) * p;
+                                    bar.fillRect(-barW * 0.5 + barMargin, barMargin, healthW, barH - barMargin * 2);
 
-                                let healthW = (barW - barMargin * 2) * p;
-                                this.HPbar.fillRect(-barW * 0.5 + barMargin, barMargin, healthW, barH - barMargin * 2);
+                                },
+                            });
 
-                            },
-                        });
+                            return bar;
+                        };
+                        this.HPbar = makeBar();
+                        gameObj.HPbar = this.HPbar;
                     };
                     update = () => {
                         let HPbar = this.HPbar;
@@ -830,6 +848,7 @@ class UIScene extends Phaser.Scene {
                 create = () => {
                     let keys = Object.values(controllCursor).join();
                     this.cursors = this.input.keyboard.addKeys(keys);
+                    gameScene.cursors = this.cursors;
                 };
                 update = () => {
 
@@ -943,7 +962,19 @@ class UIScene extends Phaser.Scene {
 
 class DefendScene extends Phaser.Scene {
     constructor(stationData, GameData, other) {
-        super({ key: 'gameScene' });
+        var sceneConfig = {
+            key: 'gameScene',
+            pack: {
+                files: [{
+                    type: 'plugin',
+                    key: 'rexawaitloaderplugin',
+                    url: 'https://raw.githubusercontent.com/rexrainbow/phaser3-rex-notes/master/dist/rexawaitloaderplugin.min.js',
+                    start: true
+                }]
+            },
+        };
+
+        super(sceneConfig);
         // console.debug(stationData);
 
         Object.assign(this, {
@@ -1021,100 +1052,105 @@ class DefendScene extends Phaser.Scene {
 
         console.debug(this);
     };
-
-
     preload() {
+        // console.debug(this.plugins.get('rexawaitloaderplugin'));
+        this.plugins.get('rexawaitloaderplugin').addToScene(this);
 
-        const gameObjDir = assetsDir + 'gameObj/';
-        const stationStats = this.gameData.stationData.stationStats;
-
-        var environment = () => {
-            const envDir = gameObjDir + 'environment/';
-            var station = () => {
-                const dir = envDir + 'station/';
-                this.load.image('station', dir + 'station.png');
-                this.load.image('title', dir + 'title.png');
-            };
-            var platform = () => {
-                const dir = envDir + 'platform/';
-                this.load.image('ground', dir + 'platform.png');
-            };
-            var background = () => {
-
-                const dir = envDir + 'background/' + this.background + '/';
-
-                let resources = BackGroundResources[this.background];
-                resources.static.concat(resources.dynamic).forEach(res => {
-                    this.load.image(res, dir + res);
-                });
-
-
-            };
-            var instrument = () => {
-                const dir = envDir + 'instrument/';
-                this.load.spritesheet('instrument',
-                    dir + 'instrument.png',
-                    { frameWidth: 256, frameHeight: 256 }
-                );
-                this.load.spritesheet('laser',
-                    dir + 'laser.png',
-                    { frameWidth: 512, frameHeight: 682.6 }
-                );
-
-            };
-            var wave = async () => {
-                let stationData = this.gameData.stationData;
-                let xAxisDomain = stationData.stationStats.orbStats ? stationData.stationStats.orbStats.xAxisDomain : null;
-
-                //==getWaveSVG
-                this.waveForm.getWaveImg(stationData, xAxisDomain).then(success => {
-                    success.forEach(d => this.load.svg(d.svgName, d.svg, { scale: 1 }));
-                    this.waveForm.svgArr = success;
-                });
-
-                //==getOverviewSVG
-                this.waveForm.getWaveImg(stationData).then(success => this.waveForm.overviewSvgArr = success);
-
-            };
-            background();
-            platform();
-            station();
-            instrument();
-            wave();
-
+        // const stationStats = this.gameData.stationData.stationStats;
+        this.scene.add(null, new LoadingScene(this), true);
+        var callback = function (successCallback, failureCallback) {
+            setTimeout(successCallback, 1000);
         };
-        var player = () => {
-            this.load.spritesheet('dude',
-                gameObjDir + 'dude.png',
-                { frameWidth: 32, frameHeight: 48 }
-            );
+        this.load.rexAwait(callback);
 
-        };
-        var enemy = () => {
-            if (stationStats.liberate) return;
-            // console.debug(this.aliveEnemy);
-            this.aliveEnemy.forEach(enemy => {
-                const dir = gameObjDir + enemy + '/';
-                const frameObj = { frameWidth: 48, frameHeight: 48 };
-                this.load.spritesheet(enemy + '_Attack', dir + 'Attack.png', frameObj);
-                this.load.spritesheet(enemy + '_Death', dir + 'Death.png', frameObj);
-                this.load.spritesheet(enemy + '_Hurt', dir + 'Hurt.png', frameObj);
-                this.load.spritesheet(enemy + '_Idle', dir + 'Idle.png', frameObj);
-                this.load.spritesheet(enemy + '_Walk', dir + 'Walk.png', frameObj);
+        // const gameObjDir = assetsDir + 'gameObj/';
+        // var environment = () => {
+        //     const envDir = gameObjDir + 'environment/';
+        //     var station = () => {
+        //         const dir = envDir + 'station/';
+        //         this.load.image('station', dir + 'station.png');
+        //         this.load.image('title', dir + 'title.png');
+        //     };
+        //     var platform = () => {
+        //         const dir = envDir + 'platform/';
+        //         this.load.image('ground', dir + 'platform.png');
+        //     };
+        //     var background = () => {
 
-            });
+        //         const dir = envDir + 'background/' + this.background + '/';
+
+        //         let resources = BackGroundResources[this.background];
+        //         resources.static.concat(resources.dynamic).forEach(res => {
+        //             this.load.image(res, dir + res);
+        //         });
 
 
-        };
-        var tooltip = () => {
-            const uiDir = assetsDir + 'ui/';
-            this.load.image('tooltipButton', uiDir + 'tooltipButton.png');
-        };
+        //     };
+        //     var instrument = () => {
+        //         const dir = envDir + 'instrument/';
+        //         this.load.spritesheet('instrument',
+        //             dir + 'instrument.png',
+        //             { frameWidth: 256, frameHeight: 256 }
+        //         );
+        //         this.load.spritesheet('laser',
+        //             dir + 'laser.png',
+        //             { frameWidth: 512, frameHeight: 682.6 }
+        //         );
 
-        environment();
-        player();
-        enemy();
-        tooltip();
+        //     };
+        //     var wave = async () => {
+        //         let stationData = this.gameData.stationData;
+        //         let xAxisDomain = stationData.stationStats.orbStats ? stationData.stationStats.orbStats.xAxisDomain : null;
+
+        //         //==getWaveSVG
+        //         this.waveForm.getWaveImg(stationData, xAxisDomain).then(success => {
+        //             success.forEach(d => this.load.svg(d.svgName, d.svg, { scale: 1 }));
+        //             this.waveForm.svgArr = success;
+        //         });
+
+        //         //==getOverviewSVG
+        //         this.waveForm.getWaveImg(stationData).then(success => this.waveForm.overviewSvgArr = success);
+
+        //     };
+        //     background();
+        //     platform();
+        //     station();
+        //     instrument();
+        //     wave();
+
+        // };
+        // var player = () => {
+        //     this.load.spritesheet('dude',
+        //         gameObjDir + 'dude.png',
+        //         { frameWidth: 32, frameHeight: 48 }
+        //     );
+
+        // };
+        // var enemy = () => {
+        //     if (stationStats.liberate) return;
+        //     // console.debug(this.aliveEnemy);
+        //     this.aliveEnemy.forEach(enemy => {
+        //         const dir = gameObjDir + enemy + '/';
+        //         const frameObj = { frameWidth: 48, frameHeight: 48 };
+        //         this.load.spritesheet(enemy + '_Attack', dir + 'Attack.png', frameObj);
+        //         this.load.spritesheet(enemy + '_Death', dir + 'Death.png', frameObj);
+        //         this.load.spritesheet(enemy + '_Hurt', dir + 'Hurt.png', frameObj);
+        //         this.load.spritesheet(enemy + '_Idle', dir + 'Idle.png', frameObj);
+        //         this.load.spritesheet(enemy + '_Walk', dir + 'Walk.png', frameObj);
+
+        //     });
+
+
+        // };
+        // var tooltip = () => {
+        //     const uiDir = assetsDir + 'ui/';
+        //     this.load.image('tooltipButton', uiDir + 'tooltipButton.png');
+        // };
+
+        // environment();
+        // player();
+        // enemy();
+        // tooltip();
 
     };
     create() {
@@ -1456,7 +1492,9 @@ class DefendScene extends Phaser.Scene {
 
             //======custom
             this.player.stats = Object.assign({}, this.gameData.playerStats);
-            let statsBarUI = this.scene.add(null, new UIScene('statsBar', this, this.player), true);
+
+            //==get HP/MP statsBar
+            this.scene.add(null, new UIScene('statsBar', this, this.player), true);
             // console.debug(statsBarUI);
 
             Object.assign(this.player, {
@@ -1464,10 +1502,6 @@ class DefendScene extends Phaser.Scene {
                 stopCursorsFlag: false,
                 invincibleFlag: false,//無敵時間
                 playerTurnLeft: false,//==判斷子彈方向
-
-                //==HP/MP
-                HPbar: statsBarUI.HPbar,
-                MPbar: statsBarUI.MPbar,
 
                 playerAttack: (bullet, enemy) => {
                     // console.debug(bullet, enemy);
@@ -1668,7 +1702,8 @@ class DefendScene extends Phaser.Scene {
         };
         var initCursors = () => {
             //===init cursors
-            this.cursors = this.scene.add(null, new UIScene('cursors', this), true).cursors;
+            this.scene.add(null, new UIScene('cursors', this), true);
+
         };
 
 
@@ -1683,10 +1718,10 @@ class DefendScene extends Phaser.Scene {
         initIconBar();
 
 
-
     };
     update() {
         // return;
+        // console.debug('game update');
         var updatePlayer = () => {
 
             this.player.movingHadler(this);
@@ -1705,9 +1740,8 @@ class DefendScene extends Phaser.Scene {
 
             if (pickUpObj)
                 pickUpObj.setPosition(this.player.x, this.player.y + 10);
-        }
+        };
         var updateTimer = () => {
-
             let gameTimer = this.gameTimer;
             let timeRemain = this.gameData.timeRemain;
             let timeVal = parseInt(timeRemain - gameTimer.getElapsed());
@@ -1892,6 +1926,112 @@ class StartScene extends Phaser.Scene {
     };
 };
 
+class LoadingScene extends Phaser.Scene {
+    constructor(gameScene) {
+        super({ key: 'LoadingScene' });
+        this.gameScene = gameScene;
+    }
+    preload() {
+        const gameScene = this.gameScene;
+        const stationStats = gameScene.gameData.stationData.stationStats;
+        const gameObjDir = assetsDir + 'gameObj/';
+
+        var environment = () => {
+            const envDir = gameObjDir + 'environment/';
+            var station = () => {
+                const dir = envDir + 'station/';
+                this.load.image('station', dir + 'station.png');
+                this.load.image('title', dir + 'title.png');
+            };
+            var platform = () => {
+                const dir = envDir + 'platform/';
+                this.load.image('ground', dir + 'platform.png');
+            };
+            var background = () => {
+
+                const dir = envDir + 'background/' + gameScene.background + '/';
+
+                let resources = BackGroundResources[gameScene.background];
+                resources.static.concat(resources.dynamic).forEach(res => {
+                    this.load.image(res, dir + res);
+                });
+
+
+            };
+            var instrument = () => {
+                const dir = envDir + 'instrument/';
+                this.load.spritesheet('instrument',
+                    dir + 'instrument.png',
+                    { frameWidth: 256, frameHeight: 256 }
+                );
+                this.load.spritesheet('laser',
+                    dir + 'laser.png',
+                    { frameWidth: 512, frameHeight: 682.6 }
+                );
+
+            };
+            var wave = async () => {
+                let stationData = gameScene.gameData.stationData;
+                let xAxisDomain = stationData.stationStats.orbStats ? stationData.stationStats.orbStats.xAxisDomain : null;
+
+                //==getWaveSVG
+                gameScene.waveForm.getWaveImg(stationData, xAxisDomain).then(success => {
+                    success.forEach(d => this.load.svg(d.svgName, d.svg, { scale: 1 }));
+                    gameScene.waveForm.svgArr = success;
+                });
+
+                //==getOverviewSVG
+                gameScene.waveForm.getWaveImg(stationData).then(success => gameScene.waveForm.overviewSvgArr = success);
+
+            };
+            background();
+            platform();
+            station();
+            instrument();
+            wave();
+
+        };
+        var player = () => {
+            this.load.spritesheet('dude',
+                gameObjDir + 'dude.png',
+                { frameWidth: 32, frameHeight: 48 }
+            );
+
+        };
+        var enemy = () => {
+            if (stationStats.liberate) return;
+            // console.debug(this.aliveEnemy);
+            gameScene.aliveEnemy.forEach(enemy => {
+                const dir = gameObjDir + enemy + '/';
+                const frameObj = { frameWidth: 48, frameHeight: 48 };
+                this.load.spritesheet(enemy + '_Attack', dir + 'Attack.png', frameObj);
+                this.load.spritesheet(enemy + '_Death', dir + 'Death.png', frameObj);
+                this.load.spritesheet(enemy + '_Hurt', dir + 'Hurt.png', frameObj);
+                this.load.spritesheet(enemy + '_Idle', dir + 'Idle.png', frameObj);
+                this.load.spritesheet(enemy + '_Walk', dir + 'Walk.png', frameObj);
+
+            });
+
+
+        };
+        var tooltip = () => {
+            const uiDir = assetsDir + 'ui/';
+            this.load.image('tooltipButton', uiDir + 'tooltipButton.png');
+        };
+
+        environment();
+        player();
+        enemy();
+        tooltip();
+
+    };
+    create() {
+
+    };
+    update() {
+
+    };
+};
 
 // class DefendScene extends Phaser.Scene {
 //     constructor() {

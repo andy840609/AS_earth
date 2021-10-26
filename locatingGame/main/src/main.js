@@ -661,7 +661,6 @@ function locatingGame() {
                 });
 
             };
-
             function updateStation(stationMarker, updateObj = {}) {
 
                 const IconClass = L.Icon.extend({

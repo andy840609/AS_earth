@@ -73,7 +73,7 @@ const BackGroundResources = {
         },
     },
 
-}
+};
 
 const Bullet = new Phaser.Class({
 

@@ -658,6 +658,30 @@ class UIScene extends Phaser.Scene {
 
                     preload = () => { };
                     create = () => {
+                        class UIMask extends Phaser.GameObjects.Graphics {
+                            constructor(scene, options, head = false) {
+                                super(scene, options);
+                                // console.debug(options);
+
+                                let width = options.width,
+                                    height = options.height;
+                                if (head) {
+                                    this.fillCircle(width * 0.5, 0, 36);
+                                }
+                                else {
+                                    this.beginPath();
+                                    this.moveTo(width, 0);
+                                    this.lineTo(0, 0);
+                                    this.lineTo(0, height);
+                                    this.lineTo(width - height - 1, height);
+                                    this.closePath();
+                                    this.fillPath();
+                                };
+
+
+                                // console.debug(this);
+                            };
+                        };
                         const BoxX = 100, hpBoxY = height * 0.08, mpBoxY = hpBoxY + 30;
                         const Depth = {
                             box: 1,
@@ -667,6 +691,7 @@ class UIScene extends Phaser.Scene {
                         };
 
                         let hpBox, mpBox, headBox;
+                        // let hpText, mpText;
                         var initBox = () => {
 
                             hpBox = this.add.image(BoxX, hpBoxY, 'UIbar_bar')
@@ -690,30 +715,48 @@ class UIScene extends Phaser.Scene {
                                 .setOrigin(0, 0.5)
                                 .setDepth(Depth.label);
 
-                            this.add.text(width * 0.88, height * 0.46, 'station', { fontSize: '32px', fill: '#000' })
-                                .setRotation(-0.1);
+                            this.HPText = this.add.text(BoxX + hpBox.displayWidth * 0.9, hpBoxY + hpBox.displayHeight * 0.8, '', { fontSize: '15px', fill: '#FFFFFF' })
+                                .setOrigin(1)
+                                .setDepth(Depth.label);
+
+                            this.MPText = this.add.text(BoxX + mpBox.displayWidth * 0.9, mpBoxY + mpBox.displayHeight * 0.8, '', { fontSize: '10px', fill: '#FFFFFF' })
+                                .setOrigin(1)
+                                .setDepth(Depth.label);
                         };
                         var initBar = () => {
-                            class BarMask extends Phaser.GameObjects.Graphics {
-                                constructor(scene, options) {
-                                    super(scene, options);
-                                    // console.debug(options);
 
-                                    let width = options.width,
-                                        height = options.height;
-
-                                    this.beginPath();
-                                    this.moveTo(width, 0);
-                                    this.lineTo(0, 0);
-                                    this.lineTo(0, height);
-                                    this.lineTo(width - height - 1, height);
-                                    this.closePath();
-                                    this.fillPath();
-
-                                    console.debug(this);
+                            var getGradientColor = (gradientColor, percent) => {
+                                function hexToRgb(hexString) {
+                                    var result = /^0x?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hexString);
+                                    return result ? {
+                                        r: parseInt(result[1], 16),
+                                        g: parseInt(result[2], 16),
+                                        b: parseInt(result[3], 16),
+                                    } : null;
                                 };
+                                function rgbToHex(rgbObj) {
+                                    var componentToHex = (c) => {
+                                        var hex = c.toString(16);
+                                        return hex.length == 1 ? "0" + hex : hex;
+                                    };
+                                    return "0x" + componentToHex(rgbObj.r) + componentToHex(rgbObj.g) + componentToHex(rgbObj.b);
+                                };
+                                let rgbArr = gradientColor.map(color => hexToRgb(color));
+                                let rgbDiff = {
+                                    r: rgbArr[1].r - rgbArr[0].r,
+                                    g: rgbArr[1].g - rgbArr[0].g,
+                                    b: rgbArr[1].b - rgbArr[0].b,
+                                };
+                                // console.debug(rgbArr);
+                                // console.debug(percent);
+                                let newRgb = {
+                                    r: rgbArr[0].r + parseInt(rgbDiff.r * percent),
+                                    g: rgbArr[0].g + parseInt(rgbDiff.g * percent),
+                                    b: rgbArr[0].b + parseInt(rgbDiff.b * percent),
+                                };
+                                // console.debug(newRgb);
+                                return rgbToHex(newRgb);
                             };
-
                             var makeBar = (stats) => {
 
                                 let bar = this.add.graphics()
@@ -729,7 +772,7 @@ class UIScene extends Phaser.Scene {
                                         barY = hpBoxY + barMargin;
                                         barW = hpBox.displayWidth - barMargin * 2;
                                         barH = hpBox.displayHeight - barMargin * 2;
-                                        gradientColor = [0x8E8E8E, 0x004B97];
+                                        gradientColor = ['0xAE0000', '0x00DB00'];
                                         break;
                                     case 'MP':
                                         barMargin = 3;
@@ -737,11 +780,11 @@ class UIScene extends Phaser.Scene {
                                         barY = mpBoxY + barMargin;
                                         barW = mpBox.displayWidth - barMargin * 2;
                                         barH = mpBox.displayHeight - barMargin * 2;
-                                        gradientColor = [0x8E8E8E, 0x004B97];
+                                        gradientColor = ['0x8E8E8E', '0x0000E3'];
                                         break;
                                 };
 
-                                let mask = new BarMask(this, {
+                                let mask = new UIMask(this, {
                                     x: barX,
                                     y: barY,
                                     width: barW,
@@ -758,18 +801,20 @@ class UIScene extends Phaser.Scene {
                                     updateBar: () => {
 
                                         bar.clear();
-                                        //  Health               
-                                        let p = gameObj.stats[stats] / gameObj.stats[`max${stats}`];
+                                        let currentVal = gameObj.stats[stats];
+                                        let totalVal = gameObj.stats[`max${stats}`];
+                                        //==update bar
+                                        let p = currentVal / totalVal;
                                         // console.debug(p);
 
-                                        // if (p < 0) p = 0;
-                                        // else if (p <= 0.3) bar.fillStyle(0xff0000);
-                                        // else if (p <= 0.5) bar.fillStyle(0xEAC100);
-                                        // else bar.fillStyle(0x00ff00);
-                                        bar.fillGradientStyle(gradientColor[0], gradientColor[1], gradientColor[0], gradientColor[1], 1);
+                                        let newGradientColor = getGradientColor(gradientColor, p);
+                                        bar.fillGradientStyle(gradientColor[0], newGradientColor, gradientColor[0], newGradientColor);
 
                                         let currentW = (barW - barMargin * 2) * p;
                                         bar.fillRect(barMargin, barMargin, currentW, barH - barMargin * 2);
+
+                                        //==update text
+                                        this[`${stats}Text`].setText(`${parseInt(currentVal)} / ${totalVal}`);
 
                                     },
                                 });
@@ -784,8 +829,33 @@ class UIScene extends Phaser.Scene {
                             gameObj.HPbar = this.HPbar;
                             gameObj.MPbar = this.MPbar;
                         };
+                        var initHead = () => {
+                            let headX = headBox.x,
+                                headY = headBox.y,
+                                headW = headBox.displayWidth,
+                                headH = headBox.displayHeight;
+
+                            let mask = new UIMask(this, {
+                                x: headX,
+                                y: headY,
+                                width: headW,
+                                height: headH,
+                            }, true).createGeometryMask();
+                            // .setDepth(50)
+                            // this.add.existing(mask)
+
+                            this.add.image(headX + headW * 0.5, headY, 'player')
+                                .setScale(2)
+                                .setOrigin(0.5)
+                                .setDepth(Depth.headBox)
+                                .setMask(mask);
+
+                        };
                         initBox();
                         initBar();
+                        initHead();
+
+
                     };
                     update = () => {
                         let HPbar = this.HPbar;
@@ -804,9 +874,7 @@ class UIScene extends Phaser.Scene {
                     };
                 }
                 else {
-                    preload = () => {
-
-                    };
+                    preload = () => { };
                     create = () => {
                         var makeBar = () => {
                             const barW = 80, barH = 16;
@@ -858,7 +926,6 @@ class UIScene extends Phaser.Scene {
                         HPbar.updateFlag = false;
                     };
                 };
-
                 break;
             case 'cursors'://==避免暫停後按鍵沒反應
                 preload = () => { };
@@ -2081,6 +2148,7 @@ class LoadingScene extends Phaser.Scene {
                     });
                     this.dude = this.add.sprite(this.progressBar.x, this.progressBar.y - 100, 'dude')
                         .play('dude_run');
+
                 });
 
                 this.load.on('complete', () => {
@@ -2094,9 +2162,8 @@ class LoadingScene extends Phaser.Scene {
                     // this.scene.remove();
                 });
             };
-            loadEvents();
             progressGraphics();
-
+            loadEvents();
             // this.load.image('logo', 'zenvalogo.png');
             // for (var i = 0; i < 5000; i++) {
             //     this.load.image('logo' + i, 'zenvalogo.png');

@@ -379,7 +379,7 @@ function locatingGame() {
 
         function gameGenerate() {
             const gameOuterDiv = document.querySelector('#gameOuter');
-            const gameInnerDiv = gameOuterDiv.querySelector('#gameMain');
+            // const gameInnerDiv = gameOuterDiv.querySelector('#gameMain');
             const width = window.innerWidth, height = window.innerHeight;
 
             var mapObj;
@@ -829,7 +829,7 @@ function locatingGame() {
                                     arcade: {
                                         gravity: { y: 300 },
                                         debug: true,
-                                    }
+                                    },
                                 },
                                 scene: new DefendScene(stationData, GameData, {
                                     getWaveImg: getWaveImg,
@@ -886,7 +886,6 @@ function locatingGame() {
 
         };
         //===init once
-
         if (!(chartContainerJQ.find('#form-game').length >= 1)) {
             initForm();
         };

@@ -3115,10 +3115,8 @@ function requestRate() {
                     e.stopPropagation();
                 });
 
-
                 //================time menu
                 // let timeDropDownMenu = chartContainerJQ.find('#timeDropDownMenu');
-
             }();
 
             const svg = d3.create("svg")

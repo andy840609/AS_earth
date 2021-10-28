@@ -54,9 +54,6 @@ class UIScene extends Phaser.Scene {
                     graphics.fillRoundedRect(0, 0, barWidth, barHeight, barRadius);
                     graphics.strokeRoundedRect(0, 0, barWidth, barHeight, barRadius);
 
-
-
-
                     this.iconButtons = UIButtonArr.map((button, i) => {
                         let key = button + '_icon';
                         let iconButton = this.add.image(barX + barWidth * (1 - (i + 1) / (buttonCount + 1)), barY + barHeight * 0.5, key)
@@ -1048,13 +1045,21 @@ class DefendScene extends Phaser.Scene {
     constructor(stationData, GameData, other) {
         var sceneConfig = {
             key: 'gameScene',
-            pack: { //讓preload()能await才create()[確定資源都讀取完成才執行create()]
-                files: [{
-                    type: 'plugin',
-                    key: 'rexawaitloaderplugin',
-                    url: '../src/phaser-3.55.2/dist/phaser-rexawaitloaderplugin.min.js',
-                    start: true,
-                }]
+            pack: {
+                files: [
+                    {//==讓preload()能await才create()[確定資源都讀取完成才執行create()]
+                        type: 'plugin',
+                        key: 'rexawaitloaderplugin',
+                        url: '../src/phaser-3.55.2/plugins/phaser-rexawaitloaderplugin.min.js',
+                        start: true,
+                    },
+                    {//==旋轉特效
+                        type: 'plugin',
+                        key: 'rexswirlpipelineplugin',
+                        url: '../src/phaser-3.55.2/plugins/phaser-rexswirlpipelineplugin.min.js',
+                        start: true,
+                    },
+                ]
             },
         };
 
@@ -1706,6 +1711,22 @@ class DefendScene extends Phaser.Scene {
         initIconBar();
 
 
+        // var postFxPlugin = this.plugins.get('rexswirlpipelineplugin');
+        // this.cameraFilter = postFxPlugin.add(this.cameras.main);
+        // this.input.on('pointerup', (pointer) => {
+        //     this.tweens.add({
+        //         targets: this.cameraFilter,
+        //         angle: 0,
+        //         radius: 0,
+        //         ease: 'Linear',
+        //         duration: 1000,
+        //         repeat: 0,
+        //         yoyo: false
+        //     });
+        // });
+
+        // this.time.slowMotion = 5.0;
+        // this.time.paused = true;
     };
     update() {
         // return;
@@ -1789,7 +1810,18 @@ class DefendScene extends Phaser.Scene {
 
             this.game.destroy(true, false);
             this.gameOver.resolve(gameResult);
-        }
+        };
+
+
+
+        // var activePointer = this.input.activePointer;
+        // if (activePointer.isDown) {
+        //     this.cameraFilter.angle += 1;
+        //     this.cameraFilter.radius += 5;
+        //     this.cameraFilter.setCenter(activePointer.x, activePointer.y);
+        // };
+
+
     };
 
 };

@@ -4,20 +4,6 @@ a {
     user-select: none;
 }
 
-
-#gameUI {
-    position: absolute;
-    top: 10px;
-    /* left: 0; */
-    z-index: 1000;
-    background: rgb(255, 255, 255);
-    border-style: double;
-    border-width: 10px;
-    border-radius: 5px;
-    padding: 10px 10px;
-}
-
-
 #loading {
     --loading-width: 150px;
     --loading-height: 60px;
@@ -136,4 +122,35 @@ svg {
         /* stroke-width: 100; */
         /* transform: scale(1) translate(10%, 10%); */
     }
+}
+
+#gameUI {
+    position: absolute;
+    top: 10px;
+    /* left: 0; */
+    z-index: 1000;
+}
+
+#gameUI .timeRemain {
+    background: rgb(255, 255, 255);
+    border-style: double;
+    border-width: 10px;
+    border-radius: 5px;
+    padding: 10px 10px;
+}
+
+#gameUI .UIbar {
+    position: relative;
+    top: 10px;
+    left: 30px;
+    /* width: 70px; */
+    /* height: 500px; */
+    border-radius: 50px;
+    border: 2px solid #7B7B7B;
+    background: rgba(224, 224, 224, 0.5);
+
+}
+
+#gameUI .UIicon {
+    position: absolute;
 }

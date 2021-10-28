@@ -173,13 +173,8 @@ function locatingGame() {
                     <div id="gameOuter"  class="row">
                         <div id="gameMain"></div>                      
                     </div>
-
-                    <div id='loading'  style="display:none;">
-                        <div class="spinner-border"role="status">
-                            <span class="sr-only" >Loading...</span>
-                        </div>
-                        Loading...
-                    </div>
+   
+                    <div class="form-group" id="gameUI"></div>
 
                 </div> 
                 </form>
@@ -434,7 +429,8 @@ function locatingGame() {
 
 
                     GameData.languageJSON = await getLanguageJSON();
-                    gameDisplay(true);
+                    // gameDisplay(true);
+
                     // let newGameData = await new Promise((resolve, reject) => {
                     //     const config = {
                     //         parent: 'gameMain',
@@ -461,7 +457,7 @@ function locatingGame() {
 
                     //==test
                     initMap();
-                    gameStart('defend');
+                    // gameStart('defend');
 
                 };
 
@@ -636,14 +632,107 @@ function locatingGame() {
 
                 };
                 async function addUI() {
+                    const gameUI = chartContainerJQ.find('#gameUI');
+                    const UIbuttons = ['playerStats', 'velocityChart'];
 
-                    chartContainerJQ.children('#form-game').append(`
-                    <div class="form-group" id="gameUI" style="display: inline;">
-                        ${GameData.languageJSON.UI['timeRemain']} : <font size="5" class='timer'>0</font> ms
-                    </div>
-                    `);
 
-                    updateMapUI({ timeRemain: GameData.timeRemain }, 800);
+
+                    var timeRemain = () => {
+                        gameUI.append(`
+                        <div class="timeRemain">${GameData.languageJSON.UI['timeRemain']} : <font size="5" class='timer'>0</font> ms</div>             
+                        `);
+
+                        updateMapUI({ timeRemain: GameData.timeRemain }, 800);
+                    };
+                    var UIbar = () => {
+                        const eachButtonH = 100;
+                        const UIbarH = eachButtonH * UIbuttons.length,
+                            UIbarW = 70;
+                        const interval = UIbarH / (UIbuttons.length + 1);
+                        const iconW = 50;
+
+                        var initBar = () => {
+                            gameUI
+                                .append(`<div class="UIbar"></div>`)
+                                .find('.UIbar')
+                                .width(UIbarW)
+                                .height(UIbarH);
+
+                        };
+                        var addIcons = () => {
+                            const left = (UIbarW - iconW) * 0.5;
+
+                            let iconsHtml = UIbuttons.map((btn, i) => `
+                            <div class="UIicon" id="${btn}" style="top:${interval * (i + 1) - iconW * 0.5}px; left:${left}px">
+                                <img src="../data/assets/icon/${btn}.png" width="${iconW}px" height="${iconW}px">
+                            </div>
+                            `);
+
+                            gameUI.find('.UIbar').append(iconsHtml);
+                        };
+                        var iconEvent = () => {
+                            const delay = 10;
+                            const iconW2 = iconW * 1.5;
+
+                            gameUI.find('.UIicon')
+                                .on('mouseover', (e) => {
+                                    // console.debug()
+                                    e.target.width = 80;
+                                    e.target.height = 80;
+
+                                    const eachPartStep = parseInt((duration / animePart) / delay);
+                                    const sizeChange = originalIconSize / eachPartStep * animePart;
+
+                                    let size = 0, step = 0;
+                                    let interval = setInterval(() => {
+
+                                        let part = parseInt(step / eachPartStep);
+
+                                        switch (part) {
+                                            case 0:
+                                                size += sizeChange;
+                                                break;
+                                            case 1:
+                                                size -= (sizeChange * 0.5);
+                                                break;
+                                            case 2://＝＝＝回復原來大小並停止
+                                                size = originalIconSize;
+                                                clearInterval(interval);
+                                                break;
+                                        };
+
+                                        marker.setIcon(new IconClass({
+                                            iconUrl: iconUrl,
+                                            iconSize: [size, size],
+                                            iconAnchor: [size / 2, size / 2],
+                                        }));
+                                        step++;
+
+                                    }, delay);
+
+
+                                })
+                                .on('mouseout', () => {
+
+                                })
+                                .on('click', () => {
+
+                                })
+                                ;
+                            // console.debug(aaa)
+                        };
+                        initBar();
+                        addIcons();
+                        iconEvent();
+
+                    };
+                    // var timeRemain = () => {
+
+                    // };
+
+                    timeRemain();
+                    UIbar();
+                    // timeRemain();
 
                 };
                 init();
@@ -796,14 +885,14 @@ function locatingGame() {
 
                 };
                 timerAnime(increase);
+
+
             };
 
 
             //===when  map clicked 
             async function gameStart(gameMode, stationMarker = null) {
                 // console.debug(gameMode, stationMarker);
-
-
 
                 gameDisplay(true);
                 // const gameBox = gameInnerDiv.getBoundingClientRect();

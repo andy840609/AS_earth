@@ -14,8 +14,8 @@
         "reset": "重置",
         "resume": "繼續",
         "tutorial": "教學",
-        "aaa": "sss",
-        "aaa": "sss"
+        "playerStats": "人物狀態",
+        "velocityChart": "速度參數"
     },
     "Load": {
         "loading": "讀取中",

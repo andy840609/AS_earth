@@ -2747,7 +2747,6 @@ function requestRate() {
                         focusGroup
                             .on('mouseout', function (e) {
                                 let bar = e.target;
-
                                 tooltip.style("display", "none");
                                 leave(bar);
                             })

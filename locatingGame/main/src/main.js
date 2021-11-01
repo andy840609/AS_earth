@@ -184,16 +184,25 @@ function locatingGame() {
                 game.dataDir();
         };
         function gameGenerate() {
-            const gameOuterDiv = document.querySelector('#gameOuter');
-            // const gameInnerDiv = gameOuterDiv.querySelector('#gameMain');
+            const gameOuterDiv = chartContainerJQ.find('#gameOuter');
+            const gameUI = chartContainerJQ.find('#gameUI');
             const width = window.innerWidth, height = window.innerHeight;
 
             var mapObj;
             var geoJSON;//===location data
             var GameData = null;
             var gameDisplay = (display) => {
-                let value = display ? 'inline' : 'none';
-                gameOuterDiv.style.display = value;
+
+                if (display) {
+                    gameOuterDiv.show();
+
+                    //==遊戲開始UI關閉
+                    gameUI.find('.UIicon').toggleClass('clicked', false);
+                    gameUI.find('.UI').hide();
+
+                }
+                else
+                    gameOuterDiv.hide();
             };
 
             var testArr;//==get markerData for debug
@@ -444,14 +453,12 @@ function locatingGame() {
                 };
                 async function addUI() {
                     //===UIBar
-                    const gameUI = chartContainerJQ.find('#gameUI');
                     const UIbuttons = ['playerStats', 'velocityChart'];
 
                     //===UItooltip
                     const UItooltip = gameUI
                         .append(`<div class="UItooltip"><div class="tooltipText"></div></div>`)
                         .find('.UItooltip');
-
 
                     function updateTooltip(target) {
                         let bigMapDOMRect = document.querySelector('#bigMap').getBoundingClientRect();
@@ -485,12 +492,9 @@ function locatingGame() {
                                 left = targetDOMRect.left - bigMapDOMRect.left + 80;
 
                             UI.css({ top: top, left: left, });
-                        }
-                        else {
-                            UI.hide();
-                        }
 
-
+                        }
+                        else UI.hide();
 
                     };
 
@@ -527,10 +531,31 @@ function locatingGame() {
 
 
                             //===UI
-                            UIbuttons.forEach(btn =>
-                                gameUI
-                                    .append(`<div class="UI" id="${btn}UI">【【【</div>`)
-                                    .find('.UI'));
+                            UIbuttons.forEach(btn => {
+                                let UI = gameUI
+                                    .append(`<div class="UI" id="${btn}UI"></div>`)
+                                    .find(`#${btn}UI`);
+
+                                switch (btn) {
+                                    case 'playerStats':
+                                        UI
+                                            .width(height * 0.5)
+                                            .height(height * 0.5);
+
+                                        break;
+                                    case 'velocityChart':
+                                        UI
+                                            .width(height * 0.5)
+                                            .height(height * 0.5)
+                                            // .append(`<p></p>`)
+                                            .append(getVelocityChart());
+
+                                        break;
+
+                                };
+
+                            });
+
                         };
                         var iconEvent = () => {
                             const iconW2 = iconW * 1.5;
@@ -592,20 +617,20 @@ function locatingGame() {
                                     UItooltip.hide();
 
                                 })
-                                .on('click', (e) => {
-                                    let button = $(e.target);
+                                .on('click', function () {
+                                    let button = $(this);
                                     let ckick = button.hasClass('clicked');
                                     button.toggleClass('clicked', !ckick);
 
-                                    updateUI(e.target.parentNode, !ckick);
-
+                                    updateUI(this, !ckick);
                                 });
 
                         };
                         init();
                         addIcons();
                         iconEvent();
-
+                        //==test
+                        $(`#velocityChart`).trigger('click');
                     };
                     // var timeRemain = () => {
 
@@ -848,11 +873,8 @@ function locatingGame() {
 
             };
 
-
             initGameData();
             initStartScene();
-
-
 
         };
         //===init once
@@ -1058,9 +1080,9 @@ function locatingGame() {
     };
     //==取得速度參數svg
     function getVelocityChart() {
-        const width = 800;
-        const height = 300;
-        const margin = { top: 30, right: 30, bottom: 40, left: 30 };
+        const width = 600;
+        const height = 600;
+        const margin = { top: 80, right: 80, bottom: 80, left: 80 };
         const svg = d3.create("svg")
             .attr("viewBox", [0, 0, width, height]);
         const xAxis = svg.append("g").attr("class", "xAxis");
@@ -1071,23 +1093,96 @@ function locatingGame() {
         var x, y;
         var newDataObj;
 
-        function getNewData(trans = false) {
+        function getNewData() {
+            //==取得做過測站的
+            function distanceByLnglat(coordinate1, coordinate2) {
+                const Rad = (d) => d * Math.PI / 180.0;
+
+                let lng1 = coordinate1[1], lat1 = coordinate1[0],
+                    lng2 = coordinate2[1], lat2 = coordinate2[0];
+
+                var radLat1 = Rad(lat1);
+                var radLat2 = Rad(lat2);
+                var a = radLat1 - radLat2;
+                var b = Rad(lng1) - Rad(lng2);
+                var s = 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(a / 2), 2) + Math.cos(radLat1) * Math.cos(radLat2) * Math.pow(Math.sin(b / 2), 2)));
+                s = s * 6378137.0;// 取WGS84標準參考橢球中的地球長半徑(單位:m)
+                s = Math.round(s * 10000) / 10000;
+                // console.debug(s);
+                return s;
+            };
+
+            let a = distanceByLnglat(data[1].coordinate, data.epicenter.coordinate);
+
+
+            console.debug(a, b * 1000);
             return {};
         };
 
         function updateChart(trans = false) {
             function init() {
+                focusGroup.selectAll(".dots").each(function (d, i) {
+                    // console.debug(d);
+                    let dots = d3.select(this);
 
+                    //==原點log= [1,1] , linear= [0,0]
+                    let point = { x: x(time), y: y(fileSize) };
+                    dots
+                        .selectAll(".rateLine")
+                        .data([0])
+                        .join("line")
+                        .attr("class", "rateLine")
+                        .attr("stroke-width", 1)
+                        .attr("fill", 'none')
+                        .attr("stroke", 'grey')
+                        .attr("stroke-opacity", 1)
+                        .attr("x1", x(pathData[0].time))
+                        .attr("y1", y(pathData[0].fileSize))
+                        .attr("x2", x(pathData[0].time))
+                        .attr("y2", y(pathData[0].fileSize))
+                        .interrupt().transition().duration(trans ? transDuration : 0) //.interrupt()前次動畫
+                        .ease(d3.easeLinear)
+                        .delay(transDelay * i)
+                        .attr("x1", x(pathData[0].time))
+                        .attr("y1", y(pathData[0].fileSize))
+                        .attr("x2", x(pathData[1].time))
+                        .attr("y2", y(pathData[1].fileSize))
+                        .attr("display", displayPath);
+
+                    let dot = dots
+                        .selectAll(".point")
+                        .data([0])
+                        .join("circle")
+                        .attr("class", 'point')
+                        .attr("cx", point.x)
+                        .attr("cy", point.y)
+                        .attr("r", 3)
+                        .attr("stroke", 'black')
+                        .attr("stroke-width", 1)
+                        .attr("stroke-opacity", .5)
+                        .attr("fill", getColor(d.typeId))
+                        .attr("fill-opacity", dotOpacity);
+
+                    if (trans)
+                        dot
+                            .attr("fill-opacity", 0)
+                            .interrupt().transition().duration(trans ? transDuration : 0) //.interrupt()前次動畫
+                            .ease(d3.easeLinear)
+                            .delay(transDelay * i)
+                            .attr("fill-opacity", dotOpacity);
+                });
             };
             function render() {
 
+                let xAxisDomain = [0, 100];
+                let yAxisDomain = [0, 100];
 
-                let x = d3.scaleLinear()
+                x = d3.scaleLinear()
                     .domain(xAxisDomain)
                     .range([margin.right, width - margin.left]);
-                let y = d3.scaleLinear()
+                y = d3.scaleLinear()
                     .domain(yAxisDomain)
-                    .range([height, 0]);
+                    .range([height - margin.bottom, margin.top]);
 
                 var refreshText = () => {
                     xAxis
@@ -1105,22 +1200,92 @@ function locatingGame() {
 
                     var makeXAxis = g => g
                         .attr("transform", `translate(0,${height - margin.bottom})`)
-                        .call(g => d3.axisBottom(x).tickSizeOuter(0).ticks(width / 80));
+                        .call(d3.axisBottom(x).tickSizeOuter(0).ticks(width / 80));
 
                     var makeYAxis = g => g
                         .attr("transform", `translate(${margin.left},0)`)
-                        .call(g => d3.axisLeft(y).ticks(height / 30));
+                        .call(d3.axisLeft(y).ticks(height / 30));
 
 
                     xAxis.call(makeXAxis);
                     yAxis.call(makeYAxis);
                 };
                 var updateFocus = () => {
+                    const transDuration = 300;
+                    const transDelay = 5;
 
+                    var makeDots = focusGroup => focusGroup
+                        // .style("mix-blend-mode", "hard-light")
+                        .selectAll("g")
+                        .data(newDataArr)
+                        .join("g")
+                        .attr("id", (d, i) => 'group_' + i)
+                        .attr("class", "dots")
+                        .call(() =>
+                            focusGroup.selectAll(".dots").each(function (d, i) {
+                                // console.debug(d);
+                                let dots = d3.select(this);
+
+                                //==原點log= [1,1] , linear= [0,0]
+                                // let pathData = [{ time: xAxisOption.logScale, fileSize: yAxisOption.logScale }, { time: time, fileSize: fileSize }];
+                                let point = { x: x(time), y: y(fileSize) };
+
+                                let rateLine = dots
+                                    .selectAll(".rateLine")
+                                    .data([0])
+                                    .join("line")
+                                    .attr("class", "rateLine")
+                                    .attr("stroke-width", 1)
+                                    .attr("fill", 'none')
+                                    .attr("stroke", 'grey')
+                                    .attr("stroke-opacity", 1)
+                                    .attr("x1", x(pathData[0].time))
+                                    .attr("y1", y(pathData[0].fileSize))
+                                    .attr("x2", x(pathData[0].time))
+                                    .attr("y2", y(pathData[0].fileSize))
+                                    .interrupt().transition().duration(trans ? transDuration : 0) //.interrupt()前次動畫
+                                    .ease(d3.easeLinear)
+                                    .delay(transDelay * i)
+                                    .attr("x1", x(pathData[0].time))
+                                    .attr("y1", y(pathData[0].fileSize))
+                                    .attr("x2", x(pathData[1].time))
+                                    .attr("y2", y(pathData[1].fileSize))
+                                    .attr("display", displayPath);
+
+
+                                let dot = dots
+                                    .selectAll(".point")
+                                    .data([0])
+                                    .join("circle")
+                                    .attr("class", 'point')
+                                    .attr("cx", point.x)
+                                    .attr("cy", point.y)
+                                    .attr("r", 3)
+                                    .attr("stroke", 'black')
+                                    .attr("stroke-width", 1)
+                                    .attr("stroke-opacity", .5)
+                                    .attr("fill", getColor(d.typeId))
+                                    .attr("fill-opacity", dotOpacity);
+
+                                if (trans)
+                                    dot
+                                        .attr("fill-opacity", 0)
+                                        .interrupt().transition().duration(trans ? transDuration : 0) //.interrupt()前次動畫
+                                        .ease(d3.easeLinear)
+                                        .delay(transDelay * i)
+                                        .attr("fill-opacity", dotOpacity);
+
+
+
+
+                            })
+                        );
+
+                    focusGroup.call(makeDots);
                 };
 
                 updateAxis();
-                updateFocus();
+                // updateFocus();
             };
 
             if (!newDataObj) {
@@ -1136,7 +1301,6 @@ function locatingGame() {
 
         return svg.node();
     };
-
 
     return game;
 };

@@ -125,7 +125,6 @@ svg {
 #gameUI {
     position: absolute;
     top: 10px;
-    /* left: 0; */
     z-index: 1000;
 }
 
@@ -141,8 +140,6 @@ svg {
     position: relative;
     top: 10px;
     left: 30px;
-    /* width: 70px; */
-    /* height: 500px; */
     border-radius: 50px;
     border: 2px solid #7B7B7B;
     background: rgba(224, 224, 224, 0.5);
@@ -162,7 +159,7 @@ svg {
     opacity: .9;
     display: none;
     pointer-events: none;
-    background-image: url(../data/assets/ui/tooltipIMG.jpg);
+    background-image: url(../data/assets/ui/mapTooltipBG.jpg);
     background-size: 150%;
 }
 
@@ -175,8 +172,13 @@ svg {
 #gameUI .UI {
     position: absolute;
     z-index: 800;
-    background: rgba(255, 255, 255, 0.9);
     display: none;
-    /* width: 500px;
-    height: 300px; */
+    background: rgba(255, 255, 255, 0.8);
+    border-style: double;
+    border-width: 10px;
+    border-radius: 5px;
+    padding: 10px 10px;
+    /* border-radius: 10px;
+    background-image: url(../data/assets/ui/mapUIBG.jpg);
+    background-size: 100%; */
 }

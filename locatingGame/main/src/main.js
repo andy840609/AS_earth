@@ -493,6 +493,9 @@ function locatingGame() {
 
                             UI.css({ top: top, left: left, });
 
+                            //==速度參數圖表更新
+                            if (id == 'velocityChart')
+                                d3.select(`#velocityChartUI>svg`).dispatch('updateEvt');
                         }
                         else UI.hide();
 
@@ -846,8 +849,9 @@ function locatingGame() {
 
                         //===update circle
                         if (stationInfo.clear) {
-                            let orbStats = stationInfo.orbStats;
-                            let timeGap = Math.abs(orbStats[0].time - orbStats[1].time);
+
+                            let timeGap = Math.abs(stationInfo.orbStats.reduce((acc, cur) => acc.time - cur.time))
+
                             //距離=時間*速度(目前先用7.5),km換算成m;
                             let radius = timeGap * 7.5 * 1000;
 
@@ -1080,109 +1084,100 @@ function locatingGame() {
     };
     //==取得速度參數svg
     function getVelocityChart() {
-        const width = 600;
-        const height = 600;
+        const width = 560;
+        const height = width;
         const margin = { top: 80, right: 80, bottom: 80, left: 80 };
         const svg = d3.create("svg")
             .attr("viewBox", [0, 0, width, height]);
+        const fixedGroup = svg.append("g").attr('class', 'fixed');
+        const focusGroup = svg.append("g").attr('class', 'focus');
         const xAxis = svg.append("g").attr("class", "xAxis");
         const yAxis = svg.append("g").attr("class", "yAxis");
-        const focusGroup = svg.append("g").attr('class', 'focus');
+
 
 
         var x, y;
         var newDataObj;
+        const slopeRange = [5, 10];//==速度參數最大小範圍(km/s)
+        var distanceByLnglat = (coordinate1, coordinate2) => {
+            const Rad = (d) => d * Math.PI / 180.0;
 
-        function getNewData() {
-            //==取得做過測站的
-            function distanceByLnglat(coordinate1, coordinate2) {
-                const Rad = (d) => d * Math.PI / 180.0;
+            let lng1 = coordinate1[1], lat1 = coordinate1[0],
+                lng2 = coordinate2[1], lat2 = coordinate2[0];
 
-                let lng1 = coordinate1[1], lat1 = coordinate1[0],
-                    lng2 = coordinate2[1], lat2 = coordinate2[0];
+            var radLat1 = Rad(lat1);
+            var radLat2 = Rad(lat2);
+            var a = radLat1 - radLat2;
+            var b = Rad(lng1) - Rad(lng2);
+            var s = 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(a / 2), 2) + Math.cos(radLat1) * Math.cos(radLat2) * Math.pow(Math.sin(b / 2), 2)));
+            s = s * 6378137.0;// 取WGS84標準參考橢球中的地球長半徑(單位:m)
+            s = Math.round(s * 10000) / 10000;
+            // console.debug(s);
+            return s / 1000;//==km
+        };
+        var getPoint = (slope, customR = null) => {
+            //==圓公式 : (x-h)^2+(y-k)^2=r^2 (圓心=(h,k))
+            //==斜率 : m=deltaY/deltaX
+            //==得 x=(r^2/(m^2+1))^(1/2)+h
 
-                var radLat1 = Rad(lat1);
-                var radLat2 = Rad(lat2);
-                var a = radLat1 - radLat2;
-                var b = Rad(lng1) - Rad(lng2);
-                var s = 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(a / 2), 2) + Math.cos(radLat1) * Math.cos(radLat2) * Math.pow(Math.sin(b / 2), 2)));
-                s = s * 6378137.0;// 取WGS84標準參考橢球中的地球長半徑(單位:m)
-                s = Math.round(s * 10000) / 10000;
-                // console.debug(s);
-                return s;
-            };
+            //==圓心x,y
+            const h = x.range()[0];
+            const k = y.range()[0];
+            //==圓半徑
+            const r = customR ? customR : x.range().reduce((pre, cur) => cur - pre);
+            //==斜率(原本slope單位是km/s,換算成無單位(px/px))
+            let m = (y(x.domain()[1] * slope) - y.range()[0]) / r;
+            // console.debug(m);
+            let pointX = Math.pow((Math.pow(r, 2) / (Math.pow(m, 2) + 1)), 0.5) + h;
+            let pointY = m * (pointX - h) + k;
 
-            let a = distanceByLnglat(data[1].coordinate, data.epicenter.coordinate);
+            // console.debug(x.invert(pointX), y.invert(pointY));
+            // console.debug(y.invert(pointY) / x.invert(pointX));//==驗算回slope斜率
 
-
-            console.debug(a, b * 1000);
-            return {};
+            return { x: pointX, y: pointY };
         };
 
-        function updateChart(trans = false) {
+
+        const epicenterCoord = data.epicenter.coordinate;
+        const yDomainMax = d3.max(data.map(d => distanceByLnglat(d.coordinate, epicenterCoord)));
+
+        function getNewData() {
+
+            //==取得做過測站的
+            let clearStationData = data.filter(d => d.stationStats.clear).map(d =>
+                new Object({
+                    station: d.station,
+                    dist: distanceByLnglat(d.coordinate, epicenterCoord),
+                    // timeGap: Math.abs(d.stationStats.orbStats.reduce((acc, cur) => acc.time - cur.time)),
+                    timeGap: 10,
+                }));
+            // distanceByLnglat(data[1].coordinate, data.epicenter.coordinate);
+            console.debug(clearStationData);
+            return clearStationData;
+        };
+
+        function updateChart(trans = true) {
+
             function init() {
-                focusGroup.selectAll(".dots").each(function (d, i) {
-                    // console.debug(d);
-                    let dots = d3.select(this);
-
-                    //==原點log= [1,1] , linear= [0,0]
-                    let point = { x: x(time), y: y(fileSize) };
-                    dots
-                        .selectAll(".rateLine")
-                        .data([0])
-                        .join("line")
-                        .attr("class", "rateLine")
-                        .attr("stroke-width", 1)
-                        .attr("fill", 'none')
-                        .attr("stroke", 'grey')
-                        .attr("stroke-opacity", 1)
-                        .attr("x1", x(pathData[0].time))
-                        .attr("y1", y(pathData[0].fileSize))
-                        .attr("x2", x(pathData[0].time))
-                        .attr("y2", y(pathData[0].fileSize))
-                        .interrupt().transition().duration(trans ? transDuration : 0) //.interrupt()前次動畫
-                        .ease(d3.easeLinear)
-                        .delay(transDelay * i)
-                        .attr("x1", x(pathData[0].time))
-                        .attr("y1", y(pathData[0].fileSize))
-                        .attr("x2", x(pathData[1].time))
-                        .attr("y2", y(pathData[1].fileSize))
-                        .attr("display", displayPath);
-
-                    let dot = dots
-                        .selectAll(".point")
-                        .data([0])
-                        .join("circle")
-                        .attr("class", 'point')
-                        .attr("cx", point.x)
-                        .attr("cy", point.y)
-                        .attr("r", 3)
-                        .attr("stroke", 'black')
-                        .attr("stroke-width", 1)
-                        .attr("stroke-opacity", .5)
-                        .attr("fill", getColor(d.typeId))
-                        .attr("fill-opacity", dotOpacity);
-
-                    if (trans)
-                        dot
-                            .attr("fill-opacity", 0)
-                            .interrupt().transition().duration(trans ? transDuration : 0) //.interrupt()前次動畫
-                            .ease(d3.easeLinear)
-                            .delay(transDelay * i)
-                            .attr("fill-opacity", dotOpacity);
-                });
+                //===test
+                data.forEach(d => d.stationStats.clear = true);
             };
             function render() {
 
-                let xAxisDomain = [0, 100];
-                let yAxisDomain = [0, 100];
+                const strokeWidth = 5;
+
+                let xAxisDomain = [0, d3.max(newDataObj.map(d => d.timeGap))];
+                let yAxisDomain = [0, yDomainMax];
+
+                // console.debug(xAxisDomain, yAxisDomain);
 
                 x = d3.scaleLinear()
                     .domain(xAxisDomain)
-                    .range([margin.right, width - margin.left]);
+                    .range([margin.left, width - margin.right]);
                 y = d3.scaleLinear()
                     .domain(yAxisDomain)
-                    .range([height - margin.bottom, margin.top]);
+                    .range([height - margin.bottom, margin.top])
+                    .nice();
 
                 var refreshText = () => {
                     xAxis
@@ -1200,92 +1195,181 @@ function locatingGame() {
 
                     var makeXAxis = g => g
                         .attr("transform", `translate(0,${height - margin.bottom})`)
-                        .call(d3.axisBottom(x).tickSizeOuter(0).ticks(width / 80));
+                        .call(d3.axisBottom(x).tickSizeOuter(0).ticks(width / 80))
+                        .call(g => g.select('.domain').attr('stroke-width', strokeWidth));
 
                     var makeYAxis = g => g
                         .attr("transform", `translate(${margin.left},0)`)
-                        .call(d3.axisLeft(y).ticks(height / 30));
-
+                        .call(d3.axisLeft(y).ticks(height / 30))
+                        .call(g => g.select('.domain').attr('stroke-width', strokeWidth));
 
                     xAxis.call(makeXAxis);
                     yAxis.call(makeYAxis);
                 };
                 var updateFocus = () => {
-                    const transDuration = 300;
-                    const transDelay = 5;
+                    const transDuration = 500;
+                    const transDelay = 90;
 
                     var makeDots = focusGroup => focusGroup
                         // .style("mix-blend-mode", "hard-light")
                         .selectAll("g")
-                        .data(newDataArr)
+                        .data(newDataObj)
                         .join("g")
-                        .attr("id", (d, i) => 'group_' + i)
                         .attr("class", "dots")
                         .call(() =>
                             focusGroup.selectAll(".dots").each(function (d, i) {
                                 // console.debug(d);
                                 let dots = d3.select(this);
 
-                                //==原點log= [1,1] , linear= [0,0]
-                                // let pathData = [{ time: xAxisOption.logScale, fileSize: yAxisOption.logScale }, { time: time, fileSize: fileSize }];
-                                let point = { x: x(time), y: y(fileSize) };
-
-                                let rateLine = dots
-                                    .selectAll(".rateLine")
-                                    .data([0])
-                                    .join("line")
-                                    .attr("class", "rateLine")
-                                    .attr("stroke-width", 1)
-                                    .attr("fill", 'none')
-                                    .attr("stroke", 'grey')
-                                    .attr("stroke-opacity", 1)
-                                    .attr("x1", x(pathData[0].time))
-                                    .attr("y1", y(pathData[0].fileSize))
-                                    .attr("x2", x(pathData[0].time))
-                                    .attr("y2", y(pathData[0].fileSize))
-                                    .interrupt().transition().duration(trans ? transDuration : 0) //.interrupt()前次動畫
-                                    .ease(d3.easeLinear)
-                                    .delay(transDelay * i)
-                                    .attr("x1", x(pathData[0].time))
-                                    .attr("y1", y(pathData[0].fileSize))
-                                    .attr("x2", x(pathData[1].time))
-                                    .attr("y2", y(pathData[1].fileSize))
-                                    .attr("display", displayPath);
-
-
                                 let dot = dots
                                     .selectAll(".point")
                                     .data([0])
                                     .join("circle")
                                     .attr("class", 'point')
-                                    .attr("cx", point.x)
-                                    .attr("cy", point.y)
-                                    .attr("r", 3)
+                                    .attr("cx", x(d.timeGap))
+                                    .attr("cy", y(d.dist))
+                                    .attr("r", 6)
                                     .attr("stroke", 'black')
                                     .attr("stroke-width", 1)
                                     .attr("stroke-opacity", .5)
-                                    .attr("fill", getColor(d.typeId))
-                                    .attr("fill-opacity", dotOpacity);
+                                    .attr("fill", "red")
+                                    .attr("fill-opacity", 1);
 
                                 if (trans)
                                     dot
-                                        .attr("fill-opacity", 0)
+                                        .attr("opacity", 0)
                                         .interrupt().transition().duration(trans ? transDuration : 0) //.interrupt()前次動畫
                                         .ease(d3.easeLinear)
                                         .delay(transDelay * i)
-                                        .attr("fill-opacity", dotOpacity);
-
-
-
+                                        .attr("opacity", 1);
 
                             })
                         );
-
                     focusGroup.call(makeDots);
                 };
+                var updateFixedGroup = () => {
 
+                    var getArcD = (r, start, end) => d3.arc()
+                        .innerRadius(r)
+                        .outerRadius(r)
+                        .startAngle(start)
+                        .endAngle(end)();
+
+                    const rangePoint = slopeRange.map(s => getPoint(s));
+                    const r = x.range().reduce((p, c) => c - p);
+
+                    // console.debug(rangePoint);
+
+                    //作出弧線和夾角區域
+                    var makeArcArea = fixedGroup => fixedGroup
+                        .selectAll(".arcArea")
+                        .data([0])
+                        .join("g")
+                        .attr("class", "arcArea")
+                        .attr("transform", `translate(${x.range()[0]},${y.range()[0]})`)
+                        .call(g => {
+
+                            //==d3.arc()的弧度從y軸順時針算,js Math則從x軸順時針
+                            let start = Math.PI / 2 + Math.asin((rangePoint[0].y - y.range()[0]) / r);
+                            let end = Math.PI / 2 + Math.asin((rangePoint[1].y - y.range()[0]) / r);
+                            let arc = getArcD(r, start, end);
+                            arc = arc.substring(0, arc.lastIndexOf('A'));
+                            // console.debug(start, end);//Math.PI/2
+
+                            g.selectAll(".area")
+                                .data([0])
+                                .join("path")
+                                .attr("class", "area")
+                                .attr("fill", 'blue')
+                                .attr("stroke", 'blue')
+                                .attr("fill-opacity", .8)
+                                .attr("d", `${arc} L0 0`);
+
+                            g.selectAll(".arc")
+                                .data([0])
+                                .join("path")
+                                .attr("class", "arc")
+                                .attr("fill", 'none')
+                                .attr("stroke", 'orange')
+                                .attr("stroke-width", strokeWidth)
+                                .attr("stroke-opacity", .8)
+                                .attr("d", getArcD(r, 0, Math.PI / 2));
+
+                        });
+
+                    //作出斜率最大最小範圍的線
+                    var makeSlash = fixedGroup => fixedGroup
+                        .selectAll(".slash")
+                        .data([0])
+                        .join("g")
+                        .attr("class", "slash")
+                        .call(g => {
+                            g
+                                .selectAll(".rateLine")
+                                .data(rangePoint)
+                                .join("line")
+                                .attr("class", "rateLine")
+                                .attr("stroke-width", strokeWidth * 0.7)
+                                .attr("fill", 'none')
+                                .attr("stroke", 'green')
+                                .attr("stroke-opacity", 1)
+                                .attr("x1", point => point.x)
+                                .attr("y1", point => point.y)
+                                .attr("x2", x(0))
+                                .attr("y2", y(0));
+
+                        });
+
+                    //作出使用者操作的把手
+                    var makeHandle = fixedGroup => fixedGroup
+                        .selectAll(".handle")
+                        .data([0])
+                        .join("g")
+                        .attr("class", "handle")
+                        .call(g => {
+
+                            let point = getPoint(7.6, r * 1.1);
+
+                            g
+                                .selectAll(".rateLine")
+                                .data([0])
+                                .join("line")
+                                .attr("class", "rateLine")
+                                .attr("stroke-width", strokeWidth)
+                                .attr("fill", 'none')
+                                .attr("stroke", '#FF60AF')
+                                .attr("stroke-opacity", 1)
+                                .attr("x1", point.x)
+                                .attr("y1", point.y)
+                                .attr("x2", x(0))
+                                .attr("y2", y(0));
+
+                            g
+                                .selectAll(".point")
+                                .data([0])
+                                .join("circle")
+                                .attr("class", 'point')
+                                .attr("cx", point.x)
+                                .attr("cy", point.y)
+                                .attr("r", strokeWidth + 1)
+                                .attr("stroke", 'grey')
+                                .attr("stroke-width", 3)
+                                .attr("stroke-opacity", 1)
+                                .attr("fill", '#FF60AF')
+                                .attr("fill-opacity", .6);
+
+
+                        });
+
+
+                    fixedGroup
+                        .call(makeArcArea)
+                        .call(makeSlash)
+                        .call(makeHandle);
+                };
+                updateFixedGroup();
                 updateAxis();
-                // updateFocus();
+                updateFocus();
             };
 
             if (!newDataObj) {
@@ -1296,7 +1380,47 @@ function locatingGame() {
         };
         updateChart();
 
-        function events(svg) { };
+        function events(svg) {
+            //==使用者按下UI紐觸發更新圖表
+            var updateCustomEvent = () => {
+                svg.on('updateEvt', function (d, i) {
+                    // var evt = d3.event;
+                    newDataObj = getNewData();
+                    updateChart();
+                });
+            };
+            var handleDrag = () => {
+                let dragBehavior = d3.drag()
+                    .on('start', function (e) {
+                        // console.log('drag start');
+
+                    })
+                    .on('drag end', function (e) {
+                        console.log('drag');
+                        // console.debug(e.x, e.y);
+                        let slope = y.invert(e.y) / x.invert(e.x);
+
+
+                        if (slope < slopeRange[0])
+                            slope = slopeRange[0];
+                        else if (slope > slopeRange[1])
+                            slope = slopeRange[1];
+
+                        console.debug(slope);
+
+                        // d3.select(this).attr("transform", `translate(${translateX}, ${translateY})`);
+                    });
+
+                fixedGroup.select('.handle')
+                    .attr("cursor", 'grab')
+                    // .call(g => g.raise())//把選中元素拉到最上層(比zoom的選取框優先)
+                    .call(g => g.call(dragBehavior));
+
+            };
+
+            updateCustomEvent();
+            handleDrag();
+        };
         svg.call(events);
 
         return svg.node();

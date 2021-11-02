@@ -389,7 +389,6 @@ function pieChart() {
 
 
                 };
-
                 function appendPie(dataGroup) {
                     const margin = 50;
                     const diff = (Math.min(width, height) / 2 - margin * dataKey.length) / (dataKey.length + 1);
@@ -896,7 +895,7 @@ function pieChart() {
                             });
 
                     }
-                }
+                };
 
                 if (!(focusGroup.selectAll('*').nodes().length >= 1))
                     init();

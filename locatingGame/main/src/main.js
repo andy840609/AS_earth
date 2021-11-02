@@ -1,7 +1,7 @@
 function locatingGame() {
     var selector = 'body';
     var data;
-    // var stringObj;
+    var GameData = null;
 
     //Append to the object constructor function so you can only make static calls
     // Object.merge2 = function (obj1, obj2) {
@@ -190,7 +190,7 @@ function locatingGame() {
 
             var mapObj;
             var geoJSON;//===location data
-            var GameData = null;
+
             var gameDisplay = (display) => {
 
                 if (display) {
@@ -210,6 +210,7 @@ function locatingGame() {
             function initGameData() {
                 GameData = {
                     timeRemain: 500000,
+                    velocity: 7.5,//==速度參數預設7.5
                     controllCursor: {
                         up: 'w',
                         down: 's',
@@ -365,8 +366,8 @@ function locatingGame() {
 
                     data.forEach((d, i) => {
                         // console.debug(d);
-                        let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
-                        // let enemy = [];//==之後隨機抽敵人組
+                        // let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
+                        let enemy = [];//==之後隨機抽敵人組
                         let enemyStats = {};
 
 
@@ -633,7 +634,7 @@ function locatingGame() {
                         addIcons();
                         iconEvent();
                         //==test
-                        $(`#velocityChart`).trigger('click');
+                        // $(`#velocityChart`).trigger('click');
                     };
                     // var timeRemain = () => {
 
@@ -852,8 +853,8 @@ function locatingGame() {
 
                             let timeGap = Math.abs(stationInfo.orbStats.reduce((acc, cur) => acc.time - cur.time))
 
-                            //距離=時間*速度(目前先用7.5),km換算成m;
-                            let radius = timeGap * 7.5 * 1000;
+                            //距離=時間*速度,km換算成m;
+                            let radius = timeGap * GameData.velocity * 1000;
 
                             //==半徑跟之前相差大於1不作動畫
                             let pre_radius = stationMarker.options.data.circleObj.getRadius();
@@ -1099,6 +1100,8 @@ function locatingGame() {
         var x, y;
         var newDataObj;
         const slopeRange = [5, 10];//==速度參數最大小範圍(km/s)
+        var handleSlope = GameData.velocity;
+
         var distanceByLnglat = (coordinate1, coordinate2) => {
             const Rad = (d) => d * Math.PI / 180.0;
 
@@ -1115,7 +1118,7 @@ function locatingGame() {
             // console.debug(s);
             return s / 1000;//==km
         };
-        var getPoint = (slope, customR = null) => {
+        var getPoint = (slope, rScale = 1) => {
             //==圓公式 : (x-h)^2+(y-k)^2=r^2 (圓心=(h,k))
             //==斜率 : m=deltaY/deltaX
             //==得 x=(r^2/(m^2+1))^(1/2)+h
@@ -1124,9 +1127,9 @@ function locatingGame() {
             const h = x.range()[0];
             const k = y.range()[0];
             //==圓半徑
-            const r = customR ? customR : x.range().reduce((pre, cur) => cur - pre);
+            const r = x.range().reduce((pre, cur) => cur - pre) * rScale;
             //==斜率(原本slope單位是km/s,換算成無單位(px/px))
-            let m = (y(x.domain()[1] * slope) - y.range()[0]) / r;
+            let m = (y(x.invert(r + x.range()[0]) * slope) - y.range()[0]) / r;
             // console.debug(m);
             let pointX = Math.pow((Math.pow(r, 2) / (Math.pow(m, 2) + 1)), 0.5) + h;
             let pointY = m * (pointX - h) + k;
@@ -1148,36 +1151,46 @@ function locatingGame() {
                 new Object({
                     station: d.station,
                     dist: distanceByLnglat(d.coordinate, epicenterCoord),
-                    // timeGap: Math.abs(d.stationStats.orbStats.reduce((acc, cur) => acc.time - cur.time)),
-                    timeGap: 10,
+                    timeGap: Math.abs(d.stationStats.orbStats.reduce((acc, cur) => acc.time - cur.time)),
+                    // timeGap: 10,
+                    data: d,
                 }));
             // distanceByLnglat(data[1].coordinate, data.epicenter.coordinate);
             console.debug(clearStationData);
             return clearStationData;
         };
 
-        function updateChart(trans = true) {
+        function updateChart(handleUpdate = false, trans = true) {
 
             function init() {
                 //===test
-                data.forEach(d => d.stationStats.clear = true);
+                // data.forEach(d => d.stationStats.clear = true);
+                //===test
+
             };
             function render() {
 
                 const strokeWidth = 5;
 
-                let xAxisDomain = [0, d3.max(newDataObj.map(d => d.timeGap))];
-                let yAxisDomain = [0, yDomainMax];
+                //==讓點能落在扇形區
+                let domainScale = 1.5;
+                //==沒完成任何站就給最大時間10才不出bug
+                let xAxisDomain = [0, newDataObj.length == 0 ? 10 : d3.max(newDataObj.map(d => d.timeGap)) * domainScale];
+                let yAxisDomain = [0, yDomainMax * domainScale];
 
                 // console.debug(xAxisDomain, yAxisDomain);
 
                 x = d3.scaleLinear()
                     .domain(xAxisDomain)
-                    .range([margin.left, width - margin.right]);
+                    .range([margin.left, width - margin.right])
+                    .nice();
+
                 y = d3.scaleLinear()
                     .domain(yAxisDomain)
                     .range([height - margin.bottom, margin.top])
                     .nice();
+
+                const r = x.range().reduce((p, c) => c - p);
 
                 var refreshText = () => {
                     xAxis
@@ -1247,7 +1260,7 @@ function locatingGame() {
                         );
                     focusGroup.call(makeDots);
                 };
-                var updateFixedGroup = () => {
+                var updateFixed = () => {
 
                     var getArcD = (r, start, end) => d3.arc()
                         .innerRadius(r)
@@ -1256,7 +1269,7 @@ function locatingGame() {
                         .endAngle(end)();
 
                     const rangePoint = slopeRange.map(s => getPoint(s));
-                    const r = x.range().reduce((p, c) => c - p);
+
 
                     // console.debug(rangePoint);
 
@@ -1320,6 +1333,15 @@ function locatingGame() {
 
                         });
 
+
+
+
+                    fixedGroup
+                        .call(makeArcArea)
+                        .call(makeSlash);
+
+                };
+                var updateHandle = () => {
                     //作出使用者操作的把手
                     var makeHandle = fixedGroup => fixedGroup
                         .selectAll(".handle")
@@ -1328,7 +1350,7 @@ function locatingGame() {
                         .attr("class", "handle")
                         .call(g => {
 
-                            let point = getPoint(7.6, r * 1.1);
+                            let point = getPoint(handleSlope, 1.1);
 
                             g
                                 .selectAll(".rateLine")
@@ -1360,16 +1382,16 @@ function locatingGame() {
 
 
                         });
-
-
                     fixedGroup
-                        .call(makeArcArea)
-                        .call(makeSlash)
                         .call(makeHandle);
                 };
-                updateFixedGroup();
-                updateAxis();
-                updateFocus();
+
+                if (!handleUpdate) {
+                    updateAxis();
+                    updateFixed();
+                    updateFocus();
+                }
+                updateHandle();
             };
 
             if (!newDataObj) {
@@ -1391,24 +1413,28 @@ function locatingGame() {
             };
             var handleDrag = () => {
                 let dragBehavior = d3.drag()
-                    .on('start', function (e) {
-                        // console.log('drag start');
-
-                    })
                     .on('drag end', function (e) {
-                        console.log('drag');
+                        // console.log('drag');
                         // console.debug(e.x, e.y);
                         let slope = y.invert(e.y) / x.invert(e.x);
-
 
                         if (slope < slopeRange[0])
                             slope = slopeRange[0];
                         else if (slope > slopeRange[1])
                             slope = slopeRange[1];
 
-                        console.debug(slope);
+                        handleSlope = Math.round(slope * 100) / 100;
+                        updateChart(true);
 
-                        // d3.select(this).attr("transform", `translate(${translateX}, ${translateY})`);
+                        //==更新測站圓圈
+                        newDataObj.forEach(d => {
+                            let circleObj = d.data.circleObj;
+                            //距離=時間*速度,km換算成m;
+                            let radius = d.timeGap * handleSlope * 1000;
+                            circleObj.setRadius(radius);
+                        });
+                        GameData.velocity = handleSlope;
+                        // circleObj.setRadius(radius);
                     });
 
                 fixedGroup.select('.handle')

@@ -11,6 +11,22 @@ function locatingGame() {
     //     //Returning obj1 is optional and certainly up to your implementation
     //     return obj1;
     // };
+    var distanceByLnglat = (coordinate1, coordinate2) => {
+        const Rad = (d) => d * Math.PI / 180.0;
+
+        let lng1 = coordinate1[1], lat1 = coordinate1[0],
+            lng2 = coordinate2[1], lat2 = coordinate2[0];
+
+        var radLat1 = Rad(lat1);
+        var radLat2 = Rad(lat2);
+        var a = radLat1 - radLat2;
+        var b = Rad(lng1) - Rad(lng2);
+        var s = 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(a / 2), 2) + Math.cos(radLat1) * Math.cos(radLat2) * Math.pow(Math.sin(b / 2), 2)));
+        s = s * 6378137.0;// 取WGS84標準參考橢球中的地球長半徑(單位:m)
+        s = Math.round(s * 10000) / 10000;
+        // console.debug(s);
+        return s / 1000;//==km
+    };
 
     game.selector = (value) => {
         selector = value;
@@ -211,6 +227,7 @@ function locatingGame() {
                 GameData = {
                     timeRemain: 500000,
                     velocity: 7.5,//==速度參數預設7.5
+                    velocityChartUnlock: false,
                     controllCursor: {
                         up: 'w',
                         down: 's',
@@ -466,9 +483,13 @@ function locatingGame() {
                         let targetDOMRect = target.getBoundingClientRect();
                         let imgNode = target.children[0];
 
+                        let text = (!GameData.velocityChartUnlock && target.id == UIbuttons[1]) ?
+                            GameData.languageJSON.Tip['velocityChartLock'] :
+                            GameData.languageJSON.UI[target.id];
+
                         UItooltip.show()//==先show才能得到寬高
                             .children('.tooltipText')
-                            .text(GameData.languageJSON.UI[target.id]);
+                            .text(text);
 
                         // UItooltip
                         let top = targetDOMRect.top - bigMapDOMRect.top - imgNode.offsetHeight * 0.7,
@@ -495,8 +516,8 @@ function locatingGame() {
                             UI.css({ top: top, left: left, });
 
                             //==速度參數圖表更新
-                            if (id == 'velocityChart')
-                                d3.select(`#velocityChartUI>svg`).dispatch('updateEvt');
+                            if (id == UIbuttons[1])
+                                d3.select(`#${UIbuttons[1]}UI>svg`).dispatch('updateEvt');
                         }
                         else UI.hide();
 
@@ -522,6 +543,7 @@ function locatingGame() {
                                 .find('.UIbar')
                                 .width(UIbarW)
                                 .height(UIbarH);
+
                         };
                         var addIcons = () => {
                             const left = (UIbarW - iconW) * 0.5;
@@ -548,11 +570,23 @@ function locatingGame() {
 
                                         break;
                                     case 'velocityChart':
+                                        //==lock gif
+                                        gameUI.find('#velocityChart').append(`
+                                            <img id="velocityChartLock" src="../data/assets/ui/unlock.gif" width="${iconW}px" height="${iconW}px">
+                                        `);
+
                                         UI
+                                            .append(`
+                                            <div  style="white-space: nowrap;text-align:center;">
+                                                <h2>${GameData.languageJSON.UI['velocityStr']}：
+                                                    <b id="velocityStr" style="color:Tomato;font-size:60px;">${GameData.velocity.toFixed(2)}</b> km/s
+                                                </h2>
+                                            </div>
+                                            `)
+                                            .append(getVelocityChart())
+                                            .find('svg')
                                             .width(height * 0.5)
-                                            .height(height * 0.5)
-                                            // .append(`<p></p>`)
-                                            .append(getVelocityChart());
+                                            .height(height * 0.5);
 
                                         break;
 
@@ -621,7 +655,10 @@ function locatingGame() {
                                     UItooltip.hide();
 
                                 })
-                                .on('click', function () {
+                                .on('click', function (e) {
+                                    //==速度參數要完成兩站才能調整
+                                    if (this.id == UIbuttons[1] && !GameData.velocityChartUnlock) return;
+
                                     let button = $(this);
                                     let ckick = button.hasClass('clicked');
                                     button.toggleClass('clicked', !ckick);
@@ -652,7 +689,9 @@ function locatingGame() {
 
                 mapObj.on('click', function (e) {
                     // console.debug('BBB');
-                    // console.debug(this);
+
+                    let distToEpicenter = distanceByLnglat([e.latlng.lat, e.latlng.lng], data.epicenter.coordinate);
+                    console.debug(distToEpicenter);
                     // L.popup()
                     //     .setLatLng(e.latlng)
                     //     .setContent("<b><font size='3'>" + String(e.latlng) + "</b></font>")
@@ -770,6 +809,33 @@ function locatingGame() {
                 GameData.timeRemain = timeRemain;
                 GameData.playerStats = Object.assign(GameData.playerStats, playerStats);
                 if (controllCursor) GameData.controllCursor = controllCursor;
+
+                if (!GameData.velocityChartUnlock)
+                    if (data.filter(d => d.stationStats.clear).length >= 2) {
+                        GameData.velocityChartUnlock = true;
+
+                        //==延遲後移除lock.gif
+                        const lock = gameUI.find('#velocityChartLock');
+                        var lockAnime = () => {
+                            const delay = 10;
+                            const step = 1 / (duration * 1.5 / delay);//==opacity預設1
+
+                            var opacity = 1;
+                            let interval = setInterval(() => {
+                                if (opacity <= 0) {
+                                    opacity = 0;
+                                    clearInterval(interval);
+                                    lock.remove();
+                                }
+                                else {
+                                    lock.css('opacity', opacity);
+                                    opacity -= step;
+                                };
+                            }, delay);
+                        };
+                        lockAnime();
+                    };
+
 
                 const timer = document.querySelector('#gameUI .timer');
                 const start = parseInt(timer.innerHTML),
@@ -1096,28 +1162,11 @@ function locatingGame() {
         const yAxis = svg.append("g").attr("class", "yAxis");
 
 
-
         var x, y;
         var newDataObj;
         const slopeRange = [5, 10];//==速度參數最大小範圍(km/s)
         var handleSlope = GameData.velocity;
 
-        var distanceByLnglat = (coordinate1, coordinate2) => {
-            const Rad = (d) => d * Math.PI / 180.0;
-
-            let lng1 = coordinate1[1], lat1 = coordinate1[0],
-                lng2 = coordinate2[1], lat2 = coordinate2[0];
-
-            var radLat1 = Rad(lat1);
-            var radLat2 = Rad(lat2);
-            var a = radLat1 - radLat2;
-            var b = Rad(lng1) - Rad(lng2);
-            var s = 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(a / 2), 2) + Math.cos(radLat1) * Math.cos(radLat2) * Math.pow(Math.sin(b / 2), 2)));
-            s = s * 6378137.0;// 取WGS84標準參考橢球中的地球長半徑(單位:m)
-            s = Math.round(s * 10000) / 10000;
-            // console.debug(s);
-            return s / 1000;//==km
-        };
         var getPoint = (slope, rScale = 1) => {
             //==圓公式 : (x-h)^2+(y-k)^2=r^2 (圓心=(h,k))
             //==斜率 : m=deltaY/deltaX
@@ -1140,15 +1189,15 @@ function locatingGame() {
             return { x: pointX, y: pointY };
         };
 
-
         const epicenterCoord = data.epicenter.coordinate;
         const yDomainMax = d3.max(data.map(d => distanceByLnglat(d.coordinate, epicenterCoord)));
 
         function getNewData() {
 
             //==取得做過測站的
-            let clearStationData = data.filter(d => d.stationStats.clear).map(d =>
-                new Object({
+            let clearStationData = data
+                .filter(d => d.stationStats.clear)
+                .map(d => new Object({
                     station: d.station,
                     dist: distanceByLnglat(d.coordinate, epicenterCoord),
                     timeGap: Math.abs(d.stationStats.orbStats.reduce((acc, cur) => acc.time - cur.time)),
@@ -1156,17 +1205,35 @@ function locatingGame() {
                     data: d,
                 }));
             // distanceByLnglat(data[1].coordinate, data.epicenter.coordinate);
-            console.debug(clearStationData);
+            // console.debug(clearStationData);
             return clearStationData;
         };
 
         function updateChart(handleUpdate = false, trans = true) {
 
             function init() {
-                //===test
-                // data.forEach(d => d.stationStats.clear = true);
-                //===test
+                xAxis
+                    .append('text')
+                    .attr("class", "axis_name")
+                    .attr("fill", "black")
+                    .attr("font-weight", "bold")
+                    .attr("font-size", "30")
+                    .attr('x', width / 2)
+                    .attr("y", margin.bottom * 0.7)
+                    .text('Time (s)');
 
+                yAxis
+                    .append('text')
+                    .attr("class", "axis_name")
+                    .attr("fill", "black")
+                    .attr("font-weight", "bold")
+                    .attr("font-size", "30")
+                    .style("text-anchor", "middle")
+                    .attr("alignment-baseline", "text-before-edge")
+                    .attr("transform", "rotate(-90)")
+                    .attr('x', -(height - margin.top - margin.bottom) / 2 - margin.top)
+                    .attr("y", -margin.left * 1.05)
+                    .text('Distance (km)');
             };
             function render() {
 
@@ -1192,28 +1259,18 @@ function locatingGame() {
 
                 const r = x.range().reduce((p, c) => c - p);
 
-                var refreshText = () => {
-                    xAxis
-                        .select('.axis_name')
-                        .text();
-
-
-                    yAxis
-                        .select('.axis_name')
-                        .text();
-
-
-                };
                 var updateAxis = () => {
 
                     var makeXAxis = g => g
                         .attr("transform", `translate(0,${height - margin.bottom})`)
+                        .style('font', 'small-caps bold 20px/1 sans-serif')
                         .call(d3.axisBottom(x).tickSizeOuter(0).ticks(width / 80))
                         .call(g => g.select('.domain').attr('stroke-width', strokeWidth));
 
                     var makeYAxis = g => g
                         .attr("transform", `translate(${margin.left},0)`)
-                        .call(d3.axisLeft(y).ticks(height / 30))
+                        .style('font', 'small-caps bold 20px/1 sans-serif')
+                        .call(d3.axisLeft(y).ticks(height / 80))
                         .call(g => g.select('.domain').attr('stroke-width', strokeWidth));
 
                     xAxis.call(makeXAxis);
@@ -1252,7 +1309,7 @@ function locatingGame() {
                                     dot
                                         .attr("opacity", 0)
                                         .interrupt().transition().duration(trans ? transDuration : 0) //.interrupt()前次動畫
-                                        .ease(d3.easeLinear)
+                                        .ease(d3.easeCircleIn)
                                         .delay(transDelay * i)
                                         .attr("opacity", 1);
 
@@ -1412,6 +1469,9 @@ function locatingGame() {
                 });
             };
             var handleDrag = () => {
+
+                let velocityStr = d3.select('#velocityStr');
+                // console.debug(velocityStr);
                 let dragBehavior = d3.drag()
                     .on('drag end', function (e) {
                         // console.log('drag');
@@ -1433,8 +1493,16 @@ function locatingGame() {
                             let radius = d.timeGap * handleSlope * 1000;
                             circleObj.setRadius(radius);
                         });
+
+
+                        //==更新顯示數字
+                        velocityStr.text(handleSlope.toFixed(2));
+
+
                         GameData.velocity = handleSlope;
                         // circleObj.setRadius(radius);
+
+
                     });
 
                 fixedGroup.select('.handle')
@@ -1443,9 +1511,62 @@ function locatingGame() {
                     .call(g => g.call(dragBehavior));
 
             };
+            var focusHover = () => {
+
+                const UI = d3.select('#velocityChartUI');
+                const tooltip = UI
+                    .append("div")
+                    .attr("id", "tooltip");
+
+
+                const tooltipMouseGap = 50;//tooltip與滑鼠距離
+
+                focusGroup
+                    .on('mouseout', function (e) {
+                        tooltip.style("display", "none");
+                        console.debug()
+                    })
+                    .on('mouseover', function (e) {
+                        let targetDOMRect = UI.node().getBoundingClientRect();
+
+                        var makeTooltip = () => {
+                            //==show tooltip and set position
+                            tooltip.style("display", "inline")
+                                //==到滑鼠位置
+                                .call(tooltip => {
+                                    // let mouseX = e.offsetX, mouseY = e.offsetY;
+                                    // console.debug(e)
+                                    tooltip
+                                        .style("top", `${e.clientY - targetDOMRect.top}px`)
+                                        .style("left", `${e.clientX - targetDOMRect.left}px`)
+                                    // .style("right", right);
+                                })
+                                //==tooltip內容更新
+                                .call(tooltip => {
+
+                                    let data = e.target.parentNode.__data__;
+                                    let station = data.station;
+                                    let dist = parseInt(data.dist);
+                                    let timeGap = parseFloat(data.timeGap.toFixed(2));
+
+                                    tooltip.html(`
+                                    <h5>${station}</h5>
+                                    <h5>${GameData.languageJSON.UI['distance']} : ${dist} km</h5>
+                                    <h5>${GameData.languageJSON.UI['estimatedTime']} : ${timeGap} s</h5>
+                                    `);
+
+                                    console.debug();
+                                })
+
+                        };
+                        makeTooltip();
+                    });
+
+            };
 
             updateCustomEvent();
             handleDrag();
+            focusHover();
         };
         svg.call(events);
 

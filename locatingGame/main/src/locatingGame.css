@@ -1,5 +1,10 @@
 text,
-label {
+label,
+font,
+h1,
+h2,
+h3,
+.UIicon {
     user-select: none;
 }
 
@@ -126,6 +131,7 @@ svg {
     position: absolute;
     top: 10px;
     z-index: 1000;
+    pointer-events: none;
 }
 
 #gameUI .timeRemain {
@@ -143,7 +149,7 @@ svg {
     border-radius: 50px;
     border: 2px solid #7B7B7B;
     background: rgba(224, 224, 224, 0.5);
-
+    pointer-events: auto;
 }
 
 #gameUI .UIicon,
@@ -157,10 +163,10 @@ svg {
     z-index: 999;
     border-radius: 5px;
     opacity: .9;
-    display: none;
-    pointer-events: none;
     background-image: url(../data/assets/ui/mapTooltipBG.jpg);
     background-size: 150%;
+    display: none;
+    pointer-events: none;
 }
 
 #gameUI .UItooltip .tooltipText {
@@ -172,13 +178,31 @@ svg {
 #gameUI .UI {
     position: absolute;
     z-index: 800;
-    display: none;
     background: rgba(255, 255, 255, 0.8);
     border-style: double;
     border-width: 10px;
     border-radius: 5px;
     padding: 10px 10px;
+    display: none;
+    pointer-events: auto;
     /* border-radius: 10px;
     background-image: url(../data/assets/ui/mapUIBG.jpg);
     background-size: 100%; */
+}
+
+#gameUI .UI #tooltip {
+    position: absolute;
+    padding: 6px;
+    background-color: rgb(0, 0, 0);
+    border: 5px solid rgb(255, 255, 255);
+    border-radius: 10px;
+    color: rgb(255, 255, 255);
+    white-space: nowrap;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    display: none;
+    pointer-events: none;
 }

@@ -15,11 +15,24 @@
         "resume": "繼續",
         "tutorial": "教學",
         "playerStats": "人物狀態",
-        "velocityChart": "速度參數"
+        "velocityChart": "速度圖",
+        "velocityStr": "速度參數",
+        "distance": "距離",
+        "estimatedTime": "預估時間",
+        "aaa": "sss",
+        "aaa": "sss",
+        "aaa": "sss"
     },
     "Load": {
         "loading": "讀取中",
         "LoadingAsset": "載入資源",
+        "aaa": "sss",
+        "aaa": "sss"
+    },
+    "Tip": {
+        "velocityChartLock": "(完成兩個測站後解鎖)",
+        "aaa": "sss",
+        "aaa": "sss",
         "aaa": "sss",
         "aaa": "sss"
     }

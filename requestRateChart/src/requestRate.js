@@ -3879,7 +3879,6 @@ function requestRate() {
                                     })
                                 );
                         };
-
                         var leave = () => {
                             // await Promise.all(transPromises);
 

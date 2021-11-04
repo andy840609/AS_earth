@@ -307,6 +307,23 @@ function locatingGame() {
                 const fadeInDuration = 300;
                 const fadeOutDuration = 100;
 
+                //==confirmWindow沒關閉又再次點擊會無法產生打字特效,所以用這方法
+                var requestTypingAnim = () => {
+                    let typingText = gameUI.find('.confirmWindow>text');
+
+                    typingText
+                        .removeClass('typingText')
+                        .css({ "visibility": "hidden" });
+
+                    window.requestAnimationFrame(function (time) {
+                        window.requestAnimationFrame(function (time) {
+                            typingText
+                                .addClass('typingText')
+                                .css({ "visibility": "visible" });
+                        });
+                    });
+                };
+
                 function init() {
                     const movableRange = 10;
 
@@ -427,7 +444,9 @@ function locatingGame() {
                             data: d,
                             // bubblingMouseEvents: true,
                         }).on('click', function (e) {
-                            // console.debug(d['liberate']);
+
+                            requestTypingAnim();
+
                             gameUI.find('.confirmWindow')
                                 .fadeIn(fadeInDuration)
                                 .find('.placeStr')
@@ -690,7 +709,7 @@ function locatingGame() {
                                 })
                                 .on('click', function (e) {
                                     //==速度參數要完成兩站才能調整
-                                    // if (this.id == UIbuttons[1] && !GameData.velocityChartUnlock) return;
+                                    if (this.id == UIbuttons[1] && !GameData.velocityChartUnlock) return;
 
                                     let button = $(this);
                                     let ckick = button.hasClass('clicked');
@@ -712,7 +731,8 @@ function locatingGame() {
                         <div class="confirmWindow">
                             <text>${GameData.languageJSON.Tip['mapClickConfirm1']} 
                                 <b class="placeStr"></b>
-                             ${GameData.languageJSON.Tip['mapClickConfirm2']}</text>
+                             ${GameData.languageJSON.Tip['mapClickConfirm2']}
+                            </text>
                             <div class="d-flex justify-content-around" >
                                 <text name="confirm" value="yes">
                                     <img name="confirmImg" src="${assetsDir}ui/triangle_left.png" width="${imgW}px" height="${imgW}px">
@@ -765,6 +785,7 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
+                            // console.debug("AAA");
                             let lat = e.latlng.lat;
                             let lng = e.latlng.lng;
 
@@ -772,7 +793,7 @@ function locatingGame() {
                             console.debug(distToEpicenter);
                             bingo = distToEpicenter <= allowedErro;
 
-                            confirmWindow.hide();
+                            requestTypingAnim();
 
                             confirmWindow.fadeIn(fadeInDuration)
                                 .find('.placeStr')
@@ -965,12 +986,8 @@ function locatingGame() {
                 // console.debug(gameMode, stationMarker);
 
                 gameDisplay(true);
-                // const gameBox = gameInnerDiv.getBoundingClientRect();
-                // const width = gameBox.width, height = gameBox.height;
-                // const width = gameBox.width, height = gameBox.height;
 
                 let gameResult;
-
                 switch (gameMode) {
                     case 'defend':
                         let stationData = stationMarker ?

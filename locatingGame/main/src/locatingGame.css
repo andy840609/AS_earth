@@ -253,15 +253,15 @@ svg {
 
 #gameUI .confirmWindow img {
     visibility: hidden;
+    pointer-events: none;
 }
 
-#gameUI .confirmWindow>text:first-child {
-
+#gameUI .confirmWindow>.typingText {
     display: inline-block;
     line-height: 1.2;
 }
 
-#gameUI .confirmWindow>text:first-child::after {
+#gameUI .confirmWindow>.typingText::after {
     content: '';
     width: var(--cursorSize);
     height: calc(var(--fontSize) *1.2);
@@ -272,7 +272,7 @@ svg {
         moveCursor var(--duration) steps(var(--steps)) forwards;
 }
 
-#gameUI .confirmWindow>text:first-child::before {
+#gameUI .confirmWindow>.typingText::before {
     content: '';
     width: 95%;
     height: calc(var(--fontSize) *1.2);

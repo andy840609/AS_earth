@@ -8,25 +8,10 @@ h3,
     user-select: none;
 }
 
-/* #loading {
-    --loading-width: 150px;
-    --loading-height: 60px;
-
-    position: absolute;
-    width: var(--loading-width);
-    height: var(--loading-height);
-    left: calc(50% - var(--loading-width) * 0.5);
-    top: calc(50% - var(--loading-height));
-    z-index: 50;
-    padding: 10px 10px;
-    background: #3C3C3C;
-    color: #fff;
-    text-align: center;
-    box-shadow: 2px 2px 10px;
-    border-radius: 5px;
+.UIicon img {
+    -webkit-user-drag: none;
 }
 
-*/
 #bigMap {
     height: 700px;
     width: 700px;
@@ -97,35 +82,9 @@ svg {
     fill-opacity: "0.2";
 
 
-    /* transform-origin: center; */
-    /* transform: scale(2); */
-    /* animation: rangeChange 1s linear;
-    animation-delay: 0ms; */
 }
 
-
-@keyframes rangeChange {
-    0% {
-        /* transform: scale(1) translate(-50%, -50%); */
-    }
-
-    50% {
-
-        /* stroke-width: 0; */
-        transform: translate(-361px, -277px) scale(2);
-        /* transform: translate(-50%, -10%) scale(2); */
-        /* (1 - scale) * currentPosition */
-        /* x: 361.9216000000015
-        y: 277.4855246205334 */
-
-    }
-
-    100% {
-
-        /* stroke-width: 100; */
-        /* transform: scale(1) translate(10%, 10%); */
-    }
-}
+/* *******************左邊UI列******************* */
 
 #gameUI {
     position: absolute;
@@ -175,6 +134,21 @@ svg {
     /* font-family: sans-serif; */
 }
 
+#gameUI .UIhint {
+    position: absolute;
+    z-index: 999;
+    background: rgba(119, 119, 119, 0.8);
+    display: none;
+    pointer-events: none;
+}
+
+#gameUI .UIhint .tooltipText {
+    padding: 5px 20px;
+    font: small-caps bold 15px sans-serif;
+    color: rgb(196, 194, 194);
+    white-space: nowrap;
+}
+
 #gameUI .UI {
     position: absolute;
     z-index: 800;
@@ -205,4 +179,142 @@ svg {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
     display: none;
     pointer-events: none;
+}
+
+
+/* *******************速度圖手把動畫******************* */
+#velocityChartUI>svg .handle .anim {
+    fill: rgb(0, 0, 0, .5);
+    -webkit-animation: living 3s linear infinite;
+}
+
+#velocityChartUI>svg .handle .anim:last-child {
+    /*第二個動畫延遲x秒*/
+    -webkit-animation-delay: 0.5s;
+}
+
+@keyframes living {
+    0% {
+        r: 6;
+        opacity: 0.5;
+    }
+
+    50% {
+        r: 40;
+        opacity: 0;
+        /*圓形放大的同時，透明度逐漸減小為0*/
+    }
+
+    100% {
+        r: 6;
+        opacity: 0.5;
+    }
+}
+
+
+
+/* *******************confirmWindow******************* */
+
+
+:root {
+    /* 字符数量 */
+    --steps: 15;
+    /* 动画时间 */
+    /* --duration: 3s; */
+    --duration: 0.5s;
+    /* 字体大小 */
+    --fontSize: 30px;
+    /* 光标大小 */
+    --cursorSize: 10px;
+}
+
+#gameUI .confirmWindow {
+    position: fixed;
+    z-index: 900;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 20px;
+    background-color: rgb(0, 0, 0);
+    border: 5px solid rgb(255, 255, 255);
+    border-radius: 10px;
+    color: rgb(255, 255, 255);
+    white-space: nowrap;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    display: none;
+    pointer-events: auto;
+
+    font-size: var(--fontSize);
+}
+
+#gameUI .confirmWindow img {
+    visibility: hidden;
+}
+
+#gameUI .confirmWindow>text:first-child {
+
+    display: inline-block;
+    line-height: 1.2;
+}
+
+#gameUI .confirmWindow>text:first-child::after {
+    content: '';
+    width: var(--cursorSize);
+    height: calc(var(--fontSize) *1.2);
+    background-color: rgb(255, 255, 255);
+    z-index: 2;
+    position: absolute;
+    animation: blink 1s var(--duration) step-end infinite,
+        moveCursor var(--duration) steps(var(--steps)) forwards;
+}
+
+#gameUI .confirmWindow>text:first-child::before {
+    content: '';
+    width: 95%;
+    height: calc(var(--fontSize) *1.2);
+    z-index: 1;
+    position: absolute;
+    background: linear-gradient(rgb(0, 0, 0), rgb(0, 0, 0)) no-repeat top right;
+    animation: showText var(--duration) steps(var(--steps)) forwards;
+}
+
+/* 光标闪烁动画 */
+@keyframes blink {
+    0% {
+        background-color: rgb(255, 255, 255);
+    }
+
+    50% {
+        background-color: transparent;
+    }
+
+    100% {
+        background-color: rgb(255, 255, 255);
+    }
+}
+
+/* 光标移动动画 */
+@keyframes moveCursor {
+    0% {
+        left: 4%;
+    }
+
+    100% {
+        left: 96%;
+    }
+}
+
+/* 背景移动动画 */
+@keyframes showText {
+    0% {
+        background-size: 100% 100%;
+    }
+
+    100% {
+        background-size: 5% 100%;
+    }
 }

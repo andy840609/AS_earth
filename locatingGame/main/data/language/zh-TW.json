@@ -30,8 +30,12 @@
         "aaa": "sss"
     },
     "Tip": {
-        "velocityChartLock": "(完成兩個測站後解鎖)",
-        "aaa": "sss",
+        "velocityChartLock": "完成兩個測站後解鎖",
+        "mapClickConfirm1": "出發前往",
+        "mapClickConfirm2": "探索嗎？",
+        "yes": "是",
+        "no": "不是",
+        "station": "測站",
         "aaa": "sss",
         "aaa": "sss",
         "aaa": "sss"

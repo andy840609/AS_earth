@@ -304,13 +304,26 @@ function locatingGame() {
             };
             function initMap() {
 
+                const fadeInDuration = 300;
+                const fadeOutDuration = 100;
+
                 function init() {
+                    const movableRange = 10;
+
+                    let coordinateArr = data.map(d => d.coordinate);
+                    let latDomain = d3.extent(coordinateArr, d => d[0]),
+                        lngDomain = d3.extent(coordinateArr, d => d[1]);
+
                     mapObj = L.map('bigMap', {
                         center: [23.58, 120.58],
                         zoom: 8,
                         minZoom: 7,
                         maxZoom: 10,
-                        maxBounds: [[25.100523, 116.257324], [22.024546, 125.793457]],
+                        //==地圖move範圍
+                        maxBounds: [
+                            [latDomain[0] - movableRange, lngDomain[0] - movableRange],
+                            [latDomain[1] + movableRange, lngDomain[1] + movableRange]
+                        ],
                         zoomControl: false,
                         attributionControl: false,
                     });
@@ -327,19 +340,19 @@ function locatingGame() {
                     }).addTo(mapObj);
 
                     // control that shows state info on hover
-                    Object.assign(L.control(), {
-                        onAdd: function (mapObj) {
-                            this._div = L.DomUtil.create('div', 'info');
-                            this._div.id = 'cityName';
-                            this.update();
-                            return this._div;
-                        },
-                        update: function (props) {
-                            this._div.innerHTML = (props ?
-                                '<b>' + props.name + '</b><br />'
-                                : 'Hover over a city or county');
-                        }
-                    }).addTo(mapObj);
+                    // Object.assign(L.control(), {
+                    //     onAdd: function (mapObj) {
+                    //         this._div = L.DomUtil.create('div', 'info');
+                    //         this._div.id = 'cityName';
+                    //         this.update();
+                    //         return this._div;
+                    //     },
+                    //     update: function (props) {
+                    //         this._div.innerHTML = (props ?
+                    //             '<b>' + props.name + '</b><br />'
+                    //             : 'Hover over a city or county');
+                    //     }
+                    // }).addTo(mapObj);
 
 
                 };
@@ -415,8 +428,12 @@ function locatingGame() {
                             // bubblingMouseEvents: true,
                         }).on('click', function (e) {
                             // console.debug(d['liberate']);
-                            // if (d['liberate']) return;//==已經贏過,不能在玩一次
-                            gameStart('defend', marker);
+                            gameUI.find('.confirmWindow')
+                                .fadeIn(fadeInDuration)
+                                .find('.placeStr')
+                                .text(`${d['station']}${GameData.languageJSON.Tip['station']}`)
+                                .data('gameStartParameters', ['defend', marker]);
+
                         });
 
                         let markerHint = "<b><font size='5'>" + d['station'] + "</font><br>";
@@ -478,18 +495,19 @@ function locatingGame() {
                         .append(`<div class="UItooltip"><div class="tooltipText"></div></div>`)
                         .find('.UItooltip');
 
+                    //===UIhint
+                    const UIhint = gameUI
+                        .append(`<div class="UIhint"><div class="tooltipText"></div></div>`)
+                        .find('.UIhint');
+
                     function updateTooltip(target) {
                         let bigMapDOMRect = document.querySelector('#bigMap').getBoundingClientRect();
                         let targetDOMRect = target.getBoundingClientRect();
                         let imgNode = target.children[0];
 
-                        let text = (!GameData.velocityChartUnlock && target.id == UIbuttons[1]) ?
-                            GameData.languageJSON.Tip['velocityChartLock'] :
-                            GameData.languageJSON.UI[target.id];
-
                         UItooltip.show()//==先show才能得到寬高
                             .children('.tooltipText')
-                            .text(text);
+                            .text(GameData.languageJSON.UI[target.id]);
 
                         // UItooltip
                         let top = targetDOMRect.top - bigMapDOMRect.top - imgNode.offsetHeight * 0.7,
@@ -497,6 +515,21 @@ function locatingGame() {
 
                         UItooltip.css({ top: top, left: left, });
 
+
+                        if (!GameData.velocityChartUnlock && target.id == UIbuttons[1]) {
+
+
+                            UIhint
+                                .animate({ "opacity": "show" }, 500)
+                                .children('.tooltipText')
+                                .text(GameData.languageJSON.Tip[`${target.id}Lock`]);
+
+                            let top = targetDOMRect.top,
+                                left = targetDOMRect.left - bigMapDOMRect.left + imgNode.offsetWidth + 10;
+
+                            UIhint.css({ top: top, left: left });
+
+                        };
                     };
                     function updateUI(target, show) {
                         // console.debug(target, show);
@@ -550,7 +583,7 @@ function locatingGame() {
 
                             let iconsHtml = UIbuttons.map((btn, i) => `
                             <div class="UIicon" id="${btn}" style="top:${interval * (i + 1) - iconW * 0.5}px; left:${left}px">
-                                <img src="../data/assets/icon/${btn}.png" width="${iconW}px" height="${iconW}px">
+                                <img src="${assetsDir}icon/${btn}.png" width="${iconW}px" height="${iconW}px">
                             </div>
                             `);
                             gameUI.find('.UIbar').append(iconsHtml);
@@ -572,7 +605,7 @@ function locatingGame() {
                                     case 'velocityChart':
                                         //==lock gif
                                         gameUI.find('#velocityChart').append(`
-                                            <img id="velocityChartLock" src="../data/assets/ui/unlock.gif" width="${iconW}px" height="${iconW}px">
+                                            <img id="velocityChartLock" src="${assetsDir}ui/unlock.gif" width="${iconW}px" height="${iconW}px">
                                         `);
 
                                         UI
@@ -640,8 +673,7 @@ function locatingGame() {
 
                                     updateTooltip(e.target.parentNode);
                                 })
-                                .on('mouseleave', (e) => {
-                                    // console.debug('mouseleave');
+                                .on('mouseout', (e) => {
                                     if (interval) clearInterval(interval);
                                     Object.assign(e.target, {
                                         width: iconW,
@@ -653,11 +685,12 @@ function locatingGame() {
                                     });
 
                                     UItooltip.hide();
-
+                                    if (!GameData.velocityChartUnlock && e.target.parentNode.id == UIbuttons[1])
+                                        UIhint.hide();
                                 })
                                 .on('click', function (e) {
                                     //==速度參數要完成兩站才能調整
-                                    if (this.id == UIbuttons[1] && !GameData.velocityChartUnlock) return;
+                                    // if (this.id == UIbuttons[1] && !GameData.velocityChartUnlock) return;
 
                                     let button = $(this);
                                     let ckick = button.hasClass('clicked');
@@ -673,30 +706,91 @@ function locatingGame() {
                         //==test
                         // $(`#velocityChart`).trigger('click');
                     };
-                    // var timeRemain = () => {
+                    var confirmWindow = () => {
+                        let imgW = 10;
+                        let confirmWindow = gameUI.append(`
+                        <div class="confirmWindow">
+                            <text>${GameData.languageJSON.Tip['mapClickConfirm1']} 
+                                <b class="placeStr"></b>
+                             ${GameData.languageJSON.Tip['mapClickConfirm2']}</text>
+                            <div class="d-flex justify-content-around" >
+                                <text name="confirm" value="yes">
+                                    <img name="confirmImg" src="${assetsDir}ui/triangle_left.png" width="${imgW}px" height="${imgW}px">
+                                    ${GameData.languageJSON.Tip['yes']}
+                                    <img name="confirmImg" src="${assetsDir}ui/triangle_right.png" width="${imgW}px" height="${imgW}px">
+                                </text>
 
-                    // };
+                                <text name="confirm" value="no">
+                                    <img name="confirmImg" src="${assetsDir}ui/triangle_left.png" width="${imgW}px" height="${imgW}px">
+                                    ${GameData.languageJSON.Tip['no']}
+                                    <img name="confirmImg" src="${assetsDir}ui/triangle_right.png" width="${imgW}px" height="${imgW}px">
+                                </text>
+                                
+                            </div>
+                        <div>
+                        `).find('.confirmWindow');
+
+                        let placeStr = confirmWindow.find('.placeStr');
+
+                        confirmWindow.find('text[name = "confirm"]')
+                            .css('cursor', 'pointer')
+                            .on('mouseover', (e) => {
+                                $(e.target).children().css({ "visibility": "visible" });
+
+                            })
+                            .on('mouseout', (e) => {
+                                $(e.target).children().css({ "visibility": "hidden" });
+                            })
+                            .on('click', (e) => {
+                                let yes = $(e.target).attr('value') == 'yes';
+                                if (yes) {
+                                    let gameStartParameters = placeStr.data('gameStartParameters');
+                                    gameStart(...gameStartParameters);
+                                };
+                                confirmWindow.hide();
+
+                            });
+
+                    };
 
                     timeRemain();
                     UIbar();
-                    // timeRemain();
+                    confirmWindow();
+
+                };
+                function addMapEvent() {
+                    const allowedErro = 10;//==容許與震央相差距離(km)
+                    let bingo;//==找到震央布林值
+                    let confirmWindow = gameUI.find('.confirmWindow');
+
+                    mapObj
+                        .on('click', function (e) {
+                            let lat = e.latlng.lat;
+                            let lng = e.latlng.lng;
+
+                            let distToEpicenter = distanceByLnglat([lat, lng], data.epicenter.coordinate);
+                            console.debug(distToEpicenter);
+                            bingo = distToEpicenter <= allowedErro;
+
+                            confirmWindow.hide();
+
+                            confirmWindow.fadeIn(fadeInDuration)
+                                .find('.placeStr')
+                                .text(`${lat.toFixed(2)} , ${lng.toFixed(2)}`)
+                                .data('gameStartParameters', ['dig', bingo ? data.epicenter : null]);
+
+                        })
+                        .on('move', function (e) {
+                            confirmWindow.fadeOut(fadeOutDuration);
+                        });
 
                 };
                 init();
                 addStation();
                 // addCounty();
                 addUI();
+                addMapEvent();
 
-                mapObj.on('click', function (e) {
-                    // console.debug('BBB');
-
-                    let distToEpicenter = distanceByLnglat([e.latlng.lat, e.latlng.lng], data.epicenter.coordinate);
-                    console.debug(distToEpicenter);
-                    // L.popup()
-                    //     .setLatLng(e.latlng)
-                    //     .setContent("<b><font size='3'>" + String(e.latlng) + "</b></font>")
-                    //     .openOn(mapObj);
-                });
 
             };
             function updateStation(stationMarker, updateObj = {}) {
@@ -904,7 +998,6 @@ function locatingGame() {
                             new Phaser.Game(config);
 
                         });
-                        gameDisplay(false);
                         console.debug(gameResult);
                         let stationInfo = gameResult.stationInfo;
                         let playerInfo = gameResult.playerInfo;
@@ -937,10 +1030,11 @@ function locatingGame() {
 
                         break;
                     case 'dig':
-
+                        // gameDisplay(false);
+                        console.debug(stationMarker);
                         break;
                 };
-
+                gameDisplay(false);
 
             };
 
@@ -1437,6 +1531,15 @@ function locatingGame() {
                                 .attr("fill", '#FF60AF')
                                 .attr("fill-opacity", .6);
 
+
+                            //===circle for anim
+                            g
+                                .selectAll(".anim")
+                                .data(d3.range(2))
+                                .join("circle")
+                                .attr("class", 'anim')
+                                .attr("cx", point.x)
+                                .attr("cy", point.y);
 
                         });
                     fixedGroup

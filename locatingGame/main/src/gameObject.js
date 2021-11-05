@@ -40,38 +40,75 @@ const GameObjectStats = {
 };
 
 const BackGroundResources = {
-    forest_1: {
-        static: ['sky.png', 'rocks_1.png', 'rocks_2.png', 'clouds_1.png'],
-        dynamic: ['clouds_2.png', 'clouds_3.png', 'clouds_4.png'],
-        depth: {
-            static: [0, 1, 2, 0],
-            dynamic: [0, 1, 2],
+    defend: {
+        forest_1: {
+            static: ['sky.png', 'rocks_1.png', 'rocks_2.png', 'clouds_1.png'],
+            dynamic: ['clouds_2.png', 'clouds_3.png', 'clouds_4.png'],
+            depth: {
+                static: [0, 1, 2, 0],
+                dynamic: [0, 1, 2],
+            },
+        },
+        forest_2: {
+            static: ['sky.png', 'rocks_3.png', 'rocks_2.png', 'rocks_1.png', 'pines.png', 'clouds_2.png'],
+            dynamic: ['clouds_1.png', 'clouds_3.png', 'birds.png'],
+            depth: {
+                static: [0, 0, 0, 0, 0, 0],
+                dynamic: [1, 1, 1],
+            },
+        },
+        forest_3: {
+            static: ['sky.png', 'rocks.png', 'ground_1.png', 'ground_2.png', 'ground_3.png', 'plant.png'],
+            dynamic: ['clouds_1.png', 'clouds_2.png'],
+            depth: {
+                static: [0, 1, 2, 2, 2, 2],
+                dynamic: [0, 1],
+            },
+        },
+        forest_4: {
+            static: ['sky.png', 'rocks.png', 'ground.png',],
+            dynamic: ['clouds_1.png', 'clouds_2.png'],
+            depth: {
+                static: [0, 1, 2],
+                dynamic: [0, 1],
+            },
         },
     },
-    forest_2: {
-        static: ['sky.png', 'rocks_3.png', 'rocks_2.png', 'rocks_1.png', 'pines.png', 'clouds_2.png'],
-        dynamic: ['clouds_1.png', 'clouds_3.png', 'birds.png'],
-        depth: {
-            static: [0, 0, 0, 0, 0, 0],
-            dynamic: [1, 1, 1],
+    dig: {
+        halloween_1: {
+            static: ['1.png', '3.png', '4.png', '5.png', '6.png', '7.png'],
+            dynamic: ['2.png'],
+            depth: {
+                static: [0, 0, 0, 2, 2, 2],
+                dynamic: [1],
+            },
         },
+        // halloween_1: {
+        //     static: ['sky.png', 'rocks_1.png', 'rocks_2.png', 'clouds_1.png'],
+        //     dynamic: ['clouds_2.png', 'clouds_3.png', 'clouds_4.png'],
+        //     depth: {
+        //         static: [0, 1, 2, 0],
+        //         dynamic: [0, 1, 2],
+        //     },
+        // },
+        // halloween_1: {
+        //     static: ['sky.png', 'rocks_1.png', 'rocks_2.png', 'clouds_1.png'],
+        //     dynamic: ['clouds_2.png', 'clouds_3.png', 'clouds_4.png'],
+        //     depth: {
+        //         static: [0, 1, 2, 0],
+        //         dynamic: [0, 1, 2],
+        //     },
+        // },
+        // halloween_1: {
+        //     static: ['sky.png', 'rocks_1.png', 'rocks_2.png', 'clouds_1.png'],
+        //     dynamic: ['clouds_2.png', 'clouds_3.png', 'clouds_4.png'],
+        //     depth: {
+        //         static: [0, 1, 2, 0],
+        //         dynamic: [0, 1, 2],
+        //     },
+        // },
     },
-    forest_3: {
-        static: ['sky.png', 'rocks.png', 'ground_1.png', 'ground_2.png', 'ground_3.png', 'plant.png'],
-        dynamic: ['clouds_1.png', 'clouds_2.png'],
-        depth: {
-            static: [0, 1, 2, 2, 2, 2],
-            dynamic: [0, 1],
-        },
-    },
-    forest_4: {
-        static: ['sky.png', 'rocks.png', 'ground.png',],
-        dynamic: ['clouds_1.png', 'clouds_2.png'],
-        depth: {
-            static: [0, 1, 2],
-            dynamic: [0, 1],
-        },
-    },
+
 
 };
 

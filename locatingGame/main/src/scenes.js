@@ -22,7 +22,6 @@ class UIScene extends Phaser.Scene {
             case 'iconBar':
                 let UIButtonArr = gameScene.UIButtonArr;
                 const eachButtonW = 85;
-                this.orbs = gameScene.orbGroup.getChildren();
 
                 preload = () => {
 
@@ -30,8 +29,10 @@ class UIScene extends Phaser.Scene {
                 create = () => {
                     const tooltip = this.tooltip;
                     const tooltipHandler = tooltip.tooltipHandler;
-
-                    this.gameClear = gameScene.gameData.stationData.stationStats.clear;//==判斷離開出現在bar上
+                    //==判斷離開出現在bar上
+                    this.gameClear = gameScene.name == 'defend' ?
+                        gameScene.gameData.stationData.stationStats.clear :
+                        true;
                     const buttonCount = UIButtonArr.length - !this.gameClear;
 
                     const barWidth = buttonCount * eachButtonW;
@@ -96,8 +97,9 @@ class UIScene extends Phaser.Scene {
                     var updateBar = () => {
                         if (this.gameClear) return;
 
-                        let orb1 = this.orbs[0];
-                        let orb2 = this.orbs[1];
+                        let orbs = gameScene.orbGroup.getChildren();
+                        let orb1 = orbs[0];
+                        let orb2 = orbs[1];
                         let isAllActive = orb1.laserObj.active && !orb1.beholdingFlag &&
                             orb2.laserObj.active && !orb2.beholdingFlag;
                         let isDiffPos = orb1.x != orb2.x;
@@ -164,7 +166,8 @@ class UIScene extends Phaser.Scene {
                         });
                     };
                     hotkeyPress();
-                    updateBar();
+                    if (gameScene.name == 'defend')
+                        updateBar();
                 };
                 break;
             case 'pauseUI':
@@ -622,7 +625,7 @@ class UIScene extends Phaser.Scene {
                     // this.scene.remove();
                 };
                 break;
-            case 'exitUI':
+            case 'exitUI'://==升等結算畫面之後作
                 preload = () => { };
                 create = () => {
                     var levelUp = () => {
@@ -932,7 +935,7 @@ class UIScene extends Phaser.Scene {
                     gameScene.cursors = this.cursors;
                 };
                 update = () => {
-
+                    if (gameScene.name != 'defend') return;
                     //==update orb(when pause gameScene wont do update funtion)
                     var updateOrb = () => {
                         gameScene.orbGroup.children.iterate(child => {
@@ -1039,6 +1042,405 @@ class UIScene extends Phaser.Scene {
         this.update();
     };
 
+};
+
+class StartScene extends Phaser.Scene {
+    constructor(GameData, resolve) {
+        super({ key: 'startScene' });
+
+        Object.assign(this, {
+            GameData: GameData,
+            resolve: resolve,
+        });
+    }
+    preload() {
+        const UIDir = assetsDir + 'ui/';
+        this.load.image('startScene', UIDir + 'startScene.jpg');
+        this.load.image('startButton', UIDir + 'startButton.png');
+
+    };
+    create() {
+        const canvas = this.sys.game.canvas;
+        const width = canvas.width;
+        const height = canvas.height;
+        const languageJSON = this.GameData.languageJSON;
+
+        // console.debug(languageJSON);
+        var background = () => {
+            let img = this.add.image(width * 0.5, height * 0.5, 'startScene');
+            img.setScale(width / img.width, height / img.height);
+        };
+
+        var button = () => {
+            // =menu buttons
+            const buttons = ['startGame', 'setting', 'rank'];
+
+            const buttonGap = height * 0.5 / (buttons.length + 1);
+            const x = width * 0.5;
+
+            let buttonGroup = buttons.map((button, i) => {
+                let y = height * 0.5 + buttonGap * (i + 1);
+                let menuButton = this.add.image(x, y, 'startButton');
+                let buttonText = this.add.text(x, y, languageJSON.UI[button], { font: '40px Arial', fill: '#ffffff' })
+                    .setOrigin(0.5);
+                let buttonScale = buttonText.height * 2 / menuButton.height;
+
+                menuButton
+                    .setScale(buttonScale)//menu.width / 4 / menuButton.width
+                    .setInteractive({ cursor: 'pointer' })
+                    .on('pointerover', function () {
+                        let scale = 1.2;
+                        this.setScale(buttonScale * scale);
+                        buttonText
+                            .setScale(scale)
+                            .setTint(0xFFFF37);
+                    })
+                    .on('pointerout', function () {
+                        this.setScale(buttonScale);
+                        buttonText
+                            .setScale(1)
+                            .clearTint();
+                    })
+                    .on('pointerdown', () => {
+                        // console.debug(button);
+                        switch (button) {
+                            case 'startGame':
+
+                                this.game.destroy(true, false);
+                                this.resolve(this.GameData);
+
+                                break;
+
+                            case 'setting':
+                                // this.setting
+
+                                break;
+
+                            case 'rank':
+
+                                break;
+                        }
+                    });
+
+
+                return {
+                    button: menuButton,
+                    text: buttonText,
+                }
+
+            });
+
+
+            // const tweensDuration = 100;
+
+            // this.tweens.add({
+            //     targets: buttonGroup.map(g => g.button),
+            //     repeat: 0,
+            //     ease: 'linear',
+            //     duration: tweensDuration * 0.2,
+            //     delay: tweensDuration * 0.5,
+            //     x: { from: menu.x - menu.displayWidth * 0.3, to: menu.x },
+            //     scaleX: {
+            //         from: 0, to: (target) => buttonGroup[0].text.height * 2 / target.height
+            //     },
+
+            // });
+
+
+            // this.tweens.add({
+            //     targets: buttonGroup.map(g => g.text),
+            //     repeat: 0,
+            //     ease: 'linear',
+            //     duration: tweensDuration,
+            //     delay: tweensDuration * 0.5,
+            //     alpha: { from: 0, to: 1 },
+            // });
+        }
+        background();
+        button();
+    };
+    update() {
+
+    };
+};
+
+class LoadingScene extends Phaser.Scene {
+
+    constructor(gameScene, resolve) {
+        super({ key: 'LoadingScene' });
+        this.gameScene = gameScene;
+        this.resolve = resolve;
+    }
+    preload() {
+        const gameScene = this.gameScene;
+        const gameObjDir = assetsDir + 'gameObj/';
+        const gameData = gameScene.gameData;
+        const LoadtextJSON = gameData.languageJSON.Load;
+
+        // console.debug(gameScene.name);
+        const packNum = { 'defend': 1, 'dig': 2, 'boss': 3 }[gameScene.name];
+        var gameObjects = () => {
+
+            var environment = () => {
+                const envDir = gameObjDir + 'environment/';
+                var station = () => {
+                    const dir = envDir + 'station/';
+                    this.load.image('station', dir + 'station.png');
+                    this.load.image('title', dir + 'title.png');
+                };
+                var platform = () => {
+                    const dir = envDir + 'platform/';
+                    this.load.image('ground', dir + 'platform.png');
+                };
+                var background = () => {
+
+                    const dir = envDir + 'background/' + gameScene.background + '/';
+
+                    let resources = BackGroundResources[gameScene.name][gameScene.background];
+                    resources.static.concat(resources.dynamic).forEach(res => {
+                        this.load.image(res, dir + res);
+                    });
+
+
+                };
+                var instrument = () => {
+                    const dir = envDir + 'instrument/';
+                    this.load.spritesheet('instrument',
+                        dir + 'instrument.png',
+                        { frameWidth: 256, frameHeight: 256 }
+                    );
+                    this.load.spritesheet('laser',
+                        dir + 'laser.png',
+                        { frameWidth: 512, frameHeight: 682.6 }
+                    );
+
+                };
+                var wave = () => {
+                    let stationData = gameData.stationData;
+                    let xAxisDomain = stationData.stationStats.orbStats ? stationData.stationStats.orbStats.xAxisDomain : null;
+
+                    //==getWaveSVG
+                    gameScene.waveForm.getWaveImg(stationData, xAxisDomain).then(success => {
+                        success.forEach(d => this.load.svg(d.svgName, d.svg, { scale: 1 }));
+                        gameScene.waveForm.svgArr = success;
+                    });
+
+                    //==getOverviewSVG
+                    gameScene.waveForm.getWaveImg(stationData).then(success => {
+                        success.forEach(d => this.load.svg('overview_' + d.svgName, d.svg, { width: 208, height: 200, }));
+                        gameScene.waveForm.overviewSvgArr = success;
+                    });
+
+
+                };
+
+
+                if (packNum == 1) {
+                    station();
+                    instrument();
+                    wave();
+                };
+                background();
+                platform();
+
+
+            };
+            var player = () => {
+                var sprite = () => {
+                    this.load.spritesheet('player',
+                        gameObjDir + 'dude.png',
+                        { frameWidth: 32, frameHeight: 48 }
+                    );
+                };
+                var UIbar = () => {
+                    const uiDir = assetsDir + 'ui/';
+
+                    this.load.image('UIbar_HPlabel', uiDir + 'UIbar_HPlabel.png');
+                    this.load.image('UIbar_MPlabel', uiDir + 'UIbar_MPlabel.png');
+                    this.load.image('UIbar_head', uiDir + 'UIbar_head.png');
+                    this.load.image('UIbar_bar', uiDir + 'UIbar_bar.png');
+                };
+                sprite();
+                UIbar();
+            };
+            var enemy = () => {
+                if (gameData.stationData.stationStats.liberate) return;
+                // console.debug(this.aliveEnemy);
+                gameScene.aliveEnemy.forEach(enemy => {
+                    const dir = gameObjDir + enemy + '/';
+                    const frameObj = { frameWidth: 48, frameHeight: 48 };
+                    this.load.spritesheet(enemy + '_Attack', dir + 'Attack.png', frameObj);
+                    this.load.spritesheet(enemy + '_Death', dir + 'Death.png', frameObj);
+                    this.load.spritesheet(enemy + '_Hurt', dir + 'Hurt.png', frameObj);
+                    this.load.spritesheet(enemy + '_Idle', dir + 'Idle.png', frameObj);
+                    this.load.spritesheet(enemy + '_Walk', dir + 'Walk.png', frameObj);
+
+                });
+
+
+            };
+
+            environment();
+            player();
+            //==dig 沒有敵人？
+            if (packNum != 2) {
+                enemy();
+            };
+
+        };
+        var UI = () => {
+            const uiDir = assetsDir + 'ui/';
+            var UIButtons = () => {
+                const iconDir = assetsDir + 'icon/';
+
+                let UIButtonArr;
+                switch (gameScene.name) {
+                    case 'defend':
+                        UIButtonArr = ['detector', 'backpack', 'pause', 'exit'];
+                        break;
+                    case 'dig':
+                        UIButtonArr = ['detector', 'backpack', 'pause', 'exit'];
+                        break;
+                    default:
+                        // UIButtonArr = ['pause', 'detector'];
+                        break;
+                };
+
+                UIButtonArr.forEach(button => {
+                    this.load.image(button + '_icon', iconDir + button + '.png');
+                });
+                gameScene.UIButtonArr = UIButtonArr;
+
+            };
+            var pauseMenu = () => {
+                this.load.image('menu', uiDir + 'menu.png');
+                this.load.image('menuButton', uiDir + 'menuButton.png');
+                // this.load.spritesheet('menuButton', uiDir + 'menuButton.png');
+            };
+            var detector = () => {
+                const dir = assetsDir + 'gameObj/environment/overview/';
+                this.load.image('detector', dir + 'detector.png');
+                this.load.image('detectorScreen', dir + 'detectorScreen.png');
+            };
+            var tooltip = () => {
+                this.load.image('tooltipButton', uiDir + 'tooltipButton.png');
+            };
+            UIButtons();
+            pauseMenu();
+            detector();
+            tooltip();
+        };
+        var makeProgressBar = () => {
+
+            const canvas = gameScene.sys.game.canvas;
+            const width = canvas.width;
+            const height = canvas.height;
+            const centre = { x: width * 0.5, y: height * 0.5 };
+
+            const boxW = 320, boxH = 50;
+            const barW = 300, barH = 30;
+
+            var progressGraphics = () => {
+                //==為了作dude動畫
+                var loadDude = () => {
+                    this.load.spritesheet('dude',
+                        gameObjDir + 'dude.png',
+                        { frameWidth: 32, frameHeight: 48 }
+                    );
+                };
+                loadDude();
+
+                this.progressBar = this.add.graphics().setPosition(centre.x, centre.y);
+                this.progressBox = this.add.graphics().setPosition(centre.x, centre.y);
+
+                this.progressBox.fillStyle(0x222222, 0.8);
+                this.progressBox.fillRect(-boxW * 0.5, -boxH * 0.5, boxW, boxH);
+
+                this.loadingText = this.make.text({
+                    x: centre.x,
+                    y: centre.y - 50,
+                    text: `${LoadtextJSON['loading']}...`,
+                    style: {
+                        font: '20px monospace',
+                        fill: '#ffffff'
+                    }
+                }).setOrigin(0.5, 0.5);
+
+                this.percentText = this.make.text({
+                    x: centre.x,
+                    y: centre.y,
+                    text: '0%',
+                    style: {
+                        font: '18px monospace',
+                        fill: '#ffffff'
+                    }
+                }).setOrigin(0.5, 0.5);
+
+                this.assetText = this.make.text({
+                    x: centre.x,
+                    y: centre.y + 50,
+                    text: '',
+                    style: {
+                        font: '18px monospace',
+                        fill: '#ffffff'
+                    }
+                }).setOrigin(0.5, 0.5);
+
+            };
+            var loadEvents = () => {
+
+                this.load.on('progress', (percent) => {
+                    this.percentText.setText(parseInt(percent * 100) + '%');
+                    this.progressBar.clear();
+                    this.progressBar.fillStyle(0xffffff, 1);
+                    this.progressBar.fillRect(-barW * 0.5, -barH * 0.5, barW * percent, barH);
+                });
+
+                this.load.on('fileprogress', (file) => {
+                    this.assetText.setText(`${LoadtextJSON['LoadingAsset']}: ${file.key}`);
+                });
+
+                this.load.on('filecomplete', (key) => {
+                    // console.debug(key);
+                    if (key != 'dude') return;
+                    this.anims.create({
+                        key: 'dude_run',
+                        frames: this.anims.generateFrameNumbers('dude', { start: 5, end: 8 }),
+                        frameRate: 15,
+                        repeat: -1,
+                    });
+                    this.dude = this.add.sprite(this.progressBar.x, this.progressBar.y - 100, 'dude')
+                        .play('dude_run');
+
+                });
+
+                this.load.on('complete', () => {
+                    this.progressBar.destroy();
+                    this.progressBox.destroy();
+                    this.loadingText.destroy();
+                    this.percentText.destroy();
+                    this.assetText.destroy();
+                    this.dude.destroy();
+                    this.resolve();
+                    // this.scene.remove();
+                });
+            };
+            progressGraphics();
+            loadEvents();
+            // this.load.image('logo', 'zenvalogo.png');
+            // for (var i = 0; i < 5000; i++) {
+            //     this.load.image('logo' + i, 'zenvalogo.png');
+            // }
+        };
+
+        makeProgressBar();
+        gameObjects();
+        UI();
+
+
+    };
+    create() { };
+    update() { };
 };
 
 class DefendScene extends Phaser.Scene {
@@ -1200,7 +1602,7 @@ class DefendScene extends Phaser.Scene {
             };
             var background = () => {
 
-                let resources = BackGroundResources[this.background];
+                let resources = BackGroundResources.defend[this.background];
                 resources.static.forEach((res, i) => {
                     let img = this.add.image(width * 0.5, height * 0.5, res);
                     img
@@ -1239,6 +1641,52 @@ class DefendScene extends Phaser.Scene {
                     },
                 });
             };
+
+            // var background = () => {
+
+            //     let resources = BackGroundResources.defend[this.background];
+            //     resources.static.forEach((res, i) => {
+            //         let img = this.add.image(width * 0.5, height * 0.5, res);
+
+            //         img
+            //             .setScale(width / img.width, height / img.height)
+            //             .setDepth(resources.depth.static[i]);
+            //     });
+
+            //     let movingThings = this.add.group();
+            //     resources.dynamic.forEach((res, i) => {
+
+            //         let thing = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, res);
+
+            //         thing
+            //             .setScale(width / thing.width, height / thing.height)
+            //             .setDepth(resources.depth.dynamic[i]);
+
+            //         movingThings.add(thing);
+            //         //==custom
+            //         thing.firstLoop = true;
+            //         thing.targetIndex = i;
+            //         thing.movingDuration = Phaser.Math.Between(5, 10) * 1000;//==第一次移動5到20秒
+
+            //     });
+
+            //     this.tweens.add({
+            //         targets: movingThings.getChildren(),
+            //         repeat: -1,
+            //         ease: 'Linear',
+            //         duration: (target) => target.movingDuration,
+            //         tilePositionX: { start: 0, to: width * 2 },
+            //         // onRepeat: (tween, target) => {
+            //         //     if (target.firstLoop) {
+            //         //         Object.assign(tween.data[target.targetIndex], {
+            //         //             duration: target.movingDuration * 2,
+            //         //             start: -width * 0.5,
+            //         //         });
+            //         //         target.firstLoop = false;
+            //         //     }
+            //         // },
+            //     });
+            // };
             var instrument = () => {
 
                 const orbScale = 0.25;
@@ -1823,393 +2271,181 @@ class DefendScene extends Phaser.Scene {
 
 
     };
-
 };
 
-class StartScene extends Phaser.Scene {
-    constructor(GameData, resolve) {
-        super({ key: 'startScene' });
+class DigScene extends Phaser.Scene {
+    constructor(placeData, GameData, other) {
+        var sceneConfig = {
+            key: 'gameScene',
+            pack: {
+                files: [
+                    {//==讓preload()能await才create()[確定資源都讀取完成才執行create()]
+                        type: 'plugin',
+                        key: 'rexawaitloaderplugin',
+                        url: '../src/phaser-3.55.2/plugins/phaser-rexawaitloaderplugin.min.js',
+                        start: true,
+                    },
+                    {//==旋轉特效
+                        type: 'plugin',
+                        key: 'rexswirlpipelineplugin',
+                        url: '../src/phaser-3.55.2/plugins/phaser-rexswirlpipelineplugin.min.js',
+                        start: true,
+                    },
+                ]
+            },
+        };
+        super(sceneConfig);
 
         Object.assign(this, {
-            GameData: GameData,
-            resolve: resolve,
+            name: 'dig',
+            player: null,
+            platforms: null,
+            gameTimer: null,
+            cursors: null,
+            gameData: GameData,
+            gameOver: {
+                flag: false,
+                resolve: other.resolve,
+            },
         });
+
+        this.background = placeData.background;
+        console.debug(this);
     }
     preload() {
-        const UIDir = assetsDir + 'ui/';
-        this.load.image('startScene', UIDir + 'startScene.jpg');
-        this.load.image('startButton', UIDir + 'startButton.png');
-
+        this.plugins.get('rexawaitloaderplugin').addToScene(this);
+        var callback = (resolve) => this.scene.add(null, new LoadingScene(this, resolve), true);
+        this.load.rexAwait(callback);//==等LoadingScene完成素材載入
     };
     create() {
         const canvas = this.sys.game.canvas;
         const width = canvas.width;
         const height = canvas.height;
-        const languageJSON = this.GameData.languageJSON;
 
-        // console.debug(languageJSON);
-        var background = () => {
-            let img = this.add.image(width * 0.5, height * 0.5, 'startScene');
-            img.setScale(width / img.width, height / img.height);
+        const Depth = {
+            platform: 3,
+            station: 4,
+            laser: 5,
+            wave: 6,
+            orbs: 7,
+            enemy: 9,
+            player: 10,
+            pickUpObj: 11,
+            bullet: 15,
+            UI: 20,
+            /*
+            Depth:
+              0-4(background)
+              5(laser)
+              6(wave)
+              7(orbs)
+              9(enemy)
+              10(player)
+              11(orb pickUp)
+              15(bullet)
+              20(UI:HP bar...)
+            */
         };
 
-        var button = () => {
-            // =menu buttons
-            const buttons = ['startGame', 'setting', 'rank'];
+        var initEnvironment = () => {
+            var background = () => {
 
-            const buttonGap = height * 0.5 / (buttons.length + 1);
-            const x = width * 0.5;
+                let resources = BackGroundResources.dig[this.background];
 
-            let buttonGroup = buttons.map((button, i) => {
-                let y = height * 0.5 + buttonGap * (i + 1);
-                let menuButton = this.add.image(x, y, 'startButton');
-                let buttonText = this.add.text(x, y, languageJSON.UI[button], { font: '40px Arial', fill: '#ffffff' })
-                    .setOrigin(0.5);
-                let buttonScale = buttonText.height * 2 / menuButton.height;
+                resources.static.forEach((res, i) => {
+                    let img = this.add.image(width * 0.5, height * 0.5, res);
 
-                menuButton
-                    .setScale(buttonScale)//menu.width / 4 / menuButton.width
-                    .setInteractive({ cursor: 'pointer' })
-                    .on('pointerover', function () {
-                        let scale = 1.2;
-                        this.setScale(buttonScale * scale);
-                        buttonText
-                            .setScale(scale)
-                            .setTint(0xFFFF37);
-                    })
-                    .on('pointerout', function () {
-                        this.setScale(buttonScale);
-                        buttonText
-                            .setScale(1)
-                            .clearTint();
-                    })
-                    .on('pointerdown', () => {
-                        // console.debug(button);
-                        switch (button) {
-                            case 'startGame':
+                    img
+                        .setScale(width / img.width, height / img.height)
+                        .setDepth(resources.depth.static[i]);
+                });
 
-                                this.game.destroy(true, false);
-                                this.resolve(this.GameData);
+                let movingThings = this.add.group();
+                resources.dynamic.forEach((res, i) => {
 
-                                break;
+                    let thing = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, res);
 
-                            case 'setting':
-                                // this.setting
+                    thing
+                        .setScale(width / thing.width, height / thing.height)
+                        .setDepth(resources.depth.dynamic[i]);
 
-                                break;
+                    movingThings.add(thing);
+                    //==custom
+                    thing.firstLoop = true;
+                    thing.targetIndex = i;
+                    thing.movingDuration = Phaser.Math.Between(5, 20) * 1000;//==第一次移動5到20秒
 
-                            case 'rank':
+                });
 
-                                break;
+                this.tweens.add({
+                    targets: movingThings.getChildren(),
+                    repeat: -1,
+                    ease: 'Linear',
+                    duration: (target) => target.movingDuration,
+                    tilePositionX: { start: width * 0.5, to: width * 1.5 },
+                    onRepeat: (tween, target) => {
+                        // console.debug(target.tilePositionX)
+                        if (target.firstLoop) {
+                            Object.assign(tween.data[target.targetIndex], {
+                                duration: target.movingDuration * 2,
+                                start: -width * 0.5,
+                            });
+                            target.firstLoop = false;
                         }
-                    });
+                    },
+                });
+            };
+            background();
+        };
+        var initTimer = () => {
+            //==計時,時間到進入結算
+            let timeRemain = this.gameData.timeRemain;
+            this.gameTimer = this.time.delayedCall(timeRemain, () => this.gameOver.flag = true, [], this);
+            this.gameTimer.timerText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#000' }).setDepth(Depth.UI);
 
 
-                return {
-                    button: menuButton,
-                    text: buttonText,
-                }
+        };
+        var initIconBar = () => {
+            this.scene.add(null, new UIScene('iconBar', this), true);
+        };
+        var initCursors = () => {
+            //===init cursors
+            this.scene.add(null, new UIScene('cursors', this), true);
+        };
 
-            });
+        //==gameScene
+        initEnvironment();
+        // initPlayer();
+        initTimer();
 
-
-            // const tweensDuration = 100;
-
-            // this.tweens.add({
-            //     targets: buttonGroup.map(g => g.button),
-            //     repeat: 0,
-            //     ease: 'linear',
-            //     duration: tweensDuration * 0.2,
-            //     delay: tweensDuration * 0.5,
-            //     x: { from: menu.x - menu.displayWidth * 0.3, to: menu.x },
-            //     scaleX: {
-            //         from: 0, to: (target) => buttonGroup[0].text.height * 2 / target.height
-            //     },
-
-            // });
-
-
-            // this.tweens.add({
-            //     targets: buttonGroup.map(g => g.text),
-            //     repeat: 0,
-            //     ease: 'linear',
-            //     duration: tweensDuration,
-            //     delay: tweensDuration * 0.5,
-            //     alpha: { from: 0, to: 1 },
-            // });
-        }
-        background();
-        button();
+        //==UI
+        initCursors();
+        initIconBar();
     };
     update() {
 
+        if (this.gameOver.flag) {
+            //===time remove
+            this.gameTimer.remove();
+
+            //===get gameResult 
+
+            let gameResult = {
+                //==更新角色資料(剩餘時間、能力值...)
+                // playerInfo: {
+                //     timeRemain: this.gameTimer.timeVal,
+                //     playerStats: Object.assign(this.gameData.playerStats, {
+                //         HP: this.player.stats.HP,
+                //         MP: this.player.stats.MP,
+                //     }),
+                //     controllCursor: this.gameData.controllCursor,
+                // },
+            };
+
+            this.game.destroy(true, false);
+            this.gameOver.resolve(gameResult);
+        };
     };
-};
-
-class LoadingScene extends Phaser.Scene {
-
-    constructor(gameScene, resolve) {
-        super({ key: 'LoadingScene' });
-        this.gameScene = gameScene;
-        this.resolve = resolve;
-    }
-    preload() {
-        const gameScene = this.gameScene;
-        const stationStats = gameScene.gameData.stationData.stationStats;
-        const gameObjDir = assetsDir + 'gameObj/';
-        const LoadtextJSON = gameScene.gameData.languageJSON.Load;
-
-        var gameObjects = () => {
-            var environment = () => {
-                const envDir = gameObjDir + 'environment/';
-                var station = () => {
-                    const dir = envDir + 'station/';
-                    this.load.image('station', dir + 'station.png');
-                    this.load.image('title', dir + 'title.png');
-                };
-                var platform = () => {
-                    const dir = envDir + 'platform/';
-                    this.load.image('ground', dir + 'platform.png');
-                };
-                var background = () => {
-
-                    const dir = envDir + 'background/' + gameScene.background + '/';
-
-                    let resources = BackGroundResources[gameScene.background];
-                    resources.static.concat(resources.dynamic).forEach(res => {
-                        this.load.image(res, dir + res);
-                    });
-
-
-                };
-                var instrument = () => {
-                    const dir = envDir + 'instrument/';
-                    this.load.spritesheet('instrument',
-                        dir + 'instrument.png',
-                        { frameWidth: 256, frameHeight: 256 }
-                    );
-                    this.load.spritesheet('laser',
-                        dir + 'laser.png',
-                        { frameWidth: 512, frameHeight: 682.6 }
-                    );
-
-                };
-                var wave = () => {
-                    let stationData = gameScene.gameData.stationData;
-                    let xAxisDomain = stationData.stationStats.orbStats ? stationData.stationStats.orbStats.xAxisDomain : null;
-
-                    //==getWaveSVG
-                    gameScene.waveForm.getWaveImg(stationData, xAxisDomain).then(success => {
-                        success.forEach(d => this.load.svg(d.svgName, d.svg, { scale: 1 }));
-                        gameScene.waveForm.svgArr = success;
-                    });
-
-                };
-                background();
-                platform();
-                station();
-                instrument();
-                wave();
-
-            };
-            var player = () => {
-                var sprite = () => {
-                    this.load.spritesheet('player',
-                        gameObjDir + 'dude.png',
-                        { frameWidth: 32, frameHeight: 48 }
-                    );
-                };
-                var UIbar = () => {
-                    const uiDir = assetsDir + 'ui/';
-
-                    this.load.image('UIbar_HPlabel', uiDir + 'UIbar_HPlabel.png');
-                    this.load.image('UIbar_MPlabel', uiDir + 'UIbar_MPlabel.png');
-                    this.load.image('UIbar_head', uiDir + 'UIbar_head.png');
-                    this.load.image('UIbar_bar', uiDir + 'UIbar_bar.png');
-                };
-                sprite();
-                UIbar();
-            };
-            var enemy = () => {
-                if (stationStats.liberate) return;
-                // console.debug(this.aliveEnemy);
-                gameScene.aliveEnemy.forEach(enemy => {
-                    const dir = gameObjDir + enemy + '/';
-                    const frameObj = { frameWidth: 48, frameHeight: 48 };
-                    this.load.spritesheet(enemy + '_Attack', dir + 'Attack.png', frameObj);
-                    this.load.spritesheet(enemy + '_Death', dir + 'Death.png', frameObj);
-                    this.load.spritesheet(enemy + '_Hurt', dir + 'Hurt.png', frameObj);
-                    this.load.spritesheet(enemy + '_Idle', dir + 'Idle.png', frameObj);
-                    this.load.spritesheet(enemy + '_Walk', dir + 'Walk.png', frameObj);
-
-                });
-
-
-            };
-            environment();
-            player();
-            enemy();
-        };
-        var UI = () => {
-            const uiDir = assetsDir + 'ui/';
-            var UIButtons = () => {
-                const iconDir = assetsDir + 'icon/';
-
-                let UIButtonArr;
-                switch (gameScene.name) {
-                    case 'defend':
-                        UIButtonArr = ['detector', 'backpack', 'pause', 'exit'];
-                        break;
-                    case 'dig':
-                        break;
-                    default:
-                        // UIButtonArr = ['pause', 'detector'];
-                        break;
-                };
-
-                UIButtonArr.forEach(button => {
-                    this.load.image(button + '_icon', iconDir + button + '.png');
-                });
-                gameScene.UIButtonArr = UIButtonArr;
-
-            };
-            var pauseMenu = () => {
-                this.load.image('menu', uiDir + 'menu.png');
-                this.load.image('menuButton', uiDir + 'menuButton.png');
-                // this.load.spritesheet('menuButton', uiDir + 'menuButton.png');
-            };
-            var detector = () => {
-                const dir = assetsDir + 'gameObj/environment/overview/';
-                this.load.image('detector', dir + 'detector.png');
-                this.load.image('detectorScreen', dir + 'detectorScreen.png');
-
-                //==getOverviewSVG
-                let stationData = gameScene.gameData.stationData;
-                gameScene.waveForm.getWaveImg(stationData).then(success => {
-                    success.forEach(d => this.load.svg('overview_' + d.svgName, d.svg, { width: 208, height: 200, }));
-                    gameScene.waveForm.overviewSvgArr = success;
-                });
-
-            };
-            var tooltip = () => {
-                this.load.image('tooltipButton', uiDir + 'tooltipButton.png');
-            };
-            UIButtons();
-            pauseMenu();
-            detector();
-            tooltip();
-        };
-        var makeProgressBar = () => {
-
-            const canvas = gameScene.sys.game.canvas;
-            const width = canvas.width;
-            const height = canvas.height;
-            const centre = { x: width * 0.5, y: height * 0.5 };
-
-            const boxW = 320, boxH = 50;
-            const barW = 300, barH = 30;
-
-            var progressGraphics = () => {
-                //==為了作dude動畫
-                var loadDude = () => {
-                    this.load.spritesheet('dude',
-                        gameObjDir + 'dude.png',
-                        { frameWidth: 32, frameHeight: 48 }
-                    );
-                };
-                loadDude();
-
-                this.progressBar = this.add.graphics().setPosition(centre.x, centre.y);
-                this.progressBox = this.add.graphics().setPosition(centre.x, centre.y);
-
-                this.progressBox.fillStyle(0x222222, 0.8);
-                this.progressBox.fillRect(-boxW * 0.5, -boxH * 0.5, boxW, boxH);
-
-                this.loadingText = this.make.text({
-                    x: centre.x,
-                    y: centre.y - 50,
-                    text: `${LoadtextJSON['loading']}...`,
-                    style: {
-                        font: '20px monospace',
-                        fill: '#ffffff'
-                    }
-                }).setOrigin(0.5, 0.5);
-
-                this.percentText = this.make.text({
-                    x: centre.x,
-                    y: centre.y,
-                    text: '0%',
-                    style: {
-                        font: '18px monospace',
-                        fill: '#ffffff'
-                    }
-                }).setOrigin(0.5, 0.5);
-
-                this.assetText = this.make.text({
-                    x: centre.x,
-                    y: centre.y + 50,
-                    text: '',
-                    style: {
-                        font: '18px monospace',
-                        fill: '#ffffff'
-                    }
-                }).setOrigin(0.5, 0.5);
-
-            };
-            var loadEvents = () => {
-
-                this.load.on('progress', (percent) => {
-                    this.percentText.setText(parseInt(percent * 100) + '%');
-                    this.progressBar.clear();
-                    this.progressBar.fillStyle(0xffffff, 1);
-                    this.progressBar.fillRect(-barW * 0.5, -barH * 0.5, barW * percent, barH);
-                });
-
-                this.load.on('fileprogress', (file) => {
-                    this.assetText.setText(`${LoadtextJSON['LoadingAsset']}: ${file.key}`);
-                });
-
-                this.load.on('filecomplete', (key) => {
-                    // console.debug(key);
-                    if (key != 'dude') return;
-                    this.anims.create({
-                        key: 'dude_run',
-                        frames: this.anims.generateFrameNumbers('dude', { start: 5, end: 8 }),
-                        frameRate: 15,
-                        repeat: -1,
-                    });
-                    this.dude = this.add.sprite(this.progressBar.x, this.progressBar.y - 100, 'dude')
-                        .play('dude_run');
-
-                });
-
-                this.load.on('complete', () => {
-                    this.progressBar.destroy();
-                    this.progressBox.destroy();
-                    this.loadingText.destroy();
-                    this.percentText.destroy();
-                    this.assetText.destroy();
-                    this.dude.destroy();
-                    this.resolve();
-                    // this.scene.remove();
-                });
-            };
-            progressGraphics();
-            loadEvents();
-            // this.load.image('logo', 'zenvalogo.png');
-            // for (var i = 0; i < 5000; i++) {
-            //     this.load.image('logo' + i, 'zenvalogo.png');
-            // }
-        };
-
-        makeProgressBar();
-        gameObjects();
-        UI();
-
-
-    };
-    create() { };
-    update() { };
 };
 
 // class DefendScene extends Phaser.Scene {

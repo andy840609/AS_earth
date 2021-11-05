@@ -165,10 +165,6 @@ function locatingGame() {
         // console.debug(data);
         return game;
     };
-    game.string = (value) => {
-        // stringObj = value;
-        return game;
-    };
 
     async function game() {
 
@@ -407,7 +403,7 @@ function locatingGame() {
                         return Math.floor(Math.random() * x);
                     };
 
-                    const backgroundArr = Object.keys(BackGroundResources);
+                    const backgroundArr = Object.keys(BackGroundResources.defend);
                     let markerArr = [],
                         circleArr = [];
 
@@ -982,16 +978,16 @@ function locatingGame() {
 
 
             //===when  map clicked 
-            async function gameStart(gameMode, stationMarker = null) {
-                // console.debug(gameMode, stationMarker);
+            async function gameStart(gameMode, siteData = null) {
+                // console.debug(gameMode, siteData);
 
                 gameDisplay(true);
 
                 let gameResult;
                 switch (gameMode) {
                     case 'defend':
-                        let stationData = stationMarker ?
-                            stationMarker.options.data :
+                        let stationData = siteData ?
+                            siteData.options.data :
                             testArr[0].options.data;//test
 
                         gameResult = await new Promise((resolve, reject) => {
@@ -1022,7 +1018,7 @@ function locatingGame() {
                         //===update icon
                         // console.debug(stationInfo.clear, !stationData.stationStats.clear)
                         if (stationInfo.clear && !stationData.stationStats.clear)
-                            updateStation(stationMarker, { icon: 'clear' });
+                            updateStation(siteData, { icon: 'clear' });
 
                         //===update circle
                         if (stationInfo.clear) {
@@ -1033,9 +1029,9 @@ function locatingGame() {
                             let radius = timeGap * GameData.velocity * 1000;
 
                             //==半徑跟之前相差大於1不作動畫
-                            let pre_radius = stationMarker.options.data.circleObj.getRadius();
+                            let pre_radius = siteData.options.data.circleObj.getRadius();
                             if (Math.abs(radius - pre_radius) > 1)
-                                updateStation(stationMarker, { circleRadius: radius });
+                                updateStation(siteData, { circleRadius: radius });
 
                         };
 
@@ -1047,8 +1043,35 @@ function locatingGame() {
 
                         break;
                     case 'dig':
-                        // gameDisplay(false);
-                        console.debug(stationMarker);
+
+                        let background = 'halloween_1';//==之後經緯度判斷？
+
+                        let placeData = Object.assign({ background: background },
+                            siteData ? { depth: siteData.depth } : {});
+
+
+                        gameResult = await new Promise((resolve, reject) => {
+                            const config = {
+                                parent: 'gameMain',
+                                type: Phaser.AUTO,
+                                width: width * 0.9,
+                                height: height * 0.95,
+                                physics: {
+                                    default: 'arcade',
+                                    arcade: {
+                                        gravity: { y: 300 },
+                                        debug: true,
+                                    },
+                                },
+                                scene: new DigScene(placeData, GameData, {
+                                    resolve: resolve,
+                                }),
+                            };
+                            new Phaser.Game(config);
+
+                        });
+
+                        console.debug(gameResult);
                         break;
                 };
                 gameDisplay(false);

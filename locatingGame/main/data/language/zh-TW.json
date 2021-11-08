@@ -17,7 +17,7 @@
         "playerStats": "人物狀態",
         "velocityChart": "速度圖",
         "velocityStr": "速度參數",
-        "distance": "距離",
+        "distance": "距離假設震央",
         "estimatedTime": "預估時間",
         "aaa": "sss",
         "aaa": "sss",
@@ -36,7 +36,7 @@
         "yes": "是",
         "no": "不是",
         "station": "測站",
-        "aaa": "sss",
+        "assumedEpicenter": "假設震央",
         "aaa": "sss",
         "aaa": "sss"
     }

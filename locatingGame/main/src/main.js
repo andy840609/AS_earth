@@ -202,6 +202,7 @@ function locatingGame() {
 
             var mapObj;
             var geoJSON;//===location data
+            var assumedEpicenter;
 
             var gameDisplay = (display) => {
 
@@ -223,6 +224,7 @@ function locatingGame() {
                 GameData = {
                     timeRemain: 500000,
                     velocity: 7.5,//==速度參數預設7.5
+                    playerEpicenter: null,
                     velocityChartUnlock: false,
                     controllCursor: {
                         up: 'w',
@@ -409,8 +411,8 @@ function locatingGame() {
 
                     data.forEach((d, i) => {
                         // console.debug(d);
-                        // let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
-                        let enemy = [];//==之後隨機抽敵人組
+                        let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
+                        // let enemy = [];//==之後隨機抽敵人組
                         let enemyStats = {};
 
 
@@ -451,8 +453,7 @@ function locatingGame() {
 
                         });
 
-                        let markerHint = "<b><font size='5'>" + d['station'] + "</font><br>";
-                        marker.bindTooltip(markerHint, {
+                        marker.bindTooltip(d['station'], {
                             direction: 'top',
                             // permanent: true,
                             className: 'station-tooltip',
@@ -498,6 +499,21 @@ function locatingGame() {
                         //     className: 'station-tooltip',
                         // })
                         .addTo(mapObj);
+
+                    assumedEpicenter = L.marker(data.epicenter['coordinate'], {
+                        icon: L.icon({
+                            iconUrl: '../data/assets/icon/star2.png',
+                            iconSize: [size, size],
+                            iconAnchor: [size / 2, size / 2],
+                        }),
+                        pane: 'markerPane',
+                        data: data.epicenter,
+                    }).bindTooltip('', {
+                        direction: 'top',
+                        className: 'station-tooltip',
+                    }).addTo(mapObj);
+                    assumedEpicenter.getElement().style.display = 'none';
+                    // console.debug()
                     //＝＝test 震央
 
                 };
@@ -705,7 +721,7 @@ function locatingGame() {
                                 })
                                 .on('click', function (e) {
                                     //==速度參數要完成兩站才能調整
-                                    if (this.id == UIbuttons[1] && !GameData.velocityChartUnlock) return;
+                                    // if (this.id == UIbuttons[1] && !GameData.velocityChartUnlock) return;
 
                                     let button = $(this);
                                     let ckick = button.hasClass('clicked');
@@ -794,7 +810,7 @@ function locatingGame() {
                             confirmWindow.fadeIn(fadeInDuration)
                                 .find('.placeStr')
                                 .text(`${lat.toFixed(2)} , ${lng.toFixed(2)}`)
-                                .data('gameStartParameters', ['dig', bingo ? data.epicenter : null]);
+                                .data('gameStartParameters', ['dig', bingo ? data.epicenter : { coordinate: [lat, lng] }]);
 
                         })
                         .on('move', function (e) {
@@ -1043,12 +1059,26 @@ function locatingGame() {
 
                         break;
                     case 'dig':
-
+                        console.debug(siteData);
+                        let coordinate = siteData.coordinate;
                         let background = 'halloween_1';//==之後經緯度判斷？
+                        let mineBGindex = 0;//==之後經緯度判斷？
 
-                        let placeData = Object.assign({ background: background },
-                            siteData ? { depth: siteData.depth } : {});
+                        let placeData = {
+                            coordinate: coordinate,
+                            background: background,
+                            mineBGindex: mineBGindex,
+                            depth: siteData.depth ? siteData.depth : null,
+                        };
 
+                        //==顯示假設點
+                        assumedEpicenter
+                            .setLatLng(coordinate)
+                            .getTooltip()
+                            .setContent(`${GameData.languageJSON.Tip['assumedEpicenter']} : ${coordinate.map(d => d.toFixed(2)).join(' , ')}`)
+                        assumedEpicenter.getElement().style.display = 'inline';
+
+                        GameData.playerEpicenter = coordinate;
 
                         gameResult = await new Promise((resolve, reject) => {
                             const config = {
@@ -1298,7 +1328,7 @@ function locatingGame() {
 
         var x, y;
         var newDataObj;
-        const slopeRange = [5, 10];//==速度參數最大小範圍(km/s)
+        const slopeRange = [5, 70];//==速度參數最大小範圍(km/s)
         var handleSlope = GameData.velocity;
 
         var getPoint = (slope, rScale = 1) => {
@@ -1323,10 +1353,12 @@ function locatingGame() {
             return { x: pointX, y: pointY };
         };
 
-        const epicenterCoord = data.epicenter.coordinate;
-        const yDomainMax = d3.max(data.map(d => distanceByLnglat(d.coordinate, epicenterCoord)));
+        var epicenterCoord = data.epicenter.coordinate;
+
 
         function getNewData() {
+
+            epicenterCoord = GameData.playerEpicenter ? GameData.playerEpicenter : epicenterCoord;
 
             //==取得做過測站的
             let clearStationData = data
@@ -1354,7 +1386,7 @@ function locatingGame() {
                     .attr("font-size", "30")
                     .attr('x', width / 2)
                     .attr("y", margin.bottom * 0.7)
-                    .text('Time (s)');
+                    .text('▵T ( Tₛ - Tₚ ) (s)');
 
                 yAxis
                     .append('text')
@@ -1377,7 +1409,7 @@ function locatingGame() {
                 let domainScale = 1.5;
                 //==沒完成任何站就給最大時間10才不出bug
                 let xAxisDomain = [0, newDataObj.length == 0 ? 10 : d3.max(newDataObj.map(d => d.timeGap)) * domainScale];
-                let yAxisDomain = [0, yDomainMax * domainScale];
+                let yAxisDomain = [0, d3.max(data.map(d => distanceByLnglat(d.coordinate, epicenterCoord))) * domainScale];
 
                 // console.debug(xAxisDomain, yAxisDomain);
 
@@ -1494,9 +1526,10 @@ function locatingGame() {
                                 .join("path")
                                 .attr("class", "arc")
                                 .attr("fill", 'none')
-                                .attr("stroke", 'orange')
+                                .attr("stroke", 'black')
                                 .attr("stroke-width", strokeWidth)
-                                .attr("stroke-opacity", .8)
+                                .attr("stroke-dasharray", "10")
+                                .attr("stroke-opacity", .2)
                                 .attr("d", getArcD(r, 0, Math.PI / 2));
 
                         });
@@ -1589,8 +1622,9 @@ function locatingGame() {
                 if (!handleUpdate) {
                     updateAxis();
                     updateFixed();
-                    updateFocus();
-                }
+                    if (GameData.playerEpicenter)
+                        updateFocus();
+                };
                 updateHandle();
             };
 

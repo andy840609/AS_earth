@@ -79,8 +79,8 @@ const BackGroundResources = {
             static: ['1.png', '3.png', '4.png', '5.png', '6.png', '7.png'],
             dynamic: ['2.png'],
             depth: {
-                static: [0, 0, 0, 2, 2, 2],
-                dynamic: [1],
+                static: [1, 1, 1, 3, 3, 3],
+                dynamic: [2],
             },
         },
         // halloween_1: {
@@ -108,7 +108,16 @@ const BackGroundResources = {
         //     },
         // },
     },
-
+    mine: {
+        mineBackground: {
+            static: ['rockBG1.jpg',],
+            dynamic: [],
+            depth: {
+                static: [0, 0, 0,],
+                dynamic: [],
+            },
+        }
+    }
 
 };
 
@@ -120,7 +129,6 @@ const Bullet = new Phaser.Class({
         function Bullet(scene) {
             Phaser.Physics.Arcade.Sprite.call(this, scene, 0, 0, 'instrument');
             this.setDepth(15);
-
         },
 
     fire: function (x, y, speed) {
@@ -148,7 +156,6 @@ const Enemy = new Phaser.Class({
 
     initialize:
         function Enemy(scene, key, i, stats) {
-
 
             Phaser.Physics.Arcade.Sprite.call(this, scene);
             scene.physics.world.enableBody(this, 0);
@@ -235,12 +242,14 @@ const Enemy = new Phaser.Class({
 
             // this.body.collideWorldBounds = true;
 
+            //==stats
+            this.stats = stats;
+
             //==HP bar
             // this.HPbar = scene.scene.add(null, new UIScene('statsBar', scene, this), true).HPbar;
             scene.scene.add(null, new UIScene('statsBar', scene, this), true);
 
-            //==stats
-            this.stats = stats;
+
 
             // this.setCollideWorldBounds(true);
             // console.debug(this);
@@ -677,4 +686,165 @@ const Enemy = new Phaser.Class({
 
 });
 
+const Player = new Phaser.Class({
 
+    Extends: Phaser.Physics.Arcade.Sprite,
+
+    initialize:
+        function Player(scene, key, stats) {
+            // console.debug(scene);
+            Phaser.Physics.Arcade.Sprite.call(this, scene, 0, 0, 'player');
+            scene.physics.world.enableBody(this, 0);
+
+            //==anims
+            var animsCreate = () => {
+                scene.anims.create({
+                    key: 'player_left',
+                    frames: scene.anims.generateFrameNumbers('player', { frames: [0, 1, 2, 3, 0] }),
+                    frameRate: 30,
+                    repeat: 0,
+                });
+
+                scene.anims.create({
+                    key: 'player_turn',
+                    frames: [{ key: 'player', frame: 4 }],
+                    // frames: scene.anims.generateFrameNumbers('player', { frames: [0, 1, 2, 3, 0] }),
+                    frameRate: 20
+                });
+
+                scene.anims.create({
+                    key: 'player_right',
+                    frames: scene.anims.generateFrameNumbers('player', { frames: [5, 6, 7, 8, 5] }),
+                    frameRate: 30,
+                    repeat: 0,
+                });
+            };
+            animsCreate();
+
+            this
+                .setCollideWorldBounds(true)
+                .setPushable(false)
+                .setName('player')
+                .play('player_turn');
+
+            this.body
+                .setGravityY(500);
+
+            //===init attack
+            this.bullets = scene.physics.add.group({
+                classType: Bullet,
+                maxSize: 10,
+                runChildUpdate: true,
+                maxVelocityY: 0,
+            });
+
+            //======custom
+            this.stats = Object.assign({}, stats);
+
+            //==get HP/MP statsBar
+            scene.scene.add(null, new UIScene('statsBar', scene, this), true);
+            // console.debug(statsBarUI);
+
+        },
+    //==移動
+    movingHadler: function (scene) {
+        if (this.stopCursorsFlag) return;
+
+        let cursors = scene.cursors;
+        let controllCursor = scene.gameData.controllCursor;
+
+        if (cursors[controllCursor['left']].isDown) {
+            this.setVelocityX(-this.stats.movementSpeed);
+            this.anims.play('player_left', true);
+            this.playerTurnLeft = true;
+        }
+        else if (cursors[controllCursor['right']].isDown) {
+            this.setVelocityX(this.stats.movementSpeed);
+            this.anims.play('player_right', true);
+            this.playerTurnLeft = false;
+        }
+        else {
+            this.setVelocityX(0);
+            // this.anims.play('player_turn');
+        };
+
+        //==跳
+        if (cursors[controllCursor['up']].isDown && this.body.touching.down) {
+            this.setVelocityY(-this.stats.jumpingPower);
+        };
+
+    },
+    //==撿起
+    pickingHadler: function (scene) {
+
+        let cursors = scene.cursors;
+        let controllCursor = scene.gameData.controllCursor;
+
+        if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['down']])) {
+
+            // console.debug(orbStats);
+            if (this.pickUpObj) {  //==put down
+
+                this.pickUpObj.statusHadler(this, false, this.pickUpObj.orbStats.isInRange);
+                this.pickUpObj = null;
+
+            }
+            else {  //==pick up
+                const piclUpDistance = 40;
+                // console.debug(this.pickUpObj);
+                let colsestOrb;
+                scene.orbGroup.children.iterate(child => {
+                    if (Phaser.Math.Distance.BetweenPoints(this, child) <= piclUpDistance)
+                        if (colsestOrb)
+                            colsestOrb =
+                                Phaser.Math.Distance.BetweenPoints(this, child) <
+                                    Phaser.Math.Distance.BetweenPoints(this, colsestOrb) ?
+                                    child : colsestOrb;
+                        else
+                            colsestOrb = child;
+
+                });
+                if (colsestOrb) {
+                    // console.debug(colsestOrb);
+                    this.pickUpObj = colsestOrb;
+                    this.pickUpObj.statusHadler(this, true);
+
+                };
+            }
+
+        };
+
+    },
+    //==攻擊
+    attackHandler: function (scene) {
+
+        let cursors = scene.cursors;
+        let controllCursor = scene.gameData.controllCursor;
+
+        if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['attack']])) {
+            if (this.stats.MP < this.stats.manaCost) return;
+
+            var bullet = this.bullets.get();
+            // console.debug(bullet);
+            if (bullet) {
+                bullet.fire(this.x, this.y, this.stats.attackSpeed * (this.playerTurnLeft ? -1 : 1));
+                bullet.anims.play(this.playerTurnLeft ? 'player_left' : 'player_right', true);
+                // bullet.setMass(1);
+                bullet.body.setSize(30, 40);
+                this.statsChangeHandler({ MP: this.stats.MP -= this.stats.manaCost }, this);
+            }
+        };
+    },
+    //==HP/MP
+    statsChangeHandler: function (statsObj) {
+
+        Object.keys(statsObj).forEach(stats => this[stats + 'bar'].updateFlag = true);
+
+        // this.stats = Object.assign(this.stats, statsObj);
+        // console.debug(statsObj);
+    },
+    stopCursorsFlag: false,
+    invincibleFlag: false,//無敵時間
+    playerTurnLeft: false,//==判斷子彈方向
+
+});

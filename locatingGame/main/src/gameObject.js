@@ -39,40 +39,82 @@ const GameObjectStats = {
 
 };
 
+//==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
 const BackGroundResources = {
     defend: {
         forest_1: {
-            static: ['sky.png', 'rocks_1.png', 'rocks_2.png', 'clouds_1.png'],
+            static: ['sky.png', 'rocks_1.png', 'rocks_2.png', 'clouds_1.png', 'soilGround.png'],
             dynamic: ['clouds_2.png', 'clouds_3.png', 'clouds_4.png'],
             depth: {
-                static: [0, 1, 2, 0],
+                static: [0, 1, 2, 0, 3],
                 dynamic: [0, 1, 2],
             },
+            animType: [1, 1, 1],
         },
         forest_2: {
-            static: ['sky.png', 'rocks_3.png', 'rocks_2.png', 'rocks_1.png', 'pines.png', 'clouds_2.png'],
+            static: ['sky.png', 'rocks_3.png', 'rocks_2.png', 'rocks_1.png', 'pines.png', 'clouds_2.png', 'soilGround.png'],
             dynamic: ['clouds_1.png', 'clouds_3.png', 'birds.png'],
             depth: {
-                static: [0, 0, 0, 0, 0, 0],
+                static: [0, 0, 0, 0, 0, 0, 0],
                 dynamic: [1, 1, 1],
             },
+            animType: [1, 1, 3],
         },
         forest_3: {
-            static: ['sky.png', 'rocks.png', 'ground_1.png', 'ground_2.png', 'ground_3.png', 'plant.png'],
+            static: ['sky.png', 'rocks.png', 'ground_1.png', 'ground_2.png', 'ground_3.png', 'plant.png', 'soilGround.png'],
             dynamic: ['clouds_1.png', 'clouds_2.png'],
             depth: {
-                static: [0, 1, 2, 2, 2, 2],
+                static: [0, 1, 2, 2, 2, 2, 0],
                 dynamic: [0, 1],
             },
+            animType: [1, 1],
         },
         forest_4: {
-            static: ['sky.png', 'rocks.png', 'ground.png',],
+            static: ['sky.png', 'rocks.png', 'ground.png', 'soilGround.png'],
             dynamic: ['clouds_1.png', 'clouds_2.png'],
             depth: {
-                static: [0, 1, 2],
+                static: [0, 1, 2, 0],
                 dynamic: [0, 1],
             },
+            animType: [1, 1],
         },
+        candy_1: {
+            static: ['layer06_sky.png', 'layer05_rocks.png', 'layer03_trees.png', 'layer02_cake.png', 'layer01_ground.png',],
+            dynamic: ['layer04_clouds.png',],
+            depth: {
+                static: [0, 0, 0, 0, 0,],
+                dynamic: [1],
+            },
+            animType: [1],
+        },
+        candy_2: {
+            static: ['layer09_Sky.png', 'layer05_Castle.png', 'layer02_Clouds_2.png', 'layer01_Clouds_1.png'],
+            dynamic: ['layer06_Stars_3.png', 'layer07_Stars_2.png', 'layer08_Stars_1.png', 'layer04_Path.png', 'layer03_Clouds_3.png',],
+            depth: {
+                static: [0, 0, 0, 0, 0, 0, 0],
+                dynamic: [1, 1, 1, 1, 1],
+            },
+            animType: [2, 2, 2, 1, 1]
+        },
+        candy_3: {
+            static: ['layer07_Sky.png', 'layer06_Rocks.png', 'layer04_Hills_2.png', 'layer03_Hills_1.png', 'layer02_Trees.png', 'layer01_Ground.png'],
+            dynamic: ['layer05_Clouds.png',],
+            depth: {
+                static: [0, 0, 0, 0, 0, 0, 0],
+                dynamic: [1],
+            },
+            animType: [1],
+        },
+        candy_4: {
+            static: ['layer07_Sky.png', 'layer06_Rocks.png', 'layer05_Hills.png', 'layer03_Hills_Castle.png', 'layer02_Trees_rocks.png', 'layer01_Ground.png'],
+            dynamic: ['layer04_Clouds.png'],
+            depth: {
+                static: [0, 0, 0, 0, 0, 0],
+                dynamic: [1],
+            },
+            animType: [1],
+        },
+
     },
     dig: {
         halloween_1: {
@@ -82,42 +124,46 @@ const BackGroundResources = {
                 static: [1, 1, 1, 3, 3, 3],
                 dynamic: [2],
             },
+            animType: [1],
         },
-        // halloween_1: {
-        //     static: ['sky.png', 'rocks_1.png', 'rocks_2.png', 'clouds_1.png'],
-        //     dynamic: ['clouds_2.png', 'clouds_3.png', 'clouds_4.png'],
-        //     depth: {
-        //         static: [0, 1, 2, 0],
-        //         dynamic: [0, 1, 2],
-        //     },
-        // },
-        // halloween_1: {
-        //     static: ['sky.png', 'rocks_1.png', 'rocks_2.png', 'clouds_1.png'],
-        //     dynamic: ['clouds_2.png', 'clouds_3.png', 'clouds_4.png'],
-        //     depth: {
-        //         static: [0, 1, 2, 0],
-        //         dynamic: [0, 1, 2],
-        //     },
-        // },
-        // halloween_1: {
-        //     static: ['sky.png', 'rocks_1.png', 'rocks_2.png', 'clouds_1.png'],
-        //     dynamic: ['clouds_2.png', 'clouds_3.png', 'clouds_4.png'],
-        //     depth: {
-        //         static: [0, 1, 2, 0],
-        //         dynamic: [0, 1, 2],
-        //     },
-        // },
+        halloween_2: {
+            static: ['1.png', '2.png', '3.png', '6.png'],
+            dynamic: ['4.png'],
+            depth: {
+                static: [1, 1, 1, 1, 1],
+                dynamic: [1],
+            },
+            animType: [2],
+        },
+        halloween_3: {
+            static: ['1.png', '3.png', '4.png', '5.png', '6.png', '7.png', '9.png'],
+            dynamic: ['2_1.png', '2_2.png', '8.png'],
+            depth: {
+                static: [1, 1, 2, 2, 2, 2, 3],
+                dynamic: [2, 1, 2],
+            },
+            animType: [3, 1, 2],
+        },
+        halloween_4: {
+            static: ['1.png', '2.png', '3.png', '4.png', '6.png', '7.png'],
+            dynamic: ['5.png', '6_2.png'],
+            depth: {
+                static: [1, 1, 1, 1, 1, 1, 1],
+                dynamic: [1, 1],
+            },
+            animType: [2, 3],
+        },
     },
     mine: {
         mineBackground: {
-            static: ['rockBG1.jpg',],
+            static: ['2.jpg',],
             dynamic: [],
             depth: {
                 static: [0, 0, 0,],
                 dynamic: [],
             },
         }
-    }
+    },
 
 };
 
@@ -692,7 +738,7 @@ const Player = new Phaser.Class({
 
     initialize:
         function Player(scene, key, stats) {
-            // console.debug(scene);
+            // console.debug(key);
             Phaser.Physics.Arcade.Sprite.call(this, scene, 0, 0, 'player');
             scene.physics.world.enableBody(this, 0);
 

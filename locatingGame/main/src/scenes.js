@@ -1188,17 +1188,21 @@ class LoadingScene extends Phaser.Scene {
                     this.load.image('station', dir + 'station.png');
                     this.load.image('title', dir + 'title.png');
                 };
-                var platform = () => {
-                    const dir = envDir + 'platform/';
-                    this.load.image('ground', dir + 'platform.png');
-                };
                 var background = () => {
 
                     const dir = envDir + 'background/' + gameScene.background + '/';
 
                     let resources = BackGroundResources[gameScene.name][gameScene.background];
-                    resources.static.concat(resources.dynamic).forEach(res => {
-                        this.load.image(res, dir + res);
+                    // resources.static.concat(resources.dynamic).forEach(res => {
+                    //     this.load.image(res, dir + res);
+                    // });
+
+                    //==重新取名讓loader裡的key不會重複(檔名可能重複)
+                    resources.static.forEach((res, i) => {
+                        this.load.image('staticBG_' + i, dir + res);
+                    });
+                    resources.dynamic.forEach((res, i) => {
+                        this.load.image('dynamicBG_' + i, dir + res);
                     });
 
                     if (packNum == 2) {
@@ -1210,7 +1214,7 @@ class LoadingScene extends Phaser.Scene {
                         // resources.dynamic.concat(resources.static).forEach(res => {
                         //     this.load.image(res, dir + res);
                         // });
-                        this.load.image(mineBG, dir + mineBG);
+                        this.load.image('mineBG', dir + mineBG);
                     }
 
                 };
@@ -1245,14 +1249,12 @@ class LoadingScene extends Phaser.Scene {
 
                 };
 
-
                 if (packNum == 1) {
                     station();
                     instrument();
                     wave();
                 };
                 background();
-                platform();
 
 
             };
@@ -1603,126 +1605,64 @@ class DefendScene extends Phaser.Scene {
                 this.add.text(width * 0.88, height * 0.46, station, { fontSize: '32px', fill: '#000' })
                     .setRotation(-0.1).setOrigin(0.5, 0.5).setDepth(Depth.station);
             };
-            var platform = () => {
-                this.platforms = this.physics.add.staticGroup();
-                let ground = this.platforms.create(width * 0.5, height * 0.95, 'ground')
-                    .setDepth(Depth.platform)
-                    .setName('platform');
-
-                ground.setScale((width + 100) / ground.width, 0.5).refreshBody().setOffset(30)
-            };
             var background = () => {
+                const groundH = height * 0.5;
 
                 let resources = BackGroundResources.defend[this.background];
                 resources.static.forEach((res, i) => {
-                    let img = this.add.image(width * 0.5, height * 0.5, res);
-                    img
-                        .setScale(width / img.width, height / img.height)
-                        .setDepth(resources.depth.static[i]);
+                    if (i == resources.static.length - 1) {
+                        this.platforms = this.physics.add.staticGroup();
+                        let ground = this.platforms.create(width * 0.5, groundH * 1.5, 'staticBG_' + i);
+
+                        ground
+                            .setScale(width / ground.width, groundH / ground.height)
+                            .setDepth(Depth.platform)
+                            .refreshBody()
+                            .setSize(width, groundH * 0.15, false)
+                            .setOffset(0, groundH * 0.85)
+                            .setName('platform');
+
+                        // console.debug(res)
+                    }
+                    else {
+                        let img = this.add.image(width * 0.5, height * 0.5, 'staticBG_' + i);
+                        img
+                            .setScale(width / img.width, height / img.height)
+                            .setDepth(resources.depth.static[i]);
+                    };
+
                 });
 
-                // let clouds = this.add.group();
-                // resources.dynamic.forEach((res, i) => {
-                //     let cloud = clouds.create(width * 0.5, height * 0.5, res);
-                //     cloud
-                //         .setScale(width / cloud.width, height / cloud.height)
-                //         .setDepth(resources.depth.dynamic[i]);
-                //     //==custom
-                //     cloud.firstLoop = true;
-                //     cloud.targetIndex = i;
-                //     cloud.movingDuration = Phaser.Math.Between(5, 20) * 1000;//==第一次移動5到20秒
-
-                // });
-                // console.debug(clouds);  
-
-                // this.tweens.add({
-                //     targets: clouds.getChildren(),
-                //     repeat: -1,
-                //     ease: 'Linear',
-                //     duration: (target) => target.movingDuration,
-                //     x: { start: width * 0.5, to: width * 1.5 },
-                //     onRepeat: (tween, target) => {
-                //         if (target.firstLoop) {
-                //             Object.assign(tween.data[target.targetIndex], {
-                //                 duration: target.movingDuration * 2,
-                //                 start: -width * 0.5,
-                //             });
-                //             target.firstLoop = false;
-                //         }
-                //     },
-                // });
-
-                let movingThings = this.add.group();
                 resources.dynamic.forEach((res, i) => {
 
-                    let thing = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, res);
+                    let thing = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, 'dynamicBG_' + i);
 
                     thing
                         .setScale(width / thing.width, height / thing.height)
                         .setDepth(resources.depth.dynamic[i]);
 
-                    movingThings.add(thing);
-                    //==custom
-                    thing.movingDuration = Phaser.Math.Between(5, 20) * 1000;//==第一次移動5到20秒
+                    //==tweens
+                    let movingDuration = Phaser.Math.Between(5, 15) * 1000;//==第一次移動5到20秒
+                    let animType = resources.animType[i];
+                    //==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
+
+                    this.tweens.add(
+                        Object.assign({
+                            targets: thing,
+                            repeat: -1,
+                            duration: movingDuration,
+                        },
+                            animType == 1 ?
+                                { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
+                                animType == 2 ? { alpha: { start: 0.1, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
+                                    animType == 3 ? { scaleX: { start: t => t.scaleX, to: t => t.scaleX * 1.5 }, scaleY: { start: t => t.scaleY, to: t => t.scaleY * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
+                                        { alpha: { start: 0.1, to: 1 }, ease: 'Bounce', yoyo: true }
+
+                        ));
 
                 });
-
-                this.tweens.add({
-                    targets: movingThings.getChildren(),
-                    repeat: -1,
-                    ease: 'Linear',
-                    duration: (target) => target.movingDuration,
-                    tilePositionX: { start: 0, to: (target) => target.width },
-                });
-
 
             };
-
-            // var background = () => {
-
-            //     let resources = BackGroundResources.defend[this.background];
-            //     resources.static.forEach((res, i) => {
-            //         let img = this.add.image(width * 0.5, height * 0.5, res);
-
-            //         img
-            //             .setScale(width / img.width, height / img.height)
-            //             .setDepth(resources.depth.static[i]);
-            //     });
-
-            //     let movingThings = this.add.group();
-            //     resources.dynamic.forEach((res, i) => {
-
-            //         let thing = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, res);
-
-            //         thing
-            //             .setScale(width / thing.width, height / thing.height)
-            //             .setDepth(resources.depth.dynamic[i]);
-
-            //         movingThings.add(thing);
-            //         //==custom
-            //         thing.firstLoop = true;
-            //         thing.targetIndex = i;
-            //         thing.movingDuration = Phaser.Math.Between(5, 10) * 1000;//==第一次移動5到20秒
-
-            //     });
-
-            //     this.tweens.add({
-            //         targets: movingThings.getChildren(),
-            //         repeat: -1,
-            //         ease: 'Linear',
-            //         duration: (target) => target.movingDuration,
-            //         tilePositionX: { start: 0, to: width * 2 },
-            //         // onRepeat: (tween, target) => {
-            //         //     if (target.firstLoop) {
-            //         //         Object.assign(tween.data[target.targetIndex], {
-            //         //             duration: target.movingDuration * 2,
-            //         //             start: -width * 0.5,
-            //         //         });
-            //         //         target.firstLoop = false;
-            //         //     }
-            //         // },
-            //     });
-            // };
             var instrument = () => {
 
                 const orbScale = 0.25;
@@ -1912,7 +1852,6 @@ class DefendScene extends Phaser.Scene {
 
             };
             background();
-            platform();
             station();
             wave();
             instrument();
@@ -1921,12 +1860,11 @@ class DefendScene extends Phaser.Scene {
         };
         var initPlayer = () => {
 
-            this.player = this.physics.add.existing(new Player(this, 'mage', this.gameData.playerStats))
+            this.player = this.add.existing(new Player(this, this.gameData.playerRole, this.gameData.playerStats))
                 .setPosition(100, 450)
-                .play('player_turn')
-                .setDepth(999);//Depth.player
+                .setDepth(Depth.player);
 
-            console.debug(this.player);
+            // console.debug(this.player);
 
             this.player.playerAttack = (bullet, enemy) => {
                 // console.debug(bullet, enemy);
@@ -1944,184 +1882,6 @@ class DefendScene extends Phaser.Scene {
                 this.physics.add.collider(this.player.bullets, this.enemy, this.player.playerAttack, null, this);
                 this.physics.add.overlap(this.enemy, this.player, this.enemy.enemyAttack, null, this);
             };
-
-            return;
-
-            var animsCreate = () => {
-                this.anims.create({
-                    key: 'player_left',
-                    frames: this.anims.generateFrameNumbers('player', { frames: [0, 1, 2, 3, 0] }),
-                    frameRate: 30,
-                    repeat: 0,
-                });
-
-                this.anims.create({
-                    key: 'player_turn',
-                    frames: [{ key: 'player', frame: 4 }],
-                    frameRate: 20
-                });
-
-                this.anims.create({
-                    key: 'player_right',
-                    frames: this.anims.generateFrameNumbers('player', { frames: [5, 6, 7, 8, 5] }),
-                    frameRate: 30,
-                    repeat: 0,
-                });
-            };
-            animsCreate();
-
-            this.player = this.physics.add.sprite(100, 450, 'player');
-            // player.setBounce(0.2);
-            // player.setBounce(100, 0);
-            this.player
-                .setCollideWorldBounds(true)
-                .setPushable(false)
-                .setDepth(Depth.player)
-                .setName('player')
-                .play('player_turn');
-            this.player.body
-                .setGravityY(500);
-
-
-            this.physics.add.collider(this.player, this.platforms);
-
-            //===init attack
-            var bullets = this.physics.add.group({
-                classType: Bullet,
-                maxSize: 10,
-                runChildUpdate: true,
-                maxVelocityY: 0,
-            });
-
-            //======custom
-            this.player.stats = Object.assign({}, this.gameData.playerStats);
-
-            //==get HP/MP statsBar
-            this.scene.add(null, new UIScene('statsBar', this, this.player), true);
-            // console.debug(statsBarUI);
-
-            Object.assign(this.player, {
-                // stats: Object.assign({}, this.gameData.playerStats),
-                stopCursorsFlag: false,
-                invincibleFlag: false,//無敵時間
-                playerTurnLeft: false,//==判斷子彈方向
-
-                playerAttack: (bullet, enemy) => {
-                    // console.debug(bullet, enemy);
-                    let playerStats = this.player.stats;
-                    bullet.disableBody(true, true);
-                    enemy.body.setVelocityX(playerStats.knockBackSpeed * (bullet.x < enemy.x ? 1 : -1));
-
-                    enemy.behavior = 'hurt';
-                    enemy.statsChangeHandler({ HP: enemy.stats.HP -= playerStats.attackPower }, this);
-                },
-
-                //==移動
-                movingHadler: function (scene) {
-                    if (this.stopCursorsFlag) return;
-
-                    let cursors = scene.cursors;
-                    let controllCursor = scene.gameData.controllCursor;
-
-                    if (cursors[controllCursor['left']].isDown) {
-                        this.setVelocityX(-this.stats.movementSpeed);
-                        this.anims.play('player_left', true);
-                        this.playerTurnLeft = true;
-                    }
-                    else if (cursors[controllCursor['right']].isDown) {
-                        this.setVelocityX(this.stats.movementSpeed);
-                        this.anims.play('player_right', true);
-                        this.playerTurnLeft = false;
-                    }
-                    else {
-                        this.setVelocityX(0);
-                        // this.anims.play('player_turn');
-                    };
-
-                    //==跳
-                    if (cursors[controllCursor['up']].isDown && this.body.touching.down) {
-                        this.setVelocityY(-this.stats.jumpingPower);
-                    };
-
-                },
-                //==撿起
-                pickingHadler: function (scene) {
-
-                    let cursors = scene.cursors;
-                    let controllCursor = scene.gameData.controllCursor;
-
-                    if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['down']])) {
-
-                        // console.debug(orbStats);
-                        if (this.pickUpObj) {  //==put down
-
-                            this.pickUpObj.statusHadler(this, false, this.pickUpObj.orbStats.isInRange);
-                            this.pickUpObj = null;
-
-                        }
-                        else {  //==pick up
-                            const piclUpDistance = 40;
-                            // console.debug(this.pickUpObj);
-                            let colsestOrb;
-                            scene.orbGroup.children.iterate(child => {
-                                if (Phaser.Math.Distance.BetweenPoints(this, child) <= piclUpDistance)
-                                    if (colsestOrb)
-                                        colsestOrb =
-                                            Phaser.Math.Distance.BetweenPoints(this, child) <
-                                                Phaser.Math.Distance.BetweenPoints(this, colsestOrb) ?
-                                                child : colsestOrb;
-                                    else
-                                        colsestOrb = child;
-
-                            });
-                            if (colsestOrb) {
-                                // console.debug(colsestOrb);
-                                this.pickUpObj = colsestOrb;
-                                this.pickUpObj.statusHadler(this, true);
-
-                            };
-                        }
-
-                    };
-
-                },
-                //==攻擊
-                attackHandler: function (scene) {
-
-                    let cursors = scene.cursors;
-                    let controllCursor = scene.gameData.controllCursor;
-
-                    if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['attack']])) {
-                        if (this.stats.MP < this.stats.manaCost) return;
-
-                        var bullet = bullets.get();
-                        // console.debug(bullet);
-                        if (bullet) {
-                            bullet.fire(this.x, this.y, this.stats.attackSpeed * (this.playerTurnLeft ? -1 : 1));
-                            bullet.anims.play(this.playerTurnLeft ? 'player_left' : 'player_right', true);
-                            // bullet.setMass(1);
-                            bullet.body.setSize(30, 40);
-                            this.statsChangeHandler({ MP: this.stats.MP -= this.stats.manaCost }, this);
-                        }
-                    };
-                },
-                //==HP/MP
-                statsChangeHandler: function (statsObj) {
-
-                    Object.keys(statsObj).forEach(stats => this[stats + 'bar'].updateFlag = true);
-
-                    // this.stats = Object.assign(this.stats, statsObj);
-                    // console.debug(statsObj);
-                },
-            });
-
-
-            //==敵人玩家相關碰撞
-            if (!stationStats.liberate) {
-                this.physics.add.collider(bullets, this.enemy, this.player.playerAttack, null, this);
-                this.physics.add.overlap(this.enemy, this.player, this.enemy.enemyAttack, null, this);
-            };
-
 
         };
         var initEnemy = () => {
@@ -2417,21 +2177,21 @@ class DigScene extends Phaser.Scene {
                     resources.static.forEach((res, i) => {
                         if (i == resources.static.length - 1) {
                             this.platforms = this.physics.add.staticGroup();
-                            let ground = this.platforms.create(width * 0.5, groundH * 0.5, res);
+                            let ground = this.platforms.create(width * 0.5, groundH * 0.5, 'staticBG_' + i);
 
 
                             ground
                                 .setScale(width / ground.width, groundH / ground.height)
-                                .setDepth(resources.depth.static[i])
+                                .setDepth(Depth.platform)
                                 .refreshBody()
                                 .setSize(ground.displayWidth, ground.displayHeight * 0.1, false)
                                 .setOffset(0, ground.displayHeight * 0.9)
                                 .setName('platform');
 
-                            console.debug(res)
+                            // console.debug(res)
                         }
                         else {
-                            let img = this.add.image(width * 0.5, groundH * 0.5, res);
+                            let img = this.add.image(width * 0.5, groundH * 0.5, 'staticBG_' + i);
 
                             img
                                 .setScale(width / img.width, groundH / img.height)
@@ -2441,36 +2201,42 @@ class DigScene extends Phaser.Scene {
                     });
 
 
-
-
-                    let movingThings = this.add.group();
                     resources.dynamic.forEach((res, i) => {
 
-                        let thing = this.add.tileSprite(width * 0.5, groundH * 0.5, 0, 0, res);
+                        let thing = this.add.tileSprite(width * 0.5, groundH * 0.5, 0, 0, 'dynamicBG_' + i);
 
                         thing
                             .setScale(width / thing.width, groundH / thing.height)
                             .setDepth(resources.depth.dynamic[i]);
 
-                        movingThings.add(thing);
-                        //==custom
-                        thing.movingDuration = Phaser.Math.Between(5, 20) * 1000;//==第一次移動5到20秒
+                        //==tweens
+                        let movingDuration = Phaser.Math.Between(5, 15) * 1000;//==第一次移動5到20秒
+                        let animType = resources.animType[i];
+                        //==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
+
+                        this.tweens.add(
+                            Object.assign({
+                                targets: thing,
+                                repeat: -1,
+                                duration: movingDuration,
+                            },
+                                animType == 1 ?
+                                    { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
+                                    animType == 2 ? { alpha: { start: 0.1, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
+                                        animType == 3 ? { alpha: { start: 0.8, to: 1 }, scaleY: { start: t => t.scaleY * 0.88, to: t => t.scaleY * 1.2 }, ease: 'Bounce.easeIn', yoyo: true } :
+                                            { tilePoanglesitionX: { start: 0, to: thing.width }, ease: 'Linear', }
+
+                            ));
 
                     });
 
-                    this.tweens.add({
-                        targets: movingThings.getChildren(),
-                        repeat: -1,
-                        ease: 'Linear',
-                        duration: (target) => target.movingDuration,
-                        tilePositionX: { start: 0, to: (target) => target.width },
-                    });
+
                 };
                 var underGround = () => {
-                    let resources = BackGroundResources['mine']['mineBackground'];
-                    let background = resources.static[this.mineBGindex];
+                    // let resources = BackGroundResources['mine']['mineBackground'];
+                    // let background = resources.static[this.mineBGindex];
 
-                    this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, background)
+                    this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, 'mineBG')
                         .setDepth(0);
 
                 };
@@ -2497,186 +2263,28 @@ class DigScene extends Phaser.Scene {
         };
         var initPlayer = () => {
 
-            var animsCreate = () => {
-                this.anims.create({
-                    key: 'player_left',
-                    frames: this.anims.generateFrameNumbers('player', { frames: [0, 1, 2, 3, 0] }),
-                    frameRate: 30,
-                    repeat: 0,
-                });
+            this.player = this.add.existing(new Player(this, this.gameData.playerRole, this.gameData.playerStats))
+                .setPosition(width * 0.5, 0)
+                .setDepth(Depth.player);
 
-                this.anims.create({
-                    key: 'player_turn',
-                    frames: [{ key: 'player', frame: 4 }],
-                    frameRate: 20
-                });
+            // console.debug(this.player);
 
-                this.anims.create({
-                    key: 'player_right',
-                    frames: this.anims.generateFrameNumbers('player', { frames: [5, 6, 7, 8, 5] }),
-                    frameRate: 30,
-                    repeat: 0,
-                });
-            };
-            animsCreate();
+            // this.player.playerAttack = (bullet, enemy) => {
+            //     // console.debug(bullet, enemy);
+            //     let playerStats = this.player.stats;
+            //     bullet.disableBody(true, true);
+            //     enemy.body.setVelocityX(playerStats.knockBackSpeed * (bullet.x < enemy.x ? 1 : -1));
 
-            this.player = this.physics.add.sprite(100, 450, 'player');
-            // player.setBounce(0.2);
-            // player.setBounce(100, 0);
-            this.player
-                .setCollideWorldBounds(true)
-                .setPushable(false)
-                .setDepth(Depth.player)
-                .setName('player')
-                .play('player_turn');
-            this.player.body
-                .setGravityY(500);
-
+            //     enemy.behavior = 'hurt';
+            //     enemy.statsChangeHandler({ HP: enemy.stats.HP -= playerStats.attackPower }, this);
+            // };
 
             this.physics.add.collider(this.player, this.platforms);
-
-            //===init attack
-            var bullets = this.physics.add.group({
-                classType: Bullet,
-                maxSize: 10,
-                runChildUpdate: true,
-                maxVelocityY: 0,
-            });
-
-            //======custom
-            this.player.stats = Object.assign({}, this.gameData.playerStats);
-
-            //==get HP/MP statsBar
-            this.scene.add(null, new UIScene('statsBar', this, this.player), true);
-            // console.debug(statsBarUI);
-
-            Object.assign(this.player, {
-                // stats: Object.assign({}, this.gameData.playerStats),
-                stopCursorsFlag: false,
-                invincibleFlag: false,//無敵時間
-                playerTurnLeft: false,//==判斷子彈方向
-
-                playerAttack: (bullet, enemy) => {
-                    // console.debug(bullet, enemy);
-                    let playerStats = this.player.stats;
-                    bullet.disableBody(true, true);
-                    enemy.body.setVelocityX(playerStats.knockBackSpeed * (bullet.x < enemy.x ? 1 : -1));
-
-                    enemy.behavior = 'hurt';
-                    enemy.statsChangeHandler({ HP: enemy.stats.HP -= playerStats.attackPower }, this);
-                },
-
-                //==移動
-                movingHadler: function (scene) {
-                    if (this.stopCursorsFlag) return;
-
-                    let cursors = scene.cursors;
-                    let controllCursor = scene.gameData.controllCursor;
-
-                    if (cursors[controllCursor['left']].isDown) {
-                        this.setVelocityX(-this.stats.movementSpeed);
-                        this.anims.play('player_left', true);
-                        this.playerTurnLeft = true;
-                    }
-                    else if (cursors[controllCursor['right']].isDown) {
-                        this.setVelocityX(this.stats.movementSpeed);
-                        this.anims.play('player_right', true);
-                        this.playerTurnLeft = false;
-                    }
-                    else {
-                        this.setVelocityX(0);
-                        // this.anims.play('player_turn');
-                    };
-
-                    //==跳
-                    if (cursors[controllCursor['up']].isDown && this.body.touching.down) {
-                        this.setVelocityY(-this.stats.jumpingPower);
-                    };
-
-                },
-                //==撿起
-                pickingHadler: function (scene) {
-
-                    let cursors = scene.cursors;
-                    let controllCursor = scene.gameData.controllCursor;
-
-                    if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['down']])) {
-
-                        // console.debug(orbStats);
-                        if (this.pickUpObj) {  //==put down
-
-                            this.pickUpObj.statusHadler(this, false, this.pickUpObj.orbStats.isInRange);
-                            this.pickUpObj = null;
-
-                        }
-                        else {  //==pick up
-                            const piclUpDistance = 40;
-                            // console.debug(this.pickUpObj);
-                            let colsestOrb;
-                            scene.orbGroup.children.iterate(child => {
-                                if (Phaser.Math.Distance.BetweenPoints(this, child) <= piclUpDistance)
-                                    if (colsestOrb)
-                                        colsestOrb =
-                                            Phaser.Math.Distance.BetweenPoints(this, child) <
-                                                Phaser.Math.Distance.BetweenPoints(this, colsestOrb) ?
-                                                child : colsestOrb;
-                                    else
-                                        colsestOrb = child;
-
-                            });
-                            if (colsestOrb) {
-                                // console.debug(colsestOrb);
-                                this.pickUpObj = colsestOrb;
-                                this.pickUpObj.statusHadler(this, true);
-
-                            };
-                        }
-
-                    };
-
-                },
-                //==攻擊
-                attackHandler: function (scene) {
-
-                    let cursors = scene.cursors;
-                    let controllCursor = scene.gameData.controllCursor;
-
-                    if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['attack']])) {
-                        if (this.stats.MP < this.stats.manaCost) return;
-
-                        var bullet = bullets.get();
-                        // console.debug(bullet);
-                        if (bullet) {
-                            bullet.fire(this.x, this.y, this.stats.attackSpeed * (this.playerTurnLeft ? -1 : 1));
-                            bullet.anims.play(this.playerTurnLeft ? 'player_left' : 'player_right', true);
-                            // bullet.setMass(1);
-                            bullet.body.setSize(30, 40);
-                            this.statsChangeHandler({ MP: this.stats.MP -= this.stats.manaCost }, this);
-                        }
-                    };
-                },
-                //==HP/MP
-                statsChangeHandler: function (statsObj) {
-
-                    Object.keys(statsObj).forEach(stats => this[stats + 'bar'].updateFlag = true);
-
-                    // this.stats = Object.assign(this.stats, statsObj);
-                    // console.debug(statsObj);
-                },
-            });
-
-
-            //==敵人玩家相關碰撞
-            if (!stationStats.liberate) {
-                this.physics.add.collider(bullets, this.enemy, this.player.playerAttack, null, this);
-                this.physics.add.overlap(this.enemy, this.player, this.enemy.enemyAttack, null, this);
-            };
-
 
         };
         //==gameScene
         initEnvironment();
-        // initPlayer();
+        initPlayer();
         initTimer();
 
         //==UI
@@ -2684,6 +2292,18 @@ class DigScene extends Phaser.Scene {
         initIconBar();
     };
     update() {
+        var updatePlayer = () => {
+
+            this.player.movingHadler(this);
+            // this.player.pickingHadler(this);
+            this.player.attackHandler(this);
+
+            let playerStats = this.player.stats;
+            if (playerStats.MP < playerStats.maxMP)
+                this.player.statsChangeHandler({ MP: playerStats.MP += playerStats.manaRegen }, this);//自然回魔
+
+        };
+        updatePlayer();
 
         if (this.gameOver.flag) {
             //===time remove

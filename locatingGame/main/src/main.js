@@ -11,6 +11,9 @@ function locatingGame() {
     //     //Returning obj1 is optional and certainly up to your implementation
     //     return obj1;
     // };
+    var getRandom = (x) => {
+        return Math.floor(Math.random() * x);
+    };
     var distanceByLnglat = (coordinate1, coordinate2) => {
         const Rad = (d) => d * Math.PI / 180.0;
 
@@ -198,6 +201,7 @@ function locatingGame() {
         function gameGenerate() {
             const gameOuterDiv = chartContainerJQ.find('#gameOuter');
             const gameUI = chartContainerJQ.find('#gameUI');
+            const bigMap = document.querySelector('#bigMap');//==一些畫面位置計算用到
             const width = window.innerWidth, height = window.innerHeight;
 
             var mapObj;
@@ -207,7 +211,7 @@ function locatingGame() {
             var gameDisplay = (display) => {
 
                 if (display) {
-                    gameOuterDiv.show();
+                    gameOuterDiv.fadeIn();
 
                     //==遊戲開始UI關閉
                     gameUI.find('.UIicon').toggleClass('clicked', false);
@@ -215,12 +219,14 @@ function locatingGame() {
 
                 }
                 else
-                    gameOuterDiv.hide();
+                    gameOuterDiv.fadeOut();
             };
 
             var testArr;//==get markerData for debug
 
             function initGameData() {
+                let playerRole = 'mage';//==之後能選其他
+
                 GameData = {
                     timeRemain: 500000,
                     velocity: 7.5,//==速度參數預設7.5
@@ -244,7 +250,8 @@ function locatingGame() {
 
                     },
                     language: 'zh-TW',
-                    playerStats: GameObjectStats.player['mage'],
+                    playerRole: playerRole,
+                    playerStats: GameObjectStats.player[playerRole],
                 };
             };
             function initStartScene() {
@@ -400,11 +407,6 @@ function locatingGame() {
                 };
                 async function addStation() {
                     // console.debug(data);
-
-                    var getRandom = (x) => {
-                        return Math.floor(Math.random() * x);
-                    };
-
                     const backgroundArr = Object.keys(BackGroundResources.defend);
                     let markerArr = [],
                         circleArr = [];
@@ -427,6 +429,7 @@ function locatingGame() {
                         // console.debug(enemyStats);
 
                         let background = backgroundArr[getRandom(backgroundArr.length)];
+                        // let background = 'candy_4';
                         // console.debug(background);
 
                         d['stationStats'] = {
@@ -511,6 +514,19 @@ function locatingGame() {
                     }).bindTooltip('', {
                         direction: 'top',
                         className: 'station-tooltip',
+                    }).on('click', function (e) {
+
+                        let bigMapDOMRect = bigMap.getBoundingClientRect();
+                        const event = new MouseEvent('click', {
+                            'view': window,
+                            'bubbles': true,
+                            'cancelable': true,
+                            'clientX': e.containerPoint.x + bigMapDOMRect.x,
+                            'clientY': e.containerPoint.y + bigMapDOMRect.y
+                        });
+                        bigMap.dispatchEvent(event);
+
+
                     }).addTo(mapObj);
                     assumedEpicenter.getElement().style.display = 'none';
                     // console.debug()
@@ -532,7 +548,7 @@ function locatingGame() {
                         .find('.UIhint');
 
                     function updateTooltip(target) {
-                        let bigMapDOMRect = document.querySelector('#bigMap').getBoundingClientRect();
+                        let bigMapDOMRect = bigMap.getBoundingClientRect();
                         let targetDOMRect = target.getBoundingClientRect();
                         let imgNode = target.children[0];
 
@@ -571,7 +587,7 @@ function locatingGame() {
                             gameUI.append(UI);//==bring to top
                             UI.show();
 
-                            let bigMapDOMRect = document.querySelector('#bigMap').getBoundingClientRect();
+                            let bigMapDOMRect = bigMap.getBoundingClientRect();
                             let targetDOMRect = target.getBoundingClientRect();
 
                             let top = targetDOMRect.top - bigMapDOMRect.top,
@@ -1016,7 +1032,7 @@ function locatingGame() {
                                     default: 'arcade',
                                     arcade: {
                                         gravity: { y: 300 },
-                                        debug: true,
+                                        // debug: true,
                                     },
                                 },
                                 scene: new DefendScene(stationData, GameData, {
@@ -1059,9 +1075,12 @@ function locatingGame() {
 
                         break;
                     case 'dig':
-                        console.debug(siteData);
+                        // console.debug(siteData);
+                        const backgroundArr = Object.keys(BackGroundResources.dig);
+
                         let coordinate = siteData.coordinate;
-                        let background = 'halloween_1';//==之後經緯度判斷？
+                        // let background = 'halloween_3';//==之後經緯度判斷？
+                        let background = backgroundArr[getRandom(backgroundArr.length)];
                         let mineBGindex = 0;//==之後經緯度判斷？
 
                         let placeData = {

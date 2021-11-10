@@ -1248,12 +1248,18 @@ class LoadingScene extends Phaser.Scene {
 
 
                 };
-
+                var groundMatters = () => {
+                    let aa = this.load.image('sprSand', gameObjDir + 'sprSand.png');
+                    console.debug(aa);
+                };
                 if (packNum == 1) {
                     station();
                     instrument();
                     wave();
-                };
+                } else if (packNum == 2) {
+                    groundMatters();
+                }
+
                 background();
 
 
@@ -2129,6 +2135,9 @@ class DigScene extends Phaser.Scene {
             },
         });
 
+
+
+        this.chunks = [];
         console.debug(this);
     };
     preload() {
@@ -2243,7 +2252,31 @@ class DigScene extends Phaser.Scene {
                 ground();
                 underGround();
             };
+            var initChunks = () => {
+                this.chunkSize = 15;
+                this.tileSize = 60;
+                this.chunkWidth = this.chunkSize * this.tileSize;
+                this.chunkWidth = this.chunkSize * this.tileSize;
+
+
+                //隨機生成的一塊塊地底構造
+                this.chunks = [];
+                this.getChunk = (x, y) => {
+                    var chunk = null;
+                    for (var i = 0; i < this.chunks.length; i++) {
+                        if (this.chunks[i].x == x && this.chunks[i].y == y) {
+                            chunk = this.chunks[i];
+                        }
+                    }
+                    return chunk;
+                };
+
+                // this.matter.world.drawDebug = true;
+                // this.matter.world.debugGraphic.visible = true;
+            };
             background();
+            //===地底用到
+            initChunks();
 
         };
         var initTimer = () => {
@@ -2282,10 +2315,12 @@ class DigScene extends Phaser.Scene {
             this.physics.add.collider(this.player, this.platforms);
 
         };
+
         //==gameScene
         initEnvironment();
         initPlayer();
         initTimer();
+
 
         //==UI
         initCursors();
@@ -2303,7 +2338,53 @@ class DigScene extends Phaser.Scene {
                 this.player.statsChangeHandler({ MP: playerStats.MP += playerStats.manaRegen }, this);//自然回魔
 
         };
+        var updateChunks = () => {
+            var snappedChunkX = this.chunkWidth * Math.round(this.player.x / this.chunkWidth);
+            var snappedChunkY = this.chunkWidth * Math.round(this.player.y / this.chunkWidth);
+
+            snappedChunkX = snappedChunkX / this.chunkWidth;
+            snappedChunkY = snappedChunkY / this.chunkWidth;
+
+            for (var x = snappedChunkX - 2; x < snappedChunkX + 2; x++) {
+                for (var y = snappedChunkY - 2; y < snappedChunkY + 2; y++) {
+                    var existingChunk = this.getChunk(x, y);
+
+                    if (existingChunk == null) {
+                        var newChunk = new Chunk(this, x, y);
+                        this.chunks.push(newChunk);
+                    }
+                }
+            };
+
+            for (var i = 0; i < this.chunks.length; i++) {
+                var chunk = this.chunks[i];
+                let distBetweenChunks = Phaser.Math.Distance.Between(snappedChunkX, snappedChunkY, chunk.x, chunk.y);
+                // console.debug(snappedChunkX, snappedChunkY, chunk.x, chunk.y)
+
+
+                if (distBetweenChunks < 3) {
+                    if (chunk !== null) {
+                        chunk.load();
+                        // console.debug(distBetweenChunks);
+                        // console.debug(snappedChunkX, snappedChunkY)
+                        // console.debug(chunk.x, chunk.y)
+                    }
+                }
+                else {
+                    if (chunk !== null) {
+                        chunk.unload();
+                    }
+                }
+            };
+        };
+        var updateCamera = () => {
+            this.cameras.main.startFollow(this.player);
+        };
+
         updatePlayer();
+        updateChunks();
+        updateCamera();
+
 
         if (this.gameOver.flag) {
             //===time remove

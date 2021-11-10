@@ -894,3 +894,84 @@ const Player = new Phaser.Class({
     playerTurnLeft: false,//==判斷子彈方向
 
 });
+//==地底用
+class Chunk {
+    constructor(scene, x, y) {
+        this.scene = scene;
+        this.x = x;
+        this.y = y;
+        this.tiles = this.scene.physics.add.group({
+            // key: 'instrument',
+            // repeat: 1,
+            // randomFrame: true,
+            // setScale: { x: orbScale, y: orbScale },
+            // setDepth: { value: Depth.orbs },
+            maxVelocityY: 0,
+            setOrigin: 0,
+        });
+        this.isLoaded = false;
+    };
+
+    unload() {
+        if (this.isLoaded) {
+            this.tiles.clear(true, true);
+            this.isLoaded = false;
+        }
+    };
+
+    load() {
+        // noise.seed(Math.random());
+
+        if (!this.isLoaded) {
+
+            for (var y = 0; y < this.scene.chunkSize; y++) {
+                var tileY = (this.y * this.scene.chunkWidth) + (y * this.scene.tileSize);
+                // if (tileY < 800) continue;
+
+                for (var x = 0; x < this.scene.chunkSize; x++) {
+                    var tileX = (this.x * this.scene.chunkWidth) + (x * this.scene.tileSize);
+                    console.debug(tileX, tileY)
+                    var perlinValue = noise.perlin2(tileX / 100, tileY / 100);
+                    // console.debug(perlinValue)
+                    var key = "";
+                    var animationKey = "";
+
+                    // if (perlinValue < range1) {
+                    //     key = "sprWater";
+                    //     animationKey = "sprWater";
+                    // }
+                    // else if (perlinValue >= range1 && perlinValue < range2) {
+                    //     key = "sprSand";
+                    // }
+                    // else if (perlinValue >= range2) {
+                    //     key = "sprGrass";
+                    // }
+                    key = "sprSand";//test
+
+                    var tile = new Tile(this.scene, tileX, tileY, key);
+
+                    if (animationKey !== "") {
+                        tile.play(animationKey);
+                    }
+
+                    this.tiles.add(tile);
+                }
+            }
+
+            this.isLoaded = true;
+        };
+    };
+};
+
+class Tile extends Phaser.GameObjects.Sprite {
+    constructor(scene, x, y, key) {
+        super(scene, x, y, key);
+
+
+        scene.add.existing(this);
+
+        // this.setScale(3)
+        // .setOrigin(0)
+        // .setSize(60)
+    };
+};

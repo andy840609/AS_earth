@@ -130,7 +130,7 @@ const BackGroundResources = {
             static: ['1.png', '2.png', '3.png', '6.png'],
             dynamic: ['4.png'],
             depth: {
-                static: [1, 1, 1, 1, 1],
+                static: [1, 1, 1, 1, 3],
                 dynamic: [1],
             },
             animType: [2],
@@ -148,7 +148,7 @@ const BackGroundResources = {
             static: ['1.png', '2.png', '3.png', '4.png', '6.png', '7.png'],
             dynamic: ['5.png', '6_2.png'],
             depth: {
-                static: [1, 1, 1, 1, 1, 1, 1],
+                static: [1, 1, 1, 1, 1, 1, 3],
                 dynamic: [1, 1],
             },
             animType: [2, 3],
@@ -897,40 +897,36 @@ const Player = new Phaser.Class({
 //==地底用
 class Chunk {
     constructor(scene, x, y) {
-        this.scene = scene;
+        this.gameSene = scene;
         this.x = x;
         this.y = y;
-        this.tiles = this.scene.physics.add.group({
-            // key: 'instrument',
-            // repeat: 1,
-            // randomFrame: true,
-            // setScale: { x: orbScale, y: orbScale },
-            // setDepth: { value: Depth.orbs },
-            maxVelocityY: 0,
-            setOrigin: 0,
+        this.tiles = scene.physics.add.staticGroup({
+
         });
+        scene.physics.add.collider(this.gameSene.player, this.tiles);
         this.isLoaded = false;
+        // console.debug(this.tiles)
     };
 
     unload() {
         if (this.isLoaded) {
             this.tiles.clear(true, true);
             this.isLoaded = false;
-        }
+        };
     };
 
     load() {
         // noise.seed(Math.random());
 
         if (!this.isLoaded) {
+            // console.debug(this.gameSene.groundY)
+            for (var y = 0; y < this.gameSene.chunkSize; y++) {
+                var tileY = (this.y * this.gameSene.chunkWidth) + (y * this.gameSene.tileSize);
+                if (tileY < this.gameSene.groundY) continue;
 
-            for (var y = 0; y < this.scene.chunkSize; y++) {
-                var tileY = (this.y * this.scene.chunkWidth) + (y * this.scene.tileSize);
-                // if (tileY < 800) continue;
-
-                for (var x = 0; x < this.scene.chunkSize; x++) {
-                    var tileX = (this.x * this.scene.chunkWidth) + (x * this.scene.tileSize);
-                    console.debug(tileX, tileY)
+                for (var x = 0; x < this.gameSene.chunkSize; x++) {
+                    var tileX = (this.x * this.gameSene.chunkWidth) + (x * this.gameSene.tileSize);
+                    // console.debug(tileX, tileY)
                     var perlinValue = noise.perlin2(tileX / 100, tileY / 100);
                     // console.debug(perlinValue)
                     var key = "";
@@ -948,15 +944,15 @@ class Chunk {
                     // }
                     key = "sprSand";//test
 
-                    var tile = new Tile(this.scene, tileX, tileY, key);
+                    var tile = new Tile(this.gameSene, tileX, tileY, key);
 
                     if (animationKey !== "") {
                         tile.play(animationKey);
-                    }
+                    };
 
                     this.tiles.add(tile);
-                }
-            }
+                };
+            };
 
             this.isLoaded = true;
         };
@@ -966,12 +962,8 @@ class Chunk {
 class Tile extends Phaser.GameObjects.Sprite {
     constructor(scene, x, y, key) {
         super(scene, x, y, key);
-
-
         scene.add.existing(this);
-
-        // this.setScale(3)
-        // .setOrigin(0)
-        // .setSize(60)
+        this
+            .setOrigin(0)
     };
 };

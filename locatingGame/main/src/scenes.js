@@ -1249,8 +1249,8 @@ class LoadingScene extends Phaser.Scene {
 
                 };
                 var groundMatters = () => {
-                    let aa = this.load.image('sprSand', gameObjDir + 'sprSand.png');
-                    console.debug(aa);
+                    this.load.image('sprSand', gameObjDir + 'sprSand.png');
+
                 };
                 if (packNum == 1) {
                     station();
@@ -2135,9 +2135,10 @@ class DigScene extends Phaser.Scene {
             },
         });
 
-
-
+        //==地質塊相關變數
         this.chunks = [];
+        this.chunkSize = 15;
+        this.tileSize = 60;
         console.debug(this);
     };
     preload() {
@@ -2146,16 +2147,15 @@ class DigScene extends Phaser.Scene {
         this.load.rexAwait(callback);//==等LoadingScene完成素材載入
     };
     create() {
+
+
         const canvas = this.sys.game.canvas;
-        const width = canvas.width;
-        const height = canvas.height;
+        const width = Math.ceil(canvas.width * 1.5 / this.tileSize) * this.tileSize;//==可以移動範圍約1.5個螢幕寬
+        const height = Math.ceil(canvas.height * 0.7 / this.tileSize) * this.tileSize;
+        this.physics.world.setBounds(0, 0, width, height);
 
         const Depth = {
-            platform: 3,
-            station: 4,
-            laser: 5,
-            wave: 6,
-            orbs: 7,
+            platform: 5,
             enemy: 9,
             player: 10,
             pickUpObj: 11,
@@ -2177,45 +2177,27 @@ class DigScene extends Phaser.Scene {
 
         var initEnvironment = () => {
             var background = () => {
-                const groundH = height * 0.4;
+                this.groundY = this.tileSize * 5;
 
                 var ground = () => {
 
                     let resources = BackGroundResources.dig[this.background];
 
                     resources.static.forEach((res, i) => {
-                        if (i == resources.static.length - 1) {
-                            this.platforms = this.physics.add.staticGroup();
-                            let ground = this.platforms.create(width * 0.5, groundH * 0.5, 'staticBG_' + i);
 
+                        let img = this.add.image(width * 0.5, this.groundY - height * 0.5, 'staticBG_' + i);
 
-                            ground
-                                .setScale(width / ground.width, groundH / ground.height)
-                                .setDepth(Depth.platform)
-                                .refreshBody()
-                                .setSize(ground.displayWidth, ground.displayHeight * 0.1, false)
-                                .setOffset(0, ground.displayHeight * 0.9)
-                                .setName('platform');
-
-                            // console.debug(res)
-                        }
-                        else {
-                            let img = this.add.image(width * 0.5, groundH * 0.5, 'staticBG_' + i);
-
-                            img
-                                .setScale(width / img.width, groundH / img.height)
-                                .setDepth(resources.depth.static[i]);
-                        };
-
+                        img
+                            .setScale(width / img.width, height / img.height)
+                            .setDepth(resources.depth.static[i]);
                     });
-
 
                     resources.dynamic.forEach((res, i) => {
 
-                        let thing = this.add.tileSprite(width * 0.5, groundH * 0.5, 0, 0, 'dynamicBG_' + i);
+                        let thing = this.add.tileSprite(width * 0.5, this.groundY - height * 0.5, 0, 0, 'dynamicBG_' + i);
 
                         thing
-                            .setScale(width / thing.width, groundH / thing.height)
+                            .setScale(width / thing.width, height / thing.height)
                             .setDepth(resources.depth.dynamic[i]);
 
                         //==tweens
@@ -2253,13 +2235,10 @@ class DigScene extends Phaser.Scene {
                 underGround();
             };
             var initChunks = () => {
-                this.chunkSize = 15;
-                this.tileSize = 60;
                 this.chunkWidth = this.chunkSize * this.tileSize;
-                this.chunkWidth = this.chunkSize * this.tileSize;
+                // this.chunkWidth = this.chunkSize * this.tileSize;
 
-
-                //隨機生成的一塊塊地底構造
+                //隨機生成的一大塊chunkSize*chunkSize個的地底構造
                 this.chunks = [];
                 this.getChunk = (x, y) => {
                     var chunk = null;
@@ -2271,8 +2250,6 @@ class DigScene extends Phaser.Scene {
                     return chunk;
                 };
 
-                // this.matter.world.drawDebug = true;
-                // this.matter.world.debugGraphic.visible = true;
             };
             background();
             //===地底用到
@@ -2312,7 +2289,7 @@ class DigScene extends Phaser.Scene {
             //     enemy.statsChangeHandler({ HP: enemy.stats.HP -= playerStats.attackPower }, this);
             // };
 
-            this.physics.add.collider(this.player, this.platforms);
+            // this.physics.add.collider(this.player, this.tiles);
 
         };
 
@@ -2339,11 +2316,11 @@ class DigScene extends Phaser.Scene {
 
         };
         var updateChunks = () => {
-            var snappedChunkX = this.chunkWidth * Math.round(this.player.x / this.chunkWidth);
-            var snappedChunkY = this.chunkWidth * Math.round(this.player.y / this.chunkWidth);
+            var snappedChunkX = Math.round(this.player.x / this.chunkWidth);
+            var snappedChunkY = Math.round(this.player.y / this.chunkWidth);
 
-            snappedChunkX = snappedChunkX / this.chunkWidth;
-            snappedChunkY = snappedChunkY / this.chunkWidth;
+            // snappedChunkX = snappedChunkX / this.chunkWidth;
+            // snappedChunkY = snappedChunkY / this.chunkWidth;
 
             for (var x = snappedChunkX - 2; x < snappedChunkX + 2; x++) {
                 for (var y = snappedChunkY - 2; y < snappedChunkY + 2; y++) {
@@ -2359,18 +2336,14 @@ class DigScene extends Phaser.Scene {
             for (var i = 0; i < this.chunks.length; i++) {
                 var chunk = this.chunks[i];
                 let distBetweenChunks = Phaser.Math.Distance.Between(snappedChunkX, snappedChunkY, chunk.x, chunk.y);
-                // console.debug(snappedChunkX, snappedChunkY, chunk.x, chunk.y)
-
 
                 if (distBetweenChunks < 3) {
                     if (chunk !== null) {
                         chunk.load();
-                        // console.debug(distBetweenChunks);
-                        // console.debug(snappedChunkX, snappedChunkY)
-                        // console.debug(chunk.x, chunk.y)
                     }
                 }
                 else {
+
                     if (chunk !== null) {
                         chunk.unload();
                     }

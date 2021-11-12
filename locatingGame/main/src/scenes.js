@@ -1249,16 +1249,24 @@ class LoadingScene extends Phaser.Scene {
 
                 };
                 var groundMatters = () => {
+                    let terrainDir = envDir + 'terrain/'
+
                     this.load.image('sprSand', gameObjDir + 'sprSand.png');
+                    this.load.spritesheet('sprWater', gameObjDir + 'sprWater.png',
+                        { frameWidth: 60, frameHeight: 60 });
+                    this.load.image('terrain1', terrainDir + '1.png');
+                    this.load.image('terrain2', terrainDir + '2.png');
+                    this.load.image('terrain3', terrainDir + '3.png');
 
                 };
                 if (packNum == 1) {
                     station();
                     instrument();
                     wave();
-                } else if (packNum == 2) {
-                    groundMatters();
                 }
+                else if (packNum == 2) {
+                    groundMatters();
+                };
 
                 background();
 
@@ -2136,8 +2144,6 @@ class DigScene extends Phaser.Scene {
         });
 
         //==地質塊相關變數
-        this.chunks = [];
-        this.chunkSize = 15;
         this.tileSize = 60;
         console.debug(this);
     };
@@ -2148,11 +2154,9 @@ class DigScene extends Phaser.Scene {
     };
     create() {
 
-
         const canvas = this.sys.game.canvas;
         const width = Math.ceil(canvas.width * 1.5 / this.tileSize) * this.tileSize;//==可以移動範圍約1.5個螢幕寬
         const height = Math.ceil(canvas.height * 0.7 / this.tileSize) * this.tileSize;
-        this.physics.world.setBounds(0, 0, width, height);
 
         const Depth = {
             platform: 5,
@@ -2178,14 +2182,15 @@ class DigScene extends Phaser.Scene {
         var initEnvironment = () => {
             var background = () => {
                 this.groundY = this.tileSize * 5;
+                this.groundW = width;
 
                 var ground = () => {
-
                     let resources = BackGroundResources.dig[this.background];
 
+                    let imgY = this.groundY - height * 0.5;
                     resources.static.forEach((res, i) => {
 
-                        let img = this.add.image(width * 0.5, this.groundY - height * 0.5, 'staticBG_' + i);
+                        let img = this.add.image(width * 0.5, imgY, 'staticBG_' + i);
 
                         img
                             .setScale(width / img.width, height / img.height)
@@ -2194,7 +2199,7 @@ class DigScene extends Phaser.Scene {
 
                     resources.dynamic.forEach((res, i) => {
 
-                        let thing = this.add.tileSprite(width * 0.5, this.groundY - height * 0.5, 0, 0, 'dynamicBG_' + i);
+                        let thing = this.add.tileSprite(width * 0.5, imgY, 0, 0, 'dynamicBG_' + i);
 
                         thing
                             .setScale(width / thing.width, height / thing.height)
@@ -2214,7 +2219,7 @@ class DigScene extends Phaser.Scene {
                                 animType == 1 ?
                                     { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
                                     animType == 2 ? { alpha: { start: 0.1, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
-                                        animType == 3 ? { alpha: { start: 0.8, to: 1 }, scaleY: { start: t => t.scaleY * 0.88, to: t => t.scaleY * 1.2 }, ease: 'Bounce.easeIn', yoyo: true } :
+                                        animType == 3 ? { alpha: { start: 0.8, to: 1 }, scaleY: { start: t => t.scaleY * 0.8, to: t => t.scaleY * 1.5 }, ease: 'Bounce.easeIn', yoyo: true } :
                                             { tilePoanglesitionX: { start: 0, to: thing.width }, ease: 'Linear', }
 
                             ));
@@ -2227,14 +2232,16 @@ class DigScene extends Phaser.Scene {
                     // let resources = BackGroundResources['mine']['mineBackground'];
                     // let background = resources.static[this.mineBGindex];
 
-                    this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, 'mineBG')
+                    this.underBG = this.add.tileSprite(width * 0.5, this.groundY + height * 0.5, 0, 0, 'mineBG')
                         .setDepth(0);
-
+                    this.underBG.setScale(width / this.underBG.width, 1);
                 };
                 ground();
                 underGround();
             };
             var initChunks = () => {
+                this.chunks = [];
+                this.chunkSize = Math.ceil(Math.max(canvas.height, width) / this.tileSize);
                 this.chunkWidth = this.chunkSize * this.tileSize;
                 // this.chunkWidth = this.chunkSize * this.tileSize;
 
@@ -2250,8 +2257,26 @@ class DigScene extends Phaser.Scene {
                     return chunk;
                 };
 
+                //==每塊tile動畫
+                var animsCreate = () => {
+                    this.anims.create({
+                        key: "sprWater",
+                        frames: this.anims.generateFrameNumbers("sprWater"),
+                        frameRate: 5,
+                        repeat: -1
+                    });
+                };
+                animsCreate();
+
             };
+            var initBounds = () => {
+                let boundY = this.groundY - height;
+                this.physics.world.setBounds(0, boundY, width);
+                this.cameras.main.setBounds(0, boundY, width);
+            };
+
             background();
+            initBounds();
             //===地底用到
             initChunks();
 
@@ -2279,29 +2304,69 @@ class DigScene extends Phaser.Scene {
 
             // console.debug(this.player);
 
-            // this.player.playerAttack = (bullet, enemy) => {
-            //     // console.debug(bullet, enemy);
-            //     let playerStats = this.player.stats;
-            //     bullet.disableBody(true, true);
-            //     enemy.body.setVelocityX(playerStats.knockBackSpeed * (bullet.x < enemy.x ? 1 : -1));
+            this.player.body
+                .setGravityY(2000);
 
-            //     enemy.behavior = 'hurt';
-            //     enemy.statsChangeHandler({ HP: enemy.stats.HP -= playerStats.attackPower }, this);
-            // };
+            this.player.playerDig = (player, tile) => {
+                // if (this.tile) return;
+                // console.debug(tile);
+                let cursors = this.cursors;
+                let controllCursor = this.gameData.controllCursor;
+
+                if (cursors[controllCursor['up']].isDown) {
+                    if (tile.body.touching.down)
+                        tile.destroy();
+                }
+                else if (cursors[controllCursor['down']].isDown) {
+                    if (tile.body.touching.up)
+                        tile.destroy();
+                }
+                else if (cursors[controllCursor['left']].isDown) {
+                    if (tile.body.touching.right)
+                        tile.destroy();
+                }
+                else if (cursors[controllCursor['right']].isDown) {
+                    if (tile.body.touching.left)
+                        tile.destroy();
+                };
+
+            };
 
             // this.physics.add.collider(this.player, this.tiles);
 
         };
+        var initCamera = () => {
+
+            let camera = this.cameras.main;
+
+            camera.preScrollX = camera.scrollX;
+            camera.preScrollY = camera.scrollY;
+
+            camera.startFollow(this.player);
+
+            //===礦坑背景隨相機移動
+            camera.on('followupdate', (camera, b) => {
+                if (camera.scrollY == camera.preScrollY) return
+
+                let shift = camera.scrollY - camera.preScrollY;
+                this.underBG.y += shift;
+                this.underBG.tilePositionY += 1 * Math.sign(shift);
+
+                camera.preScrollY = camera.scrollY;
+            });
+        };
+
 
         //==gameScene
         initEnvironment();
         initPlayer();
         initTimer();
-
+        initCamera();
 
         //==UI
         initCursors();
         initIconBar();
+
     };
     update() {
         var updatePlayer = () => {
@@ -2313,6 +2378,7 @@ class DigScene extends Phaser.Scene {
             let playerStats = this.player.stats;
             if (playerStats.MP < playerStats.maxMP)
                 this.player.statsChangeHandler({ MP: playerStats.MP += playerStats.manaRegen }, this);//自然回魔
+
 
         };
         var updateChunks = () => {
@@ -2337,7 +2403,7 @@ class DigScene extends Phaser.Scene {
                 var chunk = this.chunks[i];
                 let distBetweenChunks = Phaser.Math.Distance.Between(snappedChunkX, snappedChunkY, chunk.x, chunk.y);
 
-                if (distBetweenChunks < 3) {
+                if (distBetweenChunks < 2) {
                     if (chunk !== null) {
                         chunk.load();
                     }
@@ -2349,15 +2415,12 @@ class DigScene extends Phaser.Scene {
                     }
                 }
             };
-        };
-        var updateCamera = () => {
-            this.cameras.main.startFollow(this.player);
+
+
         };
 
         updatePlayer();
         updateChunks();
-        updateCamera();
-
 
         if (this.gameOver.flag) {
             //===time remove

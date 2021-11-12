@@ -1079,7 +1079,7 @@ function locatingGame() {
                         const backgroundArr = Object.keys(BackGroundResources.dig);
 
                         let coordinate = siteData.coordinate;
-                        // let background = 'halloween_3';//==之後經緯度判斷？
+                        // let background = 'halloween_4';//==之後經緯度判斷？
                         let background = backgroundArr[getRandom(backgroundArr.length)];
                         let mineBGindex = 0;//==之後經緯度判斷？
 

@@ -17,6 +17,63 @@ class UIScene extends Phaser.Scene {
         const controllCursor = gameScene.gameData.controllCursor;
         const UItextJSON = gameScene.gameData.languageJSON.UI;
 
+
+        const tooltip = {
+            tooltipHandler: (create = true, data = null) => {
+
+                if (create) {
+                    let obj = data.obj;
+                    let x = obj.x + obj.displayWidth * (0.5 - obj.originX);
+                    let y = obj.y + obj.displayHeight * (1 - obj.originY) + 18 + (data.dy ? data.dy : 0);
+                    let hotKeyString = controllCursor[obj.name];
+                    let text = UItextJSON[obj.name] + (hotKeyString ? `(${hotKeyString})` : '');
+                    let tweensDuration = 200;
+
+                    //===tooltip
+                    let tooltip = this.add.text(x, y, text, {
+                        font: '30px sans-serif',
+                        fill: '#000000',
+                    })
+                        .setOrigin(0.5)
+                        .setDepth(Depth.tooltip);
+
+
+                    this.tweens.add({
+                        targets: tooltip,
+                        repeat: 0,
+                        ease: 'Back.easeInOut',
+                        duration: tweensDuration * 2,
+                        alpha: { from: 0, to: 1 },
+                    });
+
+                    //===background img
+                    let img = this.add.image(x, y + 1, data.img)
+                        .setOrigin(0.5)
+                        .setDepth(Depth.tooltip - 1);
+
+                    img.setScale(0, tooltip.height / img.height);
+
+                    this.tweens.add({
+                        targets: img,
+                        repeat: 0,
+                        ease: 'Circ.easeInOut',
+                        duration: tweensDuration,
+                        scaleX: { from: tooltip.width * 0.1 / img.width, to: tooltip.width * 1.5 / img.width },
+
+                    });
+
+                    this.tooltip.tooltipGroup = [tooltip, img];
+
+                }
+                else {
+                    this.tooltip.tooltipGroup.forEach(obj => obj.destroy());
+                }
+
+            },
+            tooltipGroup: null,
+        };
+
+
         let preload, create, update;
         switch (UIkey) {
             case 'iconBar':
@@ -286,344 +343,375 @@ class UIScene extends Phaser.Scene {
                 update = () => { };
                 break;
             case 'detectorUI':
-                let detectorButtons;
-                this.orbs = gameScene.orbGroup.getChildren();
-                preload = () => {
+                const tooltipHandler = tooltip.tooltipHandler;
 
+                const x = width - 140, y = 185;
+                const scale = 0.2;
+
+                var initDetector = () => {
+                    this.detector = this.add.image(x, y, 'detector')
+                        .setOrigin(0.5)
+                        .setScale(scale)
+                        .setDepth(Depth.detector + 5);
+
+
+                    this.detectorScreen = this.add.image(x + 0.5, y - 22, 'detectorScreen')
+                        .setOrigin(0.5)
+                        .setScale(scale)
+                        .setDepth(Depth.detector);
 
                 };
-                create = () => {
-                    const tooltip = this.tooltip;
-                    const tooltipHandler = tooltip.tooltipHandler;
 
-                    const x = width - 140, y = 185;
-                    //==brush
-                    const rectX = x - 94, rectY = y - 88;
-                    const rectW = 191, rectH = 130;
-                    const handleW = 10,
-                        handleXMin = rectX - handleW * 0.5,
-                        handleXMax = rectX + rectW - handleW * 0.5;
-                    const scaleFun = gameScene.waveForm.overviewSvgArr.find(d => d.svgName == 'xAxis').x
-                        .range([handleXMin, handleXMax]);
+                if (gameScene.name == 'defend') {
+                    let detectorButtons;
+                    this.orbs = gameScene.orbGroup.getChildren();
+                    preload = () => { };
+                    create = () => {
 
-                    var initDetector = () => {
-                        var detector = () => {
-                            let scale = 0.2;
-                            this.add.image(x, y, 'detector')
-                                .setOrigin(0.5)
-                                .setScale(scale)
-                                .setDepth(Depth.detector + 5);
+                        //==brush
+                        const rectX = x - 94, rectY = y - 88;
+                        const rectW = 191, rectH = 130;
+                        const handleW = 10,
+                            handleXMin = rectX - handleW * 0.5,
+                            handleXMax = rectX + rectW - handleW * 0.5;
+                        const scaleFun = gameScene.waveForm.overviewSvgArr.find(d => d.svgName == 'xAxis').x
+                            .range([handleXMin, handleXMax]);
 
-                            this.add.image(x + 0.5, y - 22, 'detectorScreen')
-                                .setOrigin(0.5)
-                                .setScale(scale)
-                                .setDepth(Depth.detector);
-                        };
-                        var wave = () => {
-                            gameScene.waveForm.overviewSvgArr.forEach((d, i) => {
-                                let dy, scaleY;
-                                if (d.svgName == 'xAxis') {
-                                    dy = y + 70;
-                                    scaleY = 1;
-                                }
-                                else {
-                                    dy = y + (35 * i) - 65;
-                                    scaleY = 0.6;
-                                };
+                        var initOverview = () => {
+                            initDetector();
+                            var wave = () => {
+                                gameScene.waveForm.overviewSvgArr.forEach((d, i) => {
+                                    let dy, scaleY;
+                                    if (d.svgName == 'xAxis') {
+                                        dy = y + 70;
+                                        scaleY = 1;
+                                    }
+                                    else {
+                                        dy = y + (35 * i) - 65;
+                                        scaleY = 0.6;
+                                    };
 
-                                this.add.image(x + 1, dy, 'overview_' + d.svgName)
-                                    .setScale(1, scaleY)
-                                    .setDepth(Depth.detector + 1);
-                            });
-
-                        };
-
-                        detector();
-                        wave();
-
-                    };
-                    var initBrushes = () => {
-                        const stationData = gameScene.gameData.stationData;
-
-                        const getTimePoint = gameScene.getTimePoint;
-                        const groundObj = gameScene.platforms.getChildren()[0];
-
-
-                        let brushRect = this.add.rectangle(rectX, rectY, rectW, rectH, 0xEA7500)
-                            .setDepth(Depth.detector + 2)
-                            .setOrigin(0)
-                            .setAlpha(.3);
-
-                        let brushHandle1 = this.add.rectangle(handleXMin, rectY, handleW, rectH, 0xffffff)
-                            .setDepth(Depth.detector + 3)
-                            .setOrigin(0)
-                            .setAlpha(.1);
-
-                        let brushHandle2 = this.add.rectangle(handleXMax, rectY, handleW, rectH, 0xffffff)
-                            .setDepth(Depth.detector + 3)
-                            .setOrigin(0)
-                            .setAlpha(.1);
-                        // console.debug(brushHandle1);
-
-                        var dragBehavior = (brush) => {
-                            brush.setInteractive({ draggable: true, cursor: 'col-resize' })
-                                .on('drag', function (pointer, dragX, dragY) {
-
-                                    let newX;
-                                    if (dragX < handleXMin)
-                                        newX = handleXMin;
-                                    else if (dragX > handleXMax)
-                                        newX = handleXMax;
-                                    else
-                                        newX = dragX;
-                                    this.x = newX;
-                                    updateBrushRect();
-
-                                    let domain = [scaleFun.invert(brushHandle1.x), scaleFun.invert(brushHandle2.x)]
-                                        .sort((a, b) => a - b);
-
-                                    updateWave(domain);
-                                    gameScene.waveForm.domain = domain;
-
+                                    this.add.image(x + 1, dy, 'overview_' + d.svgName)
+                                        .setScale(1, scaleY)
+                                        .setDepth(Depth.detector + 1);
                                 });
+
+                            };
+                            wave();
                         };
-                        var updateBrushRect = () => {
-                            let newRectW = Phaser.Math.Distance.BetweenPoints(brushHandle1, brushHandle2);
-                            brushRect.x = Math.min(brushHandle1.x, brushHandle2.x) + handleW * 0.5;
-                            brushRect.width = newRectW;
-                        };
-                        var updateWave = (domain = null) => {
+                        var initBrushes = () => {
+                            const stationData = gameScene.gameData.stationData;
 
-                            var action = () => {
-                                gameScene.waveForm.getWaveImg(stationData, domain).then(success => {
-
-                                    let promises = success.map(d =>
-                                        new Promise((resolve, reject) => {
-                                            let key = d.svgName;
-                                            this.textures.removeKey(key);
-                                            this.load.svg(key, d.svg, { scale: 1 });
-                                            resolve();
-                                        })
-                                    );
-                                    //==避免波形沒更新到
-                                    Promise.all(promises).then(() => this.load.start());
+                            const getTimePoint = gameScene.getTimePoint;
+                            const groundObj = gameScene.platforms.getChildren()[0];
 
 
-                                    //==更新寶珠位置（在固定時間點）
-                                    gameScene.waveForm.svgArr = success;
+                            let brushRect = this.add.rectangle(rectX, rectY, rectW, rectH, 0xEA7500)
+                                .setDepth(Depth.detector + 2)
+                                .setOrigin(0)
+                                .setAlpha(.3);
 
-                                    this.orbs.forEach(orb => {
-                                        if (orb.beholdingFlag) return;
+                            let brushHandle1 = this.add.rectangle(handleXMin, rectY, handleW, rectH, 0xffffff)
+                                .setDepth(Depth.detector + 3)
+                                .setOrigin(0)
+                                .setAlpha(.1);
 
-                                        orb.orbStats = getTimePoint(orb.orbStats.time, true);
-                                        orb.setPosition(orb.orbStats.position, groundObj.y - 40);
-                                        orb.laserUpdateFlag = true;
+                            let brushHandle2 = this.add.rectangle(handleXMax, rectY, handleW, rectH, 0xffffff)
+                                .setDepth(Depth.detector + 3)
+                                .setOrigin(0)
+                                .setAlpha(.1);
+                            // console.debug(brushHandle1);
 
-                                        // console.debug(gameScene.waveForm.svgArr[3].x.domain());
-                                        orb.statusHadler(null, false, orb.orbStats.isInRange);
+                            var dragBehavior = (brush) => {
+                                brush.setInteractive({ draggable: true, cursor: 'col-resize' })
+                                    .on('drag', function (pointer, dragX, dragY) {
+
+                                        let newX;
+                                        if (dragX < handleXMin)
+                                            newX = handleXMin;
+                                        else if (dragX > handleXMax)
+                                            newX = handleXMax;
+                                        else
+                                            newX = dragX;
+                                        this.x = newX;
+                                        updateBrushRect();
+
+                                        let domain = [scaleFun.invert(brushHandle1.x), scaleFun.invert(brushHandle2.x)]
+                                            .sort((a, b) => a - b);
+
+                                        updateWave(domain);
+                                        gameScene.waveForm.domain = domain;
 
                                     });
-
-
-                                });
                             };
-                            updateHandler(action, waveUpdateObj);
-                        };
+                            var updateBrushRect = () => {
+                                let newRectW = Phaser.Math.Distance.BetweenPoints(brushHandle1, brushHandle2);
+                                brushRect.x = Math.min(brushHandle1.x, brushHandle2.x) + handleW * 0.5;
+                                brushRect.width = newRectW;
+                            };
+                            var updateWave = (domain = null) => {
 
-                        //==避免頻繁刷新
-                        var waveUpdateObj = { updateFlag: true, updateTimeOut: null, updateDelay: 20 };
-                        var updateHandler = (action, updateObj = waveUpdateObj, parameter = null, mustDone = false) => {
+                                var action = () => {
+                                    gameScene.waveForm.getWaveImg(stationData, domain).then(success => {
 
-                            if (!updateObj.updateFlag)
-                                clearTimeout(updateObj.updateTimeOut);
-
-
-                            updateObj.updateTimeOut = setTimeout(() => {
-                                parameter ? action(...parameter) : action();
-                                updateObj.updateFlag = true;
-                            }, updateObj.updateDelay);
-
-                            updateObj.updateFlag = mustDone;
-
-                        };
-
-                        dragBehavior(brushHandle1);
-                        dragBehavior(brushHandle2);
-
-                        //==保留上次選取範圍
-                        let xAxisDomain = gameScene.waveForm.domain ? gameScene.waveForm.domain : null;
-                        if (xAxisDomain) {
-                            brushHandle1.x = scaleFun(xAxisDomain[0]);
-                            brushHandle2.x = scaleFun(xAxisDomain[1]);
-                            updateBrushRect();
-                        };
+                                        let promises = success.map(d =>
+                                            new Promise((resolve, reject) => {
+                                                let key = d.svgName;
+                                                this.textures.removeKey(key);
+                                                this.load.svg(key, d.svg, { scale: 1 });
+                                                resolve();
+                                            })
+                                        );
+                                        //==避免波形沒更新到
+                                        Promise.all(promises).then(() => this.load.start());
 
 
-                        //===按鈕
+                                        //==更新寶珠位置（在固定時間點）
+                                        gameScene.waveForm.svgArr = success;
 
-                        var buttonBehavior = (button) => {
+                                        this.orbs.forEach(orb => {
+                                            if (orb.beholdingFlag) return;
 
-                            let dy = 0, burshMove = null;
-                            switch (button.name) {
-                                case 'reset':
-                                    dy = 0;
-                                    burshMove = () => {
-                                        brushHandle1.x = handleXMin;
-                                        brushHandle2.x = handleXMax;
-                                    };
-                                    break;
-                                default:
-                                    dy = 13;
-                                    burshMove = () => {
-                                        if (button.name == 'changeSide') {
-                                            button.leftSide = !button.leftSide;
-                                        }
-                                        else {
-                                            let brushHandle =
-                                                detectorButtons.find(btn => btn.name == 'changeSide').leftSide ?
-                                                    brushHandle1 : brushHandle2;
-                                            let dir = button.name == 'shiftLeft' ? -1 : 1;
+                                            orb.orbStats = getTimePoint(orb.orbStats.time, true);
+                                            orb.setPosition(orb.orbStats.position, groundObj.y - 40);
+                                            orb.laserUpdateFlag = true;
 
-                                            let newX = brushHandle.x + 2 * dir;
+                                            // console.debug(gameScene.waveForm.svgArr[3].x.domain());
+                                            orb.statusHadler(null, false, orb.orbStats.isInRange);
 
-                                            if (newX < handleXMin)
-                                                newX = handleXMin;
-                                            else if (newX > handleXMax)
-                                                newX = handleXMax;
+                                        });
 
-                                            brushHandle.x = newX;
-                                        }
-                                    };
-                                    break;
+
+                                    });
+                                };
+                                updateHandler(action, waveUpdateObj);
+                            };
+
+                            //==避免頻繁刷新
+                            var waveUpdateObj = { updateFlag: true, updateTimeOut: null, updateDelay: 20 };
+                            var updateHandler = (action, updateObj = waveUpdateObj, parameter = null, mustDone = false) => {
+
+                                if (!updateObj.updateFlag)
+                                    clearTimeout(updateObj.updateTimeOut);
+
+
+                                updateObj.updateTimeOut = setTimeout(() => {
+                                    parameter ? action(...parameter) : action();
+                                    updateObj.updateFlag = true;
+                                }, updateObj.updateDelay);
+
+                                updateObj.updateFlag = mustDone;
+
+                            };
+
+                            dragBehavior(brushHandle1);
+                            dragBehavior(brushHandle2);
+
+                            //==保留上次選取範圍
+                            let xAxisDomain = gameScene.waveForm.domain ? gameScene.waveForm.domain : null;
+                            if (xAxisDomain) {
+                                brushHandle1.x = scaleFun(xAxisDomain[0]);
+                                brushHandle2.x = scaleFun(xAxisDomain[1]);
+                                updateBrushRect();
                             };
 
 
-                            button.setInteractive({ cursor: 'pointer' })
-                                .on('pointerover', function () {
-                                    tooltipHandler(true, {
-                                        obj: this,
-                                        dy: dy,
-                                        img: 'tooltipButton',
+                            //===按鈕
+
+                            var buttonBehavior = (button) => {
+
+                                let dy = 0, burshMove = null;
+                                switch (button.name) {
+                                    case 'reset':
+                                        dy = 0;
+                                        burshMove = () => {
+                                            brushHandle1.x = handleXMin;
+                                            brushHandle2.x = handleXMax;
+                                        };
+                                        break;
+                                    default:
+                                        dy = 13;
+                                        burshMove = () => {
+                                            if (button.name == 'changeSide') {
+                                                button.leftSide = !button.leftSide;
+                                            }
+                                            else {
+                                                let brushHandle =
+                                                    detectorButtons.find(btn => btn.name == 'changeSide').leftSide ?
+                                                        brushHandle1 : brushHandle2;
+                                                let dir = button.name == 'shiftLeft' ? -1 : 1;
+
+                                                let newX = brushHandle.x + 2 * dir;
+
+                                                if (newX < handleXMin)
+                                                    newX = handleXMin;
+                                                else if (newX > handleXMax)
+                                                    newX = handleXMax;
+
+                                                brushHandle.x = newX;
+                                            }
+                                        };
+                                        break;
+                                };
+
+
+                                button.setInteractive({ cursor: 'pointer' })
+                                    .on('pointerover', function () {
+                                        tooltipHandler(true, {
+                                            obj: this,
+                                            dy: dy,
+                                            img: 'tooltipButton',
+                                        })
                                     })
-                                })
-                                .on('pointerout', function () {
-                                    tooltipHandler(false);
-                                })
-                                .on('pointerdown', function () {
-                                    burshMove();
-                                    updateBrushRect();
-                                    let domain = [scaleFun.invert(brushHandle1.x), scaleFun.invert(brushHandle2.x)]
-                                        .sort((a, b) => a - b);
-                                    updateWave(domain);
-                                    gameScene.waveForm.domain = domain;
-                                });
-                        };
+                                    .on('pointerout', function () {
+                                        tooltipHandler(false);
+                                    })
+                                    .on('pointerdown', function () {
+                                        burshMove();
+                                        updateBrushRect();
+                                        let domain = [scaleFun.invert(brushHandle1.x), scaleFun.invert(brushHandle2.x)]
+                                            .sort((a, b) => a - b);
+                                        updateWave(domain);
+                                        gameScene.waveForm.domain = domain;
+                                    });
+                            };
 
-                        let resetButton = this.add.circle(x + 60, y + 74, 18, 0xffffff)
-                            .setDepth(Depth.detector + 3)
-                            .setOrigin(0)
-                            .setAlpha(.01)
-                            .setName('reset');
-
-                        detectorButtons = [resetButton];
-
-                        const handleButtonName = ['shiftLeft', 'changeSide', 'shiftRight'];
-                        const handle1BtnX = x - 91, handle1BtnY = y + 86;
-                        handleButtonName.forEach((d, i) => {
-                            let handleButton = this.add.rectangle(handle1BtnX + i * 51, handle1BtnY, 32, 11, 0xffffff)
+                            let resetButton = this.add.circle(x + 60, y + 74, 18, 0xffffff)
                                 .setDepth(Depth.detector + 3)
                                 .setOrigin(0)
                                 .setAlpha(.01)
-                                .setName(d);
+                                .setName('reset');
 
-                            if (d == 'changeSide') handleButton.leftSide = true;
+                            detectorButtons = [resetButton];
 
-                            detectorButtons.push(handleButton);
-                        });
+                            const handleButtonName = ['shiftLeft', 'changeSide', 'shiftRight'];
+                            const handle1BtnX = x - 91, handle1BtnY = y + 86;
+                            handleButtonName.forEach((d, i) => {
+                                let handleButton = this.add.rectangle(handle1BtnX + i * 51, handle1BtnY, 32, 11, 0xffffff)
+                                    .setDepth(Depth.detector + 3)
+                                    .setOrigin(0)
+                                    .setAlpha(.01)
+                                    .setName(d);
 
-                        detectorButtons.forEach(button => buttonBehavior(button));
+                                if (d == 'changeSide') handleButton.leftSide = true;
+
+                                detectorButtons.push(handleButton);
+                            });
+
+                            detectorButtons.forEach(button => buttonBehavior(button));
+
+                        };
+                        var initUpdateListener = () => {
+                            const keys = gameScene.waveForm.svgArr.map(d => d.svgName);
+                            this.load.on('filecomplete', (key) => {
+                                let i = keys.indexOf(key);
+                                gameScene.waveForm.gameObjs[i].setTexture(key);
+                            });
+                        };
+                        var initMapIcon = () => {
+
+                            // console.debug(scaleFun.range(), scaleFun.domain());
+
+                            this.orbIcons = this.orbs.map(orb => {
+
+                                let orbStats = orb.orbStats;
+                                let orbX = scaleFun(orbStats.time) + handleW * 0.5;
+
+                                let orbIcon = this.add.sprite(orbX, y + 25, 'instrument')
+                                    .setOrigin(0.5)
+                                    .setScale(0.1)
+                                    .setDepth(Depth.detector + 2);
+
+
+                                orbIcon.updatePos = function () {
+
+                                    let x = scaleFun(orb.orbStats.time) + handleW * 0.5;
+                                    // console.debug(x);
+                                    this.x = x;
+                                    let isInScreen = x > handleXMin && x < (handleXMax + handleW);
+                                    this.setVisible(isInScreen);
+
+                                };
+                                orbIcon.statsHandler = function () {
+
+                                    let frameRate, animsKey;
+                                    if (orb.laserObj.active) {
+                                        frameRate = 300;
+                                        animsKey = 'orb_activate';
+                                    }
+                                    else {
+                                        frameRate = 600;
+                                        animsKey = 'orb_inactive';
+                                    }
+
+                                    orbIcon.anims.msPerFrame = frameRate;
+                                    this.anims.play(animsKey, true);
+                                };
+                                return orbIcon;
+                            });
+
+
+                        };
+                        initOverview();
+                        initBrushes();
+                        initUpdateListener();
+                        initMapIcon();
+
+
 
                     };
-                    var initUpdateListener = () => {
-                        const keys = gameScene.waveForm.svgArr.map(d => d.svgName);
-                        this.load.on('filecomplete', (key) => {
-                            let i = keys.indexOf(key);
-                            gameScene.waveForm.gameObjs[i].setTexture(key);
-                        });
+                    update = () => {
+                        var updateButton = () => {
+                            let cursors = gameScene.cursors;
+                            detectorButtons.forEach(button => {
+                                if (cursors[controllCursor[button.name]].isDown) {
+                                    button.emit('pointerdown');
+                                };
+                            });
+                        };
+                        var updateIcon = () => {
+                            this.orbs.forEach((orb, i) => {
+                                this.orbIcons[i].statsHandler();
+                                if (orb.beholdingFlag)
+                                    this.orbIcons[i].updatePos();
+                            });
+                        };
+                        updateButton();
+                        updateIcon();
+
+                        // this.scene.remove();
                     };
-                    var initMapIcon = () => {
+                }
+                else {
+                    preload = () => { };
+                    create = () => {
+                        var initOverview = () => {
 
-                        // console.debug(scaleFun.range(), scaleFun.domain());
+                            initDetector();
 
-                        this.orbIcons = this.orbs.map(orb => {
+                            let DS = this.detectorScreen;
 
-                            let orbStats = orb.orbStats;
-                            let orbX = scaleFun(orbStats.time) + handleW * 0.5;
+                            this.minimap =
+                                this.cameras.add(x - DS.displayWidth * 0.5, y - DS.displayHeight * 0.5, DS.displayWidth, DS.displayHeight)
+                                    // .setScene()
+                                    .setOrigin(1)
+                                    .setZoom(0.2)
+                                    .setName('mini')
+                            // .startFollow(gameScene.cameras.main)
 
-                            let orbIcon = this.add.sprite(orbX, y + 25, 'instrument')
-                                .setOrigin(0.5)
-                                .setScale(0.1)
-                                .setDepth(Depth.detector + 2);
+                            // this.cameras.addExisting(this.minimap)
 
-
-                            orbIcon.updatePos = function () {
-
-                                let x = scaleFun(orb.orbStats.time) + handleW * 0.5;
-                                // console.debug(x);
-                                this.x = x;
-                                let isInScreen = x > handleXMin && x < (handleXMax + handleW);
-                                this.setVisible(isInScreen);
-
-                            };
-                            orbIcon.statsHandler = function () {
-
-                                let frameRate, animsKey;
-                                if (orb.laserObj.active) {
-                                    frameRate = 300;
-                                    animsKey = 'orb_activate';
-                                }
-                                else {
-                                    frameRate = 600;
-                                    animsKey = 'orb_inactive';
-                                }
-
-                                orbIcon.anims.msPerFrame = frameRate;
-                                this.anims.play(animsKey, true);
-                            };
-                            return orbIcon;
-                        });
-
-
+                            console.debug(gameScene.player)
+                            // console.debug(Phaser.Cameras.Scene2D.Camera.call(x, y, width, height))
+                            this.minimap.setBackgroundColor(0x002244);
+                            // this.minimap.scrollX = 1600;
+                            // this.minimap.scrollY = 300;
+                        };
+                        initOverview();
                     };
-                    initDetector();
-                    initBrushes();
-                    initUpdateListener();
-                    initMapIcon();
-
-
-
+                    update = () => { };
                 };
-                update = () => {
-                    var updateButton = () => {
-                        let cursors = gameScene.cursors;
-                        detectorButtons.forEach(button => {
-                            if (cursors[controllCursor[button.name]].isDown) {
-                                button.emit('pointerdown');
-                            };
-                        });
-                    };
-                    var updateIcon = () => {
-                        this.orbs.forEach((orb, i) => {
-                            this.orbIcons[i].statsHandler();
-                            if (orb.beholdingFlag)
-                                this.orbIcons[i].updatePos();
-                        });
-                    };
-                    updateButton();
-                    updateIcon();
 
-                    // this.scene.remove();
-                };
                 break;
             case 'exitUI'://==升等結算畫面之後作
                 preload = () => { };
@@ -950,7 +1038,7 @@ class UIScene extends Phaser.Scene {
                                 let groundObj = gameScene.platforms.getChildren()[0];
                                 if (child.activateFlag)
                                     child.timeText
-                                        .setPosition(child.x, groundObj.y - groundObj.displayHeight * 0.15)
+                                        .setPosition(child.x, groundObj.y * 1.06)
                                         .setText(child.orbStats.time.toFixed(2));
 
                                 child.laserUpdateFlag = false;
@@ -967,60 +1055,6 @@ class UIScene extends Phaser.Scene {
                 create = () => { console.debug('undefine UI: ' + UIkey); };
                 update = () => { };
                 break;
-        };
-        let tooltip = {
-            tooltipHandler: (create = true, data = null) => {
-
-                if (create) {
-                    let obj = data.obj;
-                    let x = obj.x + obj.displayWidth * (0.5 - obj.originX);
-                    let y = obj.y + obj.displayHeight * (1 - obj.originY) + 18 + (data.dy ? data.dy : 0);
-                    let hotKeyString = controllCursor[obj.name];
-                    let text = UItextJSON[obj.name] + (hotKeyString ? `(${hotKeyString})` : '');
-                    let tweensDuration = 200;
-
-                    //===tooltip
-                    let tooltip = this.add.text(x, y, text, {
-                        font: '30px sans-serif',
-                        fill: '#000000',
-                    })
-                        .setOrigin(0.5)
-                        .setDepth(Depth.tooltip);
-
-
-                    this.tweens.add({
-                        targets: tooltip,
-                        repeat: 0,
-                        ease: 'Back.easeInOut',
-                        duration: tweensDuration * 2,
-                        alpha: { from: 0, to: 1 },
-                    });
-
-                    //===background img
-                    let img = this.add.image(x, y + 1, data.img)
-                        .setOrigin(0.5)
-                        .setDepth(Depth.tooltip - 1);
-
-                    img.setScale(0, tooltip.height / img.height);
-
-                    this.tweens.add({
-                        targets: img,
-                        repeat: 0,
-                        ease: 'Circ.easeInOut',
-                        duration: tweensDuration,
-                        scaleX: { from: tooltip.width * 0.1 / img.width, to: tooltip.width * 1.5 / img.width },
-
-                    });
-
-                    this.tooltip.tooltipGroup = [tooltip, img];
-
-                }
-                else {
-                    this.tooltip.tooltipGroup.forEach(obj => obj.destroy());
-                }
-
-            },
-            tooltipGroup: null,
         };
 
         Object.assign(this, {
@@ -1215,7 +1249,7 @@ class LoadingScene extends Phaser.Scene {
                         //     this.load.image(res, dir + res);
                         // });
                         this.load.image('mineBG', dir + mineBG);
-                    }
+                    };
 
                 };
                 var instrument = () => {
@@ -1626,11 +1660,12 @@ class DefendScene extends Phaser.Scene {
                 resources.static.forEach((res, i) => {
                     if (i == resources.static.length - 1) {
                         this.platforms = this.physics.add.staticGroup();
-                        let ground = this.platforms.create(width * 0.5, groundH * 1.5, 'staticBG_' + i);
+                        let ground = this.platforms.create(width * 0.5, groundH * 1.8, 'staticBG_' + i);
 
                         ground
                             .setScale(width / ground.width, groundH / ground.height)
                             .setDepth(Depth.platform)
+                            .setOrigin(0.5, 0.8)
                             .refreshBody()
                             .setSize(width, groundH * 0.15, false)
                             .setOffset(0, groundH * 0.85)
@@ -2007,8 +2042,10 @@ class DefendScene extends Phaser.Scene {
 
         // this.time.slowMotion = 5.0;
         // this.time.paused = true;
+        this.cameras.main.flash(500, 0, 0, 0);
     };
     update() {
+
         // return;
         // console.debug('game update');
         var updatePlayer = () => {
@@ -2236,8 +2273,12 @@ class DigScene extends Phaser.Scene {
                         .setDepth(0);
                     this.underBG.setScale(width / this.underBG.width, 1);
                 };
+                var overview = () => {
+                    this.scene.add(null, new UIScene('detectorUI', this), true);
+                };
                 ground();
                 underGround();
+                overview();
             };
             var initChunks = () => {
                 this.chunks = [];
@@ -2314,12 +2355,14 @@ class DigScene extends Phaser.Scene {
                 let controllCursor = this.gameData.controllCursor;
 
                 if (cursors[controllCursor['up']].isDown) {
+                    // console.debug(tile.body)
                     if (tile.body.touching.down)
                         tile.destroy();
                 }
                 else if (cursors[controllCursor['down']].isDown) {
                     if (tile.body.touching.up)
                         tile.destroy();
+
                 }
                 else if (cursors[controllCursor['left']].isDown) {
                     if (tile.body.touching.right)
@@ -2366,6 +2409,8 @@ class DigScene extends Phaser.Scene {
         //==UI
         initCursors();
         initIconBar();
+
+        this.cameras.main.flash(500, 0, 0, 0);
 
     };
     update() {
@@ -2439,7 +2484,6 @@ class DigScene extends Phaser.Scene {
                 //     controllCursor: this.gameData.controllCursor,
                 // },
             };
-
             this.game.destroy(true, false);
             this.gameOver.resolve(gameResult);
         };

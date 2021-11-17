@@ -90,6 +90,7 @@ function QCchart() {
 
 
         //========同步讀檔（慢）
+
         // var getFileData = (path) => {
         //     // console.debug(path);
         //     var fileData = [];
@@ -174,6 +175,9 @@ function QCchart() {
         //     return fileData;
         // };
         //========同步讀檔
+
+
+
 
 
 

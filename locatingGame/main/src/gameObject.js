@@ -905,12 +905,15 @@ class Chunk {
         this.gameSene = scene;
         this.x = x;
         this.y = y;
-        this.tiles = scene.physics.add.staticGroup({
-
-        });
+        this.tiles = scene.physics.add.staticGroup();
         scene.physics.add.collider(this.gameSene.player, this.tiles, this.gameSene.player.playerDig, null, this);
         this.isLoaded = false;
         // console.debug(this.tiles)
+
+        //==range to set tile
+        this.yRange = [500, 1000, 1500];
+        this.pRange = [-0.2, -0.1];
+
     };
 
     unload() {
@@ -934,27 +937,50 @@ class Chunk {
                     if (tileX < 0 || tileX >= this.gameSene.groundW) continue;
                     // console.debug(tileX, tileY)
                     var perlinValue = noise.perlin2(tileX / 100, tileY / 100);
-                    // console.debug(perlinValue)
+
+                    // Math.abs(perlinValue) > 0.7 ? console.debug('high : ' + perlinValue.toFixed(2)) : console.debug(perlinValue);
+
                     var key = "";
                     var animationKey = "";
 
-                    // if (perlinValue < range1) {
-                    //     key = "sprWater";
-                    //     animationKey = "sprWater";
-                    // }
-                    // else if (perlinValue >= range1 && perlinValue < range2) {
-                    //     key = "sprSand";
-                    // }
-                    // else if (perlinValue >= range2) {
-                    //     key = "sprGrass";
-                    // }
+                    //==terrain1:沉積岩 terrain2:火成岩 terrain3:花崗岩
 
-                    if (perlinValue > 0.2) {
+                    if (tileY <= this.yRange[0]) {
+                        if (perlinValue < this.pRange[0])
+                            key = "sprSand"
+                        else if (perlinValue < this.pRange[1]) {
+                            key = "sprWater";
+                            animationKey = "sprWater";
+                        }
+                        else
+                            key = "terrain1";
+                    }
+                    else if (tileY <= this.yRange[1]) {
+                        if (perlinValue < this.pRange[0])
+                            key = "sprSand"
+                        else if (perlinValue < this.pRange[1]) {
+                            key = "sprWater";
+                            animationKey = "sprWater";
+                        }
+                        else
+                            key = "terrain2";
+                    }
+                    else if (tileY <= this.yRange[2]) {
+                        if (perlinValue < this.pRange[0])
+                            key = "sprSand"
+                        else if (perlinValue < this.pRange[1]) {
+                            key = "sprWater";
+                            animationKey = "sprWater";
+                        }
+                        else
+                            key = "terrain3";
+                    }
+                    else {
                         key = "sprWater";
                         animationKey = "sprWater";
                     }
-                    else
-                        key = "sprSand";//test
+
+
 
 
                     var tile = new Tile(this.gameSene, tileX, tileY, key);

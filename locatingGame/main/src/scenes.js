@@ -237,7 +237,7 @@ class UIScene extends Phaser.Scene {
 
                 };
                 create = () => {
-                    // =menu
+                    //==menu
                     const menuH_scale = 0.9;
                     const tweensDuration = 500;
 
@@ -346,19 +346,23 @@ class UIScene extends Phaser.Scene {
                 const tooltipHandler = tooltip.tooltipHandler;
 
                 const x = width - 140, y = 185;
-                const scale = 0.2;
+                const detectorScale = 0.2;
 
-                var initDetector = () => {
+                //==brush
+                const rectX = x - 94, rectY = y - 88;
+                const rectW = 191, rectH = 130;
+
+                var initDetector = (screen = true) => {
                     this.detector = this.add.image(x, y, 'detector')
                         .setOrigin(0.5)
-                        .setScale(scale)
+                        .setScale(detectorScale)
                         .setDepth(Depth.detector + 5);
 
-
-                    this.detectorScreen = this.add.image(x + 0.5, y - 22, 'detectorScreen')
-                        .setOrigin(0.5)
-                        .setScale(scale)
-                        .setDepth(Depth.detector);
+                    if (screen)
+                        this.detectorScreen = this.add.image(x + 0.5, y - 22, 'detectorScreen')
+                            .setOrigin(0.5)
+                            .setScale(detectorScale)
+                            .setDepth(Depth.detector);
 
                 };
 
@@ -368,9 +372,7 @@ class UIScene extends Phaser.Scene {
                     preload = () => { };
                     create = () => {
 
-                        //==brush
-                        const rectX = x - 94, rectY = y - 88;
-                        const rectW = 191, rectH = 130;
+
                         const handleW = 10,
                             handleXMin = rectX - handleW * 0.5,
                             handleXMax = rectX + rectW - handleW * 0.5;
@@ -687,29 +689,65 @@ class UIScene extends Phaser.Scene {
                     create = () => {
                         var initOverview = () => {
 
-                            initDetector();
+                            const mapZoom = rectW / gameScene.groundW;
 
-                            let DS = this.detectorScreen;
+                            initDetector(false);
 
-                            this.minimap =
-                                this.cameras.add(x - DS.displayWidth * 0.5, y - DS.displayHeight * 0.5, DS.displayWidth, DS.displayHeight)
-                                    // .setScene()
-                                    .setOrigin(1)
-                                    .setZoom(0.2)
-                                    .setName('mini')
-                            // .startFollow(gameScene.cameras.main)
+                            var initMinimap = () => {
+                                this.minimap =
+                                    gameScene.cameras.add(rectX, rectY, rectW, rectH)
+                                        .setScene(this)
+                                        .centerOn(gameScene.groundW * 0.5)
+                                        .setZoom(mapZoom)
+                                        .setBackgroundColor(0x003E3E)
+                                        .ignore(gameScene.BGgroup)
+                                        .setName('mini');
 
-                            // this.cameras.addExisting(this.minimap)
 
-                            console.debug(gameScene.player)
-                            // console.debug(Phaser.Cameras.Scene2D.Camera.call(x, y, width, height))
-                            this.minimap.setBackgroundColor(0x002244);
-                            // this.minimap.scrollX = 1600;
-                            // this.minimap.scrollY = 300;
+                                this.events.on('destroy', () => {
+                                    gameScene.cameras.remove(this.minimap);
+                                });
+
+                                // console.debug(this.minimap, gameScene.cameras)
+                            };
+
+                            var initScreenRect = () => {
+
+                                let sRectW = width * mapZoom,
+                                    sRectH = height * mapZoom;
+
+                                this.screenRect = this.add.graphics()
+                                    .lineStyle(3, 0x750000)
+                                    .strokeRect(0, 0, sRectW, sRectH)
+
+                                console.debug(rectX + (rectW - sRectW) * 0.5)
+
+                            };
+
+
+                            initMinimap();
+                            initScreenRect();
                         };
                         initOverview();
                     };
-                    update = () => { };
+                    update = () => {
+                        var updateMinimap = () => {
+                            if (!gameScene.player) return;
+                            let mainCameras = gameScene.cameras.main;
+                            let minimap = this.minimap;
+
+                            minimap.scrollY = mainCameras.scrollY + gameScene.groundY;
+                            this.screenRect.setPosition(
+                                minimap.x + mainCameras.scrollX * minimap.zoom,
+                                minimap.y
+                            )
+
+                            console.debug()
+                        };
+
+                        updateMinimap();
+
+                    };
                 };
 
                 break;
@@ -1386,10 +1424,18 @@ class LoadingScene extends Phaser.Scene {
             var tooltip = () => {
                 this.load.image('tooltipButton', uiDir + 'tooltipButton.png');
             };
+            var timeRemain = () => {
+                this.load.spritesheet('hourglass',
+                    uiDir + 'hourglass.png',
+                    { frameWidth: 200, frameHeight: 310 }
+                );
+
+            };
             UIButtons();
             pauseMenu();
             detector();
             tooltip();
+            timeRemain();
         };
         var makeProgressBar = () => {
 
@@ -1641,7 +1687,6 @@ class DefendScene extends Phaser.Scene {
             */
         };
 
-
         var initEnvironment = () => {
             // console.debug()
             var station = () => {
@@ -1724,7 +1769,6 @@ class DefendScene extends Phaser.Scene {
                     // maxVelocityY: 0,
                     gravityY: 500,
                 });
-
 
                 var animsCreate = () => {
                     this.anims.create({
@@ -2000,6 +2044,27 @@ class DefendScene extends Phaser.Scene {
 
         };
         var initTimer = () => {
+
+
+
+            var animsCreate = () => {
+                this.anims.create({
+                    key: 'hourglass_jump',
+                    frames: this.anims.generateFrameNumbers('hourglass', { start: 0, end: 45 }),
+                    frameRate: 15,
+                    repeat: -1,
+                });
+
+            };
+            animsCreate();
+
+            this.add.sprite(0, 0, 0, 0, 'hourglass')
+                .setScale(0.3)
+                .setOrigin(0)
+                .setDepth(Depth.UI)
+                .play('hourglass_jump');
+
+
             //==計時,時間到進入結算
             let timeRemain = this.gameData.timeRemain;
             this.gameTimer = this.time.delayedCall(timeRemain, () => this.gameOver.flag = true, [], this);
@@ -2221,6 +2286,8 @@ class DigScene extends Phaser.Scene {
                 this.groundY = this.tileSize * 5;
                 this.groundW = width;
 
+                this.BGgroup = this.add.group();
+
                 var ground = () => {
                     let resources = BackGroundResources.dig[this.background];
 
@@ -2232,6 +2299,7 @@ class DigScene extends Phaser.Scene {
                         img
                             .setScale(width / img.width, height / img.height)
                             .setDepth(resources.depth.static[i]);
+                        this.BGgroup.add(img);
                     });
 
                     resources.dynamic.forEach((res, i) => {
@@ -2242,6 +2310,7 @@ class DigScene extends Phaser.Scene {
                             .setScale(width / thing.width, height / thing.height)
                             .setDepth(resources.depth.dynamic[i]);
 
+                        this.BGgroup.add(thing);
                         //==tweens
                         let movingDuration = Phaser.Math.Between(5, 15) * 1000;//==第一次移動5到20秒
                         let animType = resources.animType[i];
@@ -2266,12 +2335,11 @@ class DigScene extends Phaser.Scene {
 
                 };
                 var underGround = () => {
-                    // let resources = BackGroundResources['mine']['mineBackground'];
-                    // let background = resources.static[this.mineBGindex];
-
                     this.underBG = this.add.tileSprite(width * 0.5, this.groundY + height * 0.5, 0, 0, 'mineBG')
                         .setDepth(0);
                     this.underBG.setScale(width / this.underBG.width, 1);
+
+                    this.BGgroup.add(this.underBG);
                 };
                 var overview = () => {
                     this.scene.add(null, new UIScene('detectorUI', this), true);

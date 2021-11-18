@@ -1550,7 +1550,8 @@ function sacPlots() {
                                         .attr("alignment-baseline", "before-edge")
                                         .attr("font-weight", "bold")
                                         .attr("font-size", "13")
-                                        .text(title + (channel ? "." + channel[lastIndex - i] : ""));
+                                        .text(title + (channel ? "." + channel[lastIndex - isDivider] : ""));
+
                                     if (isDivider == lastIndex)
                                         tick
                                             .append('text')
@@ -3118,7 +3119,6 @@ function sacPlots() {
                 // var cloneArray = data.slice(0);
                 $('#chart' + i).append(overlayChart());
                 contextSelectionSide();
-
             }
             else {
                 // console.debug(data);

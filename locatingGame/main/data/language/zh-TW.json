@@ -19,6 +19,12 @@
         "velocityStr": "速度參數",
         "distance": "距離假設震央",
         "estimatedTime": "預估時間",
+        "DAYS": "天",
+        "HRS": "小時",
+        "MINS": "分鍾",
+        "hourglass": "顯示/隱藏時間",
+        "resurrect": "再給我時間",
+        "giveup": "放棄",
         "aaa": "sss",
         "aaa": "sss",
         "aaa": "sss"

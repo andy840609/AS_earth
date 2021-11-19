@@ -23,19 +23,28 @@ class UIScene extends Phaser.Scene {
 
                 if (create) {
                     let obj = data.obj;
-                    let x = obj.x + obj.displayWidth * (0.5 - obj.originX);
-                    let y = obj.y + obj.displayHeight * (1 - obj.originY) + 18 + (data.dy ? data.dy : 0);
+                    let x = obj.x + obj.displayWidth * (0.5 - obj.originX) + (data.dx != null ? data.dx : 0);
+                    let y = obj.y + obj.displayHeight * (1 - obj.originY) + 18 + (data.dy != null ? data.dy : 0);
                     let hotKeyString = controllCursor[obj.name];
                     let text = UItextJSON[obj.name] + (hotKeyString ? `(${hotKeyString})` : '');
                     let tweensDuration = 200;
 
                     //===tooltip
-                    let tooltip = this.add.text(x, y, text, {
+                    let tooltip = this.add.text(0, 0, text, {
                         font: '30px sans-serif',
                         fill: '#000000',
                     })
                         .setOrigin(0.5)
                         .setDepth(Depth.tooltip);
+
+                    tooltip.setPosition(x + tooltip.width * 0.75 * (0.5 - (data.originX != null ? data.originX : 0.5)) * 2, y)
+
+                    //===background img
+                    let img = this.add.image(x, y + 1, data.img)
+                        .setOrigin(data.originX != null ? data.originX : 0.5, 0.5)
+                        .setDepth(Depth.tooltip - 1);
+
+                    img.setScale(0, tooltip.height / img.height);
 
 
                     this.tweens.add({
@@ -45,13 +54,6 @@ class UIScene extends Phaser.Scene {
                         duration: tweensDuration * 2,
                         alpha: { from: 0, to: 1 },
                     });
-
-                    //===background img
-                    let img = this.add.image(x, y + 1, data.img)
-                        .setOrigin(0.5)
-                        .setDepth(Depth.tooltip - 1);
-
-                    img.setScale(0, tooltip.height / img.height);
 
                     this.tweens.add({
                         targets: img,
@@ -84,7 +86,6 @@ class UIScene extends Phaser.Scene {
 
                 };
                 create = () => {
-                    const tooltip = this.tooltip;
                     const tooltipHandler = tooltip.tooltipHandler;
                     //==判斷離開出現在bar上
                     this.gameClear = gameScene.name == 'defend' ?
@@ -228,14 +229,14 @@ class UIScene extends Phaser.Scene {
                 };
                 break;
             case 'pauseUI':
-                // =When the pause button is pressed, we pause the game
+                // =When the pause button is pressed, we pause the game and time scene
+
+                const timerUI = gameScene.game.scene.getScene('timerUI');
+                timerUI.gameTimer.paused = true;
+                timerUI.scene.pause();
                 gameScene.scene.pause();
-                gameScene.gameTimer.paused = true;
 
-                preload = () => {
-
-
-                };
+                preload = () => { };
                 create = () => {
                     //==menu
                     const menuH_scale = 0.9;
@@ -252,8 +253,7 @@ class UIScene extends Phaser.Scene {
                         scaleY: { from: 0, to: height * menuH_scale / menu.height },
                     });
 
-
-                    // =menu buttons
+                    //==menu buttons
                     const buttons = ['resume', 'tutorial', 'setting', 'exit'];
                     const menuMarginY = 80;//==卷軸頂部跟底部空間
                     const menuY = height * (1 - menuH_scale) * 0.5 + menuMarginY;
@@ -287,8 +287,9 @@ class UIScene extends Phaser.Scene {
                                     case 'resume':
                                         // console.debug(gameScene);
                                         gameScene.scene.resume();
+                                        timerUI.scene.resume();
+                                        timerUI.gameTimer.paused = false;
                                         this.scene.remove();
-                                        gameScene.gameTimer.paused = false;
                                         break;
 
                                     case 'tutorial':
@@ -335,9 +336,10 @@ class UIScene extends Phaser.Scene {
                     });
 
                     this.events.on('destroy', function () {
-                        if (gameScene.gameOver.flag) return;//避免離開多扣時間
+                        if (gameScene.gameOver.flag) return;//避免離開多扣時間                   
                         gameScene.scene.resume();
-                        gameScene.gameTimer.paused = false;
+                        timerUI.scene.resume();
+                        timerUI.gameTimer.paused = false;
                     });
                 };
                 update = () => { };
@@ -720,7 +722,7 @@ class UIScene extends Phaser.Scene {
                                     .lineStyle(3, 0x750000)
                                     .strokeRect(0, 0, sRectW, sRectH)
 
-                                console.debug(rectX + (rectW - sRectW) * 0.5)
+                                // console.debug(rectX + (rectW - sRectW) * 0.5)
 
                             };
 
@@ -742,7 +744,7 @@ class UIScene extends Phaser.Scene {
                                 minimap.y
                             )
 
-                            console.debug()
+                            // console.debug()
                         };
 
                         updateMinimap();
@@ -768,10 +770,190 @@ class UIScene extends Phaser.Scene {
                 };
                 update = () => { };
                 break;
-            case 'a':
+            case 'timerUI':
+                const timeRemain = gameScene.gameData.timeRemain;
+                const timeMultiplier = gameScene.gameData.timeMultiplier;
+                const timeString = ['DAYS', 'HRS', 'MINS'];
+
                 preload = () => { };
-                create = () => { };
-                update = () => { };
+                create = () => {
+
+                    const barX = 25, barY = 125;
+                    const barW = 220, barH = 65;
+                    const barRadius = 5;
+                    const blockW = 45;
+                    const blockMargin = 5;
+
+                    let timerGroup = Object.assign(this.add.group(), { display: true });
+
+                    var initTimer = () => {
+                        //==計時,時間到進入結算
+                        this.gameTimer = this.time.delayedCall(timeRemain, () => gameScene.gameOver.flag = true, [], this);
+                        this.gameTimer.timeText = {};
+
+                        gameScene.gameTimer = this.gameTimer;
+
+                        //test
+                        // this.gameTimer.timerText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#fff' });
+                    };
+                    var initBox = () => {
+
+                        let bar = this.add.graphics()
+                            .setPosition(barX, barY)
+                            .setDepth(Depth.UI)
+                            .setName('iconBar');
+
+                        bar.lineStyle(3, 0x000000, 1);
+
+                        //==box
+                        bar.fillStyle(0x000000, .3);
+                        bar.fillRoundedRect(0, 0, barW, barH, barRadius);
+                        bar.strokeRoundedRect(0, 0, barW, barH, barRadius);
+
+                        //==block
+                        bar.fillStyle(0x000000, .6);
+                        timeString.forEach((d, i) => {
+                            let x = barW * 0.3 + i * (blockW + blockMargin);
+                            bar.fillRoundedRect(x, blockMargin, blockW, blockW, barRadius);
+                            bar.strokeRoundedRect(x, blockMargin, blockW, blockW, barRadius);
+
+                            //==label(day,hr,min)
+                            let label = this.add.text(barX + x + blockW * 0.5, barY + blockMargin + blockW, UItextJSON[timeString[i]],
+                                { fontSize: '14px', fill: '#fff' })
+                                .setOrigin(0.5, 0)
+                                .setDepth(Depth.UI + 1);
+
+                            //==time Text
+                            let timeText = this.gameTimer.timeText[d] = this.add.text(barX + x + blockW * 0.5, barY + blockMargin + blockW * 0.5, "120",
+                                { fontSize: '23px', fill: '#fff' })
+                                .setOrigin(0.5)
+                                .setDepth(Depth.UI + 1);
+
+
+                            timerGroup.add(label);
+                            timerGroup.add(timeText);
+                        });
+                        timerGroup.add(bar);
+                    };
+                    var initHourglass = () => {
+                        var animsCreate = () => {
+                            this.anims.create({
+                                key: 'hourglass_jump',
+                                frames: this.anims.generateFrameNumbers('hourglass', { start: 0, end: 45 }),
+                                frameRate: 15,
+                                repeat: -1,
+                            });
+
+                        };
+                        animsCreate();
+
+                        const tooltipHandler = tooltip.tooltipHandler;
+
+                        let scale = 0.4;
+                        let hourglass = this.add.sprite(barX + 33, barY + 30, 0, 0, 'hourglass')
+                            .setScale(scale)
+                            .setOrigin(0.5)
+                            .setDepth(Depth.UI)
+                            .setName('hourglass')
+                            .play('hourglass_jump');
+
+                        const tweensDuration = 500;
+                        hourglass.setInteractive({ cursor: 'pointer' })
+                            .on('pointerover', function () {
+                                hourglass.setScale(scale * 1.5);
+                                tooltipHandler(true, {
+                                    obj: this,
+                                    img: 'tooltipButton',
+                                    dy: -40,
+                                    dx: -33,
+                                    originX: 0,
+                                });
+                            })
+                            .on('pointerout', function () {
+                                hourglass.setScale(scale);
+                                tooltipHandler(false);
+                            })
+                            .on('pointerdown', () => {
+                                timerGroup.display = !timerGroup.display;
+                                this.tweens.add({
+                                    targets: timerGroup.getChildren(),
+                                    repeat: 0,
+                                    ease: 'Circ.easeInOut',
+                                    duration: tweensDuration,
+                                    scaleX: { from: + !timerGroup.display, to: + timerGroup.display },
+                                });
+                            });
+
+                        //==custom
+                        Object.assign(hourglass, {
+                            max_msPerFrame: hourglass.anims.msPerFrame,
+                            mad: false,
+                            getMad: function () {
+                                // console.debug(this);
+                                if (this.mad) return;
+
+                                this.mad = true;
+                                this.scene.tweens.addCounter({
+                                    from: 0,
+                                    to: 1,
+                                    yoyo: true,
+                                    repeat: -1,
+                                    ease: 'Circ.easeInOut',
+                                    duration: 300,
+                                    onYoyo: () => this.setTint(0xFF2D2D),
+                                    onRepeat: () => this.setTint(0xffffff),
+                                });
+                            },
+                        });
+
+                        this.hourglass = hourglass;
+                    };
+                    initTimer();
+                    initBox();
+                    initHourglass();
+
+
+
+                    // console.debug(this.hourglass.anims.msPerFrame)
+
+                };
+                update = () => {
+                    let gameTimer = this.gameTimer;
+                    let timeVal = parseInt(timeRemain - gameTimer.getElapsed());
+                    var updateTimer = () => {
+                        gameTimer.timeVal = timeVal;
+
+                        let gameTimeVal = timeVal * timeMultiplier;
+                        let day = parseInt(gameTimeVal / 86400000);//1 day = 86400000 ms
+                        let hr = parseInt(gameTimeVal % 86400000 / 3600000);//1 hr = 3600000 ms
+                        let min = parseInt(gameTimeVal % 86400000 % 3600000 / 60000);//1 min = 60000ms
+                        let textArr = [day, hr, min];
+
+
+                        timeString.forEach((d, i) => {
+                            this.gameTimer.timeText[d].setText(textArr[i]);
+                        });
+                        //==test
+                        // let text = 'TimeLeft : ' + timeVal + ' ms';
+                        // gameTimer.timerText.setText(text);
+
+                    };
+                    //==時間越少動畫越快
+                    var updateHourglassAnime = () => {
+                        const speedUP = 300000;//少於5分鐘加速
+                        const min_msPerFrame = 10;//最少一張時間
+                        if (timeVal < speedUP) {
+                            let msPerFrame = min_msPerFrame + (this.hourglass.max_msPerFrame - min_msPerFrame) * (timeVal / speedUP);
+                            this.hourglass.anims.msPerFrame = msPerFrame;
+                            if (timeVal < speedUP * 0.6 && !this.hourglass.mad)
+                                this.hourglass.getMad();
+                        };
+
+                    };
+
+                    updateTimer();
+                    updateHourglassAnime();
+                };
                 break;
             case 'b':
                 preload = () => { };
@@ -808,7 +990,7 @@ class UIScene extends Phaser.Scene {
                                 // console.debug(this);
                             };
                         };
-                        const BoxX = 100, hpBoxY = height * 0.08, mpBoxY = hpBoxY + 30;
+                        const BoxX = 100, hpBoxY = 40, mpBoxY = hpBoxY + 30;
                         const Depth = {
                             box: 1,
                             bar: 5,
@@ -1227,6 +1409,99 @@ class StartScene extends Phaser.Scene {
             //     delay: tweensDuration * 0.5,
             //     alpha: { from: 0, to: 1 },
             // });
+        }
+        background();
+        button();
+    };
+    update() {
+
+    };
+};
+
+class GameOverScene extends Phaser.Scene {
+    constructor(GameData, resolve) {
+        super({ key: 'GameOverScene' });
+
+        Object.assign(this, {
+            GameData: GameData,
+            resolve: resolve,
+        });
+    }
+    preload() {
+        const UIDir = assetsDir + 'ui/';
+        this.load.image('gameOverScene', UIDir + 'gameOverScene.jpg');
+        this.load.image('startButton', UIDir + 'startButton.png');
+
+    };
+    create() {
+        const canvas = this.sys.game.canvas;
+        const width = canvas.width;
+        const height = canvas.height;
+        const languageJSON = this.GameData.languageJSON;
+
+        // console.debug(languageJSON);
+        var background = () => {
+            let img = this.add.image(width * 0.5, height * 0.5, 'gameOverScene');
+            img.setScale(width / img.width, height / img.height);
+        };
+
+        var button = () => {
+            // =menu buttons
+            const buttons = ['resurrect', 'giveup'];
+
+            const buttonGap = height * 0.5 / (buttons.length + 1);
+            const x = width * 0.5;
+
+            let buttonGroup = buttons.map((button, i) => {
+                let y = height * 0.5 + buttonGap * (i + 1);
+                let menuButton = this.add.image(x, y, 'startButton');
+                let buttonText = this.add.text(x, y, languageJSON.UI[button], { font: '40px Arial', fill: '#ffffff' })
+                    .setOrigin(0.5);
+                let buttonScale = buttonText.height * 2 / menuButton.height;
+
+                menuButton
+                    .setScale(buttonScale)//menu.width / 4 / menuButton.width
+                    .setInteractive({ cursor: 'pointer' })
+                    .on('pointerover', function () {
+                        let scale = 1.2;
+                        this.setScale(buttonScale * scale);
+                        buttonText
+                            .setScale(scale)
+                            .setTint(0xFFFF37);
+                    })
+                    .on('pointerout', function () {
+                        this.setScale(buttonScale);
+                        buttonText
+                            .setScale(1)
+                            .clearTint();
+                    })
+                    .on('pointerdown', () => {
+                        // console.debug(button);
+                        switch (button) {
+                            case 'resurrect':
+
+                                // this.game.destroy(true, false);
+                                // this.resolve(this.GameData);
+
+                                break;
+
+                            case 'giveup':
+                                // this.setting
+
+                                break;
+
+
+                        }
+                    });
+
+
+                return {
+                    button: menuButton,
+                    text: buttonText,
+                }
+
+            });
+
         }
         background();
         button();
@@ -2044,33 +2319,7 @@ class DefendScene extends Phaser.Scene {
 
         };
         var initTimer = () => {
-
-
-
-            var animsCreate = () => {
-                this.anims.create({
-                    key: 'hourglass_jump',
-                    frames: this.anims.generateFrameNumbers('hourglass', { start: 0, end: 45 }),
-                    frameRate: 15,
-                    repeat: -1,
-                });
-
-            };
-            animsCreate();
-
-            this.add.sprite(0, 0, 0, 0, 'hourglass')
-                .setScale(0.3)
-                .setOrigin(0)
-                .setDepth(Depth.UI)
-                .play('hourglass_jump');
-
-
-            //==計時,時間到進入結算
-            let timeRemain = this.gameData.timeRemain;
-            this.gameTimer = this.time.delayedCall(timeRemain, () => this.gameOver.flag = true, [], this);
-            this.gameTimer.timerText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#000' }).setDepth(Depth.UI);
-
-
+            this.scene.add(null, new UIScene('timerUI', this), true);
         };
         var initIconBar = () => {
             this.scene.add(null, new UIScene('iconBar', this), true);
@@ -2132,14 +2381,6 @@ class DefendScene extends Phaser.Scene {
             if (pickUpObj)
                 pickUpObj.setPosition(this.player.x, this.player.y + 10);
         };
-        var updateTimer = () => {
-            let gameTimer = this.gameTimer;
-            let timeRemain = this.gameData.timeRemain;
-            let timeVal = parseInt(timeRemain - gameTimer.getElapsed());
-            let text = 'TimeLeft : ' + timeVal + ' ms';
-            gameTimer.timeVal = timeVal;
-            gameTimer.timerText.setText(text);
-        };
         var updateEnemy = () => {
             if (this.gameData.stationData.stationStats.liberate) return;
             //===對話完??
@@ -2154,7 +2395,6 @@ class DefendScene extends Phaser.Scene {
 
         updatePlayer();
         updateOrb();
-        updateTimer();
         updateEnemy();
         // console.debug(gameTimer.getOverallProgress());
         // console.debug(enemy.children.entries);
@@ -2391,12 +2631,7 @@ class DigScene extends Phaser.Scene {
 
         };
         var initTimer = () => {
-            //==計時,時間到進入結算
-            let timeRemain = this.gameData.timeRemain;
-            this.gameTimer = this.time.delayedCall(timeRemain, () => this.gameOver.flag = true, [], this);
-            this.gameTimer.timerText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#000' }).setDepth(Depth.UI);
-
-
+            this.scene.add(null, new UIScene('timerUI', this), true);
         };
         var initIconBar = () => {
             this.scene.add(null, new UIScene('iconBar', this), true);
@@ -2471,8 +2706,8 @@ class DigScene extends Phaser.Scene {
         //==gameScene
         initEnvironment();
         initPlayer();
-        initTimer();
         initCamera();
+        initTimer();
 
         //==UI
         initCursors();
@@ -2543,14 +2778,14 @@ class DigScene extends Phaser.Scene {
 
             let gameResult = {
                 //==更新角色資料(剩餘時間、能力值...)
-                // playerInfo: {
-                //     timeRemain: this.gameTimer.timeVal,
-                //     playerStats: Object.assign(this.gameData.playerStats, {
-                //         HP: this.player.stats.HP,
-                //         MP: this.player.stats.MP,
-                //     }),
-                //     controllCursor: this.gameData.controllCursor,
-                // },
+                playerInfo: {
+                    timeRemain: this.gameTimer.timeVal,
+                    playerStats: Object.assign(this.gameData.playerStats, {
+                        HP: this.player.stats.HP,
+                        MP: this.player.stats.MP,
+                    }),
+                    controllCursor: this.gameData.controllCursor,
+                },
             };
             this.game.destroy(true, false);
             this.gameOver.resolve(gameResult);

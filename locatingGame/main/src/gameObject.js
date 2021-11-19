@@ -460,7 +460,7 @@ const Enemy = new Phaser.Class({
                         // console.debug('filp');
                     };
 
-                }
+                };
                 // console.debug();
                 //==死亡
                 if (this.stats.HP <= 0) {
@@ -471,7 +471,7 @@ const Enemy = new Phaser.Class({
                     this.body.enable = false;
                     this.anims.play('dog_Death', true);
 
-                }
+                };
 
             },
             cat: () => {
@@ -600,7 +600,7 @@ const Enemy = new Phaser.Class({
 
 
 
-                }
+                };
                 // console.debug();
                 //==死亡
                 if (this.stats.HP <= 0) {
@@ -613,7 +613,7 @@ const Enemy = new Phaser.Class({
                     };
                     this.anims.play('cat_Death', true);
 
-                }
+                };
 
             },
             dove: () => {
@@ -707,7 +707,7 @@ const Enemy = new Phaser.Class({
                         this.body.reset(this.x, this.y);
                     }
 
-                }
+                };
                 // console.debug();
                 //==死亡
                 if (this.stats.HP <= 0) {
@@ -718,7 +718,7 @@ const Enemy = new Phaser.Class({
                     this.body.enable = false;
                     this.anims.play('dog_Death', true);
 
-                }
+                };
 
             },
         };

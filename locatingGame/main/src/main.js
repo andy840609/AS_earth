@@ -228,7 +228,9 @@ function locatingGame() {
                 let playerRole = 'mage';//==之後能選其他
 
                 GameData = {
-                    timeRemain: 500000,
+                    timeRemain: 3.1 * 60000,//1min=60000ms           
+                    // timeRemain: 0.01 * 60000,//1min=60000ms
+                    timeMultiplier: 300,//real 1 ms = game x ms;
                     velocity: 7.5,//==速度參數預設7.5
                     playerEpicenter: null,
                     velocityChartUnlock: false,
@@ -305,6 +307,36 @@ function locatingGame() {
                 };
 
                 startScene();
+
+            };
+            function initGameOverScene() {
+
+                var gameOverScene = async () => {
+                    gameDisplay(true);
+
+                    let newGameData = await new Promise((resolve, reject) => {
+                        const config = {
+                            parent: 'gameMain',
+                            type: Phaser.AUTO,
+                            width: width,
+                            height: height,
+                            physics: {
+                                default: 'arcade',
+                                arcade: {
+                                    gravity: { y: 300 },
+                                    debug: true,
+                                }
+                            },
+                            scene: new GameOverScene(GameData, resolve),
+                        };
+                        new Phaser.Game(config);
+                    });
+
+                    // Object.assign(GameData, newGameData);
+                    gameDisplay(false);
+
+                };
+                gameOverScene();
 
             };
             function initMap() {
@@ -605,7 +637,13 @@ function locatingGame() {
 
                     var timeRemain = () => {
                         gameUI.append(`
-                        <div class="timeRemain">${GameData.languageJSON.UI['timeRemain']} : <font size="5" class='timer'>0</font> ms</div>             
+                        <div class="timeRemain">${GameData.languageJSON.UI['timeRemain']} : 
+                            <div class='timer' value='0'>
+                                &nbsp;<font size="5" >0</font>&nbsp;${GameData.languageJSON.UI['DAYS']}
+                                &nbsp;<font size="5" >0</font>&nbsp;${GameData.languageJSON.UI['HRS']}
+                                &nbsp;<font size="5" >0</font>&nbsp;${GameData.languageJSON.UI['MINS']}
+                            </div>
+                        </div>             
                         `);
 
                         updateMapUI({ timeRemain: GameData.timeRemain }, 800);
@@ -737,7 +775,7 @@ function locatingGame() {
                                 })
                                 .on('click', function (e) {
                                     //==速度參數要完成兩站才能調整
-                                    // if (this.id == UIbuttons[1] && !GameData.velocityChartUnlock) return;
+                                    if (this.id == UIbuttons[1] && !GameData.velocityChartUnlock) return;
 
                                     let button = $(this);
                                     let ckick = button.hasClass('clicked');
@@ -949,6 +987,47 @@ function locatingGame() {
                 let playerStats = gameResult.playerStats;
                 let controllCursor = gameResult.controllCursor;
 
+                //==timerAnime
+                const timer = document.querySelector('#gameUI .timer');
+                const timerTexts = timer.children;
+                const
+                    start = parseInt(timer.getAttribute('value')) * GameData.timeMultiplier,
+                    end = timeRemain * GameData.timeMultiplier;
+                const increase = start > end ? false : true;
+
+                // console.debug(start);
+
+                const startVals = Array.from(timerTexts).map(ele => parseInt(ele.innerHTML));
+                var timerAnime = (increase) => {
+                    const delay = 10;
+                    const sign = increase ? 1 : -1;
+                    const step = sign * Math.abs(start - end) / (duration / delay);
+
+                    // console.debug(step);
+
+                    var now = start;
+                    let interval = setInterval(() => {
+                        if ((now - end) * sign > 0) {
+                            now = end;
+                            clearInterval(interval);
+                        };
+
+                        let notEnoughForDays = now % 86400000;
+
+                        timerTexts[0].innerHTML = parseInt(now / 86400000);
+                        timerTexts[1].innerHTML = parseInt(notEnoughForDays / 3600000);
+                        timerTexts[2].innerHTML = parseInt(notEnoughForDays % 3600000 / 60000);
+
+                        now += step;
+                    }, delay);
+
+                };
+                timerAnime(increase);
+                timer.setAttribute('value', timeRemain);
+
+
+
+                //==update GameData
                 GameData.timeRemain = timeRemain;
                 GameData.playerStats = Object.assign(GameData.playerStats, playerStats);
                 if (controllCursor) GameData.controllCursor = controllCursor;
@@ -979,31 +1058,9 @@ function locatingGame() {
                         lockAnime();
                     };
 
-
-                const timer = document.querySelector('#gameUI .timer');
-                const start = parseInt(timer.innerHTML),
-                    end = parseInt(timeRemain);
-                const increase = start > end ? false : true;
-
-                var timerAnime = (increase) => {
-                    const delay = 10;
-                    const sign = increase ? 1 : -1;
-                    const step = sign * Math.abs(start - end) / (duration / delay);
-
-                    // console.debug(step);
-
-                    var now = start;
-                    let interval = setInterval(() => {
-                        if ((now - end) * sign > 0) {
-                            now = end;
-                            clearInterval(interval);
-                        }
-                        timer.innerHTML = parseInt(now);
-                        now += step;
-                    }, delay);
-
-                };
-                timerAnime(increase);
+                //==gameover
+                if (GameData.timeRemain == 0)
+                    setTimeout(() => initGameOverScene(), duration);
 
 
             };
@@ -1016,112 +1073,116 @@ function locatingGame() {
                 gameDisplay(true);
 
                 let gameResult;
-                switch (gameMode) {
-                    case 'defend':
-                        let stationData = siteData ?
-                            siteData.options.data :
-                            testArr[0].options.data;//test
+                if (gameMode == 'defend') {
+                    let stationData = siteData ?
+                        siteData.options.data :
+                        testArr[0].options.data;//test
 
-                        gameResult = await new Promise((resolve, reject) => {
-                            const config = {
-                                parent: 'gameMain',
-                                type: Phaser.AUTO,
-                                width: width * 0.9,
-                                height: height * 0.95,
-                                physics: {
-                                    default: 'arcade',
-                                    arcade: {
-                                        gravity: { y: 300 },
-                                        // debug: true,
-                                    },
+                    gameResult = await new Promise((resolve, reject) => {
+                        const config = {
+                            parent: 'gameMain',
+                            type: Phaser.AUTO,
+                            width: width * 0.9,
+                            height: height * 0.95,
+                            physics: {
+                                default: 'arcade',
+                                arcade: {
+                                    gravity: { y: 300 },
+                                    // debug: true,
                                 },
-                                scene: new DefendScene(stationData, GameData, {
-                                    getWaveImg: getWaveImg,
-                                    resolve: resolve,
-                                }),
-                            };
-                            new Phaser.Game(config);
-
-                        });
-                        console.debug(gameResult);
-                        let stationInfo = gameResult.stationInfo;
-                        let playerInfo = gameResult.playerInfo;
-
-                        //===update icon
-                        // console.debug(stationInfo.clear, !stationData.stationStats.clear)
-                        if (stationInfo.clear && !stationData.stationStats.clear)
-                            updateStation(siteData, { icon: 'clear' });
-
-                        //===update circle
-                        if (stationInfo.clear) {
-
-                            let timeGap = Math.abs(stationInfo.orbStats.reduce((acc, cur) => acc.time - cur.time))
-
-                            //距離=時間*速度,km換算成m;
-                            let radius = timeGap * GameData.velocity * 1000;
-
-                            //==半徑跟之前相差大於1不作動畫
-                            let pre_radius = siteData.options.data.circleObj.getRadius();
-                            if (Math.abs(radius - pre_radius) > 1)
-                                updateStation(siteData, { circleRadius: radius });
-
+                            },
+                            scene: new DefendScene(stationData, GameData, {
+                                getWaveImg: getWaveImg,
+                                resolve: resolve,
+                            }),
                         };
+                        new Phaser.Game(config);
 
-                        //===更新測站情報
-                        Object.assign(stationData.stationStats, stationInfo);
+                    });
+                    console.debug(gameResult);
+                    let stationInfo = gameResult.stationInfo;
+                    let playerInfo = gameResult.playerInfo;
 
-                        //===更新人物資料
-                        updateMapUI(playerInfo, 1000);
+                    //===update icon
+                    // console.debug(stationInfo.clear, !stationData.stationStats.clear)
+                    if (stationInfo.clear && !stationData.stationStats.clear)
+                        updateStation(siteData, { icon: 'clear' });
 
-                        break;
-                    case 'dig':
-                        // console.debug(siteData);
-                        const backgroundArr = Object.keys(BackGroundResources.dig);
+                    //===update circle
+                    if (stationInfo.clear) {
 
-                        let coordinate = siteData.coordinate;
-                        // let background = 'halloween_4';//==之後經緯度判斷？
-                        let background = backgroundArr[getRandom(backgroundArr.length)];
-                        let mineBGindex = 0;//==之後經緯度判斷？
+                        let timeGap = Math.abs(stationInfo.orbStats.reduce((acc, cur) => acc.time - cur.time))
 
-                        let placeData = {
-                            coordinate: coordinate,
-                            background: background,
-                            mineBGindex: mineBGindex,
-                            depth: siteData.depth ? siteData.depth : null,
-                        };
+                        //距離=時間*速度,km換算成m;
+                        let radius = timeGap * GameData.velocity * 1000;
 
-                        //==顯示假設點
-                        assumedEpicenter
-                            .setLatLng(coordinate)
-                            .getTooltip()
-                            .setContent(`${GameData.languageJSON.Tip['assumedEpicenter']} : ${coordinate.map(d => d.toFixed(2)).join(' , ')}`)
-                        assumedEpicenter.getElement().style.display = 'inline';
+                        //==半徑跟之前相差大於1不作動畫
+                        let pre_radius = siteData.options.data.circleObj.getRadius();
+                        if (Math.abs(radius - pre_radius) > 1)
+                            updateStation(siteData, { circleRadius: radius });
 
-                        GameData.playerEpicenter = coordinate;
+                    };
 
-                        gameResult = await new Promise((resolve, reject) => {
-                            const config = {
-                                parent: 'gameMain',
-                                type: Phaser.AUTO,
-                                width: width * 0.9,
-                                height: height * 0.95,
-                                physics: {
-                                    default: 'arcade',
-                                    arcade: {
-                                        gravity: { y: 300 },
-                                        debug: true,
-                                    },
+                    //===更新測站情報
+                    Object.assign(stationData.stationStats, stationInfo);
+
+                    //===更新人物資料
+                    updateMapUI(playerInfo, 1000);
+                }
+                else if (gameMode == 'dig') {
+
+                    // console.debug(siteData);
+                    const backgroundArr = Object.keys(BackGroundResources.dig);
+
+                    let coordinate = siteData.coordinate;
+                    // let background = 'halloween_4';//==之後經緯度判斷？
+                    let background = backgroundArr[getRandom(backgroundArr.length)];
+                    let mineBGindex = 0;//==之後經緯度判斷？
+
+                    let placeData = {
+                        coordinate: coordinate,
+                        background: background,
+                        mineBGindex: mineBGindex,
+                        depth: siteData.depth ? siteData.depth : null,
+                    };
+
+                    //==顯示假設點
+                    assumedEpicenter
+                        .setLatLng(coordinate)
+                        .getTooltip()
+                        .setContent(`${GameData.languageJSON.Tip['assumedEpicenter']} : ${coordinate.map(d => d.toFixed(2)).join(' , ')}`)
+                    assumedEpicenter.getElement().style.display = 'inline';
+
+                    GameData.playerEpicenter = coordinate;
+
+                    gameResult = await new Promise((resolve, reject) => {
+                        const config = {
+                            parent: 'gameMain',
+                            type: Phaser.AUTO,
+                            width: width * 0.9,
+                            height: height * 0.95,
+                            physics: {
+                                default: 'arcade',
+                                arcade: {
+                                    gravity: { y: 300 },
+                                    debug: true,
                                 },
-                                scene: new DigScene(placeData, GameData, {
-                                    resolve: resolve,
-                                }),
-                            };
-                            new Phaser.Game(config);
+                            },
+                            scene: new DigScene(placeData, GameData, {
+                                resolve: resolve,
+                            }),
+                        };
+                        new Phaser.Game(config);
 
-                        });
+                    });
 
-                        console.debug(gameResult);
-                        break;
+                    console.debug(gameResult);
+                    let playerInfo = gameResult.playerInfo;
+
+                    //===更新人物資料
+                    updateMapUI(playerInfo, 1000);
+
+
                 };
                 gameDisplay(false);
 

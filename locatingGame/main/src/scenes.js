@@ -690,9 +690,7 @@ class UIScene extends Phaser.Scene {
                     preload = () => { };
                     create = () => {
                         var initOverview = () => {
-
                             const mapZoom = rectW / gameScene.groundW;
-
                             initDetector(false);
 
                             var initMinimap = () => {
@@ -703,7 +701,7 @@ class UIScene extends Phaser.Scene {
                                         .setZoom(mapZoom)
                                         .setBackgroundColor(0x003E3E)
                                         .ignore(gameScene.BGgroup)
-                                        .setName('mini');
+                                        .setName('miniMap');
 
 
                                 this.events.on('destroy', () => {
@@ -712,7 +710,6 @@ class UIScene extends Phaser.Scene {
 
                                 // console.debug(this.minimap, gameScene.cameras)
                             };
-
                             var initScreenRect = () => {
 
                                 let sRectW = width * mapZoom,
@@ -720,17 +717,22 @@ class UIScene extends Phaser.Scene {
 
                                 this.screenRect = this.add.graphics()
                                     .lineStyle(3, 0x750000)
+                                    .fillStyle(0x0066CC, 0.4)
+                                    .fillRect(0, 0, sRectW, sRectH)
                                     .strokeRect(0, 0, sRectW, sRectH)
 
                                 // console.debug(rectX + (rectW - sRectW) * 0.5)
 
                             };
 
-
                             initMinimap();
                             initScreenRect();
                         };
                         initOverview();
+                        console.debug(gameScene.cameras.main)
+                        console.debug(this.minimap)
+                        // console.debug(gameScene.cameras.main.scrollY, this.minimap.scrollY)
+                        console.debug(gameScene.cameras.main.centerY, this.minimap.centerY)
                     };
                     update = () => {
                         var updateMinimap = () => {
@@ -738,17 +740,15 @@ class UIScene extends Phaser.Scene {
                             let mainCameras = gameScene.cameras.main;
                             let minimap = this.minimap;
 
-                            minimap.scrollY = mainCameras.scrollY + gameScene.groundY;
+                            minimap.scrollY = mainCameras.scrollY + gameScene.groundY + (gameScene.cameras.main.centerY - this.minimap.centerY) * 0.5;
                             this.screenRect.setPosition(
                                 minimap.x + mainCameras.scrollX * minimap.zoom,
                                 minimap.y
-                            )
-
-                            // console.debug()
+                            );
+                            // console.debug(gameScene.cameras.main.worldView.centerY, gameScene.cameras.main.centerY)
+                            // console.debug(gameScene.cameras.main.centerY, this.minimap.centerY)
                         };
-
                         updateMinimap();
-
                     };
                 };
 
@@ -1480,8 +1480,8 @@ class GameOverScene extends Phaser.Scene {
                         switch (button) {
                             case 'resurrect':
 
-                                // this.game.destroy(true, false);
-                                // this.resolve(this.GameData);
+                                this.game.destroy(true, false);
+                                this.resolve();
 
                                 break;
 
@@ -2495,7 +2495,6 @@ class DigScene extends Phaser.Scene {
         this.load.rexAwait(callback);//==等LoadingScene完成素材載入
     };
     create() {
-
         const canvas = this.sys.game.canvas;
         const width = Math.ceil(canvas.width * 1.5 / this.tileSize) * this.tileSize;//==可以移動範圍約1.5個螢幕寬
         const height = Math.ceil(canvas.height * 0.7 / this.tileSize) * this.tileSize;
@@ -2532,6 +2531,7 @@ class DigScene extends Phaser.Scene {
                     let resources = BackGroundResources.dig[this.background];
 
                     let imgY = this.groundY - height * 0.5;
+                    // console.debug(imgY)
                     resources.static.forEach((res, i) => {
 
                         let img = this.add.image(width * 0.5, imgY, 'staticBG_' + i);
@@ -2618,14 +2618,8 @@ class DigScene extends Phaser.Scene {
                 animsCreate();
 
             };
-            var initBounds = () => {
-                let boundY = this.groundY - height;
-                this.physics.world.setBounds(0, boundY, width);
-                this.cameras.main.setBounds(0, boundY, width);
-            };
 
             background();
-            initBounds();
             //===地底用到
             initChunks();
 
@@ -2641,7 +2635,6 @@ class DigScene extends Phaser.Scene {
             this.scene.add(null, new UIScene('cursors', this), true);
         };
         var initPlayer = () => {
-
             this.player = this.add.existing(new Player(this, this.gameData.playerRole, this.gameData.playerStats))
                 .setPosition(width * 0.5, 0)
                 .setDepth(Depth.player);
@@ -2649,7 +2642,8 @@ class DigScene extends Phaser.Scene {
             // console.debug(this.player);
 
             this.player.body
-                .setGravityY(2000);
+                .setGravityY(2000)
+            // .setMaxVelocity(0);
 
             this.player.playerDig = (player, tile) => {
                 // if (this.tile) return;
@@ -2682,24 +2676,34 @@ class DigScene extends Phaser.Scene {
 
         };
         var initCamera = () => {
+            var camera = () => {
+                let camera = this.cameras.main;
 
-            let camera = this.cameras.main;
-
-            camera.preScrollX = camera.scrollX;
-            camera.preScrollY = camera.scrollY;
-
-            camera.startFollow(this.player);
-
-            //===礦坑背景隨相機移動
-            camera.on('followupdate', (camera, b) => {
-                if (camera.scrollY == camera.preScrollY) return
-
-                let shift = camera.scrollY - camera.preScrollY;
-                this.underBG.y += shift;
-                this.underBG.tilePositionY += 1 * Math.sign(shift);
-
+                camera.preScrollX = camera.scrollX;
                 camera.preScrollY = camera.scrollY;
-            });
+
+                camera.startFollow(this.player);
+
+                //===礦坑背景隨相機移動
+                camera.on('followupdate', (camera, b) => {
+                    if (camera.scrollY == camera.preScrollY) return
+                    console.debug(camera.scrollY)
+                    let shift = camera.scrollY - camera.preScrollY;
+                    this.underBG.y += shift;
+                    this.underBG.tilePositionY += 1 * Math.sign(shift);
+
+                    camera.preScrollY = camera.scrollY;
+                });
+            };
+            var bounds = () => {
+                let boundY = this.groundY - height;
+                this.physics.world.setBounds(0, boundY, width);
+                this.cameras.main.setBounds(0, boundY, width);
+                console.debug(boundY)
+            };
+
+            camera();
+            bounds();
         };
 
 
@@ -2792,6 +2796,21 @@ class DigScene extends Phaser.Scene {
         };
     };
 };
+
+// class DefendScene extends Phaser.Scene {
+//     constructor() {
+//         super({ key: 'gameScene' });
+//     }
+//     preload() {
+
+//     };
+//     create() {
+
+//     };
+//     update() {
+
+//     };
+// }
 
 // class DefendScene extends Phaser.Scene {
 //     constructor() {

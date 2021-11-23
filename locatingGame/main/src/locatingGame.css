@@ -74,14 +74,14 @@ svg {
 }
 
 .station-circle {
-
+    /* stroke-opacity: 1; */
+    fill-opacity: "0.2";
     stroke: rgb(150, 36, 36);
-    stroke-opacity: 1;
     stroke-width: 10;
     /* stroke-linecap: "round"; */
     /* stroke-linejoin: "round"; */
     fill: blue;
-    fill-opacity: "0.2";
+
 
 
 }

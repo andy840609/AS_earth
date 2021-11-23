@@ -222,13 +222,11 @@ function locatingGame() {
                     gameOuterDiv.fadeOut();
             };
 
-            var testArr;//==get markerData for debug
-
             function initGameData() {
                 let playerRole = 'mage';//==之後能選其他
 
                 GameData = {
-                    timeRemain: 3.1 * 60000,//1min=60000ms           
+                    timeRemain: 10 * 60000,//1min=60000ms           
                     // timeRemain: 0.01 * 60000,//1min=60000ms
                     timeMultiplier: 300,//real 1 ms = game x ms;
                     velocity: 7.5,//==速度參數預設7.5
@@ -334,7 +332,8 @@ function locatingGame() {
 
                     // Object.assign(GameData, newGameData);
                     gameDisplay(false);
-
+                    updateMapUI({ timeRemain: 80000 }, 800);
+                    data.forEach(d => updateStation(d.markerObj, { icon: 'default' }));
                 };
                 gameOverScene();
 
@@ -393,20 +392,7 @@ function locatingGame() {
                         attribution: esriMap.attr,
                     }).addTo(mapObj);
 
-                    // control that shows state info on hover
-                    // Object.assign(L.control(), {
-                    //     onAdd: function (mapObj) {
-                    //         this._div = L.DomUtil.create('div', 'info');
-                    //         this._div.id = 'cityName';
-                    //         this.update();
-                    //         return this._div;
-                    //     },
-                    //     update: function (props) {
-                    //         this._div.innerHTML = (props ?
-                    //             '<b>' + props.name + '</b><br />'
-                    //             : 'Hover over a city or county');
-                    //     }
-                    // }).addTo(mapObj);
+
 
 
                 };
@@ -433,9 +419,23 @@ function locatingGame() {
                     })
                     countyObj.addTo(mapObj);
 
+
+                    // control that shows state info on hover
+                    // Object.assign(L.control(), {
+                    //     onAdd: function (mapObj) {
+                    //         this._div = L.DomUtil.create('div', 'info');
+                    //         this._div.id = 'cityName';
+                    //         this.update();
+                    //         return this._div;
+                    //     },
+                    //     update: function (props) {
+                    //         this._div.innerHTML = (props ?
+                    //             '<b>' + props.name + '</b><br />'
+                    //             : 'Hover over a city or county');
+                    //     }
+                    // }).addTo(mapObj);
+
                     // console.debug(geoJSON);
-
-
                 };
                 async function addStation() {
                     // console.debug(data);
@@ -445,8 +445,8 @@ function locatingGame() {
 
                     data.forEach((d, i) => {
                         // console.debug(d);
-                        let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
-                        // let enemy = [];//==之後隨機抽敵人組
+                        // let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
+                        let enemy = [];//==之後隨機抽敵人組
                         let enemyStats = {};
 
 
@@ -476,17 +476,24 @@ function locatingGame() {
                             pane: 'markerPane',
                             data: d,
                             // bubblingMouseEvents: true,
-                        }).on('click', function (e) {
+                        })
+                            .on('mouseover', (e) => {
+                                updateStation(marker, { mouseEvent: 1 });
+                            })
+                            .on('mouseout', (e) => {
+                                updateStation(marker, { mouseEvent: 0 });
+                            })
+                            .on('click', function (e) {
+                                if (GameData.timeRemain == 0) return;
+                                requestTypingAnim();
 
-                            requestTypingAnim();
+                                gameUI.find('.confirmWindow')
+                                    .fadeIn(fadeInDuration)
+                                    .find('.placeStr')
+                                    .text(`${d['station']}${GameData.languageJSON.Tip['station']}`)
+                                    .data('gameStartParameters', ['defend', marker]);
 
-                            gameUI.find('.confirmWindow')
-                                .fadeIn(fadeInDuration)
-                                .find('.placeStr')
-                                .text(`${d['station']}${GameData.languageJSON.Tip['station']}`)
-                                .data('gameStartParameters', ['defend', marker]);
-
-                        });
+                            });
 
                         marker.bindTooltip(d['station'], {
                             direction: 'top',
@@ -498,26 +505,27 @@ function locatingGame() {
                         let circle = L.circle(d['coordinate'], {
                             className: 'station-circle',
                             radius: 0,
+                            opacity: 0,
                         });
 
-                        d['circleObj'] = circle;
+                        Object.assign(d, {
+                            markerObj: marker,
+                            circleObj: circle,
+                        });
+
+
 
                         markerArr.push(marker);
                         circleArr.push(circle);
                         updateStation(marker, { icon: 'default' });
-
-                        // console.debug(d);
                     });
 
                     L.layerGroup(markerArr, { key: 'markerGroup' }).addTo(mapObj);
                     L.layerGroup(circleArr, { key: 'circleGroup' }).addTo(mapObj);
-                    // new L.layerGroup(markerArr).addTo(mapObj);
-                    // let markerLayerGroupIdx = Object.keys(mapObj._layers).filter(i => mapObj._layers[i].options['key'] == 'markerGroup')[0];
-                    // console.debug(mapObj._layers);
-                    testArr = markerArr;
+
 
                     //＝＝test 震央
-                    let size = 60;
+                    let size = 40;
                     L.marker(data.epicenter['coordinate'], {
                         icon: L.icon({
                             iconUrl: '../data/assets/icon/star.png',
@@ -526,14 +534,8 @@ function locatingGame() {
                         }),
                         pane: 'markerPane',
                         data: data.epicenter,
-                        // bubblingMouseEvents: true,
-                    })
-                        // .bindTooltip("<b><font size='5'>epicenter</font><br>", {
-                        //     direction: 'top',
-                        //     // permanent: true,
-                        //     className: 'station-tooltip',
-                        // })
-                        .addTo(mapObj);
+                    }).addTo(mapObj);
+                    //＝＝test 震央
 
                     assumedEpicenter = L.marker(data.epicenter['coordinate'], {
                         icon: L.icon({
@@ -546,23 +548,26 @@ function locatingGame() {
                     }).bindTooltip('', {
                         direction: 'top',
                         className: 'station-tooltip',
-                    }).on('click', function (e) {
+                    })
+                        .on('mouseover', e => {
+                            updateStation(e.target, { mouseEvent: 1 });
+                        })
+                        .on('mouseout', e => {
+                            updateStation(e.target, { mouseEvent: 0 });
+                        }).on('click', function (e) {
+                            //==觸發畫面位置點擊(要在假設點上座標才對)
+                            let bigMapDOMRect = bigMap.getBoundingClientRect();
+                            const event = new MouseEvent('click', {
+                                'view': window,
+                                'bubbles': true,
+                                'cancelable': true,
+                                'clientX': e.containerPoint.x + bigMapDOMRect.x,
+                                'clientY': e.containerPoint.y + bigMapDOMRect.y
+                            });
+                            bigMap.dispatchEvent(event);
 
-                        let bigMapDOMRect = bigMap.getBoundingClientRect();
-                        const event = new MouseEvent('click', {
-                            'view': window,
-                            'bubbles': true,
-                            'cancelable': true,
-                            'clientX': e.containerPoint.x + bigMapDOMRect.x,
-                            'clientY': e.containerPoint.y + bigMapDOMRect.y
-                        });
-                        bigMap.dispatchEvent(event);
-
-
-                    }).addTo(mapObj);
+                        }).addTo(mapObj);
                     assumedEpicenter.getElement().style.display = 'none';
-                    // console.debug()
-                    //＝＝test 震央
 
                 };
                 async function addUI() {
@@ -851,7 +856,7 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
-                            // console.debug("AAA");
+                            if (GameData.timeRemain == 0) return;
                             let lat = e.latlng.lat;
                             let lng = e.latlng.lng;
 
@@ -882,6 +887,7 @@ function locatingGame() {
             };
             function updateStation(stationMarker, updateObj = {}) {
 
+                const originalIconSize = 40;
                 const IconClass = L.Icon.extend({
                     options: {
                         tooltipAnchor: [0, -25],
@@ -889,13 +895,15 @@ function locatingGame() {
                     }
                 });
                 const defaultIconUrl = '../data/assets/icon/home.png';
-                const clearIconUrl = '../data/assets/icon/playerIcon.png';
+                const clearIconUrl = '../data/assets/icon/home_clear.png';
+
                 var circleAnime = (circleObj, originalRadius, duration = 500) => {
                     // console.debug(circleObj, originalRadius);
                     const delay = 10;
                     const animePart = 3;//3個步驟：變大>變小>原來大小
                     const eachPartStep = parseInt((duration / animePart) / delay);
                     const radiusChange = originalRadius / eachPartStep;
+
 
                     let radius = 0, step = 0;
                     let interval = setInterval(() => {
@@ -922,16 +930,19 @@ function locatingGame() {
 
                     }, delay);
 
+                    circleObj.setStyle({ opacity: 1 });//==一開始不顯示
                 };
-                var iconAnime = (marker, iconUrl, duration = 600) => {
+
+                let interval;
+                var iconUpDownAnime = (marker, iconUrl, duration = 600) => {
                     const delay = 10;
-                    const originalIconSize = 40;
+
                     const animePart = 2;//2個步驟：變大>原來大小
                     const eachPartStep = parseInt((duration / animePart) / delay);
                     const sizeChange = originalIconSize / eachPartStep * animePart;
 
                     let size = 0, step = 0;
-                    let interval = setInterval(() => {
+                    interval = setInterval(() => {
 
                         let part = parseInt(step / eachPartStep);
 
@@ -958,8 +969,79 @@ function locatingGame() {
                     }, delay);
 
                 };
+                var iconTriggerAnime = (marker, trigger = true, duration = 50) => {
+                    if (interval) return;
+                    const iconScale = 1.5;
+                    const
+                        iconSize1 = trigger ? originalIconSize : originalIconSize * iconScale,
+                        iconSize2 = trigger ? originalIconSize * iconScale : originalIconSize;
+                    const iconUrl = marker.getIcon().options.iconUrl;
+
+                    const delay = 10;
+                    const totalStep = parseInt(duration / delay);
+                    const sizeChange = (iconSize2 - iconSize1) / totalStep;
+
+                    let size = iconSize1, step = 0;
+                    interval = setInterval(() => {
+
+                        let part = parseInt(step / totalStep);
+
+                        switch (part) {
+                            case 0:
+                                size += sizeChange;
+                                break;
+                            case 1:
+                                size = iconSize2;
+                                clearInterval(interval);
+                                break;
+                        };
+
+
+                        marker.setIcon(new IconClass({
+                            iconUrl: iconUrl,
+                            iconSize: [size, size],
+                            iconAnchor: [size / 2, size / 2],
+                        }));
+                        step++;
+                    }, delay);
+
+                };
+                var iconBrokenAnime = (marker, duration = 500) => {
+                    const
+                        iconUrl1 = marker.getIcon().options.iconUrl,
+                        iconUrl2 = '../data/assets/icon/home_broken.png',
+                        iconUrl3 = '../data/assets/icon/home_destruction.png';
+
+                    const totalStep = 2;//==依序換2次圖
+                    const delay = parseInt(duration / totalStep);
+
+                    let url = iconUrl1, step = 1;
+                    interval = setInterval(() => {
+
+                        let part = parseInt(step / totalStep);
+
+                        switch (part) {
+                            case 0:
+                                url = iconUrl2;
+                                break;
+                            case 1:
+                                url = iconUrl3;
+                                clearInterval(interval);
+                                break;
+                        };
+
+
+                        marker.setIcon(new IconClass({
+                            iconUrl: url,
+                            // iconSize: [size, size],
+                            // iconAnchor: [size / 2, size / 2],
+                        }));
+                        step++;
+                    }, delay);
+                };
 
                 if (stationMarker) {
+                    //==完成測站動畫
                     if (updateObj.icon) {
                         let icon;
                         switch (updateObj.icon) {
@@ -970,13 +1052,25 @@ function locatingGame() {
                                 icon = clearIconUrl;
                                 break;
                         };
-                        iconAnime(stationMarker, icon);
+                        iconUpDownAnime(stationMarker, icon);
 
                     };
+                    //==delta更新動畫
                     if (!isNaN(updateObj.circleRadius)) {
                         let data = stationMarker.options.data;
                         let circleObj = data.circleObj;
                         circleAnime(circleObj, updateObj.circleRadius);
+                    };
+                    //==mousehover動畫
+                    if (updateObj.hasOwnProperty('mouseEvent')) {
+                        updateObj.mouseEvent ?
+                            iconTriggerAnime(stationMarker) :
+                            iconTriggerAnime(stationMarker, false);
+
+                    };
+                    //==gameover動畫
+                    if (updateObj.hasOwnProperty('gameOver')) {
+                        iconBrokenAnime(stationMarker, updateObj.duration);
                     };
 
                 };
@@ -997,7 +1091,6 @@ function locatingGame() {
 
                 // console.debug(start);
 
-                const startVals = Array.from(timerTexts).map(ele => parseInt(ele.innerHTML));
                 var timerAnime = (increase) => {
                     const delay = 10;
                     const sign = increase ? 1 : -1;
@@ -1024,8 +1117,6 @@ function locatingGame() {
                 };
                 timerAnime(increase);
                 timer.setAttribute('value', timeRemain);
-
-
 
                 //==update GameData
                 GameData.timeRemain = timeRemain;
@@ -1059,8 +1150,37 @@ function locatingGame() {
                     };
 
                 //==gameover
-                if (GameData.timeRemain == 0)
-                    setTimeout(() => initGameOverScene(), duration);
+                if (GameData.timeRemain == 0) {
+                    var apocalypse = () => {
+                        const bigMapJQ = $(bigMap);
+
+                        const delay = 50;
+                        const step = duration * 0.5 / delay;
+                        // console.debug(duration)
+                        let distance = 3, nowStep = 0;
+                        let interval = setInterval(() => {
+                            if (nowStep >= step) {
+                                clearInterval(interval);
+                            };
+
+                            bigMapJQ.effect("shake", {
+                                distance: distance += nowStep,
+                                times: 1,
+                            });
+
+                            nowStep += 1;
+                        }, delay);
+
+                        //==房子倒塌動畫
+                        data.forEach(d => updateStation(d.markerObj, {
+                            gameOver: true,
+                            duration: duration * 3,
+                        }));
+                    };
+
+                    setTimeout(() => apocalypse(), duration * 1);
+                    setTimeout(() => initGameOverScene(), duration * 5);
+                };
 
 
             };
@@ -1076,7 +1196,7 @@ function locatingGame() {
                 if (gameMode == 'defend') {
                     let stationData = siteData ?
                         siteData.options.data :
-                        testArr[0].options.data;//test
+                        data[0].markerObj.options.data;//test
 
                     gameResult = await new Promise((resolve, reject) => {
                         const config = {

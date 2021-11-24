@@ -814,15 +814,24 @@ const Player = new Phaser.Class({
             // this.anims.play('player_turn');
         };
 
-        // //==跳
-        // if (cursors[controllCursor['up']].isDown && this.body.touching.down) {
-        //     this.setVelocityY(-this.stats.jumpingPower);
-        // };
 
-        //==飛(dig)
-        if (cursors[controllCursor['up']].isDown) {
-            this.setVelocityY(-this.stats.jumpingPower);
+        switch (scene.name) {
+            case 'defend':
+                //==跳
+                if (cursors[controllCursor['up']].isDown && this.body.touching.down) {
+                    this.setVelocityY(-this.stats.jumpingPower);
+                };
+                break;
+            case 'dig':
+                //==飛(dig)
+                if (cursors[controllCursor['up']].isDown) {
+                    this.setVelocityY(-this.stats.jumpingPower);
+                };
+                break;
         };
+
+
+
 
     },
     //==撿起

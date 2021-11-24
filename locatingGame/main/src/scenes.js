@@ -373,8 +373,6 @@ class UIScene extends Phaser.Scene {
                     this.orbs = gameScene.orbGroup.getChildren();
                     preload = () => { };
                     create = () => {
-
-
                         const handleW = 10,
                             handleXMin = rectX - handleW * 0.5,
                             handleXMax = rectX + rectW - handleW * 0.5;
@@ -408,7 +406,6 @@ class UIScene extends Phaser.Scene {
 
                             const getTimePoint = gameScene.getTimePoint;
                             const groundObj = gameScene.platforms.getChildren()[0];
-
 
                             let brushRect = this.add.rectangle(rectX, rectY, rectW, rectH, 0xEA7500)
                                 .setDepth(Depth.detector + 2)
@@ -498,7 +495,6 @@ class UIScene extends Phaser.Scene {
                                 if (!updateObj.updateFlag)
                                     clearTimeout(updateObj.updateTimeOut);
 
-
                                 updateObj.updateTimeOut = setTimeout(() => {
                                     parameter ? action(...parameter) : action();
                                     updateObj.updateFlag = true;
@@ -519,9 +515,7 @@ class UIScene extends Phaser.Scene {
                                 updateBrushRect();
                             };
 
-
                             //===按鈕
-
                             var buttonBehavior = (button) => {
 
                                 let dy = 0, burshMove = null;
@@ -557,7 +551,6 @@ class UIScene extends Phaser.Scene {
                                         };
                                         break;
                                 };
-
 
                                 button.setInteractive({ cursor: 'pointer' })
                                     .on('pointerover', function () {
@@ -661,8 +654,6 @@ class UIScene extends Phaser.Scene {
                         initUpdateListener();
                         initMapIcon();
 
-
-
                     };
                     update = () => {
                         var updateButton = () => {
@@ -687,6 +678,8 @@ class UIScene extends Phaser.Scene {
                     };
                 }
                 else {
+                    let mainCameras = gameScene.cameras.main;
+
                     preload = () => { };
                     create = () => {
                         var initOverview = () => {
@@ -697,58 +690,94 @@ class UIScene extends Phaser.Scene {
                                 this.minimap =
                                     gameScene.cameras.add(rectX, rectY, rectW, rectH)
                                         .setScene(this)
-                                        .centerOn(gameScene.groundW * 0.5)
+                                        .centerOn(gameScene.groundW * 0.5, mainCameras.getBounds().y)
                                         .setZoom(mapZoom)
-                                        .setBackgroundColor(0x003E3E)
-                                        .ignore(gameScene.BGgroup)
+                                        .setBackgroundColor(0xBEBEBE)
+                                        // .ignore(gameScene.BGgroup)
                                         .setName('miniMap');
 
+                                //===小地圖相機修正讓方框範圍一致
+                                // this.minimap.fixedScrollY = rectH / mapZoom * 0.5 + mainCameras.getBounds().y * mapZoom;
+                                this.minimap.fixedScrollY = rectH / mapZoom * 0.5;
+                                this.minimap.updateFlag = true;//==miniMap被關掉後再開啓要update位置一次
 
                                 this.events.on('destroy', () => {
+                                    if (gameScene.gameOver.flag) return;
                                     gameScene.cameras.remove(this.minimap);
+                                    mainCameras.startFollow(gameScene.player);
                                 });
-
-                                // console.debug(this.minimap, gameScene.cameras)
                             };
                             var initScreenRect = () => {
-
                                 let sRectW = width * mapZoom,
                                     sRectH = height * mapZoom;
 
-                                this.screenRect = this.add.graphics()
-                                    .lineStyle(3, 0x750000)
-                                    .fillStyle(0x0066CC, 0.4)
-                                    .fillRect(0, 0, sRectW, sRectH)
-                                    .strokeRect(0, 0, sRectW, sRectH)
+                                this.screenRect = this.add.rectangle(rectX, rectY, sRectW, sRectH, 0x0066CC)
+                                    .setStrokeStyle(2, 0x272727)
+                                    .setOrigin(0)
+                                    .setAlpha(.4);
 
-                                // console.debug(rectX + (rectW - sRectW) * 0.5)
+                                var dragBehavior = (rect) => {
+                                    let dragRectPos;
+                                    rect.setInteractive({ draggable: true, cursor: 'move' })
+                                        .on('dragstart', function (pointer) {
+                                            dragRectPos = [pointer.worldX - this.x, pointer.worldY - this.y];
+                                        })
+                                        .on('drag', function (pointer) {
+                                            let dragX = pointer.worldX - dragRectPos[0];
+                                            let dragY = pointer.worldY - dragRectPos[1];
 
+                                            if (dragX < rectX)
+                                                dragX = rectX;
+                                            else if (dragX > rectX + rectW - sRectW)
+                                                dragX = rectX + rectW - sRectW;
+
+                                            if (dragY < rectY)
+                                                dragY = rectY;
+                                            else if (dragY > rectY + rectH - sRectH)
+                                                dragY = rectY + rectH - sRectH;
+
+                                            this.x = dragX;
+                                            this.y = dragY;
+
+                                            updateMainCamera((this.x + 0.5 * sRectW - rectX) / mapZoom, (this.y + 0.5 * sRectH - rectY) / mapZoom);
+                                        });
+                                };
+                                dragBehavior(this.screenRect);
                             };
-
+                            var updateMainCamera = (x, y) => {
+                                mainCameras
+                                    .stopFollow()
+                                    .centerOn(x, this.minimap.worldView.y + y);
+                            };
                             initMinimap();
                             initScreenRect();
                         };
                         initOverview();
-                        console.debug(gameScene.cameras.main)
-                        console.debug(this.minimap)
-                        // console.debug(gameScene.cameras.main.scrollY, this.minimap.scrollY)
-                        console.debug(gameScene.cameras.main.centerY, this.minimap.centerY)
                     };
                     update = () => {
                         var updateMinimap = () => {
-                            if (!gameScene.player) return;
-                            let mainCameras = gameScene.cameras.main;
                             let minimap = this.minimap;
+                            let player = gameScene.player;
+                            let speed = player.body.speed;
 
-                            minimap.scrollY = mainCameras.scrollY + gameScene.groundY + (gameScene.cameras.main.centerY - this.minimap.centerY) * 0.5;
+                            if (speed) minimap.updateFlag = true;
+                            if (!player || !minimap.updateFlag) return;
+
+                            mainCameras.startFollow(player);
+                            minimap.scrollY = mainCameras.scrollY + minimap.fixedScrollY;
                             this.screenRect.setPosition(
                                 minimap.x + mainCameras.scrollX * minimap.zoom,
                                 minimap.y
                             );
-                            // console.debug(gameScene.cameras.main.worldView.centerY, gameScene.cameras.main.centerY)
-                            // console.debug(gameScene.cameras.main.centerY, this.minimap.centerY)
+
+                            if (!speed) minimap.updateFlag = false;
+
+                            // console.debug(rectH / minimap.zoom,)
+                            // console.debug(minimap.scrollY, mainCameras.scrollY)
+                            console.debug(minimap)
                         };
                         updateMinimap();
+
                     };
                 };
 
@@ -2581,12 +2610,9 @@ class DigScene extends Phaser.Scene {
 
                     this.BGgroup.add(this.underBG);
                 };
-                var overview = () => {
-                    this.scene.add(null, new UIScene('detectorUI', this), true);
-                };
+
                 ground();
                 underGround();
-                overview();
             };
             var initChunks = () => {
                 this.chunks = [];
@@ -2687,7 +2713,7 @@ class DigScene extends Phaser.Scene {
                 //===礦坑背景隨相機移動
                 camera.on('followupdate', (camera, b) => {
                     if (camera.scrollY == camera.preScrollY) return
-                    console.debug(camera.scrollY)
+                    // console.debug(camera.scrollY)
                     let shift = camera.scrollY - camera.preScrollY;
                     this.underBG.y += shift;
                     this.underBG.tilePositionY += 1 * Math.sign(shift);
@@ -2699,11 +2725,14 @@ class DigScene extends Phaser.Scene {
                 let boundY = this.groundY - height;
                 this.physics.world.setBounds(0, boundY, width);
                 this.cameras.main.setBounds(0, boundY, width);
-                console.debug(boundY)
+                // console.debug(canvas.height)
             };
-
+            var overview = () => {
+                this.scene.add(null, new UIScene('detectorUI', this), true);
+            };
             camera();
             bounds();
+            overview();
         };
 
 

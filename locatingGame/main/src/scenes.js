@@ -351,8 +351,8 @@ class UIScene extends Phaser.Scene {
                 const detectorScale = 0.2;
 
                 //==brush
-                const rectX = x - 94, rectY = y - 88;
-                const rectW = 191, rectH = 130;
+                const rectX = x - 95, rectY = y - 88;
+                const rectW = 192, rectH = 130;
 
                 var initDetector = (screen = true) => {
                     this.detector = this.add.image(x, y, 'detector')
@@ -403,7 +403,6 @@ class UIScene extends Phaser.Scene {
                         };
                         var initBrushes = () => {
                             const stationData = gameScene.gameData.stationData;
-
                             const getTimePoint = gameScene.getTimePoint;
                             const groundObj = gameScene.platforms.getChildren()[0];
 
@@ -426,7 +425,6 @@ class UIScene extends Phaser.Scene {
                             var dragBehavior = (brush) => {
                                 brush.setInteractive({ draggable: true, cursor: 'col-resize' })
                                     .on('drag', function (pointer, dragX, dragY) {
-
                                         let newX;
                                         if (dragX < handleXMin)
                                             newX = handleXMin;
@@ -451,7 +449,6 @@ class UIScene extends Phaser.Scene {
                                 brushRect.width = newRectW;
                             };
                             var updateWave = (domain = null) => {
-
                                 var action = () => {
                                     gameScene.waveForm.getWaveImg(stationData, domain).then(success => {
 
@@ -517,7 +514,6 @@ class UIScene extends Phaser.Scene {
 
                             //===按鈕
                             var buttonBehavior = (button) => {
-
                                 let dy = 0, burshMove = null;
                                 switch (button.name) {
                                     case 'reset':
@@ -530,12 +526,12 @@ class UIScene extends Phaser.Scene {
                                     default:
                                         dy = 13;
                                         burshMove = () => {
-                                            if (button.name == 'changeSide') {
+                                            if (button.name == 'functionKey') {
                                                 button.leftSide = !button.leftSide;
                                             }
                                             else {
                                                 let brushHandle =
-                                                    detectorButtons.find(btn => btn.name == 'changeSide').leftSide ?
+                                                    detectorButtons.find(btn => btn.name == 'functionKey').leftSide ?
                                                         brushHandle1 : brushHandle2;
                                                 let dir = button.name == 'shiftLeft' ? -1 : 1;
 
@@ -547,7 +543,7 @@ class UIScene extends Phaser.Scene {
                                                     newX = handleXMax;
 
                                                 brushHandle.x = newX;
-                                            }
+                                            };
                                         };
                                         break;
                                 };
@@ -558,7 +554,7 @@ class UIScene extends Phaser.Scene {
                                             obj: this,
                                             dy: dy,
                                             img: 'tooltipButton',
-                                        })
+                                        });
                                     })
                                     .on('pointerout', function () {
                                         tooltipHandler(false);
@@ -581,7 +577,7 @@ class UIScene extends Phaser.Scene {
 
                             detectorButtons = [resetButton];
 
-                            const handleButtonName = ['shiftLeft', 'changeSide', 'shiftRight'];
+                            const handleButtonName = ['shiftLeft', 'functionKey', 'shiftRight'];
                             const handle1BtnX = x - 91, handle1BtnY = y + 86;
                             handleButtonName.forEach((d, i) => {
                                 let handleButton = this.add.rectangle(handle1BtnX + i * 51, handle1BtnY, 32, 11, 0xffffff)
@@ -590,7 +586,7 @@ class UIScene extends Phaser.Scene {
                                     .setAlpha(.01)
                                     .setName(d);
 
-                                if (d == 'changeSide') handleButton.leftSide = true;
+                                if (d == 'functionKey') handleButton.leftSide = true;
 
                                 detectorButtons.push(handleButton);
                             });
@@ -606,9 +602,7 @@ class UIScene extends Phaser.Scene {
                             });
                         };
                         var initMapIcon = () => {
-
                             // console.debug(scaleFun.range(), scaleFun.domain());
-
                             this.orbIcons = this.orbs.map(orb => {
 
                                 let orbStats = orb.orbStats;
@@ -646,8 +640,6 @@ class UIScene extends Phaser.Scene {
                                 };
                                 return orbIcon;
                             });
-
-
                         };
                         initOverview();
                         initBrushes();
@@ -678,8 +670,8 @@ class UIScene extends Phaser.Scene {
                     };
                 }
                 else {
+                    let detectorButtons;
                     let mainCameras = gameScene.cameras.main;
-
                     preload = () => { };
                     create = () => {
                         var initOverview = () => {
@@ -690,7 +682,8 @@ class UIScene extends Phaser.Scene {
                                 this.minimap =
                                     gameScene.cameras.add(rectX, rectY, rectW, rectH)
                                         .setScene(this)
-                                        .centerOn(gameScene.groundW * 0.5, mainCameras.getBounds().y)
+                                        // .setBounds(0, mainCameras.getBounds().y, gameScene.groundW)
+                                        .centerOn(gameScene.groundW * 0.5)
                                         .setZoom(mapZoom)
                                         .setBackgroundColor(0xBEBEBE)
                                         // .ignore(gameScene.BGgroup)
@@ -698,7 +691,7 @@ class UIScene extends Phaser.Scene {
 
                                 //===小地圖相機修正讓方框範圍一致
                                 // this.minimap.fixedScrollY = rectH / mapZoom * 0.5 + mainCameras.getBounds().y * mapZoom;
-                                this.minimap.fixedScrollY = rectH / mapZoom * 0.5;
+                                this.minimap.fixedScrollY = rectH / mapZoom / 2 - 64.5;//- 65
                                 this.minimap.updateFlag = true;//==miniMap被關掉後再開啓要update位置一次
 
                                 this.events.on('destroy', () => {
@@ -706,6 +699,7 @@ class UIScene extends Phaser.Scene {
                                     gameScene.cameras.remove(this.minimap);
                                     mainCameras.startFollow(gameScene.player);
                                 });
+
                             };
                             var initScreenRect = () => {
                                 let sRectW = width * mapZoom,
@@ -723,8 +717,15 @@ class UIScene extends Phaser.Scene {
                                             dragRectPos = [pointer.worldX - this.x, pointer.worldY - this.y];
                                         })
                                         .on('drag', function (pointer) {
-                                            let dragX = pointer.worldX - dragRectPos[0];
-                                            let dragY = pointer.worldY - dragRectPos[1];
+                                            let dragX, dragY;
+                                            if (pointer.isCustom) {
+                                                dragX = this.x + pointer.dragX;
+                                                dragY = this.y + pointer.dragY;
+                                            }
+                                            else {
+                                                dragX = pointer.worldX - dragRectPos[0];
+                                                dragY = pointer.worldY - dragRectPos[1];
+                                            };
 
                                             if (dragX < rectX)
                                                 dragX = rectX;
@@ -739,10 +740,73 @@ class UIScene extends Phaser.Scene {
                                             this.x = dragX;
                                             this.y = dragY;
 
+                                            // console.debug(dragX);
                                             updateMainCamera((this.x + 0.5 * sRectW - rectX) / mapZoom, (this.y + 0.5 * sRectH - rectY) / mapZoom);
                                         });
                                 };
                                 dragBehavior(this.screenRect);
+
+                                //===按鈕
+                                var buttonBehavior = (button) => {
+                                    button.setInteractive({ cursor: 'pointer' })
+                                        .on('pointerover', function () {
+                                            tooltipHandler(true, {
+                                                obj: this,
+                                                img: 'tooltipButton',
+                                            });
+                                        })
+                                        .on('pointerout', function () {
+                                            tooltipHandler(false);
+                                        })
+                                        .on('pointerdown', () => {
+                                            // console.debug(button.name);
+                                            let dragX = 0, dragY = 0;
+                                            switch (button.name) {
+                                                case 'reset':
+                                                    this.minimap.updateFlag = true;
+                                                    break;
+                                                case 'shiftLeft':
+                                                    dragX = -1;
+                                                    break;
+                                                case 'functionKey':
+                                                    dragY = 1;
+                                                    break;
+                                                case 'shiftRight':
+                                                    dragX = 1;
+                                                    break;
+                                            };
+
+                                            this.screenRect.emit('drag', {
+                                                isCustom: true,
+                                                dragX: dragX,
+                                                dragY: dragY,
+                                            });
+
+
+                                        });
+                                };
+
+                                let resetButton = this.add.circle(x + 60, y + 74, 18, 0xffffff)
+                                    .setDepth(Depth.detector + 3)
+                                    .setOrigin(0)
+                                    .setAlpha(.01)
+                                    .setName('reset');
+
+                                detectorButtons = [resetButton];
+
+                                const buttonName = ['shiftLeft', 'functionKey', 'shiftRight'];
+                                const btnX = x - 91, btnY = y + 86;
+                                buttonName.forEach((d, i) => {
+                                    let handleButton = this.add.rectangle(btnX + i * 51, btnY, 32, 11, 0xffffff)
+                                        .setDepth(Depth.detector + 3)
+                                        .setOrigin(0)
+                                        .setAlpha(.01)
+                                        .setName(d);
+
+                                    detectorButtons.push(handleButton);
+                                });
+                                detectorButtons.forEach(button => buttonBehavior(button));
+
                             };
                             var updateMainCamera = (x, y) => {
                                 mainCameras
@@ -765,19 +829,27 @@ class UIScene extends Phaser.Scene {
 
                             mainCameras.startFollow(player);
                             minimap.scrollY = mainCameras.scrollY + minimap.fixedScrollY;
+                            // minimap.scrollY = mainCameras.scrollY;
                             this.screenRect.setPosition(
                                 minimap.x + mainCameras.scrollX * minimap.zoom,
                                 minimap.y
                             );
 
                             if (!speed) minimap.updateFlag = false;
-
+                            // console.debug(mainCameras)
                             // console.debug(rectH / minimap.zoom,)
                             // console.debug(minimap.scrollY, mainCameras.scrollY)
-                            console.debug(minimap)
+                        };
+                        var updateButton = () => {
+                            let cursors = gameScene.cursors;
+                            detectorButtons.forEach(button => {
+                                if (cursors[controllCursor[button.name]].isDown) {
+                                    button.emit('pointerdown');
+                                };
+                            });
                         };
                         updateMinimap();
-
+                        updateButton();
                     };
                 };
 
@@ -982,6 +1054,33 @@ class UIScene extends Phaser.Scene {
 
                     updateTimer();
                     updateHourglassAnime();
+                };
+                break;
+            case 'depthCounterUI':
+
+                const depthScale = gameScene.depthCounter.depthScale;
+
+                preload = () => { };
+                create = () => {
+                    var initCounter = () => {
+                        gameScene.depthCounter.text =
+                            this.add.text(20, 300, 'AAA', { fontSize: '32px', fill: '#fff' })
+                                .setDepth(Depth.UI);
+                        this.add.text(20, 350, 'Km', { fontSize: '32px', fill: '#fff' })
+                            .setDepth(Depth.UI);
+
+                    };
+                    initCounter();
+                };
+                update = () => {
+                    // console.debug();
+                    var updateCounter = () => {
+
+                        let depth = gameScene.player.y + gameScene.player.height * 0.5 - gameScene.groundY;
+                        depth = depth < 0 ? 0 : parseFloat((depth * depthScale).toFixed(2));
+                        gameScene.depthCounter.text.setText(depth);
+                    };
+                    updateCounter();
                 };
                 break;
             case 'b':
@@ -2508,12 +2607,16 @@ class DigScene extends Phaser.Scene {
             gameData: GameData,
             background: placeData.background,
             mineBGindex: placeData.mineBGindex,
+            depthCounter: {
+                epicenter: placeData.depth,
+                depthScale: 0.05,//0.003
+            },
             gameOver: {
                 flag: false,
                 resolve: other.resolve,
             },
         });
-
+        // console.debug(placeData);
         //==地質塊相關變數
         this.tileSize = 60;
         console.debug(this);
@@ -2734,13 +2837,17 @@ class DigScene extends Phaser.Scene {
             bounds();
             overview();
         };
+        var initDepthCounter = () => {
+            this.scene.add(null, new UIScene('depthCounterUI', this), true);
 
+        };
 
         //==gameScene
         initEnvironment();
         initPlayer();
         initCamera();
         initTimer();
+        initDepthCounter();
 
         //==UI
         initCursors();

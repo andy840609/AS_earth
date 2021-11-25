@@ -911,11 +911,11 @@ const Player = new Phaser.Class({
 //==地底用
 class Chunk {
     constructor(scene, x, y) {
-        this.gameSene = scene;
+        this.gameScene = scene;
         this.x = x;
         this.y = y;
         this.tiles = scene.physics.add.staticGroup();
-        scene.physics.add.collider(this.gameSene.player, this.tiles, this.gameSene.player.playerDig, null, this);
+        scene.physics.add.collider(this.gameScene.player, this.tiles, this.gameScene.player.playerDig, null, this);
         this.isLoaded = false;
         // console.debug(this.tiles)
 
@@ -936,17 +936,28 @@ class Chunk {
         // noise.seed(Math.random());
 
         if (!this.isLoaded) {
-            // console.debug(this.gameSene.groundY)
-            for (var y = 0; y < this.gameSene.chunkSize; y++) {
-                var tileY = (this.y * this.gameSene.chunkWidth) + (y * this.gameSene.tileSize);
-                if (tileY < this.gameSene.groundY) continue;
+            // console.debug(this.gameScene.groundY)
+            for (var y = 0; y < this.gameScene.chunkSize; y++) {
+                var tileY = (this.y * this.gameScene.chunkWidth) + (y * this.gameScene.tileSize);
+                if (tileY < this.gameScene.groundY) continue;//==地面上不鋪
 
-                for (var x = 0; x < this.gameSene.chunkSize; x++) {
-                    var tileX = (this.x * this.gameSene.chunkWidth) + (x * this.gameSene.tileSize);
-                    if (tileX < 0 || tileX >= this.gameSene.groundW) continue;
+                for (var x = 0; x < this.gameScene.chunkSize; x++) {
+                    var tileX = (this.x * this.gameScene.chunkWidth) + (x * this.gameScene.tileSize);
+                    if (tileX < 0 || tileX >= this.gameScene.groundW) continue;
+
+                    //==魔王城
+                    let depthCounter = this.gameScene.depthCounter;
+                    if (depthCounter.epicenter !== null &&
+                        (tileY > depthCounter.epicenter / depthCounter.depthScale && tileY < depthCounter.epicenter / depthCounter.depthScale + this.gameScene.tileSize * 5) &&
+                        (tileX > this.gameScene.groundW / 4 && tileX < this.gameScene.groundW / 4 * 3)) {
+
+                        // console.debug(depthCounter.epicenter / depthCounter.depthScale);
+                        if (tileX == this.gameScene.groundW / 2 && tileY)
+                            continue;
+                    };
+
                     // console.debug(tileX, tileY)
                     var perlinValue = noise.perlin2(tileX / 100, tileY / 100);
-
                     // Math.abs(perlinValue) > 0.7 ? console.debug('high : ' + perlinValue.toFixed(2)) : console.debug(perlinValue);
 
                     var key = "";
@@ -992,7 +1003,7 @@ class Chunk {
 
 
 
-                    var tile = new Tile(this.gameSene, tileX, tileY, key);
+                    var tile = new Tile(this.gameScene, tileX, tileY, key);
 
                     if (animationKey !== "") {
                         tile.play(animationKey);

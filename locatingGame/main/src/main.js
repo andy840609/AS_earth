@@ -244,10 +244,9 @@ function locatingGame() {
                         detector: 'o',
                         shiftLeft: 'q',
                         shiftRight: 'e',
-                        changeSide: 'c',
+                        functionKey: 'c',
                         reset: 'r',
                         exit: 'esc',
-
                     },
                     language: 'zh-TW',
                     playerRole: playerRole,
@@ -562,7 +561,7 @@ function locatingGame() {
                                 'bubbles': true,
                                 'cancelable': true,
                                 'clientX': e.containerPoint.x + bigMapDOMRect.x,
-                                'clientY': e.containerPoint.y + bigMapDOMRect.y
+                                'clientY': e.containerPoint.y + bigMapDOMRect.y,
                             });
                             bigMap.dispatchEvent(event);
 
@@ -1184,7 +1183,6 @@ function locatingGame() {
 
 
             };
-
 
             //===when  map clicked 
             async function gameStart(gameMode, siteData = null) {

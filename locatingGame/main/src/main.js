@@ -226,7 +226,7 @@ function locatingGame() {
                 let playerRole = 'mage';//==之後能選其他
 
                 GameData = {
-                    timeRemain: 10 * 60000,//1min=60000ms           
+                    timeRemain: 5 * 60000,//1min=60000ms           
                     // timeRemain: 0.01 * 60000,//1min=60000ms
                     timeMultiplier: 300,//real 1 ms = game x ms;
                     velocity: 7.5,//==速度參數預設7.5

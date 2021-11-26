@@ -17,7 +17,6 @@ class UIScene extends Phaser.Scene {
         const controllCursor = gameScene.gameData.controllCursor;
         const UItextJSON = gameScene.gameData.languageJSON.UI;
 
-
         const tooltip = {
             tooltipHandler: (create = true, data = null) => {
 
@@ -74,7 +73,6 @@ class UIScene extends Phaser.Scene {
             },
             tooltipGroup: null,
         };
-
 
         let preload, create, update;
         switch (UIkey) {
@@ -878,7 +876,6 @@ class UIScene extends Phaser.Scene {
 
                 preload = () => { };
                 create = () => {
-
                     const barX = 25, barY = 125;
                     const barW = 220, barH = 65;
                     const barRadius = 5;
@@ -1037,7 +1034,6 @@ class UIScene extends Phaser.Scene {
                         //==test
                         // let text = 'TimeLeft : ' + timeVal + ' ms';
                         // gameTimer.timerText.setText(text);
-
                     };
                     //==時間越少動畫越快
                     var updateHourglassAnime = () => {
@@ -1057,18 +1053,16 @@ class UIScene extends Phaser.Scene {
                 };
                 break;
             case 'depthCounterUI':
-
                 const depthScale = gameScene.depthCounter.depthScale;
 
                 preload = () => { };
                 create = () => {
                     var initCounter = () => {
                         gameScene.depthCounter.text =
-                            this.add.text(20, 300, 'AAA', { fontSize: '32px', fill: '#fff' })
+                            this.add.text(20, 300, 'AAA', { fontSize: '32px', fill: '#000' })
                                 .setDepth(Depth.UI);
-                        this.add.text(20, 350, 'Km', { fontSize: '32px', fill: '#fff' })
+                        this.add.text(20, 350, 'Km', { fontSize: '32px', fill: '#000' })
                             .setDepth(Depth.UI);
-
                     };
                     initCounter();
                 };
@@ -1655,7 +1649,6 @@ class LoadingScene extends Phaser.Scene {
         // console.debug(gameScene);
         const packNum = { 'defend': 1, 'dig': 2, 'boss': 3 }[gameScene.name];
         var gameObjects = () => {
-
             var environment = () => {
                 const envDir = gameObjDir + 'environment/';
                 var station = () => {
@@ -1664,13 +1657,9 @@ class LoadingScene extends Phaser.Scene {
                     this.load.image('title', dir + 'title.png');
                 };
                 var background = () => {
-
                     const dir = envDir + 'background/' + gameScene.background + '/';
 
                     let resources = BackGroundResources[gameScene.name][gameScene.background];
-                    // resources.static.concat(resources.dynamic).forEach(res => {
-                    //     this.load.image(res, dir + res);
-                    // });
 
                     //==重新取名讓loader裡的key不會重複(檔名可能重複)
                     resources.static.forEach((res, i) => {
@@ -1681,15 +1670,25 @@ class LoadingScene extends Phaser.Scene {
                     });
 
                     if (packNum == 2) {
-
                         let dir = envDir + 'background/mineBackground/';
                         let resources = BackGroundResources['mine']['mineBackground'];
                         let mineBG = resources.static[gameScene.mineBGindex];
-                        // console.debug(resources);
-                        // resources.dynamic.concat(resources.static).forEach(res => {
-                        //     this.load.image(res, dir + res);
-                        // });
+
                         this.load.image('mineBG', dir + mineBG);
+
+                        //==魔王門素材
+                        if (gameScene.depthCounter.epicenter !== null) {
+                            this.load.spritesheet('bossDoor',
+                                dir + 'bossDoor.png',
+                                { frameWidth: 100, frameHeight: 100 },
+                            );
+                            this.load.spritesheet('bossTorch',
+                                dir + 'bossTorch.png',
+                                { frameWidth: 230, frameHeight: 410 },
+                            );
+
+                        };
+
                     };
 
                 };
@@ -1744,8 +1743,6 @@ class LoadingScene extends Phaser.Scene {
                 };
 
                 background();
-
-
             };
             var player = () => {
                 var sprite = () => {
@@ -1788,7 +1785,6 @@ class LoadingScene extends Phaser.Scene {
             if (packNum != 2) {
                 enemy();
             };
-
         };
         var UI = () => {
             const uiDir = assetsDir + 'ui/';
@@ -1812,7 +1808,6 @@ class LoadingScene extends Phaser.Scene {
                     this.load.image(button + '_icon', iconDir + button + '.png');
                 });
                 gameScene.UIButtonArr = UIButtonArr;
-
             };
             var pauseMenu = () => {
                 this.load.image('menu', uiDir + 'menu.png');
@@ -1841,7 +1836,6 @@ class LoadingScene extends Phaser.Scene {
             timeRemain();
         };
         var makeProgressBar = () => {
-
             const canvas = gameScene.sys.game.canvas;
             const width = canvas.width;
             const height = canvas.height;
@@ -1942,12 +1936,9 @@ class LoadingScene extends Phaser.Scene {
             //     this.load.image('logo' + i, 'zenvalogo.png');
             // }
         };
-
         makeProgressBar();
         gameObjects();
         UI();
-
-
     };
     create() { };
     update() { };
@@ -2091,7 +2082,6 @@ class DefendScene extends Phaser.Scene {
         };
 
         var initEnvironment = () => {
-            // console.debug()
             var station = () => {
                 let station = this.gameData.stationData.station;
                 let img = this.add.image(width * 0.92, height * 0.53, 'station')
@@ -2355,7 +2345,6 @@ class DefendScene extends Phaser.Scene {
 
         };
         var initPlayer = () => {
-
             this.player = this.add.existing(new Player(this, this.gameData.playerRole, this.gameData.playerStats))
                 .setPosition(100, 450)
                 .setDepth(Depth.player);
@@ -2455,7 +2444,6 @@ class DefendScene extends Phaser.Scene {
         var initCursors = () => {
             //===init cursors
             this.scene.add(null, new UIScene('cursors', this), true);
-
         };
 
         //==gameScene
@@ -2607,9 +2595,11 @@ class DigScene extends Phaser.Scene {
             gameData: GameData,
             background: placeData.background,
             mineBGindex: placeData.mineBGindex,
+            tileSize: 60,//==地質塊寬高
             depthCounter: {
                 epicenter: placeData.depth,
-                depthScale: 0.05,//0.003
+                // depthScale: 0.034,//0.003
+                depthScale: 0.01,//0.003
             },
             gameOver: {
                 flag: false,
@@ -2617,8 +2607,6 @@ class DigScene extends Phaser.Scene {
             },
         });
         // console.debug(placeData);
-        //==地質塊相關變數
-        this.tileSize = 60;
         console.debug(this);
     };
     preload() {
@@ -2774,34 +2762,47 @@ class DigScene extends Phaser.Scene {
                 .setGravityY(2000)
             // .setMaxVelocity(0);
 
-            this.player.playerDig = (player, tile) => {
-                // if (this.tile) return;
-                // console.debug(tile);
-                let cursors = this.cursors;
-                let controllCursor = this.gameData.controllCursor;
 
-                if (cursors[controllCursor['up']].isDown) {
-                    // console.debug(tile.body)
-                    if (tile.body.touching.down)
-                        tile.destroy();
-                }
-                else if (cursors[controllCursor['down']].isDown) {
-                    if (tile.body.touching.up)
-                        tile.destroy();
+            Object.assign(this.player, {
+                playerDig: (player, tile) => {
+                    // if (this.tile) return;
+                    // console.debug(tile);
+                    let cursors = this.cursors;
+                    let controllCursor = this.gameData.controllCursor;
 
-                }
-                else if (cursors[controllCursor['left']].isDown) {
-                    if (tile.body.touching.right)
-                        tile.destroy();
-                }
-                else if (cursors[controllCursor['right']].isDown) {
-                    if (tile.body.touching.left)
-                        tile.destroy();
-                };
+                    if (cursors[controllCursor['up']].isDown) {
+                        // console.debug(tile.body)
+                        if (tile.body.touching.down)
+                            tile.destroy();
+                    }
+                    else if (cursors[controllCursor['down']].isDown) {
+                        if (tile.body.touching.up)
+                            tile.destroy();
 
-            };
+                    }
+                    else if (cursors[controllCursor['left']].isDown) {
+                        if (tile.body.touching.right)
+                            tile.destroy();
+                    }
+                    else if (cursors[controllCursor['right']].isDown) {
+                        if (tile.body.touching.left)
+                            tile.destroy();
+                    };
 
-            // this.physics.add.collider(this.player, this.tiles);
+                },
+                playerOpenGate: (player, gate) => {
+                    // if (this.tile) return;
+                    // console.debug(player, gate);
+
+                    //==玩家選擇進入
+                    if (1) {
+                        gate.play('bossDoor_open', true)
+                        gate.body.enable = false;
+                    };
+
+
+                },
+            });
 
         };
         var initCamera = () => {
@@ -2840,7 +2841,31 @@ class DigScene extends Phaser.Scene {
         var initDepthCounter = () => {
             this.scene.add(null, new UIScene('depthCounterUI', this), true);
 
+            if (this.depthCounter.epicenter !== null) {
+                var animsCreate = () => {
+                    this.anims.create({
+                        key: 'bossDoor_shine',
+                        frames: this.anims.generateFrameNumbers('bossDoor', { frames: [0, 1, 2] }),
+                        frameRate: 5,
+                        repeat: -1,
+                    });
+                    this.anims.create({
+                        key: 'bossDoor_open',
+                        frames: this.anims.generateFrameNumbers('bossDoor', { frames: [3, 4, 5] }),
+                        frameRate: 3,
+                        repeat: 0,
+                    });
+                    this.anims.create({
+                        key: 'bossTorch_burn',
+                        frames: this.anims.generateFrameNumbers('bossTorch'),
+                        frameRate: 3,
+                        repeat: -1,
+                    });
+                };
+                animsCreate();
+            };
         };
+
 
         //==gameScene
         initEnvironment();

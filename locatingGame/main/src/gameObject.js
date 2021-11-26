@@ -920,9 +920,11 @@ class Chunk {
         // console.debug(this.tiles)
 
         //==range to set tile
-        this.yRange = [500, 1000, 1500];
+        //==沉積岩:8km 火成岩:10 花崗岩:20
+        let getYRange = (km) => scene.groundY + parseInt(km / scene.depthCounter.depthScale);
+        this.yRange = [getYRange(8), getYRange(10), getYRange(20)];
         this.pRange = [-0.2, -0.1];
-
+        // console.debug(this.yRange);
     };
 
     unload() {
@@ -947,13 +949,58 @@ class Chunk {
 
                     //==魔王城
                     let depthCounter = this.gameScene.depthCounter;
-                    if (depthCounter.epicenter !== null &&
-                        (tileY > depthCounter.epicenter / depthCounter.depthScale && tileY < depthCounter.epicenter / depthCounter.depthScale + this.gameScene.tileSize * 5) &&
-                        (tileX > this.gameScene.groundW / 4 && tileX < this.gameScene.groundW / 4 * 3)) {
+                    let tileXRange = [
+                        this.gameScene.groundW / 4,
+                        this.gameScene.groundW / 4 * 3];
 
-                        // console.debug(depthCounter.epicenter / depthCounter.depthScale);
-                        if (tileX == this.gameScene.groundW / 2 && tileY)
-                            continue;
+                    let ECtileCount = Math.ceil(depthCounter.epicenter / depthCounter.depthScale / this.gameScene.tileSize);
+                    let tileYRange = [
+                        (ECtileCount - 3) * this.gameScene.tileSize,
+                        (ECtileCount + 3) * this.gameScene.tileSize];
+
+                    if (depthCounter.epicenter !== null &&
+                        (tileX >= tileXRange[0] && tileX < tileXRange[1]) &&
+                        (tileY >= tileYRange[0] && tileY < tileYRange[1])) {
+
+                        let bossX = tileXRange.reduce((p, c) => (c + p) / 2),
+                            bossY = tileYRange[1] - this.gameScene.tileSize;
+
+                        //門
+                        if (tileX == bossX && tileY == bossY) {
+
+                            let bossCastle = this.gameScene.add.sprite(bossX, bossY + this.gameScene.tileSize * 1.15, 0, 0, 'bossDoor');
+                            let doorW = Math.ceil(bossCastle.width / this.gameScene.tileSize) * this.gameScene.tileSize;
+
+                            bossCastle
+                                .setScale(doorW / bossCastle.width * 2)
+                                .setOrigin(0.5, 1)
+                                .setDepth(9)
+                                .play('bossDoor_shine');
+
+                            this.gameScene.physics.world.enable(bossCastle, 1);
+
+                            let bodySizeW = bossCastle.displayWidth * 0.6;
+                            bossCastle.body
+                                .setSize(bodySizeW, bodySizeW)
+                                .setOffset(bossCastle.displayWidth * 0.2, bossCastle.displayWidth * 0.38);
+
+                            this.gameScene.physics.add.overlap(this.gameScene.player, bossCastle, this.gameScene.player.playerOpenGate, null, this);
+
+                        }
+                        //火把
+                        // else if (tileX == bossX - 60 && tileY == bossY) {
+                        //     let bossTorch = this.gameScene.add.sprite(bossX, bossY + this.gameScene.tileSize, 0, 0, 'bossTorch');
+
+                        //     bossTorch
+                        //         // .setScale(this.gameScene.tileSize / bossTorch.width)
+                        //         .setOrigin(0.5, 1)
+                        //         .setDepth(99)
+                        //         .play('bossTorch_burn');
+
+                        //     console.debug(tileX, tileY)
+                        // };
+                        continue;
+
                     };
 
                     // console.debug(tileX, tileY)
@@ -998,10 +1045,7 @@ class Chunk {
                     else {
                         key = "sprWater";
                         animationKey = "sprWater";
-                    }
-
-
-
+                    };
 
                     var tile = new Tile(this.gameScene, tileX, tileY, key);
 

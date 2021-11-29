@@ -300,7 +300,9 @@ function locatingGame() {
                     //==test
                     initMap();
                     // gameStart('defend');
+                    gameStart('dig');
 
+                    //==test
                 };
 
                 startScene();
@@ -882,7 +884,6 @@ function locatingGame() {
                 addUI();
                 addMapEvent();
 
-
             };
             function updateStation(stationMarker, updateObj = {}) {
 
@@ -1248,30 +1249,63 @@ function locatingGame() {
                     updateMapUI(playerInfo, 1000);
                 }
                 else if (gameMode == 'dig') {
-
                     // console.debug(siteData);
-                    const backgroundArr = Object.keys(BackGroundResources.dig);
+                    // {
+                    //     const backgroundArr = Object.keys(BackGroundResources.dig);
 
-                    let coordinate = siteData.coordinate;
-                    // let background = 'halloween_4';//==之後經緯度判斷？
+                    //     let coordinate = siteData.coordinate;
+                    //     // let background = 'halloween_4';//==之後經緯度判斷？
+                    //     let background = backgroundArr[getRandom(backgroundArr.length)];
+                    //     let mineBGindex = 0;//==之後經緯度判斷？
+
+                    //     let placeData = {
+                    //         coordinate: coordinate,
+                    //         background: background,
+                    //         mineBGindex: mineBGindex,
+                    //         depth: siteData.depth ? siteData.depth : null,
+                    //     };
+
+                    //     //==顯示假設點
+                    //     assumedEpicenter
+                    //         .setLatLng(coordinate)
+                    //         .getTooltip()
+                    //         .setContent(`${GameData.languageJSON.Tip['assumedEpicenter']} : ${coordinate.map(d => d.toFixed(2)).join(' , ')}`)
+                    //     assumedEpicenter.getElement().style.display = 'inline';
+
+                    //     GameData.playerEpicenter = coordinate;
+
+                    //     gameResult = await new Promise((resolve, reject) => {
+                    //         const config = {
+                    //             parent: 'gameMain',
+                    //             type: Phaser.AUTO,
+                    //             width: width * 0.9,
+                    //             height: height * 0.95,
+                    //             physics: {
+                    //                 default: 'arcade',
+                    //                 arcade: {
+                    //                     gravity: { y: 300 },
+                    //                     debug: true,
+                    //                 },
+                    //             },
+                    //             scene: new DigScene(placeData, GameData, {
+                    //                 resolve: resolve,
+                    //             }),
+                    //         };
+                    //         new Phaser.Game(config);
+                    //     });
+
+                    //     console.debug(gameResult);
+                    //     let playerInfo = gameResult.playerInfo;
+
+                    //     //===更新人物資料
+                    //     updateMapUI(playerInfo, 1000);
+                    // }
+                    // if (!gameResult.bossRoom) return;
+
+                    //===進王關
+
+                    const backgroundArr = Object.keys(BackGroundResources.boss);
                     let background = backgroundArr[getRandom(backgroundArr.length)];
-                    let mineBGindex = 0;//==之後經緯度判斷？
-
-                    let placeData = {
-                        coordinate: coordinate,
-                        background: background,
-                        mineBGindex: mineBGindex,
-                        depth: siteData.depth ? siteData.depth : null,
-                    };
-
-                    //==顯示假設點
-                    assumedEpicenter
-                        .setLatLng(coordinate)
-                        .getTooltip()
-                        .setContent(`${GameData.languageJSON.Tip['assumedEpicenter']} : ${coordinate.map(d => d.toFixed(2)).join(' , ')}`)
-                    assumedEpicenter.getElement().style.display = 'inline';
-
-                    GameData.playerEpicenter = coordinate;
 
                     gameResult = await new Promise((resolve, reject) => {
                         const config = {
@@ -1286,19 +1320,13 @@ function locatingGame() {
                                     debug: true,
                                 },
                             },
-                            scene: new DigScene(placeData, GameData, {
+                            scene: new BossScene(GameData, background, {
                                 resolve: resolve,
                             }),
                         };
                         new Phaser.Game(config);
-
                     });
-
                     console.debug(gameResult);
-                    let playerInfo = gameResult.playerInfo;
-
-                    //===更新人物資料
-                    updateMapUI(playerInfo, 1000);
 
 
                 };

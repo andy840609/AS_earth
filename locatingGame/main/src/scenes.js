@@ -1,5 +1,4 @@
 class UIScene extends Phaser.Scene {
-
     constructor(UIkey, preScene, gameObj = null) {
         super({ key: gameObj ? gameObj.name + "UI" : UIkey });
         // console.debug(preScene);
@@ -1407,7 +1406,7 @@ class UIScene extends Phaser.Scene {
         });
 
 
-    }
+    };
     preload() {
         this.preload();
     };
@@ -1417,7 +1416,6 @@ class UIScene extends Phaser.Scene {
     update() {
         this.update();
     };
-
 };
 
 class StartScene extends Phaser.Scene {
@@ -1428,7 +1426,7 @@ class StartScene extends Phaser.Scene {
             GameData: GameData,
             resolve: resolve,
         });
-    }
+    };
     preload() {
         const UIDir = assetsDir + 'ui/';
         this.load.image('startScene', UIDir + 'startScene.jpg');
@@ -1548,7 +1546,7 @@ class GameOverScene extends Phaser.Scene {
             GameData: GameData,
             resolve: resolve,
         });
-    }
+    };
     preload() {
         const UIDir = assetsDir + 'ui/';
         this.load.image('gameOverScene', UIDir + 'gameOverScene.jpg');
@@ -1634,12 +1632,11 @@ class GameOverScene extends Phaser.Scene {
 };
 
 class LoadingScene extends Phaser.Scene {
-
     constructor(gameScene, resolve) {
         super({ key: 'LoadingScene' });
         this.gameScene = gameScene;
         this.resolve = resolve;
-    }
+    };
     preload() {
         const gameScene = this.gameScene;
         const gameObjDir = assetsDir + 'gameObj/';
@@ -1651,11 +1648,6 @@ class LoadingScene extends Phaser.Scene {
         var gameObjects = () => {
             var environment = () => {
                 const envDir = gameObjDir + 'environment/';
-                var station = () => {
-                    const dir = envDir + 'station/';
-                    this.load.image('station', dir + 'station.png');
-                    this.load.image('title', dir + 'title.png');
-                };
                 var background = () => {
                     const dir = envDir + 'background/' + gameScene.background + '/';
 
@@ -1669,79 +1661,91 @@ class LoadingScene extends Phaser.Scene {
                         this.load.image('dynamicBG_' + i, dir + res);
                     });
 
-                    if (packNum == 2) {
-                        let dir = envDir + 'background/mineBackground/';
-                        let resources = BackGroundResources['mine']['mineBackground'];
-                        let mineBG = resources.static[gameScene.mineBGindex];
+                };
 
-                        this.load.image('mineBG', dir + mineBG);
+                if (packNum == 1) {
+                    var station = () => {
+                        const dir = envDir + 'station/';
+                        this.load.image('station', dir + 'station.png');
+                        this.load.image('title', dir + 'title.png');
+                    };
+                    var instrument = () => {
+                        const dir = envDir + 'instrument/';
+                        this.load.spritesheet('instrument',
+                            dir + 'instrument.png',
+                            { frameWidth: 256, frameHeight: 256 }
+                        );
+                        this.load.spritesheet('laser',
+                            dir + 'laser.png',
+                            { frameWidth: 512, frameHeight: 682.6 }
+                        );
 
-                        //==魔王門素材
-                        if (gameScene.depthCounter.epicenter !== null) {
-                            this.load.spritesheet('bossDoor',
-                                dir + 'bossDoor.png',
-                                { frameWidth: 100, frameHeight: 100 },
-                            );
-                            this.load.spritesheet('bossTorch',
-                                dir + 'bossTorch.png',
-                                { frameWidth: 230, frameHeight: 410 },
-                            );
+                    };
+                    var wave = () => {
+                        let stationData = gameData.stationData;
+                        let xAxisDomain = stationData.stationStats.orbStats ? stationData.stationStats.orbStats.xAxisDomain : null;
 
-                        };
+                        //==getWaveSVG
+                        gameScene.waveForm.getWaveImg(stationData, xAxisDomain).then(success => {
+                            success.forEach(d => this.load.svg(d.svgName, d.svg, { scale: 1 }));
+                            gameScene.waveForm.svgArr = success;
+                        });
+
+                        //==getOverviewSVG
+                        gameScene.waveForm.getWaveImg(stationData).then(success => {
+                            success.forEach(d => this.load.svg('overview_' + d.svgName, d.svg, { width: 208, height: 200, }));
+                            gameScene.waveForm.overviewSvgArr = success;
+                        });
+
 
                     };
 
-                };
-                var instrument = () => {
-                    const dir = envDir + 'instrument/';
-                    this.load.spritesheet('instrument',
-                        dir + 'instrument.png',
-                        { frameWidth: 256, frameHeight: 256 }
-                    );
-                    this.load.spritesheet('laser',
-                        dir + 'laser.png',
-                        { frameWidth: 512, frameHeight: 682.6 }
-                    );
-
-                };
-                var wave = () => {
-                    let stationData = gameData.stationData;
-                    let xAxisDomain = stationData.stationStats.orbStats ? stationData.stationStats.orbStats.xAxisDomain : null;
-
-                    //==getWaveSVG
-                    gameScene.waveForm.getWaveImg(stationData, xAxisDomain).then(success => {
-                        success.forEach(d => this.load.svg(d.svgName, d.svg, { scale: 1 }));
-                        gameScene.waveForm.svgArr = success;
-                    });
-
-                    //==getOverviewSVG
-                    gameScene.waveForm.getWaveImg(stationData).then(success => {
-                        success.forEach(d => this.load.svg('overview_' + d.svgName, d.svg, { width: 208, height: 200, }));
-                        gameScene.waveForm.overviewSvgArr = success;
-                    });
-
-
-                };
-                var groundMatters = () => {
-                    let terrainDir = envDir + 'terrain/'
-
-                    this.load.image('sprSand', gameObjDir + 'sprSand.png');
-                    this.load.spritesheet('sprWater', gameObjDir + 'sprWater.png',
-                        { frameWidth: 60, frameHeight: 60 });
-                    this.load.image('terrain1', terrainDir + '1.png');
-                    this.load.image('terrain2', terrainDir + '2.png');
-                    this.load.image('terrain3', terrainDir + '3.png');
-
-                };
-                if (packNum == 1) {
                     station();
                     instrument();
                     wave();
                 }
                 else if (packNum == 2) {
-                    groundMatters();
-                };
+                    let mineDir = envDir + 'background/mineBackground/';
+                    var groundMatters = () => {
+                        let terrainDir = envDir + 'terrain/'
 
+                        this.load.image('sprSand', gameObjDir + 'sprSand.png');
+                        this.load.spritesheet('sprWater', gameObjDir + 'sprWater.png',
+                            { frameWidth: 60, frameHeight: 60 });
+                        this.load.image('terrain1', terrainDir + '1.png');
+                        this.load.image('terrain2', terrainDir + '2.png');
+                        this.load.image('terrain3', terrainDir + '3.png');
+
+                    };
+                    var mineBackground = () => {
+                        let resources = BackGroundResources['mine']['mineBackground'];
+                        let mineBG = resources.static[gameScene.mineBGindex];
+                        this.load.image('mineBG', mineDir + mineBG);
+                    };
+                    var bossDoor = () => {
+                        if (gameScene.depthCounter.epicenter === null) return;
+                        //==魔王門素材              
+                        this.load.spritesheet('bossDoor',
+                            mineDir + 'bossDoor.png',
+                            { frameWidth: 100, frameHeight: 100 },
+                        );
+
+                    };
+
+                    groundMatters();
+                    mineBackground();
+                    bossDoor();
+                }
+                else if (packNum == 3) {
+                    var bossRoom = () => {
+                        let bossDir = envDir + 'background/bossBackground/';
+                        this.load.spritesheet('bossFlame',
+                            bossDir + 'flame.png',
+                            { frameWidth: 1000, frameHeight: 1000 },
+                        );
+                    };
+                    bossRoom();
+                };
                 background();
             };
             var player = () => {
@@ -1762,27 +1766,24 @@ class LoadingScene extends Phaser.Scene {
                 sprite();
                 UIbar();
             };
-            var enemy = () => {
-                if (gameData.stationData.stationStats.liberate) return;
-                // console.debug(this.aliveEnemy);
-                gameScene.aliveEnemy.forEach(enemy => {
-                    const dir = gameObjDir + enemy + '/';
-                    const frameObj = { frameWidth: 48, frameHeight: 48 };
-                    this.load.spritesheet(enemy + '_Attack', dir + 'Attack.png', frameObj);
-                    this.load.spritesheet(enemy + '_Death', dir + 'Death.png', frameObj);
-                    this.load.spritesheet(enemy + '_Hurt', dir + 'Hurt.png', frameObj);
-                    this.load.spritesheet(enemy + '_Idle', dir + 'Idle.png', frameObj);
-                    this.load.spritesheet(enemy + '_Walk', dir + 'Walk.png', frameObj);
-
-                });
-
-
-            };
-
             environment();
             player();
-            //==dig 沒有敵人？
-            if (packNum != 2) {
+
+            if (packNum == 1) {
+                var enemy = () => {
+                    if (gameData.stationData.stationStats.liberate) return;
+                    // console.debug(this.aliveEnemy);
+                    gameScene.aliveEnemy.forEach(enemy => {
+                        const dir = gameObjDir + enemy + '/';
+                        const frameObj = { frameWidth: 48, frameHeight: 48 };
+                        this.load.spritesheet(enemy + '_Attack', dir + 'Attack.png', frameObj);
+                        this.load.spritesheet(enemy + '_Death', dir + 'Death.png', frameObj);
+                        this.load.spritesheet(enemy + '_Hurt', dir + 'Hurt.png', frameObj);
+                        this.load.spritesheet(enemy + '_Idle', dir + 'Idle.png', frameObj);
+                        this.load.spritesheet(enemy + '_Walk', dir + 'Walk.png', frameObj);
+
+                    });
+                };
                 enemy();
             };
         };
@@ -1798,6 +1799,9 @@ class LoadingScene extends Phaser.Scene {
                         break;
                     case 'dig':
                         UIButtonArr = ['detector', 'backpack', 'pause', 'exit'];
+                        break;
+                    case 'boss':
+                        UIButtonArr = ['backpack', 'pause'];
                         break;
                     default:
                         // UIButtonArr = ['pause', 'detector'];
@@ -2354,6 +2358,7 @@ class DefendScene extends Phaser.Scene {
             this.player.playerAttack = (bullet, enemy) => {
                 // console.debug(bullet, enemy);
                 let playerStats = this.player.stats;
+
                 bullet.disableBody(true, true);
                 enemy.body.setVelocityX(playerStats.knockBackSpeed * (bullet.x < enemy.x ? 1 : -1));
 
@@ -2450,11 +2455,13 @@ class DefendScene extends Phaser.Scene {
         initEnvironment();
         initEnemy();
         initPlayer();
-        initTimer();
+
 
         //==UI
         initCursors();
         initIconBar();
+        initTimer();
+
 
         // var postFxPlugin = this.plugins.get('rexswirlpipelineplugin');
         // this.cameraFilter = postFxPlugin.add(this.cameras.main);
@@ -2598,8 +2605,9 @@ class DigScene extends Phaser.Scene {
             tileSize: 60,//==地質塊寬高
             depthCounter: {
                 epicenter: placeData.depth,
-                // depthScale: 0.034,//0.003
-                depthScale: 0.01,//0.003
+                depthScale: 0.034,//0.003
+                // depthScale: 0.01,//0.003
+                bossRoom: false,
             },
             gameOver: {
                 flag: false,
@@ -2739,7 +2747,6 @@ class DigScene extends Phaser.Scene {
             background();
             //===地底用到
             initChunks();
-
         };
         var initTimer = () => {
             this.scene.add(null, new UIScene('timerUI', this), true);
@@ -2798,6 +2805,9 @@ class DigScene extends Phaser.Scene {
                     if (1) {
                         gate.play('bossDoor_open', true)
                         gate.body.enable = false;
+                        this.depthCounter.bossRoom = true;
+
+                        this.time.delayedCall(10, () => this.gameOver.flag = true, [], this);
                     };
 
 
@@ -2866,17 +2876,16 @@ class DigScene extends Phaser.Scene {
             };
         };
 
-
         //==gameScene
         initEnvironment();
         initPlayer();
         initCamera();
-        initTimer();
-        initDepthCounter();
 
         //==UI
         initCursors();
         initIconBar();
+        initTimer();
+        initDepthCounter();
 
         this.cameras.main.flash(500, 0, 0, 0);
 
@@ -2951,12 +2960,235 @@ class DigScene extends Phaser.Scene {
                     }),
                     controllCursor: this.gameData.controllCursor,
                 },
+                bossRoom: this.depthCounter.bossRoom,
             };
             this.game.destroy(true, false);
             this.gameOver.resolve(gameResult);
         };
     };
 };
+
+class BossScene extends Phaser.Scene {
+    constructor(GameData, background, other) {
+        var sceneConfig = {
+            key: 'gameScene',
+            pack: {
+                files: [
+                    {//==讓preload()能await才create()[確定資源都讀取完成才執行create()]
+                        type: 'plugin',
+                        key: 'rexawaitloaderplugin',
+                        url: '../src/phaser-3.55.2/plugins/phaser-rexawaitloaderplugin.min.js',
+                        start: true,
+                    },
+                ]
+            },
+        };
+        super(sceneConfig);
+
+        Object.assign(this, {
+            name: 'boss',
+            player: null,
+            gameTimer: null,
+            cursors: null,
+            gameData: GameData,
+            background: background,
+            gameOver: {
+                flag: false,
+                resolve: other.resolve,
+            },
+        });
+        // console.debug(placeData);
+        console.debug(this);
+    };
+    preload() {
+        this.plugins.get('rexawaitloaderplugin').addToScene(this);
+        var callback = (resolve) => this.scene.add(null, new LoadingScene(this, resolve), true);
+        this.load.rexAwait(callback);//==等LoadingScene完成素材載入
+    };
+    create() {
+        const canvas = this.sys.game.canvas;
+        const width = canvas.width;
+        const height = canvas.height;
+
+        const Depth = {
+            flame: 8,
+            player: 10,
+            UI: 20,
+            /*
+            Depth:
+              0-4(background)
+              5(laser)
+              6(wave)
+              7(orbs)
+              9(enemy)
+              10(player)
+              11(orb pickUp)
+              15(bullet)
+              20(UI:HP bar...)
+            */
+        };
+
+        var initEnvironment = () => {
+            const flameCount = 4;
+            const animeDelay = 500;
+
+            var background = () => {
+                let BGgroup = this.add.group();
+                let resources = BackGroundResources.boss[this.background];
+                // console.debug(resources)
+                resources.static.forEach((res, i) => {
+                    let img = this.add.image(width * 0.5, height * 0.5, 'staticBG_' + i);
+                    img
+                        .setAlpha(0)
+                        .setScale(width / img.width, height / img.height)
+                        .setDepth(resources.depth.static[i]);
+
+                    BGgroup.add(img);
+                });
+
+                resources.dynamic.forEach((res, i) => {
+                    let thing = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, 'dynamicBG_' + i);
+
+                    thing
+                        .setAlpha(0)
+                        .setScale(width / thing.width, height / thing.height)
+                        .setDepth(resources.depth.dynamic[i]);
+
+                    //==tweens
+                    let movingDuration = Phaser.Math.Between(5, 15) * 1000;//==第一次移動5到20秒
+                    let animType = resources.animType[i];
+                    //==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
+
+                    this.tweens.add(
+                        Object.assign({
+                            targets: thing,
+                            repeat: -1,
+                            duration: movingDuration,
+                            delay: animeDelay * flameCount,
+                        },
+                            animType == 1 ?
+                                { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
+                                animType == 2 ? { alpha: { start: 0, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
+                                    animType == 3 ? { scaleX: { start: t => t.scaleX, to: t => t.scaleX * 1.5 }, scaleY: { start: t => t.scaleY, to: t => t.scaleY * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
+                                        { alpha: { start: 0, to: 1 }, ease: 'Bounce', yoyo: true }
+
+                        ));
+
+                    BGgroup.add(thing);
+
+                });
+
+                this.tweens.add({
+                    targets: BGgroup.getChildren(),
+                    repeat: 0,
+                    ease: 'Back.easeInOut',
+                    delay: animeDelay * flameCount,
+                    duration: animeDelay * 2,
+                    alpha: { from: 0, to: 1 },
+                });
+
+            };
+            var flame = () => {
+                var animsCreate = () => {
+                    this.anims.create({
+                        key: 'bossFlame_burn',
+                        frames: this.anims.generateFrameNumbers('bossFlame'),
+                        frameRate: 13,
+                        repeat: -1,
+                    });
+                };
+                animsCreate();
+
+                var addFlame = (i, flameCount) => {
+                    this.add.sprite(width * i / (flameCount + 1), height * 0.4, 'bossFlame')
+                        .setScale(0.2)
+                        .setOrigin(0.5)
+                        .setDepth(Depth.flame)
+                        .play('bossFlame_burn');
+                };
+
+                for (let i = 1; i <= flameCount; i++)
+                    this.time.delayedCall(animeDelay * i, () => addFlame(i, flameCount), [], this);
+
+            };
+            background();
+            flame();
+        };
+        var initTimer = () => {
+            this.scene.add(null, new UIScene('timerUI', this), true);
+        };
+        var initIconBar = () => {
+            this.scene.add(null, new UIScene('iconBar', this), true);
+        };
+        var initCursors = () => {
+            //===init cursors
+            this.scene.add(null, new UIScene('cursors', this), true);
+        };
+        var initPlayer = () => {
+            this.player = this.add.existing(new Player(this, this.gameData.playerRole, this.gameData.playerStats))
+                .setPosition(width * 0.1, height * 0.5)
+                .setDepth(Depth.player);
+
+            // console.debug(this.player);
+
+            this.player.body
+                // .setGravityY(2000)
+                .setMaxVelocity(0);
+
+
+            Object.assign(this.player, {
+
+            });
+
+        };
+        //==gameScene
+        initEnvironment();
+        initPlayer();
+
+        //==UI
+        initCursors();
+        initIconBar();
+        initTimer();
+    };
+    update() {
+
+        if (this.gameOver.flag) {
+            //===time remove
+            this.gameTimer.remove();
+
+            //===get gameResult 
+
+            let gameResult = {
+                //==更新角色資料(剩餘時間、能力值...)
+                playerInfo: {
+                    timeRemain: this.gameTimer.timeVal,
+                    playerStats: Object.assign(this.gameData.playerStats, {
+                        HP: this.player.stats.HP,
+                        MP: this.player.stats.MP,
+                    }),
+                    controllCursor: this.gameData.controllCursor,
+                },
+            };
+            this.game.destroy(true, false);
+            this.gameOver.resolve(gameResult);
+        };
+    };
+};
+
+// class DefendScene extends Phaser.Scene {
+//     constructor() {
+//         super({ key: 'gameScene' });
+//     }
+//     preload() {
+
+//     };
+//     create() {
+
+//     };
+//     update() {
+
+//     };
+// }
 
 // class DefendScene extends Phaser.Scene {
 //     constructor() {

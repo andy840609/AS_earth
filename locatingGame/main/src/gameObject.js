@@ -153,6 +153,24 @@ const BackGroundResources = {
             },
             animType: [2, 3],
         },
+        apocalypce_1: {
+            static: ['houses&trees_bg.png', 'houses.png', 'car_trees_etc.png', 'fence.png', 'road.png'],
+            dynamic: ['sky.png', 'bird2.png', 'bird3.png'],
+            depth: {
+                static: [2, 2, 2, 2, 2, 2, 3],
+                dynamic: [1, 3, 3],
+            },
+            animType: [1, 3, 3],
+        },
+        desert_1: {
+            static: ['9 Background.png', '6 Sun.png', '5 Mountains.png', '4 Layer4.png', '3 Layer3.png', '2 Layer2.png', '1 Layer1.png'],
+            dynamic: ['8 Stars2.png', '7 Clouds2.png'],
+            depth: {
+                static: [1, 1, 2, 2, 2, 2, 3],
+                dynamic: [1, 1],
+            },
+            animType: [2, 1],
+        },
     },
     mine: {
         mineBackground: {
@@ -163,6 +181,17 @@ const BackGroundResources = {
                 dynamic: [],
             },
         }
+    },
+    boss: {
+        castle_1: {
+            static: ['bg.png', 'windows.png', 'columns&falgs.png', 'floor.png', 'dragon.png'],
+            dynamic: ['mountaims.png',],
+            depth: {
+                static: [1, 2, 2, 2, 2, 2, 3],
+                dynamic: [1,],
+            },
+            animType: [1],
+        },
     },
 
 };
@@ -950,24 +979,24 @@ class Chunk {
                     //==魔王城
                     let depthCounter = this.gameScene.depthCounter;
                     let tileXRange = [
-                        this.gameScene.groundW / 4,
-                        this.gameScene.groundW / 4 * 3];
+                        Math.floor(this.gameScene.groundW / 4 / this.gameScene.tileSize) * this.gameScene.tileSize,
+                        Math.floor(this.gameScene.groundW / 4 * 3 / this.gameScene.tileSize) * this.gameScene.tileSize];
 
                     let ECtileCount = Math.ceil(depthCounter.epicenter / depthCounter.depthScale / this.gameScene.tileSize);
                     let tileYRange = [
-                        (ECtileCount - 3) * this.gameScene.tileSize,
-                        (ECtileCount + 3) * this.gameScene.tileSize];
+                        this.gameScene.groundY + (ECtileCount - 7) * this.gameScene.tileSize,
+                        this.gameScene.groundY + ECtileCount * this.gameScene.tileSize];
 
                     if (depthCounter.epicenter !== null &&
                         (tileX >= tileXRange[0] && tileX < tileXRange[1]) &&
                         (tileY >= tileYRange[0] && tileY < tileYRange[1])) {
 
-                        let bossX = tileXRange.reduce((p, c) => (c + p) / 2),
+                        let bossX = Math.ceil(tileXRange.reduce((p, c) => (c + p) / 2) / this.gameScene.tileSize) * this.gameScene.tileSize,
                             bossY = tileYRange[1] - this.gameScene.tileSize;
 
                         //門
                         if (tileX == bossX && tileY == bossY) {
-
+                            console.debug('gate');
                             let bossCastle = this.gameScene.add.sprite(bossX, bossY + this.gameScene.tileSize * 1.15, 0, 0, 'bossDoor');
                             let doorW = Math.ceil(bossCastle.width / this.gameScene.tileSize) * this.gameScene.tileSize;
 

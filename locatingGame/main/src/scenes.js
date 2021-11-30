@@ -1009,8 +1009,6 @@ class UIScene extends Phaser.Scene {
                     initBox();
                     initHourglass();
 
-
-
                     // console.debug(this.hourglass.anims.msPerFrame)
 
                 };
@@ -1076,13 +1074,58 @@ class UIScene extends Phaser.Scene {
                     updateCounter();
                 };
                 break;
+            case 'dialogUI':
+                const DLconfig = {
+                    dialogX: width * 0.5,
+                    dialogY: height * 0.8,
+                    dialogWidth: width * 0.7,
+                    dialogHeight: height * 0.2,
+                };
+
+
+                preload = () => { };
+                create = () => {
+                    var dialogArrow = () => {
+                        var animsCreate = () => {
+                            this.anims.create({
+                                key: 'dialogArrow',
+                                frames: this.anims.generateFrameNumbers('dialogArrow', { start: 0, end: 38 }),
+                                frameRate: 15,
+                                repeat: -1,
+                            });
+
+                        };
+                        animsCreate();
+                    };
+                    dialogArrow();
+
+                    Object.assign(this, {
+                        newDialog: (content, config = null) => {
+                            //==新設定
+                            if (config) Object.assign(DLconfig, config);
+
+                            new rexDialog(this, DLconfig.dialogX, DLconfig.dialogY, {
+                                wrapWidth: DLconfig.dialogWidth,
+                                fixedWidth: DLconfig.dialogWidth,
+                                fixedHeight: DLconfig.dialogHeight,
+                            })
+                                .setDepth(Depth.UI)
+                                .start(content, 50);
+
+                        },
+                    });
+
+                };
+                update = () => { };
+                break;
+
             case 'b':
                 preload = () => { };
                 create = () => { };
                 update = () => { };
                 break;
             case 'statsBar':
-                // console.debug();
+                // console.debug(gameObj.name);
                 if (gameObj.name == 'player') {
 
                     preload = () => { };
@@ -1300,6 +1343,59 @@ class UIScene extends Phaser.Scene {
                             MPbar.updateBar();
                             MPbar.updateFlag = false;
                         };
+                    };
+                }
+                else if (gameObj.name == 'boss') {
+                    preload = () => { };
+                    create = () => {
+                        var makeBar = () => {
+                            const barW = 80, barH = 16;
+                            const barMargin = 2;
+
+                            let bar = this.add.graphics()
+                                .setDepth(Depth.UI);
+
+                            Object.assign(bar, {
+                                updateFlag: false,
+                                updateBar: () => {
+
+                                    bar.clear();
+
+                                    //  stroke
+                                    bar.fillStyle(0x000000);
+                                    bar.fillRect(-barW * 0.5, 0, barW, barH);
+
+                                    //  BG
+                                    bar.fillStyle(0xffffff);
+                                    bar.fillRect(-barW * 0.5 + barMargin, barMargin, barW - barMargin * 2, barH - barMargin * 2);
+
+                                    //  Health               
+                                    let p = gameObj.stats.HP / gameObj.stats.maxHP;
+                                    // console.debug(p);
+
+                                    if (p < 0) p = 0;
+                                    else if (p <= 0.3) bar.fillStyle(0xff0000);
+                                    else if (p <= 0.5) bar.fillStyle(0xEAC100);
+                                    else bar.fillStyle(0x00ff00);
+
+                                    let healthW = (barW - barMargin * 2) * p;
+                                    bar.fillRect(-barW * 0.5 + barMargin, barMargin, healthW, barH - barMargin * 2);
+
+                                },
+                            });
+
+                            return bar;
+                        };
+                        this.HPbar = makeBar();
+                        gameObj.HPbar = this.HPbar;
+                    };
+                    update = () => {
+                        let HPbar = this.HPbar;
+
+                        if (!HPbar.updateFlag) return;
+                        // console.debug('HPbar update');
+                        HPbar.updateBar();
+                        HPbar.updateFlag = false;
                     };
                 }
                 else {
@@ -1729,7 +1825,6 @@ class LoadingScene extends Phaser.Scene {
                             mineDir + 'bossDoor.png',
                             { frameWidth: 100, frameHeight: 100 },
                         );
-
                     };
 
                     groundMatters();
@@ -1738,13 +1833,33 @@ class LoadingScene extends Phaser.Scene {
                 }
                 else if (packNum == 3) {
                     var bossRoom = () => {
-                        let bossDir = envDir + 'background/bossBackground/';
+                        let castleDir = envDir + 'castle/';
                         this.load.spritesheet('bossFlame',
-                            bossDir + 'flame.png',
+                            castleDir + 'flame.png',
                             { frameWidth: 1000, frameHeight: 1000 },
                         );
                     };
+                    var boss = () => {
+                        let bossDir = gameObjDir + 'boss/';
+                        this.load.spritesheet('boss_Attack',
+                            bossDir + 'Attack.png',
+                            { frameWidth: 100, frameHeight: 100 },
+                        );
+                        this.load.spritesheet('boss_Death',
+                            bossDir + 'Death.png',
+                            { frameWidth: 100, frameHeight: 100 },
+                        );
+                        this.load.spritesheet('boss_Fly',
+                            bossDir + 'Fly.png',
+                            { frameWidth: 100, frameHeight: 100 },
+                        );
+                        this.load.spritesheet('boss_Idle',
+                            bossDir + 'Idle.png',
+                            { frameWidth: 100, frameHeight: 100 },
+                        );
+                    };
                     bossRoom();
+                    boss();
                 };
                 background();
             };
@@ -1756,12 +1871,12 @@ class LoadingScene extends Phaser.Scene {
                     );
                 };
                 var UIbar = () => {
-                    const uiDir = assetsDir + 'ui/';
+                    const playerBarDir = assetsDir + 'ui/playerBar/';
 
-                    this.load.image('UIbar_HPlabel', uiDir + 'UIbar_HPlabel.png');
-                    this.load.image('UIbar_MPlabel', uiDir + 'UIbar_MPlabel.png');
-                    this.load.image('UIbar_head', uiDir + 'UIbar_head.png');
-                    this.load.image('UIbar_bar', uiDir + 'UIbar_bar.png');
+                    this.load.image('UIbar_HPlabel', playerBarDir + 'UIbar_HPlabel.png');
+                    this.load.image('UIbar_MPlabel', playerBarDir + 'UIbar_MPlabel.png');
+                    this.load.image('UIbar_head', playerBarDir + 'UIbar_head.png');
+                    this.load.image('UIbar_bar', playerBarDir + 'UIbar_bar.png');
                 };
                 sprite();
                 UIbar();
@@ -1788,7 +1903,7 @@ class LoadingScene extends Phaser.Scene {
             };
         };
         var UI = () => {
-            const uiDir = assetsDir + 'ui/';
+            const ctrlDir = assetsDir + 'ui/controller/';
             var UIButtons = () => {
                 const iconDir = assetsDir + 'icon/';
 
@@ -1814,9 +1929,9 @@ class LoadingScene extends Phaser.Scene {
                 gameScene.UIButtonArr = UIButtonArr;
             };
             var pauseMenu = () => {
-                this.load.image('menu', uiDir + 'menu.png');
-                this.load.image('menuButton', uiDir + 'menuButton.png');
-                // this.load.spritesheet('menuButton', uiDir + 'menuButton.png');
+                this.load.image('menu', ctrlDir + 'menu.png');
+                this.load.image('menuButton', ctrlDir + 'menuButton.png');
+                // this.load.spritesheet('menuButton', ctrlDir + 'menuButton.png');
             };
             var detector = () => {
                 const dir = assetsDir + 'gameObj/environment/overview/';
@@ -1824,20 +1939,35 @@ class LoadingScene extends Phaser.Scene {
                 this.load.image('detectorScreen', dir + 'detectorScreen.png');
             };
             var tooltip = () => {
-                this.load.image('tooltipButton', uiDir + 'tooltipButton.png');
+                this.load.image('tooltipButton', ctrlDir + 'tooltipButton.png');
             };
             var timeRemain = () => {
                 this.load.spritesheet('hourglass',
-                    uiDir + 'hourglass.png',
+                    ctrlDir + 'hourglass.png',
                     { frameWidth: 200, frameHeight: 310 }
                 );
 
+            };
+            var dialog = () => {
+
+                //==對話框
+                this.load.scenePlugin({
+                    key: 'rexuiplugin',
+                    url: '../src/phaser-3.55.2/plugins/rexplugins/rexuiplugin.min.js',
+                    sceneKey: 'rexUI',
+                });
+
+                this.load.spritesheet('dialogArrow',
+                    ctrlDir + 'dialogArrow.png',
+                    { frameWidth: 100, frameHeight: 100 }
+                );
             };
             UIButtons();
             pauseMenu();
             detector();
             tooltip();
             timeRemain();
+            dialog();
         };
         var makeProgressBar = () => {
             const canvas = gameScene.sys.game.canvas;
@@ -1957,13 +2087,13 @@ class DefendScene extends Phaser.Scene {
                     {//==讓preload()能await才create()[確定資源都讀取完成才執行create()]
                         type: 'plugin',
                         key: 'rexawaitloaderplugin',
-                        url: '../src/phaser-3.55.2/plugins/phaser-rexawaitloaderplugin.min.js',
+                        url: '../src/phaser-3.55.2/plugins/rexplugins/rexawaitloaderplugin.min.js',
                         start: true,
                     },
                     {//==旋轉特效
                         type: 'plugin',
                         key: 'rexswirlpipelineplugin',
-                        url: '../src/phaser-3.55.2/plugins/phaser-rexswirlpipelineplugin.min.js',
+                        url: '../src/phaser-3.55.2/plugins/rexplugins/rexswirlpipelineplugin.min.js',
                         start: true,
                     },
                 ]
@@ -2579,13 +2709,13 @@ class DigScene extends Phaser.Scene {
                     {//==讓preload()能await才create()[確定資源都讀取完成才執行create()]
                         type: 'plugin',
                         key: 'rexawaitloaderplugin',
-                        url: '../src/phaser-3.55.2/plugins/phaser-rexawaitloaderplugin.min.js',
+                        url: '../src/phaser-3.55.2/plugins/rexplugins/rexawaitloaderplugin.min.js',
                         start: true,
                     },
                     {//==旋轉特效
                         type: 'plugin',
                         key: 'rexswirlpipelineplugin',
-                        url: '../src/phaser-3.55.2/plugins/phaser-rexswirlpipelineplugin.min.js',
+                        url: '../src/phaser-3.55.2/plugins/rexplugins/rexswirlpipelineplugin.min.js',
                         start: true,
                     },
                 ]
@@ -2977,9 +3107,10 @@ class BossScene extends Phaser.Scene {
                     {//==讓preload()能await才create()[確定資源都讀取完成才執行create()]
                         type: 'plugin',
                         key: 'rexawaitloaderplugin',
-                        url: '../src/phaser-3.55.2/plugins/phaser-rexawaitloaderplugin.min.js',
+                        url: '../src/phaser-3.55.2/plugins/rexplugins/rexawaitloaderplugin.min.js',
                         start: true,
                     },
+
                 ]
             },
         };
@@ -3004,6 +3135,8 @@ class BossScene extends Phaser.Scene {
         this.plugins.get('rexawaitloaderplugin').addToScene(this);
         var callback = (resolve) => this.scene.add(null, new LoadingScene(this, resolve), true);
         this.load.rexAwait(callback);//==等LoadingScene完成素材載入
+
+
     };
     create() {
         const canvas = this.sys.game.canvas;
@@ -3013,6 +3146,7 @@ class BossScene extends Phaser.Scene {
         const Depth = {
             flame: 8,
             player: 10,
+            boss: 11,
             UI: 20,
             /*
             Depth:
@@ -3028,10 +3162,10 @@ class BossScene extends Phaser.Scene {
             */
         };
 
-        var initEnvironment = () => {
-            const flameCount = 4;
-            const animeDelay = 500;
+        const flameCount = 4;
+        const animeDelay = 500;
 
+        var initEnvironment = () => {
             var background = () => {
                 let BGgroup = this.add.group();
                 let resources = BackGroundResources.boss[this.background];
@@ -3126,7 +3260,8 @@ class BossScene extends Phaser.Scene {
         };
         var initPlayer = () => {
             this.player = this.add.existing(new Player(this, this.gameData.playerRole, this.gameData.playerStats))
-                .setPosition(width * 0.1, height * 0.5)
+                .setPosition(width * 0.1, height * 0.65)
+                .setOrigin(0.5, 1)
                 .setDepth(Depth.player);
 
             // console.debug(this.player);
@@ -3141,14 +3276,95 @@ class BossScene extends Phaser.Scene {
             });
 
         };
+        var initBoss = () => {
+            var animsCreate = () => {
+                this.anims.create({
+                    key: 'boss_Idle',
+                    frames: this.anims.generateFrameNumbers('boss_Idle'),
+                    frameRate: 5,
+                    repeat: -1,
+                });
+                this.anims.create({
+                    key: 'boss_Attack',
+                    frames: this.anims.generateFrameNumbers('boss_Attack', { start: 0, end: 10 }),
+                    frameRate: 8,
+                    repeat: 0,
+                });
+                this.anims.create({
+                    key: 'boss_Death',
+                    frames: this.anims.generateFrameNumbers('boss_Death'),
+                    frameRate: 5,
+                    repeat: -1,
+                });
+                this.anims.create({
+                    key: 'boss_Fly',
+                    frames: this.anims.generateFrameNumbers('boss_Fly'),
+                    frameRate: 5,
+                    repeat: -1,
+                });
+
+            };
+            animsCreate();
+
+            const bossScale = 3;
+
+            let boss = this.add.sprite(width * 0.8, height * 0.7, 'boss_Fly');
+
+            boss
+                .setScale(-bossScale, bossScale)
+                .setOrigin(0.5, 1)
+                .setAlpha(0)
+                .setDepth(Depth.boss)
+                .setName('boss');
+
+            var bossShowAnims = () => {
+                this.tweens.add({
+                    targets: boss,
+                    repeat: 0,
+                    ease: 'Back.easeInOut',
+                    delay: flameCount * animeDelay,
+                    duration: animeDelay,
+                    alpha: { from: 0, to: 1 },
+                });
+
+                let flyRepeat = 2, yoyoFlag = true;
+
+                this.tweens.add({
+                    targets: boss,
+                    repeat: flyRepeat - 1,
+                    ease: 'Quadratic.InOut',
+                    delay: flameCount * animeDelay,
+                    duration: animeDelay,
+                    yoyo: yoyoFlag,
+                    y: { from: height * 0.7, to: height * 0.7 - 15 },
+                });
+
+                this.time.delayedCall((flameCount + flyRepeat * (yoyoFlag ? 2 : 1)) * animeDelay, () => boss.play('boss_Attack'), [], this);
+            };
+            bossShowAnims();
+            this.scene.add(null, new UIScene('statsBar', this, boss), true);
+
+
+            this.boss = boss;
+        };
+        var initDialog = () => {
+
+            let dialogUI = this.scene.add(null, new UIScene('dialogUI', this), true);
+
+
+            var content = `Phaser is a fast, free, and fun open source HTML5 game framework that offers WebGL and Canvas rendering across desktop and mobile web browsers. Games can be compiled to iOS, Android and native apps by using 3rd party tools. You can use JavaScript or TypeScript for development.`;
+            dialogUI.newDialog(content);
+        };
         //==gameScene
         initEnvironment();
         initPlayer();
+        initBoss();
 
         //==UI
         initCursors();
         initIconBar();
         initTimer();
+        initDialog();
     };
     update() {
 

@@ -572,6 +572,8 @@ function locatingGame() {
 
                 };
                 async function addUI() {
+                    const ctrlDir = assetsDir + 'ui/controller/';
+
                     //===UIBar
                     const UIbuttons = ['playerStats', 'velocityChart'];
 
@@ -696,7 +698,7 @@ function locatingGame() {
                                     case 'velocityChart':
                                         //==lock gif
                                         gameUI.find('#velocityChart').append(`
-                                            <img id="velocityChartLock" src="${assetsDir}ui/unlock.gif" width="${iconW}px" height="${iconW}px">
+                                            <img id="velocityChartLock" src="${ctrlDir}unlock.gif" width="${iconW}px" height="${iconW}px">
                                         `);
 
                                         UI
@@ -807,15 +809,15 @@ function locatingGame() {
                             </text>
                             <div class="d-flex justify-content-around" >
                                 <text name="confirm" value="yes">
-                                    <img name="confirmImg" src="${assetsDir}ui/triangle_left.png" width="${imgW}px" height="${imgW}px">
+                                    <img name="confirmImg" src="${ctrlDir}triangle_left.png" width="${imgW}px" height="${imgW}px">
                                     ${GameData.languageJSON.Tip['yes']}
-                                    <img name="confirmImg" src="${assetsDir}ui/triangle_right.png" width="${imgW}px" height="${imgW}px">
+                                    <img name="confirmImg" src="${ctrlDir}triangle_right.png" width="${imgW}px" height="${imgW}px">
                                 </text>
 
                                 <text name="confirm" value="no">
-                                    <img name="confirmImg" src="${assetsDir}ui/triangle_left.png" width="${imgW}px" height="${imgW}px">
+                                    <img name="confirmImg" src="${ctrlDir}triangle_left.png" width="${imgW}px" height="${imgW}px">
                                     ${GameData.languageJSON.Tip['no']}
-                                    <img name="confirmImg" src="${assetsDir}ui/triangle_right.png" width="${imgW}px" height="${imgW}px">
+                                    <img name="confirmImg" src="${ctrlDir}triangle_right.png" width="${imgW}px" height="${imgW}px">
                                 </text>
                                 
                             </div>
@@ -894,8 +896,8 @@ function locatingGame() {
                         className: 'station-icon',
                     }
                 });
-                const defaultIconUrl = '../data/assets/icon/home.png';
-                const clearIconUrl = '../data/assets/icon/home_clear.png';
+                const defaultIconUrl = assetsDir + 'icon/home.png';
+                const clearIconUrl = assetsDir + 'icon/home_clear.png';
 
                 var circleAnime = (circleObj, originalRadius, duration = 500) => {
                     // console.debug(circleObj, originalRadius);
@@ -1327,7 +1329,10 @@ function locatingGame() {
                         new Phaser.Game(config);
                     });
                     console.debug(gameResult);
+                    let playerInfo = gameResult.playerInfo;
 
+                    //===更新人物資料
+                    updateMapUI(playerInfo, 1000);
 
                 };
                 gameDisplay(false);

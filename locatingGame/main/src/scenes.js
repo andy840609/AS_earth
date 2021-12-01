@@ -448,7 +448,6 @@ class UIScene extends Phaser.Scene {
                             var updateWave = (domain = null) => {
                                 var action = () => {
                                     gameScene.waveForm.getWaveImg(stationData, domain).then(success => {
-
                                         let promises = success.map(d =>
                                             new Promise((resolve, reject) => {
                                                 let key = d.svgName;
@@ -473,9 +472,7 @@ class UIScene extends Phaser.Scene {
 
                                             // console.debug(gameScene.waveForm.svgArr[3].x.domain());
                                             orb.statusHadler(null, false, orb.orbStats.isInRange);
-
                                         });
-
 
                                     });
                                 };
@@ -1082,39 +1079,28 @@ class UIScene extends Phaser.Scene {
                     dialogHeight: height * 0.2,
                 };
 
-
                 preload = () => { };
                 create = () => {
-                    var dialogArrow = () => {
-                        var animsCreate = () => {
-                            this.anims.create({
-                                key: 'dialogArrow',
-                                frames: this.anims.generateFrameNumbers('dialogArrow', { start: 0, end: 38 }),
-                                frameRate: 15,
-                                repeat: -1,
-                            });
-
-                        };
-                        animsCreate();
-                    };
-                    dialogArrow();
-
-                    Object.assign(this, {
-                        newDialog: (content, config = null) => {
+                    var addDialog = () => {
+                        this.newDialog = (content, config = null) => {
                             //==新設定
                             if (config) Object.assign(DLconfig, config);
 
-                            new rexDialog(this, DLconfig.dialogX, DLconfig.dialogY, {
+                            new RexTextBox(gameScene, DLconfig.dialogX, DLconfig.dialogY, {
                                 wrapWidth: DLconfig.dialogWidth,
                                 fixedWidth: DLconfig.dialogWidth,
                                 fixedHeight: DLconfig.dialogHeight,
+                                character: DLconfig.character,
                             })
                                 .setDepth(Depth.UI)
                                 .start(content, 50);
 
-                        },
-                    });
+                        };
+                    };
+                    addDialog();
 
+                    gameScene.dialogUI = this;
+                    // console.debug(this);
                 };
                 update = () => { };
                 break;
@@ -1950,17 +1936,33 @@ class LoadingScene extends Phaser.Scene {
             };
             var dialog = () => {
 
-                //==對話框
-                this.load.scenePlugin({
-                    key: 'rexuiplugin',
-                    url: '../src/phaser-3.55.2/plugins/rexplugins/rexuiplugin.min.js',
-                    sceneKey: 'rexUI',
-                });
+                var textBox = () => {
 
-                this.load.spritesheet('dialogArrow',
-                    ctrlDir + 'dialogArrow.png',
-                    { frameWidth: 100, frameHeight: 100 }
-                );
+                    //==對話框(已經在html引入了所以不用這段)
+                    // this.load.scenePlugin({
+                    //     key: 'rexuiplugin',
+                    //     url: '../src/phaser-3.55.2/plugins/rexplugins/rexuiplugin.min.js',
+                    //     sceneKey: 'rexUI',// 'rexUI'
+                    //     systemKey: 'rexUI',
+                    // });
+
+                    this.load.image('dialogButton', ctrlDir + 'dialogButton.png');
+
+                };
+                var avatar = () => {
+                    const avatarDir = assetsDir + 'avatar/';
+                    if (packNum == 1) {
+
+                    }
+                    else if (packNum == 2) {
+
+                    }
+                    else if (packNum == 3) {
+                        this.load.image('bossAvatar', avatarDir + 'boss.jpg');
+                    };
+                };
+                textBox();
+                avatar();
             };
             UIButtons();
             pauseMenu();
@@ -2062,6 +2064,7 @@ class LoadingScene extends Phaser.Scene {
                     this.resolve();
                     // this.scene.remove();
                 });
+
             };
             progressGraphics();
             loadEvents();
@@ -3136,7 +3139,7 @@ class BossScene extends Phaser.Scene {
         var callback = (resolve) => this.scene.add(null, new LoadingScene(this, resolve), true);
         this.load.rexAwait(callback);//==等LoadingScene完成素材載入
 
-
+        this.scene.add(null, new UIScene('dialogUI', this), true);
     };
     create() {
         const canvas = this.sys.game.canvas;
@@ -3318,43 +3321,49 @@ class BossScene extends Phaser.Scene {
                 .setName('boss');
 
             var bossShowAnims = () => {
+
+                //==出現
+                let showDelay = flameCount * animeDelay;
                 this.tweens.add({
                     targets: boss,
                     repeat: 0,
                     ease: 'Back.easeInOut',
-                    delay: flameCount * animeDelay,
+                    delay: showDelay,
                     duration: animeDelay,
                     alpha: { from: 0, to: 1 },
                 });
 
+                //==飛
                 let flyRepeat = 2, yoyoFlag = true;
-
                 this.tweens.add({
                     targets: boss,
                     repeat: flyRepeat - 1,
                     ease: 'Quadratic.InOut',
-                    delay: flameCount * animeDelay,
+                    delay: showDelay,
                     duration: animeDelay,
                     yoyo: yoyoFlag,
                     y: { from: height * 0.7, to: height * 0.7 - 15 },
                 });
 
-                this.time.delayedCall((flameCount + flyRepeat * (yoyoFlag ? 2 : 1)) * animeDelay, () => boss.play('boss_Attack'), [], this);
+                //==攻擊動畫
+                let attackDelay = (flameCount + flyRepeat * (yoyoFlag ? 2 : 1)) * animeDelay;
+                this.time.delayedCall(attackDelay, () => boss.play('boss_Attack'), [], this);
+
+
+                //==說話
+                let speakDelay = attackDelay + 500;
+                var content = 'Phaser is a fast,free,and fun open source HTML5 game framework that offers WebGL and Canvas rendering across desktop and mobile web browsers.\f\nGames can be compiled to iOS, Android and native apps by using 3rd party tools.\f\nYou can use JavaScript or TypeScript for development.';
+                this.time.delayedCall(speakDelay, () => this.dialogUI.newDialog(content, { character: 'boss' }), [], this);
+
             };
             bossShowAnims();
-            this.scene.add(null, new UIScene('statsBar', this, boss), true);
 
+
+            this.scene.add(null, new UIScene('statsBar', this, boss), true);
 
             this.boss = boss;
         };
-        var initDialog = () => {
 
-            let dialogUI = this.scene.add(null, new UIScene('dialogUI', this), true);
-
-
-            var content = `Phaser is a fast, free, and fun open source HTML5 game framework that offers WebGL and Canvas rendering across desktop and mobile web browsers. Games can be compiled to iOS, Android and native apps by using 3rd party tools. You can use JavaScript or TypeScript for development.`;
-            dialogUI.newDialog(content);
-        };
         //==gameScene
         initEnvironment();
         initPlayer();
@@ -3364,7 +3373,6 @@ class BossScene extends Phaser.Scene {
         initCursors();
         initIconBar();
         initTimer();
-        initDialog();
     };
     update() {
 

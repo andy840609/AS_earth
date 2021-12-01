@@ -934,6 +934,7 @@ const Player = new Phaser.Class({
     playerTurnLeft: false,//==判斷子彈方向
 
 });
+
 //==地底用
 class Chunk {
     constructor(scene, x, y) {
@@ -1098,48 +1099,47 @@ class Tile extends Phaser.GameObjects.Sprite {
     };
 };
 
-//==對話框
-class rexDialog {
+//===對話框
+class RexTextBox extends RexPlugins.UI.TextBox {
     constructor(scene, x, y, config) {
-        console.debug(scene);
+        // console.debug(scene);
 
-        const COLOR_PRIMARY = 0x4e342e;
-        const COLOR_LIGHT = 0x7b5e57;
+        const COLOR_PRIMARY = 0x4e342e;//==box背景色
+        const COLOR_LIGHT = 0x7b5e57;//==box框線色
         const COLOR_DARK = 0x260e04;
         const GetValue = Phaser.Utils.Objects.GetValue;
 
+        const iconW = 200;//==扣掉頭像和按鈕的空間
 
-        var wrapWidth = GetValue(config, 'wrapWidth', 0);
-        var fixedWidth = GetValue(config, 'fixedWidth', 0);
+        var wrapWidth = GetValue(config, 'wrapWidth', 0) - iconW;
+        var fixedWidth = GetValue(config, 'fixedWidth', 0) - iconW;
         var fixedHeight = GetValue(config, 'fixedHeight', 0);
-        var getBBcodeText = function (scene, wrapWidth, fixedWidth, fixedHeight) {
-            return scene.rexUI.add.BBCodeText(0, 0, '', {
+        var character = config.character;
+
+
+        //===textBox config
+        let rexRect = new RexPlugins.UI.RoundRectangle(scene, 0, 0, 2, 2, 20, COLOR_PRIMARY)
+            .setStrokeStyle(2, COLOR_LIGHT);
+
+        let rexBBText = new RexPlugins.UI.BBCodeText(scene, 0, 0, '',
+            {
                 fixedWidth: fixedWidth,
                 fixedHeight: fixedHeight,
-
                 fontSize: '20px',
                 wrap: {
                     mode: 'word',
                     width: wrapWidth
                 },
                 maxLines: 3
-            })
-        };
+            });
 
-
-        var textBox = scene.rexUI.add.textBox({
+        var TBconfig = {
             x: x,
             y: y,
-
-            background: scene.rexUI.add.roundRectangle(0, 0, 2, 2, 20, COLOR_PRIMARY)
-                .setStrokeStyle(2, COLOR_LIGHT),
-
-            icon: scene.rexUI.add.roundRectangle(0, 0, 2, 2, 20, COLOR_DARK),
-
-            text: getBBcodeText(scene, wrapWidth, fixedWidth, fixedHeight),
-
-            action: scene.add.sprite(0, 0, 'dialogArrow').setTint(COLOR_LIGHT).setVisible(false),
-
+            background: scene.add.existing(rexRect),
+            icon: scene.add.image(0, 0, character + 'Avatar'),
+            text: scene.add.existing(rexBBText),
+            action: scene.add.image(0, 0, 'dialogButton').setVisible(false).setScale(0.1),
             space: {
                 left: 20,
                 right: 20,
@@ -1147,43 +1147,186 @@ class rexDialog {
                 bottom: 20,
                 icon: 10,
                 text: 10,
-            }
-        })
+            },
+        };
+        super(scene, TBconfig);
+        // scene.add.existing(this);
+
+        this
             .setOrigin(0.5)
             .layout();
 
-        textBox
+        let action = this.getElement('action');
+
+        this
             .setInteractive()
             .on('pointerdown', function () {
-                var icon = this.getElement('action').setVisible(false);
-                this.resetChildVisibleState(icon);
+                action.setVisible(false);
+                this.resetChildVisibleState(action);
+
                 if (this.isTyping) {
                     this.stop(true);
                 } else {
+                    if (this.isLastPage) {
+                        this.destroy();
+                        return;
+                    };
                     this.typeNextPage();
-                }
-            }, textBox)
-            .on('pageend', function () {
-                if (this.isLastPage) {
-                    return;
-                }
+                };
 
-                var icon = this.getElement('action').setVisible(true);
-                this.resetChildVisibleState(icon);
-                icon.y -= 30;
-                var tween = scene.tweens.add({
-                    targets: icon,
-                    y: '+=30', // '+=100'
+
+            }, this)
+            .on('pageend', function () {
+                if (this.isLastPage) return;
+
+                action.setVisible(true);
+                this.resetChildVisibleState(action);
+
+                const endY = this.y + this.displayHeight * 0.5 - 50;
+
+                scene.tweens.add({
+                    targets: action,
+                    y: {
+                        start: endY - 20,
+                        to: endY,
+                    },
                     ease: 'Bounce', // 'Cubic', 'Elastic', 'Bounce', 'Back'
                     duration: 500,
                     repeat: 0, // -1: infinity
                     yoyo: false
                 });
-            }, textBox)
+            }, this)
         //.on('type', function () {
         //})
+        // console.debug(this);
+    };
+};
 
-        return textBox;
+//==問答UI
+class RexDialog extends RexPlugins.UI.Dialog {
+    constructor(scene, x, y, config) {
+        const GetValue = Phaser.Utils.Objects.GetValue;
+
+        var createDialog = function (scene) {
+            return scene.rexUI.add.dialog({
+                x: 400,
+                y: 300,
+                width: 360,
+
+                background: scene.rexUI.add.roundRectangle(0, 0, 100, 100, 20, 0x3e2723),
+
+                title: scene.rexUI.add.label({
+                    background: scene.rexUI.add.roundRectangle(0, 0, 100, 40, 20, 0x1b0000),
+                    text: scene.add.text(0, 0, ' ', {
+                        fontSize: '24px'
+                    }),
+                    space: {
+                        left: 15,
+                        right: 15,
+                        top: 10,
+                        bottom: 10
+                    }
+                }),
+
+                content: scene.add.text(0, 0, ' ', {
+                    fontSize: '24px'
+                }),
+
+                choices: [
+                    createLabel(scene, ' ', 0x6a4f4b),
+                    createLabel(scene, ' ', 0x6a4f4b),
+                    createLabel(scene, ' ', 0x6a4f4b),
+                    createLabel(scene, ' ', 0x6a4f4b),
+                    createLabel(scene, ' ', 0x6a4f4b)
+                ], // Support 5 choices
+
+                actions: [
+                    createLabel(scene, 'Submit', 0x1b0000),
+                ],
+
+                space: {
+                    title: 25,
+                    content: 25,
+                    choices: 20,
+                    choice: 15,
+                    action: 15,
+
+                    left: 25,
+                    right: 25,
+                    top: 25,
+                    bottom: 25,
+                },
+
+                expand: {
+                    content: false,  // Content is a pure text object
+                }
+            });
+        }
+        var createLabel = function (scene, text, backgroundColor) {
+            return scene.rexUI.add.label({
+                background: scene.rexUI.add.roundRectangle(0, 0, 100, 40, 20, backgroundColor),
+
+                text: scene.add.text(0, 0, text, {
+                    fontSize: '24px'
+                }),
+
+                space: {
+                    left: 10,
+                    right: 10,
+                    top: 10,
+                    bottom: 10
+                }
+            });
+        }
+
+        var setDialog = function (dialog, config) {
+            // Set title
+            dialog.getElement('title').text = GetValue(config, 'title', ' ');
+            // Set content
+            dialog.getElement('content').text = GetValue(config, 'content', ' ');
+            // Set choices
+            var choiceTextArray = GetValue(config, 'choices', []),
+                choiceText;
+            var choices = dialog.getElement('choices');
+            for (var i = 0, cnt = choices.length; i < cnt; i++) {
+                choiceText = choiceTextArray[i];
+                if (choiceText != null) {
+                    dialog.showChoice(i);
+                    choices[i].text = choiceText;
+                } else {
+                    dialog.hideChoice(i);
+                }
+            }
+            return dialog;
+        }
+        const data = {
+            title: 'Question 1',
+            content: '1 + 1 + 1 + 1 = ',
+            choices: [3, 4, 5, 6],
+        };
+
+
+        this.print = this.add.text(0, 0, '');
+
+        var dialog = createDialog(this)
+            .layout()
+            .on('button.click', function (button, groupName, index) {
+                this.print.text += index + ': ' + button.text + '\n';
+            }, this)
+            .on('button.over', function (button, groupName, index) {
+                button.getElement('background').setStrokeStyle(1, 0xffffff);
+            })
+            .on('button.out', function (button, groupName, index) {
+                button.getElement('background').setStrokeStyle();
+            })
+
+        this.input.once('pointerdown', function () {
+            setDialog(dialog, data).layout();
+        });
+
+        this.add.text(0, 580, 'Click to reset buttons');
     };
 
 };
+
+

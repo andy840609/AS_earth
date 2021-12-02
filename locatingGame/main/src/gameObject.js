@@ -20,6 +20,12 @@ const GameObjectStats = {
             movementSpeed: 500,
             jumpingPower: 0,
         },
+        boss: {
+            HP: 1000,
+            attackPower: 10,
+            movementSpeed: 500,
+            jumpingPower: 0,
+        },
     },
     player: {
         mage: {
@@ -903,7 +909,6 @@ const Player = new Phaser.Class({
     },
     //==攻擊
     attackHandler: function (scene) {
-
         let cursors = scene.cursors;
         let controllCursor = scene.gameData.controllCursor;
 
@@ -920,6 +925,20 @@ const Player = new Phaser.Class({
                 this.statsChangeHandler({ MP: this.stats.MP -= this.stats.manaCost }, this);
             }
         };
+    },
+    //==受擊
+    gotHurtHandler: function (scene) {
+        const invincibleDuration = 800;
+
+        scene.tweens.add({
+            targets: this,
+            alpha: 0.5,
+            duration: invincibleDuration / 20,//==   20=repeat(10)*yoyo(=2)
+            yoyo: true,
+            repeat: 10,
+            ease: 'Sine.easeInOut',
+            onComplete: () => this.invincibleFlag = false,
+        });
     },
     //==HP/MP
     statsChangeHandler: function (statsObj) {
@@ -1101,12 +1120,14 @@ class Tile extends Phaser.GameObjects.Sprite {
 
 //===對話框
 class RexTextBox extends RexPlugins.UI.TextBox {
-    constructor(scene, x, y, config) {
+    constructor(scene, x, y, config, resolve) {
         // console.debug(scene);
 
-        const COLOR_PRIMARY = 0x4e342e;//==box背景色
-        const COLOR_LIGHT = 0x7b5e57;//==box框線色
-        const COLOR_DARK = 0x260e04;
+        const
+            COLOR_PRIMARY = 0x4e342e,//==box背景色
+            COLOR_LIGHT = 0x7b5e57,//==box框線色
+            COLOR_DARK = 0x260e04;
+
         const GetValue = Phaser.Utils.Objects.GetValue;
 
         const iconW = 200;//==扣掉頭像和按鈕的空間
@@ -1133,7 +1154,7 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                 maxLines: 3
             });
 
-        var TBconfig = {
+        const textBoxConfig = {
             x: x,
             y: y,
             background: scene.add.existing(rexRect),
@@ -1149,18 +1170,15 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                 text: 10,
             },
         };
-        super(scene, TBconfig);
+        super(scene, textBoxConfig);
         // scene.add.existing(this);
 
         this
             .setOrigin(0.5)
-            .layout();
-
-        let action = this.getElement('action');
-
-        this
+            .layout()
             .setInteractive()
             .on('pointerdown', function () {
+                let action = this.getElement('action');
                 action.setVisible(false);
                 this.resetChildVisibleState(action);
 
@@ -1169,6 +1187,7 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                 } else {
                     if (this.isLastPage) {
                         this.destroy();
+                        if (resolve) resolve();
                         return;
                     };
                     this.typeNextPage();
@@ -1179,6 +1198,7 @@ class RexTextBox extends RexPlugins.UI.TextBox {
             .on('pageend', function () {
                 if (this.isLastPage) return;
 
+                let action = this.getElement('action');
                 action.setVisible(true);
                 this.resetChildVisibleState(action);
 
@@ -1198,133 +1218,165 @@ class RexTextBox extends RexPlugins.UI.TextBox {
             }, this)
         //.on('type', function () {
         //})
-        // console.debug(this);
+        // console.debug(scene);
     };
 };
 
 //==問答UI
 class RexDialog extends RexPlugins.UI.Dialog {
-    constructor(scene, x, y, config) {
+    constructor(scene, x, y, data, resolve) {
+        const
+            COLOR_PRIMARY = 0x4e342e,//==box背景色
+            COLOR_LIGHT = 0x6a4f4b,//==選項顏色
+            COLOR_DARK = 0x1b0000,//==標題顏色
+            COLOR_CORRECT = 0x009100,
+            COLOR_WRONG = 0x750000;
         const GetValue = Phaser.Utils.Objects.GetValue;
 
-        var createDialog = function (scene) {
-            return scene.rexUI.add.dialog({
-                x: 400,
-                y: 300,
-                width: 360,
-
-                background: scene.rexUI.add.roundRectangle(0, 0, 100, 100, 20, 0x3e2723),
-
-                title: scene.rexUI.add.label({
-                    background: scene.rexUI.add.roundRectangle(0, 0, 100, 40, 20, 0x1b0000),
-                    text: scene.add.text(0, 0, ' ', {
-                        fontSize: '24px'
-                    }),
-                    space: {
-                        left: 15,
-                        right: 15,
-                        top: 10,
-                        bottom: 10
-                    }
-                }),
-
-                content: scene.add.text(0, 0, ' ', {
-                    fontSize: '24px'
-                }),
-
-                choices: [
-                    createLabel(scene, ' ', 0x6a4f4b),
-                    createLabel(scene, ' ', 0x6a4f4b),
-                    createLabel(scene, ' ', 0x6a4f4b),
-                    createLabel(scene, ' ', 0x6a4f4b),
-                    createLabel(scene, ' ', 0x6a4f4b)
-                ], // Support 5 choices
-
-                actions: [
-                    createLabel(scene, 'Submit', 0x1b0000),
-                ],
-
-                space: {
-                    title: 25,
-                    content: 25,
-                    choices: 20,
-                    choice: 15,
-                    action: 15,
-
-                    left: 25,
-                    right: 25,
-                    top: 25,
-                    bottom: 25,
-                },
-
-                expand: {
-                    content: false,  // Content is a pure text object
-                }
-            });
-        }
-        var createLabel = function (scene, text, backgroundColor) {
-            return scene.rexUI.add.label({
-                background: scene.rexUI.add.roundRectangle(0, 0, 100, 40, 20, backgroundColor),
-
-                text: scene.add.text(0, 0, text, {
-                    fontSize: '24px'
-                }),
-
+        var createLabel = (scene, text, backgroundColor) => {
+            return new RexPlugins.UI.Label(scene, {
+                background: scene.add.existing(new RexPlugins.UI.RoundRectangle(scene, 0, 0, 100, 40, 20, backgroundColor)),
+                text: scene.add.text(0, 0, text, { fontSize: '24px' }),
                 space: {
                     left: 10,
                     right: 10,
                     top: 10,
                     bottom: 10
-                }
+                },
             });
-        }
+        };
+        var setDialog = (data) => {
+            // console.debug(this);
 
-        var setDialog = function (dialog, config) {
-            // Set title
-            dialog.getElement('title').text = GetValue(config, 'title', ' ');
+            //==分行
+            const
+                charInLine = 15,//每行字數
+                lineCount = parseInt((data.content.length - 1) / charInLine);//總行數
+            let newStr = '';
+            for (let i = 0; i < lineCount; i++) {
+                let lastIdx = (i + 1) * charInLine;
+
+                let line = data.content.slice(i * charInLine, lastIdx) + '\n';
+                if (i == lineCount - 1) line += data.content.slice(lastIdx);//==不足一行
+                newStr += line;
+            };
+
             // Set content
-            dialog.getElement('content').text = GetValue(config, 'content', ' ');
+            this.getElement('content').text = newStr;
+            // Set title
+            this.getElement('title').text = GetValue(data, 'title', ' ');
             // Set choices
-            var choiceTextArray = GetValue(config, 'choices', []),
+            var choiceTextArray = GetValue(data, 'choices', []).sort(function () {
+                return (0.5 - Math.random());
+            }),
                 choiceText;
-            var choices = dialog.getElement('choices');
+            var choices = this.getElement('choices');
             for (var i = 0, cnt = choices.length; i < cnt; i++) {
                 choiceText = choiceTextArray[i];
                 if (choiceText != null) {
-                    dialog.showChoice(i);
+                    this.showChoice(i);
                     choices[i].text = choiceText;
                 } else {
-                    dialog.hideChoice(i);
-                }
-            }
-            return dialog;
-        }
-        const data = {
-            title: 'Question 1',
-            content: '1 + 1 + 1 + 1 = ',
-            choices: [3, 4, 5, 6],
+                    this.hideChoice(i);
+                };
+            };
+            return this;
         };
 
+        //===dialogConfig
+        let rexRect = new RexPlugins.UI.RoundRectangle(scene, 0, 0, 100, 100, 20, COLOR_PRIMARY);
 
-        this.print = this.add.text(0, 0, '');
+        const dialogConfig = {
+            x: x,
+            y: y,
+            width: 360,
+            background: scene.add.existing(rexRect),
+            title: scene.add.existing(createLabel(scene, ' ', COLOR_DARK)),
+            content: scene.add.text(0, 0, ' ', { fontSize: '36px' }),
+            choices: [
+                createLabel(scene, ' ', COLOR_LIGHT),
+                createLabel(scene, ' ', COLOR_LIGHT),
+                createLabel(scene, ' ', COLOR_LIGHT),
+                createLabel(scene, ' ', COLOR_LIGHT),
+            ],
+            space: {
+                title: 25,
+                content: 25,
+                choices: 20,
+                choice: 15,
+                action: 15,
+                left: 25,
+                right: 25,
+                top: 25,
+                bottom: 25,
+            },
+            expand: {
+                content: false,  // Content is a pure text object
+            }
+        };
 
-        var dialog = createDialog(this)
+        super(scene, dialogConfig);
+
+        this.isClicked = false;
+        this
+            .setOrigin(0.5)
             .layout()
-            .on('button.click', function (button, groupName, index) {
-                this.print.text += index + ': ' + button.text + '\n';
-            }, this)
-            .on('button.over', function (button, groupName, index) {
+            .on('button.click', (button, groupName, index) => {
+                // console.debug(button.getElement('background'));
+                if (this.isClicked) return;
+                // var checkAnswer = (correct) => {
+
+                // };
+                // console.debug(this);
+
+                let correct = index == data.answer;
+                let color = correct ? COLOR_CORRECT : COLOR_WRONG;
+
+                const duration = 500;
+                button.getElement('background').setFillStyle(color);
+
+                let sign = scene.add.image(button.x + button.displayWidth * 0.5, button.y, 'quiz' + (correct ? 'Correct' : 'Wrong'))
+                    .setScale(0.1)
+                    .setDepth(button.depth + 1);
+
+                scene.tweens.add({
+                    targets: sign,
+                    y: { start: button.y - 50, to: button.y },
+                    ease: 'Cubic', // 'Cubic', 'Elastic', 'Bounce', 'Back'
+                    duration: duration,
+                });
+
+                scene.time.delayedCall(duration * 2, () => {
+                    scene.tweens.add({
+                        targets: [this, sign],
+                        scaleX: { start: t => t.scaleX, to: 0 },
+                        scaleY: { start: t => t.scaleY, to: 0 },
+                        ease: 'Bounce', // 'Cubic', 'Elastic', 'Bounce', 'Back'
+                        duration: duration,
+                        onComplete: () => {
+                            this.destroy();
+                            sign.destroy();
+                            resolve(correct);
+                        },
+                    });
+                }, [], scene);
+
+
+                this.isClicked = true;
+
+            }, scene)
+            .on('button.over', (button, groupName, index) => {
+                if (this.isClicked) return;
                 button.getElement('background').setStrokeStyle(1, 0xffffff);
             })
-            .on('button.out', function (button, groupName, index) {
+            .on('button.out', (button, groupName, index) => {
+                if (this.isClicked) return;
                 button.getElement('background').setStrokeStyle();
-            })
+            });
 
-        this.input.once('pointerdown', function () {
-            setDialog(dialog, data).layout();
-        });
+        setDialog(data).layout();
 
-        this.add.text(0, 580, 'Click to reset buttons');
+
     };
 
 };

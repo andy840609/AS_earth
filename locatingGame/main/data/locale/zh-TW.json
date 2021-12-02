@@ -45,5 +45,41 @@
         "assumedEpicenter": "假設震央",
         "aaa": "sss",
         "aaa": "sss"
+    },
+    "Lines": {
+        "player": {},
+        "boss": {}
+    },
+    "Quiz": {
+        "0": {
+            "content": "台灣地震主要發生在台灣的?",
+            "choices": [
+                "東部",
+                "西部",
+                "南部",
+                "北部"
+            ],
+            "answer": 0
+        },
+        "1": {
+            "content": "最快到達的波是?",
+            "choices": [
+                "P波",
+                "S波",
+                "PS波",
+                "A波"
+            ],
+            "answer": 0
+        },
+        "2": {
+            "content": "幾個測站才能決定震央位置?",
+            "choices": [
+                "1個",
+                "2個",
+                "3個",
+                "4個"
+            ],
+            "answer": 0
+        }
     }
 }

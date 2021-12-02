@@ -248,7 +248,7 @@ function locatingGame() {
                         reset: 'r',
                         exit: 'esc',
                     },
-                    language: 'zh-TW',
+                    locale: 'zh-TW',
                     playerRole: playerRole,
                     playerStats: GameObjectStats.player[playerRole],
                 };
@@ -257,7 +257,7 @@ function locatingGame() {
 
                 var getLanguageJSON = () => {
                     return $.ajax({
-                        url: "../data/language/" + GameData.language + ".json",
+                        url: "../data/locale/" + GameData.locale + ".json",
                         dataType: "json",
                         async: false,
                         success: function (d) { console.debug(d); },
@@ -270,7 +270,7 @@ function locatingGame() {
                 var startScene = async () => {
 
 
-                    GameData.languageJSON = await getLanguageJSON();
+                    GameData.localeJSON = await getLanguageJSON();
                     // gameDisplay(true);
 
                     // let newGameData = await new Promise((resolve, reject) => {
@@ -290,8 +290,8 @@ function locatingGame() {
                     //     };
                     //     new Phaser.Game(config);
                     // });
-                    // if (GameData.language != newGameData.language)
-                    //     GameData.languageJSON = await getLanguageJSON();
+                    // if (GameData.locale != newGameData.locale)
+                    //     GameData.localeJSON = await getLanguageJSON();
                     // Object.assign(GameData, newGameData);
                     // gameDisplay(false);
                     // initMap();
@@ -446,8 +446,8 @@ function locatingGame() {
 
                     data.forEach((d, i) => {
                         // console.debug(d);
-                        // let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
-                        let enemy = [];//==之後隨機抽敵人組
+                        let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
+                        // let enemy = [];//==之後隨機抽敵人組
                         let enemyStats = {};
 
 
@@ -491,7 +491,7 @@ function locatingGame() {
                                 gameUI.find('.confirmWindow')
                                     .fadeIn(fadeInDuration)
                                     .find('.placeStr')
-                                    .text(`${d['station']}${GameData.languageJSON.Tip['station']}`)
+                                    .text(`${d['station']}${GameData.localeJSON.Tip['station']}`)
                                     .data('gameStartParameters', ['defend', marker]);
 
                             });
@@ -594,7 +594,7 @@ function locatingGame() {
 
                         UItooltip.show()//==先show才能得到寬高
                             .children('.tooltipText')
-                            .text(GameData.languageJSON.UI[target.id]);
+                            .text(GameData.localeJSON.UI[target.id]);
 
                         // UItooltip
                         let top = targetDOMRect.top - bigMapDOMRect.top - imgNode.offsetHeight * 0.7,
@@ -609,7 +609,7 @@ function locatingGame() {
                             UIhint
                                 .animate({ "opacity": "show" }, 500)
                                 .children('.tooltipText')
-                                .text(GameData.languageJSON.Tip[`${target.id}Lock`]);
+                                .text(GameData.localeJSON.Tip[`${target.id}Lock`]);
 
                             let top = targetDOMRect.top,
                                 left = targetDOMRect.left - bigMapDOMRect.left + imgNode.offsetWidth + 10;
@@ -645,11 +645,11 @@ function locatingGame() {
 
                     var timeRemain = () => {
                         gameUI.append(`
-                        <div class="timeRemain">${GameData.languageJSON.UI['timeRemain']} : 
+                        <div class="timeRemain">${GameData.localeJSON.UI['timeRemain']} : 
                             <div class='timer' value='0'>
-                                &nbsp;<font size="5" >0</font>&nbsp;${GameData.languageJSON.UI['DAYS']}
-                                &nbsp;<font size="5" >0</font>&nbsp;${GameData.languageJSON.UI['HRS']}
-                                &nbsp;<font size="5" >0</font>&nbsp;${GameData.languageJSON.UI['MINS']}
+                                &nbsp;<font size="5" >0</font>&nbsp;${GameData.localeJSON.UI['DAYS']}
+                                &nbsp;<font size="5" >0</font>&nbsp;${GameData.localeJSON.UI['HRS']}
+                                &nbsp;<font size="5" >0</font>&nbsp;${GameData.localeJSON.UI['MINS']}
                             </div>
                         </div>             
                         `);
@@ -704,7 +704,7 @@ function locatingGame() {
                                         UI
                                             .append(`
                                             <div  style="white-space: nowrap;text-align:center;">
-                                                <h2>${GameData.languageJSON.UI['velocityStr']}：
+                                                <h2>${GameData.localeJSON.UI['velocityStr']}：
                                                     <b id="velocityStr" style="color:Tomato;font-size:60px;">${GameData.velocity.toFixed(2)}</b> km/s
                                                 </h2>
                                             </div>
@@ -803,20 +803,20 @@ function locatingGame() {
                         let imgW = 10;
                         let confirmWindow = gameUI.append(`
                         <div class="confirmWindow">
-                            <text>${GameData.languageJSON.Tip['mapClickConfirm1']} 
+                            <text>${GameData.localeJSON.Tip['mapClickConfirm1']} 
                                 <b class="placeStr"></b>
-                             ${GameData.languageJSON.Tip['mapClickConfirm2']}
+                             ${GameData.localeJSON.Tip['mapClickConfirm2']}
                             </text>
                             <div class="d-flex justify-content-around" >
                                 <text name="confirm" value="yes">
                                     <img name="confirmImg" src="${ctrlDir}triangle_left.png" width="${imgW}px" height="${imgW}px">
-                                    ${GameData.languageJSON.Tip['yes']}
+                                    ${GameData.localeJSON.Tip['yes']}
                                     <img name="confirmImg" src="${ctrlDir}triangle_right.png" width="${imgW}px" height="${imgW}px">
                                 </text>
 
                                 <text name="confirm" value="no">
                                     <img name="confirmImg" src="${ctrlDir}triangle_left.png" width="${imgW}px" height="${imgW}px">
-                                    ${GameData.languageJSON.Tip['no']}
+                                    ${GameData.localeJSON.Tip['no']}
                                     <img name="confirmImg" src="${ctrlDir}triangle_right.png" width="${imgW}px" height="${imgW}px">
                                 </text>
                                 
@@ -1271,7 +1271,7 @@ function locatingGame() {
                     //     assumedEpicenter
                     //         .setLatLng(coordinate)
                     //         .getTooltip()
-                    //         .setContent(`${GameData.languageJSON.Tip['assumedEpicenter']} : ${coordinate.map(d => d.toFixed(2)).join(' , ')}`)
+                    //         .setContent(`${GameData.localeJSON.Tip['assumedEpicenter']} : ${coordinate.map(d => d.toFixed(2)).join(' , ')}`)
                     //     assumedEpicenter.getElement().style.display = 'inline';
 
                     //     GameData.playerEpicenter = coordinate;
@@ -1959,8 +1959,8 @@ function locatingGame() {
 
                                     tooltip.html(`
                                     <h5>${station}</h5>
-                                    <h5>${GameData.languageJSON.UI['distance']} : ${dist} km</h5>
-                                    <h5>${GameData.languageJSON.UI['estimatedTime']} : ${timeGap} s</h5>
+                                    <h5>${GameData.localeJSON.UI['distance']} : ${dist} km</h5>
+                                    <h5>${GameData.localeJSON.UI['estimatedTime']} : ${timeGap} s</h5>
                                     `);
 
                                     console.debug();

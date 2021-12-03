@@ -1100,9 +1100,8 @@ class UIScene extends Phaser.Scene {
                         //==問答題
                         if (gameScene.name == 'boss')
                             this.newQuiz = (data, resolve) => {
-                                new RexDialog(this, DLconfig.dialogX, DLconfig.dialogY * 0.5, data, resolve)
-                                    .setDepth(Depth.UI)
-                                // .start(content, 50);
+                                new RexDialog(this, DLconfig.dialogX, DLconfig.dialogY * 0.5, data, gameScene.gameData.locale, resolve)
+                                    .setDepth(Depth.UI);
                             };
                     };
                     addDialog();
@@ -1121,7 +1120,6 @@ class UIScene extends Phaser.Scene {
             case 'statsBar':
                 // console.debug(gameObj.name);
                 if (gameObj.name == 'player') {
-
                     preload = () => { };
                     create = () => {
                         class UIMask extends Phaser.GameObjects.Graphics {
@@ -1159,7 +1157,6 @@ class UIScene extends Phaser.Scene {
                         let hpBox, mpBox, headBox;
                         // let hpText, mpText;
                         var initBox = () => {
-
                             hpBox = this.add.image(BoxX, hpBoxY, 'UIbar_bar')
                                 .setScale(1.5)
                                 .setOrigin(0)
@@ -1190,7 +1187,6 @@ class UIScene extends Phaser.Scene {
                                 .setDepth(Depth.label);
                         };
                         var initBar = () => {
-
                             var getGradientColor = (gradientColor, percent) => {
                                 function hexToRgb(hexString) {
                                     var result = /^0x?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hexString);
@@ -1224,7 +1220,6 @@ class UIScene extends Phaser.Scene {
                                 return rgbToHex(newRgb);
                             };
                             var makeBar = (stats) => {
-
                                 let bar = this.add.graphics()
                                     .setDepth(Depth.bar)
                                     .setName(stats);
@@ -1320,8 +1315,6 @@ class UIScene extends Phaser.Scene {
                         initBox();
                         initBar();
                         initHead();
-
-
                     };
                     update = () => {
                         let HPbar = this.HPbar;
@@ -1342,46 +1335,86 @@ class UIScene extends Phaser.Scene {
                 else if (gameObj.name == 'boss') {
                     preload = () => { };
                     create = () => {
-                        var makeBar = () => {
-                            const barW = 80, barH = 16;
-                            const barMargin = 2;
+                        const Depth = {
+                            box: 5,
+                            bar: 4,
+                            text: 3,
+                        };
+
+                        let hpBarGroup = this.add.group();
+                        let hpBox;
+
+                        var initBox = () => {
+                            hpBox = this.add.image(0, 0, 'bossBar')
+                                // .setAlpha(0)
+                                .setScale(0.8)
+                                .setOrigin(0.6, 0.5)
+                                .setDepth(Depth.box);
+
+                            hpBarGroup.add(hpBox);
+                        };
+                        var initText = () => {
+                            let text = this.add.text(0, 0, `${UItextJSON['bossName']}\n                      `,
+                                {
+                                    fontSize: '32px', fill: '#fff', align: 'center',
+                                    stroke: '#003e4f',
+                                    strokeThickness: 2,
+                                    shadow: {
+                                        offsetX: 2,
+                                        offsetY: 2,
+                                        color: '#003e4f',
+                                        blur: 4,
+                                        stroke: true,
+                                        fill: true
+                                    },
+                                })
+                                .setOrigin(0.56, 1)
+                                .setDepth(Depth.text);
+
+                            hpBarGroup.add(text);
+                        };
+                        var initBar = () => {
+                            const barW = hpBox.displayWidth * 0.88, barH = 15;
+                            const barX = -barW * 0.61, barY = -barH * 0.2;
 
                             let bar = this.add.graphics()
-                                .setDepth(Depth.UI);
+                                .setDepth(Depth.bar);
 
-                            Object.assign(bar, {
+                            Object.assign(hpBarGroup, {
                                 updateFlag: false,
                                 updateBar: () => {
-
                                     bar.clear();
 
-                                    //  stroke
-                                    bar.fillStyle(0x000000);
-                                    bar.fillRect(-barW * 0.5, 0, barW, barH);
-
                                     //  BG
-                                    bar.fillStyle(0xffffff);
-                                    bar.fillRect(-barW * 0.5 + barMargin, barMargin, barW - barMargin * 2, barH - barMargin * 2);
+                                    bar.fillStyle(0x272727);
+                                    bar.fillRect(barX, barY, barW, barH);
 
-                                    //  Health               
+                                    //  Health
                                     let p = gameObj.stats.HP / gameObj.stats.maxHP;
                                     // console.debug(p);
 
                                     if (p < 0) p = 0;
-                                    else if (p <= 0.3) bar.fillStyle(0xff0000);
-                                    else if (p <= 0.5) bar.fillStyle(0xEAC100);
-                                    else bar.fillStyle(0x00ff00);
+                                    else if (p <= 0.4) bar.fillStyle(0xAE0000);
+                                    else if (p <= 0.7) bar.fillStyle(0x930000);
+                                    else bar.fillStyle(0x750000);
 
-                                    let healthW = (barW - barMargin * 2) * p;
-                                    bar.fillRect(-barW * 0.5 + barMargin, barMargin, healthW, barH - barMargin * 2);
+                                    let healthW = barW * p;
+                                    bar.fillRect(barX, barY, healthW, barH);
 
                                 },
                             });
 
-                            return bar;
+                            hpBarGroup.add(bar);
                         };
-                        this.HPbar = makeBar();
+
+                        initBox();
+                        initBar();
+                        initText();
+                        // console.debug(hpBarGroup);
+
+                        this.HPbar = hpBarGroup;
                         gameObj.HPbar = this.HPbar;
+
                     };
                     update = () => {
                         let HPbar = this.HPbar;
@@ -1853,8 +1886,13 @@ class LoadingScene extends Phaser.Scene {
                             { frameWidth: 100, frameHeight: 100 },
                         );
                     };
+                    var bossBar = () => {
+                        let bossBarDir = assetsDir + 'ui/bossBar/';
+                        this.load.image('bossBar', bossBarDir + 'bossBar.png');
+                    };
                     bossRoom();
                     boss();
+                    bossBar();
                 };
                 background();
             };
@@ -2542,9 +2580,6 @@ class DefendScene extends Phaser.Scene {
             });
 
             this.enemy.enemyAttack = (player, foe) => {
-                // console.debug(player, foe);
-                // console.debug(player.body);
-                // console.debug('player hurt');
                 const knockBackDuration = 200;
                 const knockBackSpeed = 300;
 
@@ -2903,7 +2938,6 @@ class DigScene extends Phaser.Scene {
                 .setGravityY(2000)
             // .setMaxVelocity(0);
 
-
             Object.assign(this.player, {
                 playerDig: (player, tile) => {
                     // if (this.tile) return;
@@ -2937,11 +2971,12 @@ class DigScene extends Phaser.Scene {
 
                     //==玩家選擇進入
                     if (1) {
+                        const doorDelay = 1500;
                         gate.play('bossDoor_open', true)
                         gate.body.enable = false;
                         this.depthCounter.bossRoom = true;
 
-                        this.time.delayedCall(10, () => this.gameOver.flag = true, [], this);
+                        this.time.delayedCall(doorDelay, () => this.gameOver.flag = true, [], this);
                     };
 
 
@@ -3034,7 +3069,6 @@ class DigScene extends Phaser.Scene {
             let playerStats = this.player.stats;
             if (playerStats.MP < playerStats.maxMP)
                 this.player.statsChangeHandler({ MP: playerStats.MP += playerStats.manaRegen }, this);//自然回魔
-
 
         };
         var updateChunks = () => {
@@ -3132,7 +3166,6 @@ class BossScene extends Phaser.Scene {
                 resolve: other.resolve,
             },
         });
-        // console.debug(placeData);
         console.debug(this);
     };
     preload() {
@@ -3146,7 +3179,7 @@ class BossScene extends Phaser.Scene {
         const canvas = this.sys.game.canvas;
         const width = canvas.width;
         const height = canvas.height;
-
+        const localeJSON = this.gameData.localeJSON;
         const Depth = {
             flame: 8,
             player: 10,
@@ -3284,7 +3317,6 @@ class BossScene extends Phaser.Scene {
                 },
 
             });
-
         };
         var initBoss = () => {
             var animsCreate = () => {
@@ -3328,7 +3360,7 @@ class BossScene extends Phaser.Scene {
             this.boss
                 .setScale(-bossScale, bossScale)
                 .setOrigin(0.5, 1)
-                .setAlpha(1)
+                .setAlpha(0)
                 .setDepth(Depth.boss)
                 .setName('boss');
 
@@ -3353,18 +3385,35 @@ class BossScene extends Phaser.Scene {
                 on: false,
             });
 
-
             var showAnims = () => {
                 let boss = this.boss;
+                let bossHPbar = boss.HPbar;
+
                 //==出現
                 let showDelay = flameCount * animeDelay;
+                let barShowDelay = 500;
+
                 this.tweens.add({
-                    targets: boss,
+                    targets: [boss].concat(bossHPbar.getChildren()),
                     repeat: 0,
                     ease: 'Back.easeInOut',
-                    delay: showDelay,
+                    delay: (t, tk, v, i) => showDelay + (i > 0 ? barShowDelay : 0),
                     duration: animeDelay,
                     alpha: { from: 0, to: 1 },
+                });
+
+                //==出現血條
+                let bossHP = boss.stats.HP;
+                this.tweens.addCounter({
+                    from: 0,
+                    to: bossHP,
+                    loop: 0,
+                    delay: showDelay + barShowDelay,
+                    duration: animeDelay * 3,
+                    onUpdate: (t, v) => {
+                        boss.stats.HP = v.value;
+                        bossHPbar.updateFlag = true;
+                    },
                 });
 
                 //==飛
@@ -3385,14 +3434,15 @@ class BossScene extends Phaser.Scene {
 
                 //==說話
                 let speakDelay = attackDelay + 500;
-                var content = 'Phaser is a fast,free,and fun open source HTML5 game framework that offers WebGL and Canvas rendering across desktop and mobile web browsers.\f\nGames can be compiled to iOS, Android and native apps by using 3rd party tools.\f\nYou can use JavaScript or TypeScript for development.';
+                var content = localeJSON.Lines.boss[0];
                 this.time.delayedCall(speakDelay, async () => {
                     //==對話完才開始問題
                     await new Promise(resolve => this.dialogUI.newDialog(content, { character: 'boss' }, resolve));
                     boss.play('boss_Idle');
-                    // this.time.delayedCall(animeDelay * 1.5, () => initQuiz(), [], this);
+                    this.time.delayedCall(animeDelay * 1.5, () => initQuiz(), [], this);
 
                 }, [], this);
+
 
             };
             var attackAnims = (resolve) => {
@@ -3435,7 +3485,7 @@ class BossScene extends Phaser.Scene {
                         let otiginX = boss.x;
                         this.tweens.add({
                             targets: boss,
-                            ease: 'Quadratic.InOut',
+                            ease: 'Expo.InOut',
                             delay: flyT2,
                             duration: flyT1,
                             x: { from: otiginX, to: -boss.displayWidth },
@@ -3457,17 +3507,34 @@ class BossScene extends Phaser.Scene {
                         this.time.delayedCall(flyT1 + flyT2 * 2, () => boss.play('boss_Idle'), [], this);
                     };
                 };
-                attack(1);
+                attack(attackType);
 
                 this.time.delayedCall(duration, () => resolve(), [], this);
             };
             var gotHurtAnims = (duration) => {
                 let boss = this.boss;
+                let bossHP = boss.stats.HP - this.player.stats.attackPower * 4;
 
-                boss.stats.HP -= this.player.stats.attackPower * 5;
+                this.tweens.addCounter({
+                    from: boss.stats.HP,
+                    to: bossHP,
+                    loop: 0,
+                    duration: duration,
+                    onUpdate: (t, v) => {
+                        boss.stats.HP = v.value;
+                        boss.HPbar.updateFlag = true;
+                    },
+                });
 
-                if (boss.stats.HP <= 0) {
+                if (bossHP <= 0) {
                     boss.play('boss_Death');
+                    this.tweens.add({
+                        targets: boss.HPbar.getChildren(),
+                        repeat: 0,
+                        ease: 'Back.easeInOut',
+                        duration: duration * 2,
+                        alpha: { from: t => t.alpha, to: 0 },
+                    });
                     // this.gameOver.flag=true;
                 }
                 else {
@@ -3475,40 +3542,49 @@ class BossScene extends Phaser.Scene {
                     this.time.delayedCall(duration, () => boss.play('boss_Idle'), [], this);
                 };
 
-                console.debug(boss.stats.HP);
+                // console.debug(boss.stats.HP);
             };
 
-            // showAnims();
             this.scene.add(null, new UIScene('statsBar', this, this.boss), true);
-
+            let newStats = { ...GameObjectStats.creature['boss'] };
             Object.assign(this.boss, {
                 attackAnims: attackAnims,
                 gotHurtAnims: gotHurtAnims,
-                stats: GameObjectStats.creature['boss'],
+                stats: Object.assign(newStats, {
+                    maxHP: newStats.HP,
+                }),
             });
 
-
-
+            showAnims();
         };
         var initQuiz = () => {
             this.dialogUI.scene.bringToTop();
 
-            const data = {
-                title: 'Question 1',
-                content: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-                choices: [3, 4, 5, 6],
-                answer: 0,
-            };
+            //==題庫題目總數量
+            const quizArr = localeJSON.Quiz;
+            const quizAmount = Object.keys(quizArr).length;
 
-            var getQuiz = async () => {
-                let correct = await new Promise(resolve => this.dialogUI.newQuiz(data, resolve));
+            var getQuizIdxArr = (quizAmount) => Array.from(new Array(quizAmount), (d, i) => i).sort(() => 0.5 - Math.random());
+            let quizIdxArr = getQuizIdxArr(quizAmount);
+            let quizCount = 1;
+
+            var getQuiz = () => {
+                let quizIdx = quizIdxArr.pop();
+                if (quizIdxArr.length == 0) quizIdxArr = getQuizIdxArr(quizAmount);
+                // console.debug(quizIdxArr);
+
+                return Object.assign(quizArr[quizIdx], {
+                    title: localeJSON.UI['Question'] + quizCount++,
+                });
+            };
+            var showQuiz = async () => {
+                let correct = await new Promise(resolve => this.dialogUI.newQuiz(getQuiz(), resolve));
                 await new Promise(resolve => this[correct ? 'player' : 'boss'].attackAnims(resolve));
 
-                if (this.boss.stats.HP > 0) getQuiz();
-                console.debug('hp :' + this.boss.stats.HP);
+                if (this.boss.stats.HP > 0) showQuiz();
+                // console.debug('hp :' + this.boss.stats.HP);
             };
-
-            getQuiz();
+            showQuiz();
         };
         //==gameScene
         initEnvironment();
@@ -3519,11 +3595,16 @@ class BossScene extends Phaser.Scene {
         initCursors();
         initIconBar();
         initTimer();
-        initQuiz();
+        // initQuiz();
 
         this.cameras.main.flash(500, 0, 0, 0);
     };
     update() {
+        var updateBoss = () => {
+            let boss = this.boss;
+            boss.HPbar.setXY(boss.x, boss.y - boss.displayHeight);
+        };
+        updateBoss();
 
         if (this.gameOver.flag) {
             //===time remove

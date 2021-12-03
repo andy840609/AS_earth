@@ -390,7 +390,6 @@ const Enemy = new Phaser.Class({
     behaviorCallback: null,//為了計時器不重複註冊多個
     knockBackCallback: null,//擊退計時
     behaviorHandler: function (player, scene) {
-
         let EnemyBehaviorFunction = {
             dog: () => {
                 // console.debug(this);
@@ -759,7 +758,6 @@ const Enemy = new Phaser.Class({
         // console.debug(this.body.touching.down);
         // console.debug(this.name + ':' + this.behavior);
 
-
     },
 
 });
@@ -1112,9 +1110,8 @@ class Tile extends Phaser.GameObjects.Sprite {
     constructor(scene, x, y, key) {
         super(scene, x, y, key);
         scene.add.existing(this);
-        this
-            .setOrigin(0)
-        // .setDepth(5)
+        this.setOrigin(0);
+
     };
 };
 
@@ -1224,11 +1221,11 @@ class RexTextBox extends RexPlugins.UI.TextBox {
 
 //==問答UI
 class RexDialog extends RexPlugins.UI.Dialog {
-    constructor(scene, x, y, data, resolve) {
+    constructor(scene, x, y, data, locale, resolve) {
         const
-            COLOR_PRIMARY = 0x4e342e,//==box背景色
-            COLOR_LIGHT = 0x6a4f4b,//==選項顏色
-            COLOR_DARK = 0x1b0000,//==標題顏色
+            COLOR_PRIMARY = 0x333333,//==box背景色
+            COLOR_LIGHT = 0x7A7A7A,//==選項顏色
+            COLOR_DARK = 0xD0B625,//==標題顏色
             COLOR_CORRECT = 0x009100,
             COLOR_WRONG = 0x750000;
         const GetValue = Phaser.Utils.Objects.GetValue;
@@ -1246,13 +1243,13 @@ class RexDialog extends RexPlugins.UI.Dialog {
             });
         };
         var setDialog = (data) => {
-            // console.debug(this);
+            // console.debug(scene);
 
             //==分行
             const
-                charInLine = 15,//每行字數
+                charInLine = locale == "zh-TW" ? 8 : 15,//每行字數
                 lineCount = parseInt((data.content.length - 1) / charInLine);//總行數
-            let newStr = '';
+            let newStr = lineCount ? '' : data.content;
             for (let i = 0; i < lineCount; i++) {
                 let lastIdx = (i + 1) * charInLine;
 
@@ -1260,16 +1257,15 @@ class RexDialog extends RexPlugins.UI.Dialog {
                 if (i == lineCount - 1) line += data.content.slice(lastIdx);//==不足一行
                 newStr += line;
             };
+            // console.debug(data, data.content);
 
             // Set content
             this.getElement('content').text = newStr;
             // Set title
             this.getElement('title').text = GetValue(data, 'title', ' ');
             // Set choices
-            var choiceTextArray = GetValue(data, 'choices', []).sort(function () {
-                return (0.5 - Math.random());
-            }),
-                choiceText;
+            var choiceTextArray = GetValue(data, 'choices', []).sort(() => 0.5 - Math.random());
+            var choiceText;
             var choices = this.getElement('choices');
             for (var i = 0, cnt = choices.length; i < cnt; i++) {
                 choiceText = choiceTextArray[i];
@@ -1322,14 +1318,10 @@ class RexDialog extends RexPlugins.UI.Dialog {
             .setOrigin(0.5)
             .layout()
             .on('button.click', (button, groupName, index) => {
-                // console.debug(button.getElement('background'));
+                // console.debug();
                 if (this.isClicked) return;
-                // var checkAnswer = (correct) => {
-
-                // };
-                // console.debug(this);
-
-                let correct = index == data.answer;
+                let text = this.getElement('choices[' + index + ']').text;
+                let correct = (text == data.answer);
                 let color = correct ? COLOR_CORRECT : COLOR_WRONG;
 
                 const duration = 500;
@@ -1365,11 +1357,11 @@ class RexDialog extends RexPlugins.UI.Dialog {
                 this.isClicked = true;
 
             }, scene)
-            .on('button.over', (button, groupName, index) => {
+            .on('button.over', button => {
                 if (this.isClicked) return;
                 button.getElement('background').setStrokeStyle(1, 0xffffff);
             })
-            .on('button.out', (button, groupName, index) => {
+            .on('button.out', button => {
                 if (this.isClicked) return;
                 button.getElement('background').setStrokeStyle();
             });

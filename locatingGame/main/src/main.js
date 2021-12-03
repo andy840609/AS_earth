@@ -227,7 +227,7 @@ function locatingGame() {
 
                 GameData = {
                     timeRemain: 5 * 60000,//1min=60000ms           
-                    // timeRemain: 0.01 * 60000,//1min=60000ms
+                    // timeRemain: 0.09 * 60000,//1min=60000ms
                     timeMultiplier: 300,//real 1 ms = game x ms;
                     velocity: 7.5,//==速度參數預設7.5
                     playerEpicenter: null,
@@ -334,7 +334,10 @@ function locatingGame() {
                     // Object.assign(GameData, newGameData);
                     gameDisplay(false);
                     updateMapUI({ timeRemain: 80000 }, 800);
-                    data.forEach(d => updateStation(d.markerObj, { icon: 'default' }));
+                    data.forEach(d => {
+                        let icon = d.stationStats.clear ? 'clear' : 'default';
+                        updateStation(d.markerObj, { icon: icon });
+                    });
                 };
                 gameOverScene();
 
@@ -1055,7 +1058,6 @@ function locatingGame() {
                                 break;
                         };
                         iconUpDownAnime(stationMarker, icon);
-
                     };
                     //==delta更新動畫
                     if (!isNaN(updateObj.circleRadius)) {
@@ -1302,38 +1304,37 @@ function locatingGame() {
                     //     //===更新人物資料
                     //     updateMapUI(playerInfo, 1000);
                     // }
-                    // if (!gameResult.bossRoom) return;
 
                     //===進王關
+                    if (1) {//gameResult.bossRoom
+                        const backgroundArr = Object.keys(BackGroundResources.boss);
+                        let background = backgroundArr[getRandom(backgroundArr.length)];
 
-                    const backgroundArr = Object.keys(BackGroundResources.boss);
-                    let background = backgroundArr[getRandom(backgroundArr.length)];
-
-                    gameResult = await new Promise((resolve, reject) => {
-                        const config = {
-                            parent: 'gameMain',
-                            type: Phaser.AUTO,
-                            width: width * 0.9,
-                            height: height * 0.95,
-                            physics: {
-                                default: 'arcade',
-                                arcade: {
-                                    gravity: { y: 300 },
-                                    debug: true,
+                        gameResult = await new Promise((resolve, reject) => {
+                            const config = {
+                                parent: 'gameMain',
+                                type: Phaser.AUTO,
+                                width: width * 0.9,
+                                height: height * 0.95,
+                                physics: {
+                                    default: 'arcade',
+                                    arcade: {
+                                        gravity: { y: 300 },
+                                        debug: true,
+                                    },
                                 },
-                            },
-                            scene: new BossScene(GameData, background, {
-                                resolve: resolve,
-                            }),
-                        };
-                        new Phaser.Game(config);
-                    });
-                    console.debug(gameResult);
-                    let playerInfo = gameResult.playerInfo;
+                                scene: new BossScene(GameData, background, {
+                                    resolve: resolve,
+                                }),
+                            };
+                            new Phaser.Game(config);
+                        });
+                        console.debug(gameResult);
+                        let playerInfo = gameResult.playerInfo;
 
-                    //===更新人物資料
-                    updateMapUI(playerInfo, 1000);
-
+                        //===更新人物資料
+                        updateMapUI(playerInfo, 1000);
+                    };
                 };
                 gameDisplay(false);
 

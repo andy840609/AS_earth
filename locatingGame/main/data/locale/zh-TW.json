@@ -26,7 +26,7 @@
         "resurrect": "回到過去",
         "giveup": "放棄",
         "Question": "問題",
-        "bossName": "地牛王",
+        "bossName": "震源",
         "aaa": "sss",
         "aaa": "sss"
     },
@@ -48,7 +48,9 @@
         "aaa": "sss"
     },
     "Lines": {
-        "player": {},
+        "player": {
+            "0": "都結束了嗎......"
+        },
         "boss": {
             "0": "果然到了這裡呢...\f\n接下來要考驗你的智慧了"
         }

@@ -1346,7 +1346,7 @@ class UIScene extends Phaser.Scene {
 
                         var initBox = () => {
                             hpBox = this.add.image(0, 0, 'bossBar')
-                                // .setAlpha(0)
+                                .setAlpha(0)
                                 .setScale(0.8)
                                 .setOrigin(0.6, 0.5)
                                 .setDepth(Depth.box);
@@ -1368,7 +1368,8 @@ class UIScene extends Phaser.Scene {
                                         fill: true
                                     },
                                 })
-                                .setOrigin(0.56, 1)
+                                .setAlpha(0)
+                                .setOrigin(0.56, 0.8)
                                 .setDepth(Depth.text);
 
                             hpBarGroup.add(text);
@@ -3161,6 +3162,7 @@ class BossScene extends Phaser.Scene {
             cursors: null,
             gameData: GameData,
             background: background,
+            bossDefeated: false,
             gameOver: {
                 flag: false,
                 resolve: other.resolve,
@@ -3315,7 +3317,20 @@ class BossScene extends Phaser.Scene {
 
                     this.time.delayedCall(duration, () => resolve(), [], this);
                 },
+                winAnims: () => {
+                    let talkDelay = 1000;
+                    let playerContent = localeJSON.Lines.player[0];
+                    this.bossDefeated = true;
 
+
+                    //==說話
+                    this.time.delayedCall(talkDelay, async () => {
+                        await new Promise(resolve => this.dialogUI.newDialog(playerContent, { character: 'player' }, resolve));
+                        this.gameOver.flag = true;
+                    }, [], this);
+
+
+                },
             });
         };
         var initBoss = () => {
@@ -3434,15 +3449,14 @@ class BossScene extends Phaser.Scene {
 
                 //==說話
                 let speakDelay = attackDelay + 500;
-                var content = localeJSON.Lines.boss[0];
+                var bossContent = localeJSON.Lines.boss[0];
                 this.time.delayedCall(speakDelay, async () => {
                     //==對話完才開始問題
-                    await new Promise(resolve => this.dialogUI.newDialog(content, { character: 'boss' }, resolve));
+                    await new Promise(resolve => this.dialogUI.newDialog(bossContent, { character: 'boss' }, resolve));
                     boss.play('boss_Idle');
-                    this.time.delayedCall(animeDelay * 1.5, () => initQuiz(), [], this);
+                    this.time.delayedCall(animeDelay, () => initQuiz(), [], this);
 
                 }, [], this);
-
 
             };
             var attackAnims = (resolve) => {
@@ -3535,7 +3549,8 @@ class BossScene extends Phaser.Scene {
                         duration: duration * 2,
                         alpha: { from: t => t.alpha, to: 0 },
                     });
-                    // this.gameOver.flag=true;
+
+                    this.player.winAnims();
                 }
                 else {
                     boss.play('boss_Hurt');
@@ -3622,6 +3637,7 @@ class BossScene extends Phaser.Scene {
                     }),
                     controllCursor: this.gameData.controllCursor,
                 },
+                bossDefeated: this.bossDefeated,
             };
             this.game.destroy(true, false);
             this.gameOver.resolve(gameResult);

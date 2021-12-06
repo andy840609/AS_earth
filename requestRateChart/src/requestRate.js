@@ -2373,8 +2373,6 @@ function requestRate() {
 
                 getGapGroupData(gap);
 
-
-
                 // console.debug(gap);
                 let tmpObj = {
                     gapGroupData: gapGroupData,
@@ -2980,7 +2978,6 @@ function requestRate() {
 
             };
             svg.call(events);
-
 
             return svg.node();
         };

@@ -30,6 +30,22 @@ function locatingGame() {
         // console.debug(s);
         return s / 1000;//==km
     };
+    var getPhaserConfig = (width, height) => {
+        return {
+            parent: 'gameMain',
+            type: Phaser.AUTO,
+            width: width,
+            height: height,
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 300 },
+                    debug: true,
+                },
+            },
+        };
+
+    };
 
     game.selector = (value) => {
         selector = value;
@@ -157,7 +173,6 @@ function locatingGame() {
             })
         );
 
-
         data = Promise.all([stationData, epicenterData]).then(sucess => {
             // console.debug(sucess);
             let tmp = sucess[0];
@@ -207,6 +222,7 @@ function locatingGame() {
             var mapObj;
             var geoJSON;//===location data
             var assumedEpicenter;
+            var rankingData;
 
             var gameDisplay = (display) => {
 
@@ -254,7 +270,6 @@ function locatingGame() {
                 };
             };
             function initStartScene() {
-
                 var getLanguageJSON = () => {
                     return $.ajax({
                         url: "../data/locale/" + GameData.locale + ".json",
@@ -266,30 +281,18 @@ function locatingGame() {
                         },
                     });
                 };
-
                 var startScene = async () => {
-
-
                     GameData.localeJSON = await getLanguageJSON();
                     // gameDisplay(true);
 
+
                     // let newGameData = await new Promise((resolve, reject) => {
-                    //     const config = {
-                    //         parent: 'gameMain',
-                    //         type: Phaser.AUTO,
-                    //         width: width,
-                    //         height: height,
-                    //         physics: {
-                    //             default: 'arcade',
-                    //             arcade: {
-                    //                 gravity: { y: 300 },
-                    //                 debug: true,
-                    //             }
-                    //         },
+                    //     const config = Object.assign(getPhaserConfig(width, height), {
                     //         scene: new StartScene(GameData, resolve),
-                    //     };
+                    //     });
                     //     new Phaser.Game(config);
                     // });
+
                     // if (GameData.locale != newGameData.locale)
                     //     GameData.localeJSON = await getLanguageJSON();
                     // Object.assign(GameData, newGameData);
@@ -306,28 +309,16 @@ function locatingGame() {
                 };
 
                 startScene();
-
             };
-            function initGameOverScene() {
+            function initEndScene(win = false) {
 
                 var gameOverScene = async () => {
                     gameDisplay(true);
 
                     let newGameData = await new Promise((resolve, reject) => {
-                        const config = {
-                            parent: 'gameMain',
-                            type: Phaser.AUTO,
-                            width: width,
-                            height: height,
-                            physics: {
-                                default: 'arcade',
-                                arcade: {
-                                    gravity: { y: 300 },
-                                    debug: true,
-                                }
-                            },
+                        const config = Object.assign(getPhaserConfig(width, height), {
                             scene: new GameOverScene(GameData, resolve),
-                        };
+                        });
                         new Phaser.Game(config);
                     });
 
@@ -339,11 +330,21 @@ function locatingGame() {
                         updateStation(d.markerObj, { icon: icon });
                     });
                 };
-                gameOverScene();
+                var congratsScene = async () => {
+                    let congrats = chartContainerJQ.find('#gameGroup .Congrats');
+
+                    congrats.fadeIn()
+                        .append(getRankChart())
+                        .find('svg')
+                        .width(height * 0.5)
+                        .height(height * 0.5);
+
+                };
+
+                win ? congratsScene() : gameOverScene();
 
             };
             function initMap() {
-
                 const fadeInDuration = 300;
                 const fadeOutDuration = 100;
 
@@ -516,8 +517,6 @@ function locatingGame() {
                             markerObj: marker,
                             circleObj: circle,
                         });
-
-
 
                         markerArr.push(marker);
                         circleArr.push(circle);
@@ -706,16 +705,19 @@ function locatingGame() {
 
                                         UI
                                             .append(`
-                                            <div  style="white-space: nowrap;text-align:center;">
+                                            <div>
                                                 <h2>${GameData.localeJSON.UI['velocityStr']}：
-                                                    <b id="velocityStr" style="color:Tomato;font-size:60px;">${GameData.velocity.toFixed(2)}</b> km/s
+                                                    <div style="white-space:nowrap;text-align:center;">
+                                                        <b id="velocityStr" style="color:Tomato;font-size:60px;">${GameData.velocity.toFixed(2)}</b> km/s
+                                                    </div>
                                                 </h2>
                                             </div>
                                             `)
                                             .append(getVelocityChart())
                                             .find('svg')
-                                            .width(height * 0.5)
-                                            .height(height * 0.5);
+                                            .width(height * 0.4)
+                                            .height(height * 0.4);
+
 
                                         break;
 
@@ -786,7 +788,7 @@ function locatingGame() {
                                 })
                                 .on('click', function (e) {
                                     //==速度參數要完成兩站才能調整
-                                    if (this.id == UIbuttons[1] && !GameData.velocityChartUnlock) return;
+                                    // if (this.id == UIbuttons[1] && !GameData.velocityChartUnlock) return;
 
                                     let button = $(this);
                                     let ckick = button.hasClass('clicked');
@@ -849,11 +851,34 @@ function locatingGame() {
                             });
 
                     };
+                    var congratsPage = () => {
+
+                        chartContainerJQ.find('#gameGroup')
+                            .append(`
+                                <div class="Congrats"></div>
+                            `);
+
+
+                        $.ajax({
+                            url: "../data/datafile/rank/records.txt",
+                            dataType: "text",
+                            async: true,
+                            success: function (d) {
+                                console.debug(d);
+                                rankingData = d;
+                            },
+                            error: function (jqXHR, textStatus, errorThrown) {
+                                console.error(jqXHR, textStatus, errorThrown);
+                            },
+                        });
+
+
+                    };
 
                     timeRemain();
                     UIbar();
                     confirmWindow();
-
+                    congratsPage();
                 };
                 function addMapEvent() {
                     const allowedErro = 10;//==容許與震央相差距離(km)
@@ -881,7 +906,6 @@ function locatingGame() {
                         .on('move', function (e) {
                             confirmWindow.fadeOut(fadeOutDuration);
                         });
-
                 };
                 init();
                 addStation();
@@ -891,7 +915,6 @@ function locatingGame() {
 
             };
             function updateStation(stationMarker, updateObj = {}) {
-
                 const originalIconSize = 40;
                 const IconClass = L.Icon.extend({
                     options: {
@@ -1094,7 +1117,6 @@ function locatingGame() {
                 const increase = start > end ? false : true;
 
                 // console.debug(start);
-
                 var timerAnime = (increase) => {
                     const delay = 10;
                     const sign = increase ? 1 : -1;
@@ -1183,13 +1205,13 @@ function locatingGame() {
                     };
 
                     setTimeout(() => apocalypse(), duration * 1);
-                    setTimeout(() => initGameOverScene(), duration * 5);
+                    setTimeout(() => initEndScene(false), duration * 5);
                 };
 
 
             };
 
-            //===when  map clicked 
+            //===when map clicked
             async function gameStart(gameMode, siteData = null) {
                 // console.debug(gameMode, siteData);
 
@@ -1202,26 +1224,15 @@ function locatingGame() {
                         data[0].markerObj.options.data;//test
 
                     gameResult = await new Promise((resolve, reject) => {
-                        const config = {
-                            parent: 'gameMain',
-                            type: Phaser.AUTO,
-                            width: width * 0.9,
-                            height: height * 0.95,
-                            physics: {
-                                default: 'arcade',
-                                arcade: {
-                                    gravity: { y: 300 },
-                                    // debug: true,
-                                },
-                            },
+                        const config = Object.assign(getPhaserConfig(width * 0.9, height * 0.95), {
                             scene: new DefendScene(stationData, GameData, {
                                 getWaveImg: getWaveImg,
                                 resolve: resolve,
                             }),
-                        };
+                        });
                         new Phaser.Game(config);
-
                     });
+
                     console.debug(gameResult);
                     let stationInfo = gameResult.stationInfo;
                     let playerInfo = gameResult.playerInfo;
@@ -1233,8 +1244,7 @@ function locatingGame() {
 
                     //===update circle
                     if (stationInfo.clear) {
-
-                        let timeGap = Math.abs(stationInfo.orbStats.reduce((acc, cur) => acc.time - cur.time))
+                        let timeGap = Math.abs(stationInfo.orbStats.reduce((acc, cur) => acc.time - cur.time));
 
                         //距離=時間*速度,km換算成m;
                         let radius = timeGap * GameData.velocity * 1000;
@@ -1243,7 +1253,6 @@ function locatingGame() {
                         let pre_radius = siteData.options.data.circleObj.getRadius();
                         if (Math.abs(radius - pre_radius) > 1)
                             updateStation(siteData, { circleRadius: radius });
-
                     };
 
                     //===更新測站情報
@@ -1279,22 +1288,11 @@ function locatingGame() {
                     //     GameData.playerEpicenter = coordinate;
 
                     //     gameResult = await new Promise((resolve, reject) => {
-                    //         const config = {
-                    //             parent: 'gameMain',
-                    //             type: Phaser.AUTO,
-                    //             width: width * 0.9,
-                    //             height: height * 0.95,
-                    //             physics: {
-                    //                 default: 'arcade',
-                    //                 arcade: {
-                    //                     gravity: { y: 300 },
-                    //                     debug: true,
-                    //                 },
-                    //             },
+                    //         const config = Object.assign(getPhaserConfig(width * 0.9, height * 0.95), {
                     //             scene: new DigScene(placeData, GameData, {
                     //                 resolve: resolve,
                     //             }),
-                    //         };
+                    //         });
                     //         new Phaser.Game(config);
                     //     });
 
@@ -1306,36 +1304,36 @@ function locatingGame() {
                     // }
 
                     //===進王關
-                    if (1) {//gameResult.bossRoom
-                        const backgroundArr = Object.keys(BackGroundResources.boss);
-                        let background = backgroundArr[getRandom(backgroundArr.length)];
+                    // if (1) {//gameResult.bossRoom
+                    //     const backgroundArr = Object.keys(BackGroundResources.boss);
+                    //     let background = backgroundArr[getRandom(backgroundArr.length)];
 
-                        gameResult = await new Promise((resolve, reject) => {
-                            const config = {
-                                parent: 'gameMain',
-                                type: Phaser.AUTO,
-                                width: width * 0.9,
-                                height: height * 0.95,
-                                physics: {
-                                    default: 'arcade',
-                                    arcade: {
-                                        gravity: { y: 300 },
-                                        debug: true,
-                                    },
-                                },
-                                scene: new BossScene(GameData, background, {
-                                    resolve: resolve,
-                                }),
-                            };
-                            new Phaser.Game(config);
-                        });
-                        console.debug(gameResult);
-                        let playerInfo = gameResult.playerInfo;
+                    //     gameResult = await new Promise((resolve, reject) => {
+                    //         const config = Object.assign(getPhaserConfig(width * 0.9, height * 0.95), {
+                    //             scene: new BossScene(GameData, background, {
+                    //                 resolve: resolve,
+                    //             }),
+                    //         });
+                    //         new Phaser.Game(config);
+                    //     });
+                    //     console.debug(gameResult);
+                    //     let playerInfo = gameResult.playerInfo;
 
-                        //===更新人物資料
-                        updateMapUI(playerInfo, 1000);
+                    //     //===更新人物資料
+                    //     updateMapUI(playerInfo, 1000);
+
+                    //==通關
+                    if (1) {//gameResult.bossDefeated
+
+
+                        console.debug('通關');
+                        initEndScene(true);
+
+
+                        return;
                     };
                 };
+                // };
                 gameDisplay(false);
 
             };
@@ -1557,7 +1555,6 @@ function locatingGame() {
         const xAxis = svg.append("g").attr("class", "xAxis");
         const yAxis = svg.append("g").attr("class", "yAxis");
 
-
         var x, y;
         var newDataObj;
         const slopeRange = [5, 70];//==速度參數最大小範圍(km/s)
@@ -1587,7 +1584,6 @@ function locatingGame() {
 
         var epicenterCoord = data.epicenter.coordinate;
 
-
         function getNewData() {
 
             epicenterCoord = GameData.playerEpicenter ? GameData.playerEpicenter : epicenterCoord;
@@ -1606,7 +1602,6 @@ function locatingGame() {
             // console.debug(clearStationData);
             return clearStationData;
         };
-
         function updateChart(handleUpdate = false, trans = true) {
 
             function init() {
@@ -1926,14 +1921,12 @@ function locatingGame() {
                 const tooltip = UI
                     .append("div")
                     .attr("id", "tooltip");
-
-
-                const tooltipMouseGap = 50;//tooltip與滑鼠距離
+                // const tooltipMouseGap = 50;//tooltip與滑鼠距離
 
                 focusGroup
                     .on('mouseout', function (e) {
                         tooltip.style("display", "none");
-                        console.debug()
+                        // console.debug()
                     })
                     .on('mouseover', function (e) {
                         let targetDOMRect = UI.node().getBoundingClientRect();
@@ -1976,6 +1969,152 @@ function locatingGame() {
             updateCustomEvent();
             handleDrag();
             focusHover();
+        };
+        svg.call(events);
+
+        return svg.node();
+    };
+    //==取得過關排名圖
+    function getRankChart() {
+        const width = 560;
+        const height = width;
+        const margin = { top: 80, right: 80, bottom: 80, left: 80 };
+        const svg = d3.create("svg")
+            .attr("viewBox", [0, 0, width, height]);
+        const focusGroup = svg.append("g").attr('class', 'focus');
+        const xAxis = svg.append("g").attr("class", "xAxis");
+        const yAxis = svg.append("g").attr("class", "yAxis");
+
+        var x, y;
+        var newDataObj;
+
+        function getNewData() {
+
+
+        };
+        function updateChart(handleUpdate = false, trans = true) {
+
+            function init() {
+                xAxis
+                    .append('text')
+                    .attr("class", "axis_name")
+                    .attr("fill", "black")
+                    .attr("font-weight", "bold")
+                    .attr("font-size", "30")
+                    .attr('x', width / 2)
+                    .attr("y", margin.bottom * 0.7)
+                    .text('▵T ( Tₛ - Tₚ ) (s)');
+
+                yAxis
+                    .append('text')
+                    .attr("class", "axis_name")
+                    .attr("fill", "black")
+                    .attr("font-weight", "bold")
+                    .attr("font-size", "30")
+                    .style("text-anchor", "middle")
+                    .attr("alignment-baseline", "text-before-edge")
+                    .attr("transform", "rotate(-90)")
+                    .attr('x', -(height - margin.top - margin.bottom) / 2 - margin.top)
+                    .attr("y", -margin.left * 1.05)
+                    .text('Distance (km)');
+            };
+            function render() {
+
+
+                //==讓點能落在扇形區
+                let domainScale = 1.5;
+                //==沒完成任何站就給最大時間10才不出bug
+                let xAxisDomain = [0, newDataObj.length == 0 ? 10 : d3.max(newDataObj.map(d => d.timeGap)) * domainScale];
+                let yAxisDomain = [0, d3.max(data.map(d => distanceByLnglat(d.coordinate, epicenterCoord))) * domainScale];
+
+                // console.debug(xAxisDomain, yAxisDomain);
+
+                x = d3.scaleLinear()
+                    .domain(xAxisDomain)
+                    .range([margin.left, width - margin.right])
+                    .nice();
+
+                y = d3.scaleLinear()
+                    .domain(yAxisDomain)
+                    .range([height - margin.bottom, margin.top])
+                    .nice();
+
+                const r = x.range().reduce((p, c) => c - p);
+
+                var updateAxis = () => {
+
+                    var makeXAxis = g => g
+                        .attr("transform", `translate(0,${height - margin.bottom})`)
+                        .style('font', 'small-caps bold 20px/1 sans-serif')
+                        .call(d3.axisBottom(x).tickSizeOuter(0).ticks(width / 80))
+                        .call(g => g.select('.domain').attr('stroke-width', strokeWidth));
+
+                    var makeYAxis = g => g
+                        .attr("transform", `translate(${margin.left},0)`)
+                        .style('font', 'small-caps bold 20px/1 sans-serif')
+                        .call(d3.axisLeft(y).ticks(height / 80))
+                        .call(g => g.select('.domain').attr('stroke-width', strokeWidth));
+
+                    xAxis.call(makeXAxis);
+                    yAxis.call(makeYAxis);
+                };
+                var updateFocus = () => {
+                    const transDuration = 500;
+                    const transDelay = 90;
+
+                    var makeDots = focusGroup => focusGroup
+                        // .style("mix-blend-mode", "hard-light")
+                        .selectAll("g")
+                        .data(newDataObj)
+                        .join("g")
+                        .attr("class", "dots")
+                        .call(() =>
+                            focusGroup.selectAll(".dots").each(function (d, i) {
+                                // console.debug(d);
+                                let dots = d3.select(this);
+
+                                let dot = dots
+                                    .selectAll(".point")
+                                    .data([0])
+                                    .join("circle")
+                                    .attr("class", 'point')
+                                    .attr("cx", x(d.timeGap))
+                                    .attr("cy", y(d.dist))
+                                    .attr("r", 6)
+                                    .attr("stroke", 'black')
+                                    .attr("stroke-width", 1)
+                                    .attr("stroke-opacity", .5)
+                                    .attr("fill", "red")
+                                    .attr("fill-opacity", 1);
+
+                                if (trans)
+                                    dot
+                                        .attr("opacity", 0)
+                                        .interrupt().transition().duration(trans ? transDuration : 0) //.interrupt()前次動畫
+                                        .ease(d3.easeCircleIn)
+                                        .delay(transDelay * i)
+                                        .attr("opacity", 1);
+
+                            })
+                        );
+                    focusGroup.call(makeDots);
+                };
+
+                updateAxis();
+                updateFocus();
+
+            };
+
+            if (!newDataObj) {
+                newDataObj = getNewData();
+                init();
+            };
+            render();
+        };
+        updateChart();
+
+        function events(svg) {
+
         };
         svg.call(events);
 

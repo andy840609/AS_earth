@@ -2972,7 +2972,7 @@ class DigScene extends Phaser.Scene {
 
                     //==玩家選擇進入
                     if (1) {
-                        const doorDelay = 1500;
+                        const doorDelay = 1300;
                         gate.play('bossDoor_open', true)
                         gate.body.enable = false;
                         this.depthCounter.bossRoom = true;

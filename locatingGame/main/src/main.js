@@ -70,13 +70,13 @@ function locatingGame() {
                     let obj = {};
                     col.forEach((c, index) => obj[fileDataKey[index]] = (isNaN(c) ? c : parseFloat(c)));
                     tmpData.push(obj);
-                }
+                };
             }
             else {//一行有一列直接作數值陣列
                 pushData = (row) => {
                     tmpData.push(isNaN(row) ? row : parseFloat(row));
                 }
-            }
+            };
 
             return new Promise((resolve, reject) => {
                 var rawFile = new XMLHttpRequest();
@@ -185,7 +185,6 @@ function locatingGame() {
     };
 
     async function game() {
-
         const chartContainerJQ = $(selector);
 
         //===append map,gameInnerDiv..etc
@@ -303,7 +302,7 @@ function locatingGame() {
                     //==test
                     initMap();
                     // gameStart('defend');
-                    gameStart('dig');
+                    // gameStart('dig');
 
                     //==test
                 };
@@ -333,11 +332,25 @@ function locatingGame() {
                 var congratsScene = async () => {
                     let congrats = chartContainerJQ.find('#gameGroup .Congrats');
 
+                    var getRKData = (rankingData) => {//==之後改讀json?不用處理
+                        let newData = [];
+                        var rows = rankingData.split("\n");
+                        rows.forEach(row => {
+                            let col = row.split(' ');
+                            newData.push({
+                                player: col[0],
+                                timeUse: parseInt(col[1]),
+                            });
+                        });
+                        return newData
+                    };
+                    rankingData = getRKData(await rankingData);
+
                     congrats.fadeIn()
-                        .append(getRankChart())
+                        .append(getRankChart(rankingData))
                         .find('svg')
-                        .width(height * 0.5)
-                        .height(height * 0.5);
+                        .width(height)
+                        .height(height);
 
                 };
 
@@ -859,18 +872,16 @@ function locatingGame() {
                             `);
 
 
-                        $.ajax({
+                        rankingData = $.ajax({
                             url: "../data/datafile/rank/records.txt",
                             dataType: "text",
                             async: true,
-                            success: function (d) {
-                                console.debug(d);
-                                rankingData = d;
-                            },
+                            // success: function (d) { },
                             error: function (jqXHR, textStatus, errorThrown) {
                                 console.error(jqXHR, textStatus, errorThrown);
                             },
                         });
+
 
 
                     };
@@ -1263,77 +1274,74 @@ function locatingGame() {
                 }
                 else if (gameMode == 'dig') {
                     // console.debug(siteData);
-                    // {
-                    //     const backgroundArr = Object.keys(BackGroundResources.dig);
+                    {
+                        const backgroundArr = Object.keys(BackGroundResources.dig);
 
-                    //     let coordinate = siteData.coordinate;
-                    //     // let background = 'halloween_4';//==之後經緯度判斷？
-                    //     let background = backgroundArr[getRandom(backgroundArr.length)];
-                    //     let mineBGindex = 0;//==之後經緯度判斷？
+                        let coordinate = siteData.coordinate;
+                        // let background = 'halloween_4';//==之後經緯度判斷？
+                        let background = backgroundArr[getRandom(backgroundArr.length)];
+                        let mineBGindex = 0;//==之後經緯度判斷？
 
-                    //     let placeData = {
-                    //         coordinate: coordinate,
-                    //         background: background,
-                    //         mineBGindex: mineBGindex,
-                    //         depth: siteData.depth ? siteData.depth : null,
-                    //     };
+                        let placeData = {
+                            coordinate: coordinate,
+                            background: background,
+                            mineBGindex: mineBGindex,
+                            depth: siteData.depth ? siteData.depth : null,
+                        };
 
-                    //     //==顯示假設點
-                    //     assumedEpicenter
-                    //         .setLatLng(coordinate)
-                    //         .getTooltip()
-                    //         .setContent(`${GameData.localeJSON.Tip['assumedEpicenter']} : ${coordinate.map(d => d.toFixed(2)).join(' , ')}`)
-                    //     assumedEpicenter.getElement().style.display = 'inline';
+                        //==顯示假設點
+                        assumedEpicenter
+                            .setLatLng(coordinate)
+                            .getTooltip()
+                            .setContent(`${GameData.localeJSON.Tip['assumedEpicenter']} : ${coordinate.map(d => d.toFixed(2)).join(' , ')}`)
+                        assumedEpicenter.getElement().style.display = 'inline';
 
-                    //     GameData.playerEpicenter = coordinate;
+                        GameData.playerEpicenter = coordinate;
 
-                    //     gameResult = await new Promise((resolve, reject) => {
-                    //         const config = Object.assign(getPhaserConfig(width * 0.9, height * 0.95), {
-                    //             scene: new DigScene(placeData, GameData, {
-                    //                 resolve: resolve,
-                    //             }),
-                    //         });
-                    //         new Phaser.Game(config);
-                    //     });
+                        gameResult = await new Promise((resolve, reject) => {
+                            const config = Object.assign(getPhaserConfig(width * 0.9, height * 0.95), {
+                                scene: new DigScene(placeData, GameData, {
+                                    resolve: resolve,
+                                }),
+                            });
+                            new Phaser.Game(config);
+                        });
 
-                    //     console.debug(gameResult);
-                    //     let playerInfo = gameResult.playerInfo;
+                        console.debug(gameResult);
+                        let playerInfo = gameResult.playerInfo;
 
-                    //     //===更新人物資料
-                    //     updateMapUI(playerInfo, 1000);
-                    // }
+                        //===更新人物資料
+                        updateMapUI(playerInfo, 1000);
+                    }
 
                     //===進王關
-                    // if (1) {//gameResult.bossRoom
-                    //     const backgroundArr = Object.keys(BackGroundResources.boss);
-                    //     let background = backgroundArr[getRandom(backgroundArr.length)];
+                    if (gameResult.bossRoom) {//gameResult.bossRoom
+                        const backgroundArr = Object.keys(BackGroundResources.boss);
+                        let background = backgroundArr[getRandom(backgroundArr.length)];
 
-                    //     gameResult = await new Promise((resolve, reject) => {
-                    //         const config = Object.assign(getPhaserConfig(width * 0.9, height * 0.95), {
-                    //             scene: new BossScene(GameData, background, {
-                    //                 resolve: resolve,
-                    //             }),
-                    //         });
-                    //         new Phaser.Game(config);
-                    //     });
-                    //     console.debug(gameResult);
-                    //     let playerInfo = gameResult.playerInfo;
+                        gameResult = await new Promise((resolve, reject) => {
+                            const config = Object.assign(getPhaserConfig(width * 0.9, height * 0.95), {
+                                scene: new BossScene(GameData, background, {
+                                    resolve: resolve,
+                                }),
+                            });
+                            new Phaser.Game(config);
+                        });
+                        console.debug(gameResult);
+                        let playerInfo = gameResult.playerInfo;
 
-                    //     //===更新人物資料
-                    //     updateMapUI(playerInfo, 1000);
+                        //===更新人物資料
+                        updateMapUI(playerInfo, 1000);
 
-                    //==通關
-                    if (1) {//gameResult.bossDefeated
+                        //==通關
+                        if (gameResult.bossDefeated) {//gameResult.bossDefeated
+                            console.debug('通關');
+                            initEndScene(true);
 
-
-                        console.debug('通關');
-                        initEndScene(true);
-
-
-                        return;
+                            return;
+                        };
                     };
                 };
-                // };
                 gameDisplay(false);
 
             };
@@ -1975,7 +1983,8 @@ function locatingGame() {
         return svg.node();
     };
     //==取得過關排名圖
-    function getRankChart() {
+    function getRankChart(rankingData) {
+        console.debug(rankingData);
         const width = 560;
         const height = width;
         const margin = { top: 80, right: 80, bottom: 80, left: 80 };
@@ -1989,10 +1998,31 @@ function locatingGame() {
         var newDataObj;
 
         function getNewData() {
+            const gap = 10;//==每10分鐘一組(>10,10-20)
+            let groupCount = 10;//==暫定10組(最大90-100)
+            let gapGroupData = Array.from(new Array(groupCount), () => 0);
+            rankingData.forEach(d => {
+                let groupIndex = Math.ceil(d.timeUse / gap) - 1;
+                if (groupIndex < 0) groupIndex = 0;//==0時index會是-1
+                else if (groupIndex > groupCount - 1) groupIndex = groupCount - 1;//==超過90都算第一組
+                // console.debug(groupIndex);
 
+                gapGroupData[groupIndex]++;
+            });
+            // console.debug(gapGroupData);
 
+            return {
+                gapGroupData: gapGroupData.reverse(),//因為是用時排列,越少時間排名越高
+                gap: gap,
+            };
         };
-        function updateChart(handleUpdate = false, trans = true) {
+        function updateChart(trans = true) {
+            const
+                appearDuration = 600,
+                runDuration = 3000,
+                attackDuration = 1200;
+            const braveDir = assetsDir + 'gameObj/brave/';
+            const braveW = 70;
 
             function init() {
                 xAxis
@@ -2003,7 +2033,7 @@ function locatingGame() {
                     .attr("font-size", "30")
                     .attr('x', width / 2)
                     .attr("y", margin.bottom * 0.7)
-                    .text('▵T ( Tₛ - Tₚ ) (s)');
+                    .text(`${GameData.localeJSON.UI['timeUse']} (mins)`);
 
                 yAxis
                     .append('text')
@@ -2016,93 +2046,166 @@ function locatingGame() {
                     .attr("transform", "rotate(-90)")
                     .attr('x', -(height - margin.top - margin.bottom) / 2 - margin.top)
                     .attr("y", -margin.left * 1.05)
-                    .text('Distance (km)');
+                    .text(`${GameData.localeJSON.UI['playerCount']}`);
+
             };
             function render() {
+                let gapGroupData = newDataObj.gapGroupData;
+                let gap = newDataObj.gap;
+                let playerGroupIdx = 8;//==test
+                console.debug(newDataObj);
 
-
-                //==讓點能落在扇形區
-                let domainScale = 1.5;
                 //==沒完成任何站就給最大時間10才不出bug
-                let xAxisDomain = [0, newDataObj.length == 0 ? 10 : d3.max(newDataObj.map(d => d.timeGap)) * domainScale];
-                let yAxisDomain = [0, d3.max(data.map(d => distanceByLnglat(d.coordinate, epicenterCoord))) * domainScale];
+                let xAxisDomain = [gap * gapGroupData.length, 0];
+                let yAxisDomain = [0, d3.max(gapGroupData)];
 
                 // console.debug(xAxisDomain, yAxisDomain);
-
                 x = d3.scaleLinear()
                     .domain(xAxisDomain)
-                    .range([margin.left, width - margin.right])
-                    .nice();
+                    .range([margin.left, width - margin.right]);
 
                 y = d3.scaleLinear()
                     .domain(yAxisDomain)
-                    .range([height - margin.bottom, margin.top])
-                    .nice();
+                    .range([height - margin.bottom, margin.top]);
 
-                const r = x.range().reduce((p, c) => c - p);
+                let line = d3.line()
+                    .curve(d3.curveCatmullRom.alpha(0.5))
+                    .x((d, i) => {
+                        let multi = gapGroupData.length - i - (i == 0 ? 2 : i == gapGroupData.length - 1 ? 1 : 1.5);
+                        return x(multi * gap);
+                    })
+                    .y(d => y(d))
 
                 var updateAxis = () => {
-
                     var makeXAxis = g => g
                         .attr("transform", `translate(0,${height - margin.bottom})`)
-                        .style('font', 'small-caps bold 20px/1 sans-serif')
-                        .call(d3.axisBottom(x).tickSizeOuter(0).ticks(width / 80))
-                        .call(g => g.select('.domain').attr('stroke-width', strokeWidth));
+                        .call(g => {
+                            let axisFun = d3.axisBottom(x).tickSizeOuter(0);
+                            let tickValues = gapGroupData.map((d, i) => gap * i);
+                            axisFun
+                                .tickValues(tickValues)
+                                .tickFormat(d => d);//==不然小數會被轉整數
+                            axisFun(g);
+                        });
 
                     var makeYAxis = g => g
                         .attr("transform", `translate(${margin.left},0)`)
-                        .style('font', 'small-caps bold 20px/1 sans-serif')
-                        .call(d3.axisLeft(y).ticks(height / 80))
-                        .call(g => g.select('.domain').attr('stroke-width', strokeWidth));
+                        .call(g => {
+                            let axisFun = d3.axisLeft(y).tickSizeOuter(0);
+                            let tickValues = y.ticks()
+                                .filter(Number.isInteger);
+                            axisFun
+                                .tickValues(tickValues)
+                                .tickFormat(d3.format('d'));//==不然小數會被轉整數
+                            axisFun(g);
+                        })
+                    // .call(g =>
+                    //     g.selectAll("g.yAxis g.tick line")
+                    //         .call(lines => {
+                    //             lines
+                    //                 .attr("x2", d => width - margin.left - margin.right)
+                    //                 .attr("stroke-opacity", 0.2);
+                    //         })
+                    // );
 
                     xAxis.call(makeXAxis);
                     yAxis.call(makeYAxis);
                 };
                 var updateFocus = () => {
-                    const transDuration = 500;
-                    const transDelay = 90;
+                    const originOpacity = 0.2;
+                    const width = (x(0) - x(gap)) - 1;
 
-                    var makeDots = focusGroup => focusGroup
-                        // .style("mix-blend-mode", "hard-light")
-                        .selectAll("g")
-                        .data(newDataObj)
-                        .join("g")
-                        .attr("class", "dots")
-                        .call(() =>
-                            focusGroup.selectAll(".dots").each(function (d, i) {
-                                // console.debug(d);
-                                let dots = d3.select(this);
+                    let bar = focusGroup
+                        .selectAll(".braveBar")
+                        .data(gapGroupData)
+                        .join("rect")
+                        .attr("class", "braveBar")
+                        .attr("fill", 'blue')
+                        .attr("stroke", "#79FF79")
+                        .attr('opacity', originOpacity)
+                        .attr("x", (d, i) => x((gapGroupData.length - i) * gap) + 1)
+                        .attr("y", d => y(d))
+                        .attr("height", d => y(0) - y(d))
+                        .attr("width", width);
 
-                                let dot = dots
-                                    .selectAll(".point")
-                                    .data([0])
-                                    .join("circle")
-                                    .attr("class", 'point')
-                                    .attr("cx", x(d.timeGap))
-                                    .attr("cy", y(d.dist))
-                                    .attr("r", 6)
-                                    .attr("stroke", 'black')
-                                    .attr("stroke-width", 1)
-                                    .attr("stroke-opacity", .5)
-                                    .attr("fill", "red")
-                                    .attr("fill-opacity", 1);
+                    //     console.debug(gapGroupData);
 
-                                if (trans)
-                                    dot
-                                        .attr("opacity", 0)
-                                        .interrupt().transition().duration(trans ? transDuration : 0) //.interrupt()前次動畫
-                                        .ease(d3.easeCircleIn)
-                                        .delay(transDelay * i)
-                                        .attr("opacity", 1);
+                    let path = svg
+                        .selectAll(".bravePath")
+                        .data([0])
+                        .join("path")
+                        .attr("class", "bravePath")
+                        .attr("fill", "none")
+                        .attr("stroke", "#000")
+                        .attr("stroke-width", 1.5)
+                        .attr("stroke-linejoin", "round")
+                        .attr("d", () => {//==頭尾從0開始
+                            gapGroupData.unshift(0);
+                            gapGroupData.push(0);
+                            return line(gapGroupData);
+                        });
 
-                            })
-                        );
-                    focusGroup.call(makeDots);
+                    if (trans) {
+                        bar
+                            .attr("y", y(0))
+                            .attr("height", 0)
+                            .interrupt().transition().duration(appearDuration) //.interrupt()前次動畫
+                            .ease(d3.easeBounceIn)
+                            .attr("y", d => y(d))
+                            .attr("height", d => y(0) - y(d));
+
+                        bar
+                            .filter((d, i) => i <= playerGroupIdx)
+                            .attr("opacity", originOpacity)
+                            .transition().duration(appearDuration)
+                            .delay((d, i) => appearDuration + i * (runDuration / (playerGroupIdx + 1)))
+                            .ease(d3.easeLinear)
+                            .attr("opacity", .8);
+
+                        path
+                            .attr("stroke-dashoffset", 3000)
+                            .attr("stroke-dasharray", 3000)
+                            .interrupt().transition().duration(appearDuration * 2)
+                            .ease(d3.easeLinear)
+                            .attr("stroke-dashoffset", 0);
+
+                    }
+
                 };
+                var updateBraves = () => {
+                    let brave = svg
+                        .selectAll(".image")
+                        .data([0])
+                        .join("image")
+                        .attr("class", "brave")
+                        .attr("href", braveDir + 'braveRun.gif')
+                        .attr("width", braveW)
+                        .attr("x", -braveW * 0.4)
+                        .attr("y", -braveW * 1.1);
 
+                    let dur = runDuration / 1000,
+                        delay = appearDuration / 1000;
+
+                    let braveAnim = brave
+                        .selectAll(".braveAnim")
+                        .data([0])
+                        .join("animateMotion")
+                        .attr("class", "braveAnim")
+                        .attr("dur", dur + "s")
+                        .attr("begin", `${delay}s;op.end+${delay}s`)
+                        .attr("path", () => line(gapGroupData.slice(0, playerGroupIdx + 2)))
+                        .attr("repeatCount", "1")
+                        .attr("fill", "freeze")
+                        .attr("rotate", 0);
+
+                    braveAnim.on('endEvent', (e) => {
+                        brave.attr("href", braveDir + 'braveAttack.gif');
+                        d3.timeout(() => brave.attr("href", braveDir + 'braveIdle.gif'), attackDuration);
+                    });
+                };
                 updateAxis();
                 updateFocus();
-
+                updateBraves();
             };
 
             if (!newDataObj) {

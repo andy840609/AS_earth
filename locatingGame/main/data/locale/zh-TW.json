@@ -27,7 +27,7 @@
         "giveup": "放棄",
         "Question": "問題",
         "bossName": "震源",
-        "timeUse": "用時",
+        "timeUse": "通關時間 ( 分鐘 )",
         "playerCount": "人次"
     },
     "Load": {

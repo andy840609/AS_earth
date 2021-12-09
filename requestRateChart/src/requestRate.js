@@ -56,7 +56,6 @@ function requestRate() {
         return chart;
     };
     function chart() {
-
         const chartContainerJQ = $(selector);
         const chartContainerD3 = d3.select(selector);
 
@@ -4159,6 +4158,4 @@ function requestRate() {
 
     };
     return chart;
-
-
 }

@@ -24,15 +24,51 @@
     <script src="../src/gameObject.js"></script>
     <script src="../src/scenes.js"></script>
     <script src="../src/main.js"></script>
+    <!-- <script async defer crossorigin="anonymous"
+        src="https://connect.facebook.net/zh_TW/sdk.js#xfbml=1&version=v12.0&appId=502581274226161&autoLogAppEvents=1"
+        nonce="uEUntkmk"></script>-->
     <script>
-
         var path = '../data/datafile/event/';
         var game = locatingGame()
             // .dataDir(path)
             .selector('.container');
         game();
+    </script>
 
 
+    <!-- <script>
+        window.fbAsyncInit = function () {
+            FB.init({
+                appId: 502581274226161,
+                status: true,
+                xfbml: true,
+                version: 'v1.0'
+            });
+
+            FB.logout();
+            FB.AppEvents.logPageView();
+        };
+
+        (function (d, s, id) {
+            var js, fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)) { return; }
+            js = d.createElement(s); js.id = id;
+            js.src = "https://connect.facebook.net/en_US/sdk.js";
+            fjs.parentNode.insertBefore(js, fjs);
+        }(document, 'script', 'facebook-jssdk'));
+    </script> -->
+
+    <!-- <div id="fb-root"></div> -->
+    <script src="https://connect.facebook.net/en_US/sdk.js" nonce="8VI4oqMX"></script>
+    <script nonce="8VI4oqMX">
+        FB.init({
+            appId: 502581274226161,
+            status: true,
+            xfbml: true,
+            version: 'v12.0'
+        });
+        // FB.logout();
+        FB.AppEvents.logPageView();
     </script>
 
 </body>

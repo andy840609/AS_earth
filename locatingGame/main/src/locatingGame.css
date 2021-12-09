@@ -323,7 +323,7 @@ svg {
 
 /* 通關畫面 */
 #gameGroup .Congrats {
-    background: rgba(255, 255, 255, 1);
+    background: #003652;
     position: absolute;
     top: 0;
     left: 0;
@@ -331,12 +331,4 @@ svg {
     width: 100%;
     height: 100%;
     display: none;
-}
-
-.Congrats svg .tick line {
-    display: none;
-}
-
-.Congrats svg text {
-    text-shadow: #111 0 0 2px, rgba(255, 255, 255, 0.1) 0 1px 3px;
 }

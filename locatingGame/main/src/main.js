@@ -337,6 +337,7 @@ function locatingGame() {
                         let newData = [];
                         var rows = rankingData.split("\n");
                         rows.forEach(row => {
+                            if (row.trim() == '') return;
                             let col = row.split(' ');
                             newData.push({
                                 player: col[0],
@@ -345,16 +346,90 @@ function locatingGame() {
                         });
                         return newData
                     };
+                    var initRankChart = () => {
+                        congrats
+                            .find('.rankChart')
+                            .append(getRankChart(rankingData))
+                        // .find('svg')
+                        // .width(height)
+                        // .height(height);
+                    };
+                    var initShareSocial = () => {
+                        let shareSocial = congrats.find('.shareSocial');
+
+                        shareSocial
+                            // .append(`
+                            // <fb:login-button 
+                            // scope="email"
+                            // >
+                            // </fb:login-button>
+                            // `)
+                            .append(`
+                            <div class="fb-login-button" data-width="" data-size="large" data-button-type="continue_with" 
+                            data-layout="rounded" data-auto-logout-link="false" data-use-continue-as="true"></div>
+                            `)
+                            .hide();
+
+                        // shareSocial.find('fb-login-button')
+
+                        // .on('click', (e) => {
+                        //     console.debug('hi')
+                        // });
+
+
+                        // (function (d) {
+                        //     var js, id = 'facebook-jssdk'; if (d.getElementById(id)) { return; }
+                        //     js = d.createElement('script'); js.id = id; js.async = true;
+                        //     js.src = "https://connect.facebook.net/es_LA/all.js";
+                        //     d.getElementsByTagName('head')[0].appendChild(js);
+                        // }(document));
+
+                        // FB.logout(function (response) {
+                        //     console.log(response);
+                        // });
+                        // FB.getLoginStatus(function (response) {
+                        //     console.debug(response);
+                        // });
+                        // FB.getLoginStatus(function (response) {
+                        //     console.log(response);
+                        // });
+
+
+                        // FB.ui(
+                        //     {
+                        //         method: 'share',
+                        //         href: 'https://developers.facebook.com/docs/',
+                        //     },
+                        //     // callback
+                        //     function (response) {
+                        //         if (response && !response.error_message) {
+                        //             // alert('Posting completed.');
+                        //         } else {
+                        //             // alert('Error while posting.');
+                        //         }
+                        //     }
+                        // );
+
+                        // FB.login(function (response) {
+                        //     if (response.authResponse) {
+                        //         console.log(response);
+                        //         console.log('Welcome!  Fetching your information.... ');
+                        //         FB.api('/me', function (response) {
+                        //             console.log('Good to see you, ' + response.name + '.');
+                        //         });
+                        //     } else {
+                        //         console.log('User cancelled login or did not fully authorize.');
+                        //     }
+                        // });// scope: 'email,user_likes' 
+
+                    };
+
                     rankingData = getRKData(await rankingData);
 
-                    congrats.fadeIn()
-                        .append(getRankChart(rankingData))
-                        .find('svg')
-                        .width(height)
-                        .height(height);
-
+                    congrats.fadeIn();
+                    initRankChart();
+                    initShareSocial();
                 };
-
                 win ? congratsScene() : gameOverScene();
 
             };
@@ -867,7 +942,12 @@ function locatingGame() {
                     var congratsPage = () => {
                         chartContainerJQ.find('#gameGroup')
                             .append(`
-                                <div class="Congrats"></div>
+                                <div class="Congrats">
+                                    <div class="container d-flex justify-content-center ">
+                                        <div class="rankChart col-6"></div>
+                                        <div class="shareSocial col-6 d-flex align-items-center"></div>
+                                    </div>
+                                </div>
                             `);
 
 
@@ -1338,7 +1418,7 @@ function locatingGame() {
 
                     //==通關
                     if (1) {//gameResult.bossDefeated
-                        console.debug('通關');
+                        // console.debug('通關');
                         initEndScene(true);
 
                         return;
@@ -1991,10 +2071,10 @@ function locatingGame() {
         const margin = { top: 130, right: 90, bottom: 80, left: 80 };
         const svg = d3.create("svg")
             .attr("viewBox", [0, 0, width, height]);
-        const focusGroup = svg.append("g").attr('class', 'focus');
         const xAxis = svg.append("g").attr("class", "xAxis");
         const yAxis = svg.append("g").attr("class", "yAxis");
         const title = svg.append("g").attr("class", "title");
+        const focusGroup = svg.append("g").attr('class', 'focus');
 
         var x, y;
         var newDataObj;
@@ -2003,11 +2083,11 @@ function locatingGame() {
             const gap = 10,//==每10分鐘一組(>10,10-20)
                 groupCount = 10;//==暫定10組(最大90-100)
 
-
             let playerObj = {
                 player: 'AAA',
                 timeUse: GameData.playerTimeUse / 60000,
             };
+
             var getGapGroupData = () => {
                 let gapGroupData = Array.from(new Array(groupCount), () => 0);
                 console.debug(rankingData);
@@ -2035,9 +2115,20 @@ function locatingGame() {
 
                 return parseFloat(((playerIdx + 1) / rankingData.length * 100).toFixed(2));
             };
-            // console.debug(gapGroupData);
+            var writeFile = () => {
+                $.ajax({
+                    type: 'POST',
+                    url: "../src/php/writeRankingFile.php",
+                    data: playerObj,//['playerName',100]
+                    async: true,
+                    success: function (d) { console.debug(d); },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        console.error(jqXHR, textStatus, errorThrown);
+                    },
+                });
+            };
 
-
+            writeFile();
 
             return {
                 PR: getPR(),
@@ -2046,19 +2137,29 @@ function locatingGame() {
             };
         };
         function updateChart(trans = true) {
+            const textColor = '#ADFFFA',
+                barFill = '#283618',
+                barFill2 = '#00AF54',
+                barStroke = '#606C38',
+                pathStroke = '#FFD633';
+
             const
-                appearDuration = 600,
+                appearDuration = 1200,
                 runDuration = 3000,//3000
-                attackDuration = 1200;
+                attackDuration = 1200,
+                fallDuration = 600;
             const braveDir = assetsDir + 'gameObj/brave/';
             const braveW = 70;
             const devilW = 130;
 
             function init() {
 
+                //==svg轉圖片css不會套用所以寫在這裏
+                svg.style('text-shadow', '#111 0 0 2px, rgba(255, 255, 255, 0.1) 0 1px 3px');
+
                 title
                     .append('text')
-                    .attr("fill", "currentColor")
+                    .attr("fill", textColor)
                     .attr("text-anchor", "middle")
                     .attr("font-weight", "bold")
                     .attr("font-size", "15")
@@ -2068,19 +2169,19 @@ function locatingGame() {
                 xAxis
                     .append('text')
                     .attr("class", "axis_name")
-                    .attr("fill", "black")
+                    .attr("fill", textColor)
                     .attr("font-weight", "bold")
-                    .attr("font-size", "30")
+                    .attr("font-size", "20")
                     .attr('x', width / 2)
                     .attr("y", margin.bottom * 0.7)
-                    .text(`${GameData.localeJSON.UI['timeUse']} (mins)`);
+                    .text(`${GameData.localeJSON.UI['timeUse']}`);
 
                 yAxis
                     .append('text')
                     .attr("class", "axis_name")
-                    .attr("fill", "black")
+                    .attr("fill", textColor)
                     .attr("font-weight", "bold")
-                    .attr("font-size", "30")
+                    .attr("font-size", "20")
                     .style("text-anchor", "middle")
                     .attr("alignment-baseline", "text-before-edge")
                     .attr("transform", "rotate(-90)")
@@ -2093,7 +2194,6 @@ function locatingGame() {
                 let playerGroupIdx = gapGroupData.playerGroupIdx;
                 let PR = newDataObj.PR;
                 let gap = newDataObj.gap;
-
 
                 console.debug(newDataObj);
 
@@ -2119,6 +2219,15 @@ function locatingGame() {
                     .y(d => y(d))
 
                 var updateAxis = () => {
+                    var setStyle = g => {
+                        g.selectAll(".tick line").remove();
+                        g.selectAll(".tick text")
+                            .attr("fill", textColor);
+                        g.select(".domain")
+                            .attr('stroke', textColor)
+                            .attr('stroke-width', 3)
+                            .attr('stroke-linecap', "round")
+                    };
                     var makeXAxis = g => g
                         .attr("transform", `translate(0,${height - margin.bottom})`)
                         .call(g => {
@@ -2128,8 +2237,8 @@ function locatingGame() {
                                 .tickValues(tickValues)
                                 .tickFormat(d => d);//==不然小數會被轉整數
                             axisFun(g);
-                        });
-
+                        })
+                        .call(setStyle);
                     var makeYAxis = g => g
                         .attr("transform", `translate(${margin.left},0)`)
                         .call(g => {
@@ -2141,14 +2250,7 @@ function locatingGame() {
                                 .tickFormat(d3.format('d'));//==不然小數會被轉整數
                             axisFun(g);
                         })
-                    // .call(g =>
-                    //     g.selectAll("g.yAxis g.tick line")
-                    //         .call(lines => {
-                    //             lines
-                    //                 .attr("x2", d => width - margin.left - margin.right)
-                    //                 .attr("stroke-opacity", 0.2);
-                    //         })
-                    // );
+                        .call(setStyle);
 
                     xAxis.call(makeXAxis);
                     yAxis.call(makeYAxis);
@@ -2162,9 +2264,11 @@ function locatingGame() {
                         .data(gapGroupData)
                         .join("rect")
                         .attr("class", "braveBar")
-                        .attr("fill", 'blue')
-                        .attr("stroke", 'none')
+                        .attr("fill", barFill)
+                        .attr("stroke", barStroke)
+                        .attr("stroke-width", 2)
                         .attr('opacity', originOpacity)
+                        .attr("rx", '4')
                         .attr("x", (d, i) => x((gapGroupData.length - i) * gap) + 1)
                         .attr("y", d => y(d))
                         .attr("height", d => y(0) - y(d))
@@ -2177,9 +2281,10 @@ function locatingGame() {
                         .join("path")
                         .attr("class", "bravePath")
                         .attr("fill", "none")
-                        .attr("stroke", "#000")
-                        .attr("stroke-width", 1.5)
+                        .attr("stroke", pathStroke)
+                        .attr("stroke-width", 4)
                         .attr("stroke-linejoin", "round")
+
                         .attr("d", () => {//==頭尾從0開始
                             gapGroupData.unshift(0);
                             gapGroupData.push(0);
@@ -2201,7 +2306,7 @@ function locatingGame() {
                             .transition().duration(appearDuration)
                             .delay((d, i) => appearDuration + i * (runDuration / (playerGroupIdx + 1)))
                             .ease(d3.easeLinear)
-                            .call(bar => bar.filter((d, i) => i == playerGroupIdx).attr("fill", 'green'))
+                            .call(bar => bar.filter((d, i) => i == playerGroupIdx).attr("fill", barFill2))
                             .attr("opacity", .7);
 
                         path
@@ -2231,6 +2336,7 @@ function locatingGame() {
                         .data([0])
                         .join("image")
                         .attr("class", "brave")
+                        .attr("opacity", 0)
                         .attr("href", braveDir + 'braveRun.gif')
                         .attr("width", braveW)
                         .attr("x", -braveW * 0.4)
@@ -2251,57 +2357,59 @@ function locatingGame() {
                         .attr("fill", "freeze")
                         .attr("rotate", 0);
 
-                    braveAnim.on('endEvent', (e) => {
-                        brave.attr("href", braveDir + 'braveAttack.gif');
-                        d3.timeout(() => {
-                            brave.attr("href", braveDir + 'braveIdle.gif');
+                    braveAnim
+                        .on('beginEvent', () => brave.attr("opacity", 1))
+                        .on('endEvent', () => {
+                            brave.attr("href", braveDir + 'braveAttack.gif');
+                            d3.timeout(() => {
+                                brave.attr("href", braveDir + 'braveIdle.gif');
 
-                            let bossX = parseFloat(boss.attr("x")),
-                                bossY = parseFloat(boss.attr("y")),
-                                bossW = parseFloat(boss.attr("width")),
-                                bossH = parseFloat(boss.attr("height"));
-                            // console.debug(bossX, bossY, bossW, bossH)
+                                let bossX = parseFloat(boss.attr("x")),
+                                    bossY = parseFloat(boss.attr("y")),
+                                    bossW = parseFloat(boss.attr("width")),
+                                    bossH = parseFloat(boss.attr("height"));
+                                // console.debug(bossX, bossY, bossW, bossH)
 
-                            let bossT1 = appearDuration * 0.1,
-                                bossT2 = appearDuration * 0.4,
-                                bossT3 = appearDuration * 2;
-                            boss
-                                .attr("y", bossY)
-                                .attr("transform-origin", `${bossX + 0.5 * bossW} ${bossY + 0.3 * bossW}`)
-                                .attr("transform", `scale(-1,1) rotate(-180)`)
-                                .interrupt().transition().duration(bossT1) //.interrupt()前次動畫
-                                .ease(d3.easeSinOut)
-                                .attr("y", bossY + 15)
-                                .transition().duration(bossT3).delay(bossT2)
-                                .ease(d3.easeCubicIn)
-                                .attr("y", -height);
+                                let bossT1 = fallDuration * 0.5,
+                                    bossT2 = fallDuration * 0.2,
+                                    bossT3 = fallDuration * 2;
+                                boss
+                                    .attr("y", bossY)
+                                    .attr("transform-origin", `${bossX + 0.5 * bossW} ${bossY + 0.3 * bossW}`)
+                                    .attr("transform", `scale(-1,1) rotate(-180)`)
+                                    .transition().duration(bossT1) //.interrupt()前次動畫
+                                    .ease(d3.easeSinOut)
+                                    .attr("y", bossY + 15)
+                                    .transition().duration(bossT3).delay(bossT2)
+                                    .ease(d3.easeCubicIn)
+                                    .attr("y", -height);
 
-                            let titleDelay = bossT1 + bossT2 + bossT3 * 0.5;
+                                let titleDelay = bossT1 + bossT2 + bossT3 * 0.5;
 
-                            title
-                                .select('text')
-                                .text(GameData.localeJSON.Tip['rankChartStr1'])
-                                .append('tspan')
-                                .attr("fill", "red")
-                                .attr("font-size", "30")
-                                .text(` ${PR}% `)
-                                .append('tspan')
-                                .attr("fill", "currentColor")
-                                .attr("font-size", "15")
-                                .text(GameData.localeJSON.Tip['rankChartStr2']);
-
-
-                            title
-                                .attr('opacity', 0)
-                                .transition().duration(appearDuration).delay(titleDelay)
-                                .ease(d3.easeCubicIn)
-                                .attr('opacity', 1)
+                                title
+                                    .select('text')
+                                    .text(GameData.localeJSON.Tip['rankChartStr1'])
+                                    .append('tspan')
+                                    .attr("fill", "red")
+                                    .attr("font-size", "30")
+                                    .text(` ${PR}% `)
+                                    .append('tspan')
+                                    .attr("fill", textColor)
+                                    .attr("font-size", "15")
+                                    .text(GameData.localeJSON.Tip['rankChartStr2']);
 
 
+                                title
+                                    .attr('opacity', 0)
+                                    .transition().duration(appearDuration).delay(titleDelay)
+                                    .ease(d3.easeCubicIn)
+                                    .attr('opacity', 1)
 
-                        }, attackDuration);
+                                // chartContainerJQ.find('#gameGroup .Congrats .shareSocial').show();
 
-                    });
+                            }, attackDuration);
+
+                        });
                 };
                 updateAxis();
                 updateFocus();

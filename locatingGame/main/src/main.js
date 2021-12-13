@@ -350,31 +350,64 @@ function locatingGame() {
                         congrats
                             .find('.rankChart')
                             .append(getRankChart(rankingData))
-                        // .find('svg')
-                        // .width(height)
-                        // .height(height);
+                            .find('svg')
+                            .width(height)
+                            .height(height);
                     };
                     var initShareSocial = () => {
                         let shareSocial = congrats.find('.shareSocial');
 
                         shareSocial
-                            // .append(`
-                            // <fb:login-button 
-                            // scope="email"
-                            // >
-                            // </fb:login-button>
-                            // `)
                             .append(`
-                            <div class="fb-login-button" data-width="" data-size="large" data-button-type="continue_with" 
-                            data-layout="rounded" data-auto-logout-link="false" data-use-continue-as="true"></div>
+                            <div class="fbGroup">
+
+                            <button type="button" class="btn btn-primary  d-flex align-items-center rounded-pill" id="fbButton">
+                                <i class="fab fa-facebook fa-2x"></i>
+                                <text class="text-nowrap p-1 pt-2">${GameData.localeJSON.UI['shareTo']} FACEBOOK </text>
+                            </button>
+                              
+                            </div>
                             `)
-                            .hide();
 
-                        // shareSocial.find('fb-login-button')
 
-                        // .on('click', (e) => {
-                        //     console.debug('hi')
-                        // });
+                        shareSocial.find('#fbButton')
+                            .on('click', () => {
+                                // FB.login(function (response) {
+                                //     if (response.authResponse) {
+                                //         console.log(response);
+                                //         console.log('Welcome!  Fetching your information.... ');
+                                //         FB.api('/me', function (response) {
+                                //             console.log('Good to see you, ' + response.name + '.');
+                                //         });
+                                //     } else {
+                                //         console.log('User cancelled login or did not fully authorize.');
+                                //     }
+                                // }, { scope: 'name,email,profile_picture' });// scope: 'email,user_likes' 
+
+
+                                FB.ui(
+                                    {
+                                        method: 'share_open_graph',
+                                        action_type: 'og.likes',
+                                        action_properties: JSON.stringify({
+                                            object: {
+                                                'og:url': "http://qnimate.com/wp-content/uploads/2014/03/images2.jpg",
+                                                'og:title': "your caption here",
+                                                'og:description': "your caption here",
+                                                'og:image': "http://qnimate.com/wp-content/uploads/2014/03/images2.jpg"
+                                            }
+                                        }),
+                                    },
+                                    // callback
+                                    function (response) {
+                                        if (response && !response.error_message) {
+                                            // alert('Posting completed.');
+                                        } else {
+                                            // alert('Error while posting.');
+                                        }
+                                    }
+                                );
+                            });
 
 
                         // (function (d) {
@@ -384,43 +417,9 @@ function locatingGame() {
                         //     d.getElementsByTagName('head')[0].appendChild(js);
                         // }(document));
 
-                        // FB.logout(function (response) {
-                        //     console.log(response);
-                        // });
-                        // FB.getLoginStatus(function (response) {
-                        //     console.debug(response);
-                        // });
-                        // FB.getLoginStatus(function (response) {
-                        //     console.log(response);
-                        // });
 
 
-                        // FB.ui(
-                        //     {
-                        //         method: 'share',
-                        //         href: 'https://developers.facebook.com/docs/',
-                        //     },
-                        //     // callback
-                        //     function (response) {
-                        //         if (response && !response.error_message) {
-                        //             // alert('Posting completed.');
-                        //         } else {
-                        //             // alert('Error while posting.');
-                        //         }
-                        //     }
-                        // );
 
-                        // FB.login(function (response) {
-                        //     if (response.authResponse) {
-                        //         console.log(response);
-                        //         console.log('Welcome!  Fetching your information.... ');
-                        //         FB.api('/me', function (response) {
-                        //             console.log('Good to see you, ' + response.name + '.');
-                        //         });
-                        //     } else {
-                        //         console.log('User cancelled login or did not fully authorize.');
-                        //     }
-                        // });// scope: 'email,user_likes' 
 
                     };
 
@@ -944,8 +943,8 @@ function locatingGame() {
                             .append(`
                                 <div class="Congrats">
                                     <div class="container d-flex justify-content-center ">
-                                        <div class="rankChart col-6"></div>
-                                        <div class="shareSocial col-6 d-flex align-items-center"></div>
+                                        <div class="rankChart col-9"></div>
+                                        <div class="shareSocial col-3 d-flex align-items-center"></div>
                                     </div>
                                 </div>
                             `);

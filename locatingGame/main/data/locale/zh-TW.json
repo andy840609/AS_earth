@@ -28,7 +28,8 @@
         "Question": "問題",
         "bossName": "震源",
         "timeUse": "通關時間 ( 分鐘 )",
-        "playerCount": "人次"
+        "playerCount": "人次",
+        "shareTo": "分享到"
     },
     "Load": {
         "loading": "讀取中",

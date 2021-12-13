@@ -332,3 +332,29 @@ svg {
     height: 100%;
     display: none;
 }
+
+/* fb Button */
+.fbGroup {
+    opacity: 0;
+    position: relative;
+    animation: showButton 1.5s ease-in 0s forwards;
+}
+
+/* fb Button动画 */
+@keyframes showButton {
+    0% {
+        left: -100px;
+        opacity: 0;
+    }
+
+    60% {
+        opacity: 0.3;
+    }
+
+    100% {
+        left: 0px;
+        opacity: 1;
+    }
+}
+
+.shareButton {}

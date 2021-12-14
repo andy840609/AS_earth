@@ -698,7 +698,6 @@ function requestRate() {
                     var imageWidth = canvas.width;
                     var imageHeight = canvas.height / svgArr.length;
 
-
                     svgArr.forEach((queryStr, index) => {
                         var svgNode = $(queryStr)[0];
                         var svgUrl = getSvgUrl(svgNode);

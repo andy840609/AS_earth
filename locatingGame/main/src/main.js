@@ -351,8 +351,9 @@ function locatingGame() {
                             .find('.rankChart')
                             .append(getRankChart(rankingData))
                             .find('svg')
-                            .width(height)
-                            .height(height);
+                            .height(height)
+                            .width(height);
+
                     };
                     var initShareSocial = () => {
                         let shareSocial = congrats.find('.shareSocial');
@@ -372,17 +373,32 @@ function locatingGame() {
 
                         shareSocial.find('#fbButton')
                             .on('click', () => {
+                                // getSharingImg();
+
                                 // FB.login(function (response) {
                                 //     if (response.authResponse) {
                                 //         console.log(response);
                                 //         console.log('Welcome!  Fetching your information.... ');
-                                //         FB.api('/me', function (response) {
-                                //             console.log('Good to see you, ' + response.name + '.');
+                                //         // FB.api('/me', function (response) {
+                                //         //     console.log('Good to see you, ' + response.name + '.');
+                                //         // });
+                                //         FB.api('/' + response.authResponse.userID + '/picture', 'GET', {}, function (response) {
+                                //             console.log(response);
                                 //         });
+
                                 //     } else {
                                 //         console.log('User cancelled login or did not fully authorize.');
                                 //     }
                                 // }, { scope: 'name,email,profile_picture' });// scope: 'email,user_likes' 
+
+                                // FB.getLoginStatus((response) => {
+                                //     console.log(response);
+                                //     if (response.status == "connected")
+                                //         FB.api('/' + response.authResponse.userID + '/picture', 'GET', {}, function (response) {
+                                //             console.log(response);
+                                //         });
+
+                                // });
 
 
                                 FB.ui(
@@ -391,10 +407,10 @@ function locatingGame() {
                                         action_type: 'og.likes',
                                         action_properties: JSON.stringify({
                                             object: {
-                                                'og:url': "http://qnimate.com/wp-content/uploads/2014/03/images2.jpg",
+                                                'og:url': "http://140.109.80.59/data/locatingGame/main/example/locatingGame.html",
                                                 'og:title': "your caption here",
                                                 'og:description': "your caption here",
-                                                'og:image': "http://qnimate.com/wp-content/uploads/2014/03/images2.jpg"
+                                                'og:image': "http://140.109.80.59/data/testImg/AAA.png"
                                             }
                                         }),
                                     },
@@ -2065,8 +2081,8 @@ function locatingGame() {
     //==取得過關排名圖
     function getRankChart(rankingData) {
         // console.debug(rankingData);
-        const width = 560;
-        const height = width;
+        const width = 600;
+        const height = 560;
         const margin = { top: 130, right: 90, bottom: 80, left: 80 };
         const svg = d3.create("svg")
             .attr("viewBox", [0, 0, width, height]);
@@ -2075,8 +2091,15 @@ function locatingGame() {
         const title = svg.append("g").attr("class", "title");
         const focusGroup = svg.append("g").attr('class', 'focus');
 
-        var x, y;
+        var x, y, line;
         var newDataObj;
+        var braveAnim, boss, brave;
+
+
+        var replayFlag = false;
+        const
+            originOpacity = 0.2,
+            afterOpacity = 0.7;
 
         function getNewData() {
             const gap = 10,//==每10分鐘一組(>10,10-20)
@@ -2084,7 +2107,8 @@ function locatingGame() {
 
             let playerObj = {
                 player: 'AAA',
-                timeUse: GameData.playerTimeUse / 60000,
+                // timeUse: GameData.playerTimeUse / 60000,
+                timeUse: 55,//test
             };
 
             var getGapGroupData = () => {
@@ -2135,7 +2159,7 @@ function locatingGame() {
                 gap: gap,
             };
         };
-        function updateChart(trans = true) {
+        function updateChart(replay = false) {
             const textColor = '#ADFFFA',
                 barFill = '#283618',
                 barFill2 = '#00AF54',
@@ -2185,7 +2209,7 @@ function locatingGame() {
                     .attr("alignment-baseline", "text-before-edge")
                     .attr("transform", "rotate(-90)")
                     .attr('x', -(height - margin.top - margin.bottom) / 2 - margin.top)
-                    .attr("y", -margin.left * 1.05)
+                    .attr("y", -margin.left * 0.7)
                     .text(`${GameData.localeJSON.UI['playerCount']}`);
             };
             function render() {
@@ -2194,28 +2218,30 @@ function locatingGame() {
                 let PR = newDataObj.PR;
                 let gap = newDataObj.gap;
 
-                console.debug(newDataObj);
+                // console.debug(newDataObj);
+                var init = () => {
+                    //==沒完成任何站就給最大時間10才不出bug
+                    let xAxisDomain = [gap * gapGroupData.length, 0];
+                    let yAxisDomain = [0, d3.max(gapGroupData)];
 
-                //==沒完成任何站就給最大時間10才不出bug
-                let xAxisDomain = [gap * gapGroupData.length, 0];
-                let yAxisDomain = [0, d3.max(gapGroupData)];
+                    // console.debug(xAxisDomain, yAxisDomain);
+                    x = d3.scaleLinear()
+                        .domain(xAxisDomain)
+                        .range([margin.left, width - margin.right]);
 
-                // console.debug(xAxisDomain, yAxisDomain);
-                x = d3.scaleLinear()
-                    .domain(xAxisDomain)
-                    .range([margin.left, width - margin.right]);
+                    y = d3.scaleLinear()
+                        .domain(yAxisDomain)
+                        .range([height - margin.bottom, margin.top]);
 
-                y = d3.scaleLinear()
-                    .domain(yAxisDomain)
-                    .range([height - margin.bottom, margin.top]);
+                    line = d3.line()
+                        .curve(d3.curveCatmullRom.alpha(0.5))
+                        .x((d, i) => {
+                            let multi = gapGroupData.length - i - (i == 0 ? 2 : i == gapGroupData.length - 1 ? 1 : 1.5);
+                            return x(multi * gap);
+                        })
+                        .y(d => y(d));
+                };
 
-                let line = d3.line()
-                    .curve(d3.curveCatmullRom.alpha(0.5))
-                    .x((d, i) => {
-                        let multi = gapGroupData.length - i - (i == 0 ? 2 : i == gapGroupData.length - 1 ? 1 : 1.5);
-                        return x(multi * gap);
-                    })
-                    .y(d => y(d))
 
                 var updateAxis = () => {
                     var setStyle = g => {
@@ -2255,7 +2281,7 @@ function locatingGame() {
                     yAxis.call(makeYAxis);
                 };
                 var updateFocus = () => {
-                    const originOpacity = 0.2;
+
                     const width = (x(0) - x(gap)) - 1;
 
                     let bar = focusGroup
@@ -2290,129 +2316,162 @@ function locatingGame() {
                             return line(gapGroupData);
                         });
 
-                    if (trans) {
-                        bar
-                            .attr("y", y(0))
-                            .attr("height", 0)
-                            .interrupt().transition().duration(appearDuration) //.interrupt()前次動畫
-                            .ease(d3.easeBounceIn)
-                            .attr("y", d => y(d))
-                            .attr("height", d => y(0) - y(d));
 
-                        bar
-                            .filter((d, i) => i <= playerGroupIdx)
-                            .attr("opacity", originOpacity)
-                            .transition().duration(appearDuration)
-                            .delay((d, i) => appearDuration + i * (runDuration / (playerGroupIdx + 1)))
-                            .ease(d3.easeLinear)
-                            .call(bar => bar.filter((d, i) => i == playerGroupIdx).attr("fill", barFill2))
-                            .attr("opacity", .7);
+                    bar
+                        .attr("y", y(0))
+                        .attr("height", 0)
+                        .interrupt().transition().duration(appearDuration) //.interrupt()前次動畫
+                        .ease(d3.easeBounceIn)
+                        .attr("y", d => y(d))
+                        .attr("height", d => y(0) - y(d));
 
-                        path
-                            .attr("stroke-dashoffset", 3000)
-                            .attr("stroke-dasharray", 3000)
-                            .interrupt().transition().duration(appearDuration * 2)
-                            .ease(d3.easeLinear)
-                            .attr("stroke-dashoffset", 0);
+                    bar
+                        .filter((d, i) => i <= playerGroupIdx)
+                        .attr("opacity", originOpacity)
+                        .transition().duration(appearDuration)
+                        .delay((d, i) => appearDuration + i * (runDuration / (playerGroupIdx + 1)))
+                        .ease(d3.easeLinear)
+                        .call(bar => bar.filter((d, i) => i == playerGroupIdx).attr("fill", barFill2))
+                        .attr("opacity", afterOpacity);
 
-                    };
+                    path
+                        .attr("stroke-dashoffset", 3000)
+                        .attr("stroke-dasharray", 3000)
+                        .interrupt().transition().duration(appearDuration * 2)
+                        .ease(d3.easeLinear)
+                        .attr("stroke-dashoffset", 0);
+
+
 
                 };
                 var updateBraves = () => {
 
-                    let boss = svg
+                    boss = svg
                         .selectAll(".image")
                         .data([0])
                         .join("image")
                         .attr("class", "devil")
                         .attr("href", braveDir + 'devilFly.gif')
-                        .attr("width", devilW)
-                        .attr("x", x((gapGroupData.length - playerGroupIdx - 2) * gap))
-                        .attr("y", y(gapGroupData[playerGroupIdx + 1]) - devilW * 0.65);
+                        .attr("width", devilW);
 
-                    let brave = svg
+                    brave = svg
                         .selectAll(".image")
                         .data([0])
                         .join("image")
                         .attr("class", "brave")
                         .attr("opacity", 0)
-                        .attr("href", braveDir + 'braveRun.gif')
                         .attr("width", braveW)
                         .attr("x", -braveW * 0.4)
                         .attr("y", -braveW * 1.1);
 
-                    let dur = runDuration / 1000,
-                        delay = appearDuration / 1000;
-
-                    let braveAnim = brave
+                    braveAnim = brave
                         .selectAll(".braveAnim")
                         .data([0])
                         .join("animateMotion")
-                        .attr("class", "braveAnim")
-                        .attr("dur", dur + "s")
-                        .attr("begin", `${delay}s;op.end+${delay}s`)
-                        .attr("path", () => line(gapGroupData.slice(0, playerGroupIdx + 2)))
-                        .attr("repeatCount", "1")
-                        .attr("fill", "freeze")
-                        .attr("rotate", 0);
+                        .attr("class", "braveAnim");
 
-                    braveAnim
-                        .on('beginEvent', () => brave.attr("opacity", 1))
-                        .on('endEvent', () => {
-                            brave.attr("href", braveDir + 'braveAttack.gif');
-                            d3.timeout(() => {
-                                brave.attr("href", braveDir + 'braveIdle.gif');
-
-                                let bossX = parseFloat(boss.attr("x")),
-                                    bossY = parseFloat(boss.attr("y")),
-                                    bossW = parseFloat(boss.attr("width")),
-                                    bossH = parseFloat(boss.attr("height"));
-                                // console.debug(bossX, bossY, bossW, bossH)
-
-                                let bossT1 = fallDuration * 0.5,
-                                    bossT2 = fallDuration * 0.2,
-                                    bossT3 = fallDuration * 2;
-                                boss
-                                    .attr("y", bossY)
-                                    .attr("transform-origin", `${bossX + 0.5 * bossW} ${bossY + 0.3 * bossW}`)
-                                    .attr("transform", `scale(-1,1) rotate(-180)`)
-                                    .transition().duration(bossT1) //.interrupt()前次動畫
-                                    .ease(d3.easeSinOut)
-                                    .attr("y", bossY + 15)
-                                    .transition().duration(bossT3).delay(bossT2)
-                                    .ease(d3.easeCubicIn)
-                                    .attr("y", -height);
-
-                                let titleDelay = bossT1 + bossT2 + bossT3 * 0.5;
-
-                                title
-                                    .select('text')
-                                    .text(GameData.localeJSON.Tip['rankChartStr1'])
-                                    .append('tspan')
-                                    .attr("fill", "red")
-                                    .attr("font-size", "30")
-                                    .text(` ${PR}% `)
-                                    .append('tspan')
-                                    .attr("fill", textColor)
-                                    .attr("font-size", "15")
-                                    .text(GameData.localeJSON.Tip['rankChartStr2']);
-
-
-                                title
-                                    .attr('opacity', 0)
-                                    .transition().duration(appearDuration).delay(titleDelay)
-                                    .ease(d3.easeCubicIn)
-                                    .attr('opacity', 1)
-
-                                // chartContainerJQ.find('#gameGroup .Congrats .shareSocial').show();
-
-                            }, attackDuration);
-
-                        });
                 };
-                updateAxis();
-                updateFocus();
-                updateBraves();
+                var playAnime = (replay) => {
+                    var init = () => {
+                        brave
+                            .attr("href", braveDir + 'braveRun.gif');
+
+                        boss
+                            .attr("x", x((gapGroupData.length - playerGroupIdx - 2) * gap))
+                            .attr("y", y(gapGroupData[playerGroupIdx + 1]) - devilW * 0.65)
+                            .attr("transform", null);
+
+                    };
+                    var walkingAnime = () => {
+                        let dur = runDuration / 1000,
+                            delay = appearDuration / 1000;
+
+                        braveAnim
+                            .attr("restart", "whenNotActive")
+                            .attr("dur", dur + "s")
+                            .attr("begin", `${delay}s;op.end+${delay}s`)
+                            .attr("path", () => line(gapGroupData.slice(0, playerGroupIdx + 2)))
+                            .attr("repeatCount", "1")
+                            .attr("fill", "freeze")
+                            .attr("rotate", 0);
+
+                        braveAnim.node().beginElement();
+
+                    };
+                    var attackAnime = () => {
+                        braveAnim
+                            .on('beginEvent', () => brave.attr("opacity", 1))
+                            .on('endEvent', () => {
+                                brave.attr("href", braveDir + 'braveAttack.gif');
+                                d3.timeout(() => {
+                                    brave.attr("href", braveDir + 'braveIdle.gif');
+
+                                    let bossX = parseFloat(boss.attr("x")),
+                                        bossY = parseFloat(boss.attr("y")),
+                                        bossW = parseFloat(boss.attr("width")),
+                                        bossH = parseFloat(boss.attr("height"));
+                                    // console.debug(bossX, bossY, bossW, bossH)
+
+                                    let bossT1 = fallDuration * 0.5,
+                                        bossT2 = fallDuration * 0.2,
+                                        bossT3 = fallDuration * 2;
+                                    boss
+                                        .attr("y", bossY)
+                                        .attr("transform-origin", `${bossX + 0.5 * bossW} ${bossY + 0.3 * bossW}`)
+                                        .attr("transform", `scale(-1,1) rotate(-180)`)
+                                        .transition().duration(bossT1) //.interrupt()前次動畫
+                                        .ease(d3.easeSinOut)
+                                        .attr("y", bossY + 15)
+                                        .transition().duration(bossT3).delay(bossT2)
+                                        .ease(d3.easeCubicIn)
+                                        .attr("y", -height);
+
+
+                                    if (!replay) {
+
+                                        let titleDelay = bossT1 + bossT2 + bossT3 * 0.5;
+
+                                        title
+                                            .select('text')
+                                            .text(GameData.localeJSON.Tip['rankChartStr1'])
+                                            .append('tspan')
+                                            .attr("fill", "red")
+                                            .attr("font-size", "30")
+                                            .text(` ${PR}% `)
+                                            .append('tspan')
+                                            .attr("fill", textColor)
+                                            .attr("font-size", "15")
+                                            .text(GameData.localeJSON.Tip['rankChartStr2']);
+
+
+                                        title
+                                            .attr('opacity', 0)
+                                            .transition().duration(appearDuration).delay(titleDelay)
+                                            .ease(d3.easeCubicIn)
+                                            .attr('opacity', 1)
+                                    };
+
+                                    d3.timeout(() => replayFlag = true, bossT1 + bossT2 + bossT3);
+                                    // chartContainerJQ.find('#gameGroup .Congrats .shareSocial').show();
+
+                                }, attackDuration);
+                            });
+
+                    };
+
+                    init();
+                    walkingAnime();
+                    attackAnime();
+
+
+                };
+                if (!replay) {
+                    init();
+                    updateAxis();
+                    updateFocus();
+                    updateBraves();
+                };
+                playAnime(replay);
             };
 
             if (!newDataObj) {
@@ -2425,10 +2484,340 @@ function locatingGame() {
 
         function events(svg) {
 
+
+            const tooltip = d3.select(".rankChart")
+                .append("div")
+                .attr("id", "tooltip");
+
+            var replayAnime = () => {
+                let brave = svg.select('.brave');
+
+                brave
+                    .on('click', () => {
+                        if (replayFlag) {
+                            updateChart(true);
+                            replayFlag = false;
+                        };
+                    })
+                    .on('mouseover', e => {
+                        if (replayFlag) {
+                            brave.attr("cursor", 'pointer');
+
+                            tooltip
+                                .style("display", "inline")
+                                .style("top", `${e.clientY - 60}px`)
+                                .style("left", `${e.clientX}px`)
+                                .selectAll('div')
+                                .data([0])
+                                .join('div')
+                                .text(GameData.localeJSON.UI['replay']);
+                        }
+                    })
+                    .on('mouseout', () => {
+                        brave.attr("cursor", 'auto');
+                        tooltip.style("display", "none");
+                    });
+
+            };
+            var barHover = () => {
+
+                var updateTooltip = (groupIndex, data) => {
+
+                    tooltip
+                        .selectAll('div')
+                        .data([groupIndex, data])
+                        .join('div')
+                        .attr('class', 'd-flex flex-nowrap justify-content-center align-items-end text-nowrap')
+                        .call(divC => divC.each(function (d, i) {
+                            let div = d3.select(this);
+                            let html;
+                            if (i == 0) {
+                                let gap = newDataObj.gap;
+                                let groupCount = newDataObj.gapGroupData.length - 2;//==頭尾多的
+                                let multiplier = groupCount - d - 1;
+
+                                let range1, range2;
+
+                                range1 = gap * multiplier;
+                                range2 = gap * (multiplier + 1);
+
+                                // console.debug(gap, d)
+
+                                html = d == 0 ?
+                                    `<h5>${GameData.localeJSON.UI['timeUse2']}&nbsp;≧</h5>&nbsp;${range1}` :
+                                    `${range2}&nbsp;>&nbsp;<h5>${GameData.localeJSON.UI['timeUse2']}&nbsp;≧</h5>&nbsp;${range1}`;
+                            }
+                            else
+                                html = `<h1 style='font-weight:bold;'>${d}</h1>&nbsp;<h6>${GameData.localeJSON.UI['playerCount']}</h6> `;
+
+                            div
+                                .style('font-size', '30px')
+                                .html(html);
+
+                        }));
+
+                };
+
+
+                let braveBars = focusGroup.selectAll(".braveBar");
+                braveBars
+                    .on('mouseover', e => {
+                        let bar = e.target;
+                        d3.select(bar).attr("opacity", 1);
+
+                        //==show tooltip and set position
+                        tooltip
+                            .style("display", "inline")
+                            .style("top", `${e.clientY - 60}px`)
+                            .style("left", `${e.clientX}px`);
+
+                        let groupIndex = Array.from(bar.parentNode.children).indexOf(bar);
+                        let data = bar.__data__;
+
+                        updateTooltip(groupIndex, data);
+                    })
+                    .on('mouseout', e => {
+
+                        let playerGroupIdx = newDataObj.gapGroupData.playerGroupIdx;
+                        braveBars
+                            .attr("opacity", (d, i) => i <= playerGroupIdx ? afterOpacity : originOpacity);
+
+                        tooltip.style("display", "none");
+                    });
+
+            };
+
+            replayAnime();
+            barHover();
+
         };
         svg.call(events);
 
         return svg.node();
+    };
+    //==取得分享圖
+    function getSharingImg() {
+        var convertSvg = (svgArr, fileName, option) => {
+            function getSvgUrl(svgNode) {
+                var svgData = (new XMLSerializer()).serializeToString(svgNode);
+                var svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+                var svgUrl = URL.createObjectURL(svgBlob);
+                // console.debug(svgUrl);
+                return svgUrl;
+            };
+            function getCanvas(resize) {
+                // =============== canvas init
+                let canvas = document.createElement('canvas');
+                let context = canvas.getContext('2d');
+
+                // var svgWidth = svgArr[0].viewBox.baseVal.width;
+                // var svgHeight = svgArr[0].viewBox.baseVal.height * svgArr.length;
+                // var canvasWidth, canvasHeight;
+                // //檢視時縮放,下載時放大
+                // if (resize) {
+                //     var windowW = window.innerWidth;//获取当前窗口宽度 
+                //     var windowH = window.innerHeight;//获取当前窗口高度 
+
+                //     var width, height;
+                //     var scale = 0.9;//缩放尺寸
+                //     height = windowH * scale;
+                //     width = height / svgHeight * svgWidth;
+                //     while (width > windowW * scale) {//如宽度扔大于窗口宽度 
+                //         height = height * scale;//再对宽度进行缩放
+                //         width = width * scale;
+                //     }
+                //     canvasWidth = width;
+                //     canvasHeight = height;
+                // }
+                // else {
+                //     var scale = 1.5;
+                //     canvasWidth = svgWidth * scale;
+                //     canvasHeight = svgHeight * scale;
+                // }
+
+                // canvas.width = canvasWidth;
+                // canvas.height = canvasHeight;
+
+                canvas.width = 800;
+                canvas.height = 800;
+                //====bgcolor
+                context.fillStyle = "#8E8E8E";
+                context.fillRect(0, 0, canvas.width, canvas.height);
+                return [canvas, context];
+
+            };
+            function download(href, name) {
+                var downloadLink = document.createElement("a");
+                downloadLink.href = href;
+                downloadLink.download = name;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+            };
+            function show(width, height) {
+                // $('#bigimg').attr("src", img);//设置#bigimg元素的src属性 
+                // $('#outerdiv').fadeIn("fast");//淡入显示#outerdiv及.pimg 
+                // $('#outerdiv').off('click');
+                // $('#outerdiv').click(function () {//再次点击淡出消失弹出层 
+                //     $(this).fadeOut("fast");
+                // });
+                let outerdiv = $('#outerdiv');
+
+                outerdiv.fadeIn("fast");//淡入显示#outerdiv及.pimg 
+                outerdiv.off('click');
+                outerdiv.click(function (e) {//再次点击淡出消失弹出层 
+                    if (e.target.id != 'outerdiv') return;
+                    $(this).fadeOut("fast");
+                    $(originParent).children('svg').remove();
+                    originSvg.removeAttribute('width');
+                    originSvg.removeAttribute('height');
+                    originParent.append(originSvg);
+                });
+
+                let originSvg = svgArr[0];
+                let originParent = originSvg.parentNode;
+                let cloneSvg = originSvg.cloneNode(true);
+                originSvg.setAttribute('width', width);
+                originSvg.setAttribute('height', height);
+                document.querySelector('#innerdiv').append(originSvg);
+                originParent.append(cloneSvg);
+
+            };
+
+            //==============each svg draw to canvas
+            var CanvasObjArr = getCanvas(option == 'bigimg');
+
+            var canvas = CanvasObjArr[0];
+            var context = CanvasObjArr[1];
+
+
+
+            svgArr.forEach((svgNode, index) => {
+                if (index == 1)
+                    d3.select(svgNode)
+                        .select('.title>text')
+                        .attr("y", 100)
+
+                var svgUrl = getSvgUrl(svgNode);
+
+
+                var image = new Image();
+                image.src = svgUrl;
+                image.onload = () => {
+                    let imageX, imageY,
+                        imageWidth, imageHeight;
+
+                    switch (index) {
+                        case 0://==獎狀底                 
+                            imageWidth = canvas.width;
+                            imageHeight = canvas.height;
+                            imageX = 0;
+                            imageY = 0;
+                            break;
+                        case 1://==PR圖
+                            imageWidth = canvas.width * 0.9;
+                            imageHeight = image.height * (imageWidth / image.width) * 0.7;
+                            imageX = (canvas.width - imageWidth) * 0.5;
+                            imageY = canvas.height - imageHeight
+                            break;
+                        case 2:
+                            break;
+                    }
+                    context.drawImage(image, imageX, imageY, imageWidth, imageHeight);
+
+                    if (index == svgArr.length - 1) {
+                        let imgUrl = canvas.toDataURL('image/' + option);
+                        download(imgUrl, fileName + '.' + option);
+                        // console.debug(imgUrl)
+                    }
+
+                };
+
+            });
+
+
+            //==============merge svg
+            // var newSvg = document.createElement('svg');
+
+
+            // svgArr.forEach(queryStr => {
+            //     var svgjQobj = $(queryStr);
+            //     svgjQobj.clone().appendTo(newSvg);
+            // });
+            // // console.debug(newSvg);
+            // var svgUrl = getSvgUrl(newSvg);
+            // download(svgUrl, fileName + '.' + option);
+
+
+        };
+        const width = 560;
+        const height = width;
+        const margin = { top: 80, right: 80, bottom: 80, left: 80 };
+        const svg = d3.create("svg")
+            .attr("viewBox", [0, 0, width, height])
+        // .style('background-color', 'green')
+        const title = svg.append("g").attr("class", "title");
+        const focusGroup = svg.append("g").attr('class', 'focus');
+
+        var newDataObj;
+        function getNewData() { };
+        function updateChart() {
+            const textColor = '#FFFFFF';
+
+            // const photoDir = assetsDir + 'gameObj/brave/';
+            function init() {
+                title
+                    .append('text')
+                    .attr("fill", textColor)
+                    .attr("text-anchor", "middle")
+                    .attr("font-weight", "bold")
+                    .attr("font-size", "15")
+                    .attr("x", width / 2)
+                    .attr("y", 30)
+                    .text('獎狀');
+
+                focusGroup
+                    .append('text')
+                    .attr("fill", textColor)
+                    .attr("text-anchor", "middle")
+                    .attr("font-weight", "bold")
+                    .attr("font-size", "30")
+                    .attr("x", width * 0.6)
+                    .attr("y", height * 0.2)
+                    .text('勇者 ： AAAA');
+            };
+            function render() {
+
+                var updatePhoto = () => {
+                    let boss = svg
+                        .selectAll(".image")
+                        .data([0])
+                        .join("image")
+                        .attr("class", "photo")
+                        .attr("href", braveDir + 'devilFly.gif')
+                        .attr("width", devilW)
+                        .attr("x", x((gapGroupData.length - playerGroupIdx - 2) * gap))
+                        .attr("y", y(gapGroupData[playerGroupIdx + 1]) - devilW * 0.65);
+                };
+
+            };
+            if (!newDataObj) {
+                newDataObj = getNewData();
+                init();
+            };
+            render();
+        };
+        updateChart();
+
+
+        let svg1 = document.querySelector('.rankChart>svg');
+        convertSvg([svg.node(), svg1].map(svg => svg.cloneNode(true)), 'AAA', 'png');
+
+        // $('.rankChart')
+        //     .append(svg.node())
+        //     .find('svg')
+        //     .width(height)
+        //     .height(height);
     };
 
     return game;

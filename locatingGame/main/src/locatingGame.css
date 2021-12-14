@@ -166,7 +166,7 @@ svg {
     background-size: 100%; */
 }
 
-#gameUI .UI #tooltip {
+#tooltip {
     position: absolute;
     padding: 6px;
     background-color: rgb(0, 0, 0);
@@ -356,5 +356,3 @@ svg {
         opacity: 1;
     }
 }
-
-.shareButton {}

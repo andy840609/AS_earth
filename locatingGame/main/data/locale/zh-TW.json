@@ -28,6 +28,8 @@
         "Question": "問題",
         "bossName": "震源",
         "timeUse": "通關時間 ( 分鐘 )",
+        "timeUse2": "耗時",
+        "replay": "重播動畫",
         "playerCount": "人次",
         "shareTo": "分享到"
     },

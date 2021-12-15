@@ -285,7 +285,6 @@ function locatingGame() {
                     GameData.localeJSON = await getLanguageJSON();
                     // gameDisplay(true);
 
-
                     // let newGameData = await new Promise((resolve, reject) => {
                     //     const config = Object.assign(getPhaserConfig(width, height), {
                     //         scene: new StartScene(GameData, resolve),
@@ -298,7 +297,6 @@ function locatingGame() {
                     // Object.assign(GameData, newGameData);
                     // gameDisplay(false);
                     // initMap();
-
 
                     //==test
                     initMap();
@@ -347,12 +345,15 @@ function locatingGame() {
                         return newData
                     };
                     var initRankChart = () => {
+                        let svg = getRankChart(rankingData);
+                        let svgBox = svg.viewBox.baseVal;
+
                         congrats
                             .find('.rankChart')
-                            .append(getRankChart(rankingData))
+                            .append(svg)
                             .find('svg')
                             .height(height)
-                            .width(height);
+                            .width(svgBox.width * (height / svgBox.height));
 
                     };
                     var initShareSocial = () => {
@@ -373,23 +374,57 @@ function locatingGame() {
 
                         shareSocial.find('#fbButton')
                             .on('click', () => {
-                                // getSharingImg();
 
-                                // FB.login(function (response) {
-                                //     if (response.authResponse) {
-                                //         console.log(response);
-                                //         console.log('Welcome!  Fetching your information.... ');
-                                //         // FB.api('/me', function (response) {
-                                //         //     console.log('Good to see you, ' + response.name + '.');
-                                //         // });
-                                //         FB.api('/' + response.authResponse.userID + '/picture', 'GET', {}, function (response) {
-                                //             console.log(response);
-                                //         });
+                                var getProfile = () => {
+                                    const pictureW = 100;
+                                    return new Promise(r => {
+                                        FB.api('/me', { fields: `id,name,picture.width(${pictureW}).height(${pictureW}).redirect(true)` }, function (response) {
+                                            // console.log('Good to see you, ' + response.name + '.');
+                                            console.log(response);
+                                            r(response);
+                                        });
 
-                                //     } else {
-                                //         console.log('User cancelled login or did not fully authorize.');
-                                //     }
-                                // }, { scope: 'name,email,profile_picture' });// scope: 'email,user_likes' 
+                                    });
+                                };
+
+                                var share = async (profilePromise) => {
+
+
+                                    getSharingImg(await profilePromise);
+
+                                    FB.ui(
+                                        {
+                                            method: 'share_open_graph',
+                                            action_type: 'og.likes',
+                                            action_properties: JSON.stringify({
+                                                object: {
+                                                    'og:url': "http://140.109.80.59/data/locatingGame/main/example/locatingGame.html",
+                                                    'og:title': "your caption here",
+                                                    'og:description': "your caption here",
+                                                    'og:image': "http://140.109.80.59/data/testImg/AAA.png"
+                                                }
+                                            }),
+                                        },
+                                        // callback
+                                        function (response) {
+                                            if (response && !response.error_message) {
+                                                // alert('Posting completed.');
+                                            } else {
+                                                // alert('Error while posting.');
+                                            }
+                                        }
+                                    );
+                                };
+                                FB.login(function (response) {
+                                    if (response.authResponse) {
+                                        console.log(response);
+                                        console.log('Welcome!  Fetching your information.... ');
+                                        share(getProfile());
+
+                                    } else {
+                                        console.log('User cancelled login or did not fully authorize.');
+                                    }
+                                });
 
                                 // FB.getLoginStatus((response) => {
                                 //     console.log(response);
@@ -401,28 +436,10 @@ function locatingGame() {
                                 // });
 
 
-                                FB.ui(
-                                    {
-                                        method: 'share_open_graph',
-                                        action_type: 'og.likes',
-                                        action_properties: JSON.stringify({
-                                            object: {
-                                                'og:url': "http://140.109.80.59/data/locatingGame/main/example/locatingGame.html",
-                                                'og:title': "your caption here",
-                                                'og:description': "your caption here",
-                                                'og:image': "http://140.109.80.59/data/testImg/AAA.png"
-                                            }
-                                        }),
-                                    },
-                                    // callback
-                                    function (response) {
-                                        if (response && !response.error_message) {
-                                            // alert('Posting completed.');
-                                        } else {
-                                            // alert('Error while posting.');
-                                        }
-                                    }
-                                );
+
+
+
+
                             });
 
 
@@ -1413,7 +1430,7 @@ function locatingGame() {
                     // }
 
                     //===進王關
-                    // if (gameResult.bossRoom) {//gameResult.bossRoom
+                    // if (1) {//gameResult.bossRoom
                     //     const backgroundArr = Object.keys(BackGroundResources.boss);
                     //     let background = backgroundArr[getRandom(backgroundArr.length)];
 
@@ -2081,8 +2098,8 @@ function locatingGame() {
     //==取得過關排名圖
     function getRankChart(rankingData) {
         // console.debug(rankingData);
-        const width = 600;
-        const height = 560;
+        const width = 700;
+        const height = 600;
         const margin = { top: 130, right: 90, bottom: 80, left: 80 };
         const svg = d3.create("svg")
             .attr("viewBox", [0, 0, width, height]);
@@ -2241,8 +2258,6 @@ function locatingGame() {
                         })
                         .y(d => y(d));
                 };
-
-
                 var updateAxis = () => {
                     var setStyle = g => {
                         g.selectAll(".tick line").remove();
@@ -2302,14 +2317,13 @@ function locatingGame() {
 
                     let path = svg
                         .selectAll(".bravePath")
-                        .data([0])
+                        .data([PR])
                         .join("path")
                         .attr("class", "bravePath")
                         .attr("fill", "none")
                         .attr("stroke", pathStroke)
                         .attr("stroke-width", 4)
                         .attr("stroke-linejoin", "round")
-
                         .attr("d", () => {//==頭尾從0開始
                             gapGroupData.unshift(0);
                             gapGroupData.push(0);
@@ -2511,7 +2525,7 @@ function locatingGame() {
                                 .data([0])
                                 .join('div')
                                 .text(GameData.localeJSON.UI['replay']);
-                        }
+                        };
                     })
                     .on('mouseout', () => {
                         brave.attr("cursor", 'auto');
@@ -2596,14 +2610,25 @@ function locatingGame() {
         return svg.node();
     };
     //==取得分享圖
-    function getSharingImg() {
-        var convertSvg = (svgArr, fileName, option) => {
-            function getSvgUrl(svgNode) {
-                var svgData = (new XMLSerializer()).serializeToString(svgNode);
-                var svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-                var svgUrl = URL.createObjectURL(svgBlob);
+    function getSharingImg(profile) {
+        const photoW = profile.picture.data.width;
+
+        var rankChart = document.querySelector('.rankChart>svg');
+        var composeCertificate = async (imgObj, fileName, option) => {
+            function getBlobUrl(imgData, isSvg) {
                 // console.debug(svgUrl);
-                return svgUrl;
+                return new Promise(r => {
+                    if (isSvg) {
+                        var svgData = (new XMLSerializer()).serializeToString(imgData);
+                        var blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+                        r(URL.createObjectURL(blob));
+                    }
+                    else {
+                        fetch(imgData)
+                            .then(res => res.blob()) // Gets the response and returns it as a blob
+                            .then(blob => r(URL.createObjectURL(blob)));
+                    };
+                });
             };
             function getCanvas(resize) {
                 // =============== canvas init
@@ -2641,7 +2666,7 @@ function locatingGame() {
                 canvas.width = 800;
                 canvas.height = 800;
                 //====bgcolor
-                context.fillStyle = "#8E8E8E";
+                context.fillStyle = "#FFF";
                 context.fillRect(0, 0, canvas.width, canvas.height);
                 return [canvas, context];
 
@@ -2690,101 +2715,189 @@ function locatingGame() {
             var canvas = CanvasObjArr[0];
             var context = CanvasObjArr[1];
 
+            var imgKeys = Object.keys(imgObj);
 
+            for (let index = 0; index < imgKeys.length; index++) {
+                let key = imgKeys[index];
+                let value = imgObj[key];
+                // console.debug(key, value);
 
-            svgArr.forEach((svgNode, index) => {
-                if (index == 1)
-                    d3.select(svgNode)
-                        .select('.title>text')
-                        .attr("y", 100)
+                let imageX, imageY,
+                    imageWidth, imageHeight;
 
-                var svgUrl = getSvgUrl(svgNode);
+                switch (key) {
+                    case 'rankChart'://==PR圖
+                        //==標題字調整
+                        d3.select(value)
+                            .select('.title>text').remove();
 
+                        imageWidth = canvas.width * 0.75;
+                        imageHeight = imageWidth * 6 / 7;
+                        imageX = canvas.width * 0.05;
+                        imageY = canvas.height - imageHeight - margin.bottom - 20;
+                        break;
+                    case 'words'://==獎狀底   
+                        imageWidth = canvas.width;
+                        imageHeight = canvas.height;
+                        imageX = 0;
+                        imageY = 0;
+                        break;
+                    case 'photo':
+                        imageWidth = photoW;
+                        imageHeight = photoW;
+                        imageX = margin.left + 25;
+                        imageY = canvas.height * 0.2 + 20;
+                        break;
+                    case 'head_line'://==素材
+                        imageWidth = canvas.width;
+                        imageHeight = 30;
+                        imageX = 0;
+                        imageY = margin.top;
+                        break;
+                    case 'head_line2'://==素材
+                        imageWidth = canvas.width;
+                        imageHeight = 10;
+                        imageX = 0;
+                        imageY = margin.top + 50;
+                        break;
+                    case 'foot_line'://==素材
+                        imageWidth = canvas.width;
+                        imageHeight = 10;
+                        imageX = 0;
+                        imageY = canvas.height - margin.bottom * 1.5;
+                        break;
+                    case 'ribbon'://==素材
+                        imageWidth = 100;
+                        imageHeight = 200;
+                        imageX = canvas.width * 0.8;
+                        imageY = margin.top - 20;
+                        break;
+                    case 'seal'://==素材
+                        imageWidth = 300;
+                        imageHeight = 300;
+                        imageX = canvas.width - imageWidth;
+                        imageY = canvas.height - imageHeight - margin.bottom;
+                        break;
+                    case 'background'://==素材
+                        imageWidth = canvas.width;
+                        imageHeight = canvas.height;
+                        imageX = 0;
+                        imageY = 0;
+                        break;
 
-                var image = new Image();
-                image.src = svgUrl;
-                image.onload = () => {
-                    let imageX, imageY,
-                        imageWidth, imageHeight;
-
-                    switch (index) {
-                        case 0://==獎狀底                 
-                            imageWidth = canvas.width;
-                            imageHeight = canvas.height;
-                            imageX = 0;
-                            imageY = 0;
-                            break;
-                        case 1://==PR圖
-                            imageWidth = canvas.width * 0.9;
-                            imageHeight = image.height * (imageWidth / image.width) * 0.7;
-                            imageX = (canvas.width - imageWidth) * 0.5;
-                            imageY = canvas.height - imageHeight
-                            break;
-                        case 2:
-                            break;
-                    }
-                    context.drawImage(image, imageX, imageY, imageWidth, imageHeight);
-
-                    if (index == svgArr.length - 1) {
-                        let imgUrl = canvas.toDataURL('image/' + option);
-                        download(imgUrl, fileName + '.' + option);
-                        // console.debug(imgUrl)
-                    }
 
                 };
 
-            });
+                var imgUrl = ((key == 'rankChart') || (key == 'words') || (key == 'photo')) ?
+                    await getBlobUrl(value, isSvg = !(key == 'photo')) :
+                    value;
 
+                var image = new Image();
+                image.src = imgUrl;
+                await new Promise(r => {
+                    image.onload = () => {
+                        // 素材貼到畫布上
 
-            //==============merge svg
-            // var newSvg = document.createElement('svg');
+                        context.globalAlpha = key == 'seal' ? 0.7 : 1;
+                        context.drawImage(image, imageX, imageY, imageWidth, imageHeight);
 
-
-            // svgArr.forEach(queryStr => {
-            //     var svgjQobj = $(queryStr);
-            //     svgjQobj.clone().appendTo(newSvg);
-            // });
-            // // console.debug(newSvg);
-            // var svgUrl = getSvgUrl(newSvg);
-            // download(svgUrl, fileName + '.' + option);
-
+                        // console.debug(index, key);
+                        //貼完輸出
+                        if (index == imgKeys.length - 1) {
+                            let certificateUrl = canvas.toDataURL('image/' + option);
+                            download(certificateUrl, fileName + '.' + option);
+                            // console.debug(imgUrl)
+                        };
+                        r();
+                    };
+                });
+            };
 
         };
         const width = 560;
         const height = width;
-        const margin = { top: 80, right: 80, bottom: 80, left: 80 };
+        const margin = { top: 50, right: 50, bottom: 50, left: 50 };
         const svg = d3.create("svg")
-            .attr("viewBox", [0, 0, width, height])
-        // .style('background-color', 'green')
+            .attr("viewBox", [0, 0, width, height]);
         const title = svg.append("g").attr("class", "title");
         const focusGroup = svg.append("g").attr('class', 'focus');
 
         var newDataObj;
         function getNewData() { };
         function updateChart() {
-            const textColor = '#FFFFFF';
+            const
+                textColor = '#000',
+                PRColor = 'red';
 
             // const photoDir = assetsDir + 'gameObj/brave/';
             function init() {
+                let localeJSON = GameData.localeJSON.UI;
+
                 title
                     .append('text')
                     .attr("fill", textColor)
-                    .attr("text-anchor", "middle")
+                    .attr("text-anchor", "start")
                     .attr("font-weight", "bold")
-                    .attr("font-size", "15")
-                    .attr("x", width / 2)
-                    .attr("y", 30)
-                    .text('獎狀');
+                    .attr("font-size", "20")
+                    .attr("x", margin.left)
+                    .attr("y", height * 0.2)
+                    .text(localeJSON['certTitle']);
 
                 focusGroup
-                    .append('text')
-                    .attr("fill", textColor)
-                    .attr("text-anchor", "middle")
-                    .attr("font-weight", "bold")
-                    .attr("font-size", "30")
-                    .attr("x", width * 0.6)
-                    .attr("y", height * 0.2)
-                    .text('勇者 ： AAAA');
+                    .call(g => {
+                        g
+                            .append('text')
+                            .attr("fill", textColor)
+                            .attr("text-anchor", "start")
+                            .attr("font-weight", "bold")
+                            .attr("font-size", "15")
+                            .attr("x", margin.left + photoW * 1.2)
+                            .attr("y", height * 0.3)
+                            .text(`${localeJSON['certLabel1']} ： ${profile.name}`);
+
+                        g
+                            .append('text')
+                            .attr("fill", textColor)
+                            .attr("text-anchor", "start")
+                            .attr("font-weight", "bold")
+                            .attr("font-size", "15")
+                            .attr("x", margin.left + photoW * 1.2)
+                            .attr("y", height * 0.3 + 20)
+                            .text(`${localeJSON['certLabel2']} ： ${GameData.playerTimeUse / 60000} ${localeJSON['MINS']}`);
+
+                        g
+                            .append('text')
+                            .attr("fill", textColor)
+                            .attr("text-anchor", "start")
+                            .attr("font-weight", "bold")
+                            .attr("font-size", "10")
+                            .attr("x", width * 0.7)
+                            .attr("y", height - margin.bottom - 10)
+                            .text(`${localeJSON['certLabel3']} ： ${new Date().toISOString().substring(0, 10)}`);
+
+                        let webSite = 'http://192.168.201.67/GDMS_projects/locatingGame/main/example/locatingGame.html';
+                        g
+                            .append('text')
+                            .attr("fill", textColor)
+                            .attr("text-anchor", "start")
+                            .attr("font-weight", "bold")
+                            .attr("font-size", "10")
+                            .attr("x", width * 0.7)
+                            .attr("y", height - margin.bottom + 20)
+                            .text(`${localeJSON['certLabel4']} ： ${webSite}`);
+
+
+                        g
+                            .append('text')
+                            .attr("fill", PRColor)
+                            .attr("text-anchor", "start")
+                            .attr("font-weight", "bold")
+                            .attr("font-size", "15")
+                            .attr("x", width * 0.7)
+                            .attr("y", height * 0.5)
+                            .text(d3.select(rankChart).select('.bravePath').data()[0]);//PR
+                    });
+
             };
             function render() {
 
@@ -2810,8 +2923,24 @@ function locatingGame() {
         updateChart();
 
 
-        let svg1 = document.querySelector('.rankChart>svg');
-        convertSvg([svg.node(), svg1].map(svg => svg.cloneNode(true)), 'AAA', 'png');
+
+
+        const certificateDir = assetsDir + 'certificate/';
+        let imgResource = {
+            background: certificateDir + 'background.jpeg',
+            head_line: certificateDir + 'head_line.png',
+            head_line2: certificateDir + 'head_line2.png',
+            foot_line: certificateDir + 'foot_line.png',
+            ribbon: certificateDir + 'ribbon.png',
+
+
+            rankChart: rankChart.cloneNode(true),
+            words: svg.node().cloneNode(true),
+            photo: profile.picture.data.url,
+            seal: certificateDir + 'seal.png',
+        };
+
+        composeCertificate(imgResource, 'AAA', 'png');
 
         // $('.rankChart')
         //     .append(svg.node())

@@ -1,3 +1,9 @@
+/* @font-face {
+    font-family: Pigmo;
+    src: url(../data/font/Pigmo-00.otf);
+}*/
+
+
 text,
 label,
 font,
@@ -6,6 +12,7 @@ h2,
 h3,
 .UIicon {
     user-select: none;
+    /* font-family: Pigmo; */
 }
 
 .UIicon img {

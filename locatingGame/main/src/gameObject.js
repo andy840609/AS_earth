@@ -1,5 +1,13 @@
 const assetsDir = '../data/assets/';
 
+//載入字型
+// function loadFont(name, url) {
+//     var newStyle = document.createElement('style');
+//     newStyle.appendChild(document.createTextNode('@font-face{font-family: ' + name + '; src: url(' + url + ');}'));
+//     document.body.appendChild(newStyle);
+// };
+// loadFont('Pigmo', '../data/font/Pigmo-00.otf');
+
 const GameObjectStats = {
     creature: {
         dog: {

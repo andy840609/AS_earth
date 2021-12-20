@@ -53,7 +53,7 @@ function locatingGame() {
     };
     game.dataDir = (value) => {
         const event = '2010.166';//之後能選
-        const eventCatlog = (value ? value : '../data/datafile/event/') + event + '/';
+        const eventCatlog = (value ? value : datafileDir + 'event/') + event + '/';
         const channel = ['BHE', 'BHN', 'BHZ'];//不一定BH的話還要有檔案得到
         const fileExtension = '.xy';
 
@@ -272,7 +272,7 @@ function locatingGame() {
             function initStartScene() {
                 var getLanguageJSON = () => {
                     return $.ajax({
-                        url: "../data/locale/" + GameData.locale + ".json",
+                        url: "data/locale/" + GameData.locale + ".json",
                         dataType: "json",
                         async: false,
                         success: function (d) { console.debug(d); },
@@ -339,7 +339,7 @@ function locatingGame() {
                             let col = row.split(' ');
                             newData.push({
                                 player: col[0],
-                                timeUse: parseInt(col[1]),
+                                timeUse: parseFloat(col[1]),
                             });
                         });
                         return newData
@@ -369,7 +369,7 @@ function locatingGame() {
                             </button>
                               
                             </div>
-                            `)
+                            `);
 
 
                         shareSocial.find('#fbButton')
@@ -388,9 +388,11 @@ function locatingGame() {
                                 };
 
                                 var share = async (profilePromise) => {
+                                    const server = "https://tecdc.earth.sinica.edu.tw/tecdc/Game/locatingGame/";
+                                    const certificateDir = server + "certificate/";
 
-
-                                    getSharingImg(await profilePromise);
+                                    let imgName = await getSharingImg(await profilePromise);
+                                    // console.debug(imgName);
 
                                     FB.ui(
                                         {
@@ -398,10 +400,10 @@ function locatingGame() {
                                             action_type: 'og.likes',
                                             action_properties: JSON.stringify({
                                                 object: {
-                                                    'og:url': "http://140.109.80.59/data/locatingGame/main/example/locatingGame.html",
+                                                    'og:url': certificateDir + imgName,
                                                     'og:title': "your caption here",
                                                     'og:description': "your caption here",
-                                                    'og:image': "http://140.109.80.59/data/testImg/AAA.png"
+                                                    'og:image': certificateDir + imgName,
                                                 }
                                             }),
                                         },
@@ -525,7 +527,7 @@ function locatingGame() {
                 async function addCounty() {
 
                     geoJSON = await $.ajax({
-                        url: "../data/datafile/twCounty.json",
+                        url: "data/datafile/twCounty.json",
                         dataType: "json",
                         async: true,
                         // success: function (d) { console.debug(d); },
@@ -651,7 +653,7 @@ function locatingGame() {
                     let size = 40;
                     L.marker(data.epicenter['coordinate'], {
                         icon: L.icon({
-                            iconUrl: '../data/assets/icon/star.png',
+                            iconUrl: assetsDir + 'icon/star.png',
                             iconSize: [size, size],
                             iconAnchor: [size / 2, size / 2],
                         }),
@@ -662,7 +664,7 @@ function locatingGame() {
 
                     assumedEpicenter = L.marker(data.epicenter['coordinate'], {
                         icon: L.icon({
-                            iconUrl: '../data/assets/icon/star2.png',
+                            iconUrl: assetsDir + 'icon/star2.png',
                             iconSize: [size, size],
                             iconAnchor: [size / 2, size / 2],
                         }),
@@ -984,7 +986,7 @@ function locatingGame() {
 
 
                         rankingData = $.ajax({
-                            url: "../data/datafile/rank/records.txt",
+                            url: datafileDir + "rank/records.txt",
                             dataType: "text",
                             async: true,
                             // success: function (d) { },
@@ -1159,8 +1161,8 @@ function locatingGame() {
                 var iconBrokenAnime = (marker, duration = 500) => {
                     const
                         iconUrl1 = marker.getIcon().options.iconUrl,
-                        iconUrl2 = '../data/assets/icon/home_broken.png',
-                        iconUrl3 = '../data/assets/icon/home_destruction.png';
+                        iconUrl2 = assetsDir + 'icon/home_broken.png',
+                        iconUrl3 = assetsDir + 'icon/home_destruction.png';
 
                     const totalStep = 2;//==依序換2次圖
                     const delay = parseInt(duration / totalStep);
@@ -1389,73 +1391,73 @@ function locatingGame() {
                 }
                 else if (gameMode == 'dig') {
                     // console.debug(siteData);
-                    {
-                        const backgroundArr = Object.keys(BackGroundResources.dig);
+                    // {
+                    //     const backgroundArr = Object.keys(BackGroundResources.dig);
 
-                        let coordinate = siteData.coordinate;
-                        // let background = 'halloween_4';//==之後經緯度判斷？
-                        let background = backgroundArr[getRandom(backgroundArr.length)];
-                        let mineBGindex = 0;//==之後經緯度判斷？
+                    //     let coordinate = siteData.coordinate;
+                    //     // let background = 'halloween_4';//==之後經緯度判斷？
+                    //     let background = backgroundArr[getRandom(backgroundArr.length)];
+                    //     let mineBGindex = 0;//==之後經緯度判斷？
 
-                        let placeData = {
-                            coordinate: coordinate,
-                            background: background,
-                            mineBGindex: mineBGindex,
-                            depth: siteData.depth ? siteData.depth : null,
-                        };
+                    //     let placeData = {
+                    //         coordinate: coordinate,
+                    //         background: background,
+                    //         mineBGindex: mineBGindex,
+                    //         depth: siteData.depth ? siteData.depth : null,
+                    //     };
 
-                        //==顯示假設點
-                        assumedEpicenter
-                            .setLatLng(coordinate)
-                            .getTooltip()
-                            .setContent(`${GameData.localeJSON.Tip['assumedEpicenter']} : ${coordinate.map(d => d.toFixed(2)).join(' , ')}`)
-                        assumedEpicenter.getElement().style.display = 'inline';
+                    //     //==顯示假設點
+                    //     assumedEpicenter
+                    //         .setLatLng(coordinate)
+                    //         .getTooltip()
+                    //         .setContent(`${GameData.localeJSON.Tip['assumedEpicenter']} : ${coordinate.map(d => d.toFixed(2)).join(' , ')}`)
+                    //     assumedEpicenter.getElement().style.display = 'inline';
 
-                        GameData.playerEpicenter = coordinate;
+                    //     GameData.playerEpicenter = coordinate;
 
-                        gameResult = await new Promise((resolve, reject) => {
-                            const config = Object.assign(getPhaserConfig(width * 0.9, height * 0.95), {
-                                scene: new DigScene(placeData, GameData, {
-                                    resolve: resolve,
-                                }),
-                            });
-                            new Phaser.Game(config);
-                        });
+                    //     gameResult = await new Promise((resolve, reject) => {
+                    //         const config = Object.assign(getPhaserConfig(width * 0.9, height * 0.95), {
+                    //             scene: new DigScene(placeData, GameData, {
+                    //                 resolve: resolve,
+                    //             }),
+                    //         });
+                    //         new Phaser.Game(config);
+                    //     });
 
-                        console.debug(gameResult);
-                        let playerInfo = gameResult.playerInfo;
+                    //     console.debug(gameResult);
+                    //     let playerInfo = gameResult.playerInfo;
 
-                        //===更新人物資料
-                        updateMapUI(playerInfo, 1000);
-                    }
+                    //     //===更新人物資料
+                    //     updateMapUI(playerInfo, 1000);
+                    // }
 
-                    // ===進王關
-                    if (gameResult.bossRoom) {//gameResult.bossRoom
-                        const backgroundArr = Object.keys(BackGroundResources.boss);
-                        let background = backgroundArr[getRandom(backgroundArr.length)];
+                    // // ===進王關
+                    // if (1) {//gameResult.bossRoom
+                    //     const backgroundArr = Object.keys(BackGroundResources.boss);
+                    //     let background = backgroundArr[getRandom(backgroundArr.length)];
 
-                        gameResult = await new Promise((resolve, reject) => {
-                            const config = Object.assign(getPhaserConfig(width * 0.9, height * 0.95), {
-                                scene: new BossScene(GameData, background, {
-                                    resolve: resolve,
-                                }),
-                            });
-                            new Phaser.Game(config);
-                        });
-                        console.debug(gameResult);
-                        let playerInfo = gameResult.playerInfo;
+                    //     gameResult = await new Promise((resolve, reject) => {
+                    //         const config = Object.assign(getPhaserConfig(width * 0.9, height * 0.95), {
+                    //             scene: new BossScene(GameData, background, {
+                    //                 resolve: resolve,
+                    //             }),
+                    //         });
+                    //         new Phaser.Game(config);
+                    //     });
+                    //     console.debug(gameResult);
+                    //     let playerInfo = gameResult.playerInfo;
 
-                        //===更新人物資料
-                        updateMapUI(playerInfo, 1000);
+                    //     //===更新人物資料
+                    //     updateMapUI(playerInfo, 1000);
 
-                        //==通關
-                        if (gameResult.bossDefeated) {//gameResult.bossDefeated
-                            // console.debug('通關');
-                            initEndScene(true);
+                    //==通關
+                    if (1) {//gameResult.bossDefeated
+                        // console.debug('通關');
+                        initEndScene(true);
 
-                            return;
-                        };
+                        return;
                     };
+                    // };
                 };
                 gameDisplay(false);
 
@@ -2120,10 +2122,11 @@ function locatingGame() {
             const gap = 10,//==每10分鐘一組(>10,10-20)
                 groupCount = 10;//==暫定10組(最大90-100)
 
+            // console.debug(GameData.playerTimeUse);
             let playerObj = {
                 player: 'AAA',
                 timeUse: parseFloat((GameData.playerTimeUse / 60000).toFixed(2)),
-                // timeUse: 55,//test
+                // timeUse: 1.62,//test
             };
 
             var getGapGroupData = () => {
@@ -2156,7 +2159,7 @@ function locatingGame() {
             var writeFile = () => {
                 $.ajax({
                     type: 'POST',
-                    url: "../src/php/writeRankingFile.php",
+                    url: "src/php/writeRankingFile.php",
                     data: playerObj,//['playerName',100]
                     async: true,
                     success: function (d) { console.debug(d); },
@@ -2212,7 +2215,7 @@ function locatingGame() {
                     .attr("font-size", "20")
                     .attr('x', width / 2)
                     .attr("y", margin.bottom * 0.7)
-                    .text(`${GameData.localeJSON.UI['timeUse']}`);
+                    .text(`${GameData.localeJSON.UI['score']}`);
 
                 yAxis
                     .append('text')
@@ -2271,12 +2274,17 @@ function locatingGame() {
                         .call(g => {
                             let axisFun = d3.axisBottom(x).tickSizeOuter(0);
                             let tickValues = gapGroupData.map((d, i) => gap * i);
+                            // console.debug(tickValues);
                             axisFun
                                 .tickValues(tickValues)
                                 .tickFormat(d => d);//==不然小數會被轉整數
                             axisFun(g);
                         })
-                        .call(setStyle);
+                        .call(setStyle)
+                        .call(g => g//==改成顯示分數
+                            .selectAll('.tick>text')
+                            .text((d, i) => (gapGroupData.length - i) * 10)
+                        );
                     var makeYAxis = g => g
                         .attr("transform", `translate(${margin.left},0)`)
                         .call(g => {
@@ -2495,11 +2503,10 @@ function locatingGame() {
         updateChart();
 
         function events(svg) {
-
-
             const tooltip = d3.select(".rankChart")
                 .append("div")
                 .attr("id", "tooltip");
+            const mouseGap = 50;
 
             var replayAnime = () => {
                 let brave = svg.select('.brave');
@@ -2517,8 +2524,8 @@ function locatingGame() {
 
                             tooltip
                                 .style("display", "inline")
-                                .style("top", `${e.clientY - 60}px`)
-                                .style("left", `${e.clientX}px`)
+                                .style("top", `${e.offsetY - mouseGap}px`)
+                                .style("left", `${e.offsetX}px`)
                                 .selectAll('div')
                                 .data([0])
                                 .join('div')
@@ -2532,7 +2539,6 @@ function locatingGame() {
 
             };
             var barHover = () => {
-
                 var updateTooltip = (groupIndex, data) => {
 
                     tooltip
@@ -2544,20 +2550,15 @@ function locatingGame() {
                             let div = d3.select(this);
                             let html;
                             if (i == 0) {
-                                let gap = newDataObj.gap;
                                 let groupCount = newDataObj.gapGroupData.length - 2;//==頭尾多的
-                                let multiplier = groupCount - d - 1;
+                                let multiplier = d;
 
                                 let range1, range2;
 
-                                range1 = gap * multiplier;
-                                range2 = gap * (multiplier + 1);
+                                range1 = multiplier * groupCount + 1;
+                                range2 = (multiplier + 1) * groupCount;
 
-                                // console.debug(gap, d)
-
-                                html = d == 0 ?
-                                    `<h5>${GameData.localeJSON.UI['timeUse2']}&nbsp;≧</h5>&nbsp;${range1}` :
-                                    `${range2}&nbsp;>&nbsp;<h5>${GameData.localeJSON.UI['timeUse2']}&nbsp;≧</h5>&nbsp;${range1}`;
+                                html = (d == 0 ? `<h5>≦</h5>&nbsp;${range2}` : `${range1}&nbsp;~&nbsp;${range2}`) + '&nbsp;<h5>pt</h5>';
                             }
                             else
                                 html = `<h1 style='font-weight:bold;'>${d}</h1>&nbsp;<h6>${GameData.localeJSON.UI['playerCount']}</h6> `;
@@ -2580,8 +2581,8 @@ function locatingGame() {
                         //==show tooltip and set position
                         tooltip
                             .style("display", "inline")
-                            .style("top", `${e.clientY - 60}px`)
-                            .style("left", `${e.clientX}px`);
+                            .style("top", `${e.offsetY - mouseGap}px`)
+                            .style("left", `${e.offsetX + mouseGap}px`);
 
                         let groupIndex = Array.from(bar.parentNode.children).indexOf(bar);
                         let data = bar.__data__;
@@ -2589,7 +2590,6 @@ function locatingGame() {
                         updateTooltip(groupIndex, data);
                     })
                     .on('mouseout', e => {
-
                         let playerGroupIdx = newDataObj.gapGroupData.playerGroupIdx;
                         braveBars
                             .attr("opacity", (d, i) => i <= playerGroupIdx ? afterOpacity : originOpacity);
@@ -2612,7 +2612,7 @@ function locatingGame() {
         const photoW = profile.picture.data.width;
 
         var rankChart = document.querySelector('.rankChart>svg');
-        var composeCertificate = async (imgObj, fileName, option) => {
+        var composeCertificate = (imgObj, fileName, option) => {
 
             function getBlobUrl(imgData, isSvg) {
                 // console.debug(svgUrl);
@@ -2679,35 +2679,24 @@ function locatingGame() {
                 downloadLink.click();
                 document.body.removeChild(downloadLink);
             };
-            function show(width, height) {
-                // $('#bigimg').attr("src", img);//设置#bigimg元素的src属性 
-                // $('#outerdiv').fadeIn("fast");//淡入显示#outerdiv及.pimg 
-                // $('#outerdiv').off('click');
-                // $('#outerdiv').click(function () {//再次点击淡出消失弹出层 
-                //     $(this).fadeOut("fast");
-                // });
-                let outerdiv = $('#outerdiv');
-
-                outerdiv.fadeIn("fast");//淡入显示#outerdiv及.pimg 
-                outerdiv.off('click');
-                outerdiv.click(function (e) {//再次点击淡出消失弹出层 
-                    if (e.target.id != 'outerdiv') return;
-                    $(this).fadeOut("fast");
-                    $(originParent).children('svg').remove();
-                    originSvg.removeAttribute('width');
-                    originSvg.removeAttribute('height');
-                    originParent.append(originSvg);
+            function saveCertificate(imgUrl) {
+                // console.debug(imgUrl);
+                return $.ajax({
+                    type: 'POST',
+                    url: "src/php/saveCertificate.php",
+                    data: {
+                        imgUrl: imgUrl,
+                        imgType: option,
+                        fileName: fileName,
+                    },
+                    async: true,
+                    // success: function (d) { console.debug(d); },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        console.error(jqXHR, textStatus, errorThrown);
+                    },
                 });
-
-                let originSvg = svgArr[0];
-                let originParent = originSvg.parentNode;
-                let cloneSvg = originSvg.cloneNode(true);
-                originSvg.setAttribute('width', width);
-                originSvg.setAttribute('height', height);
-                document.querySelector('#innerdiv').append(originSvg);
-                originParent.append(cloneSvg);
-
             };
+
 
             //==============each svg draw to canvas
             var CanvasObjArr = getCanvas(option == 'bigimg');
@@ -2718,101 +2707,104 @@ function locatingGame() {
             var imgKeys = Object.keys(imgObj);
 
             // console.debug(svg.node().cloneNode(true));
-            for (let index = 0; index < imgKeys.length; index++) {
-                let key = imgKeys[index];
-                let value = imgObj[key];
-                // console.debug(key, value);
+            return new Promise(async (resolve) => {
+                for (let index = 0; index < imgKeys.length; index++) {
+                    let key = imgKeys[index];
+                    let value = imgObj[key];
+                    // console.debug(key, value);
 
-                let imageX, imageY,
-                    imageWidth, imageHeight;
+                    let imageX, imageY,
+                        imageWidth, imageHeight;
 
-                switch (key) {
-                    case 'rankChart'://==PR圖
-                        //==標題字調整
-                        d3.select(value)
-                            .select('.title>text').remove();
+                    switch (key) {
+                        case 'rankChart'://==PR圖
+                            //==標題字調整
+                            d3.select(value)
+                                .select('.title>text').remove();
 
-                        imageWidth = canvas.width * 0.75;
-                        imageHeight = imageWidth * 6 / 7;
-                        imageX = canvas.width * 0.05;
-                        imageY = canvas.height - imageHeight - margin.bottom - 20;
-                        break;
-                    case 'words'://==獎狀底   
-                        imageWidth = canvas.width;
-                        imageHeight = canvas.height;
-                        imageX = 0;
-                        imageY = 0;
-                        break;
-                    case 'photo':
-                        imageWidth = photoW;
-                        imageHeight = photoW;
-                        imageX = margin.left + 25;
-                        imageY = canvas.height * 0.2 + 20;
-                        break;
-                    case 'head_line'://==素材
-                        imageWidth = canvas.width;
-                        imageHeight = 30;
-                        imageX = 0;
-                        imageY = margin.top;
-                        break;
-                    case 'head_line2'://==素材
-                        imageWidth = canvas.width;
-                        imageHeight = 10;
-                        imageX = 0;
-                        imageY = margin.top + 50;
-                        break;
-                    case 'foot_line'://==素材
-                        imageWidth = canvas.width;
-                        imageHeight = 10;
-                        imageX = 0;
-                        imageY = canvas.height - margin.bottom * 1.5;
-                        break;
-                    case 'ribbon'://==素材
-                        imageWidth = 100;
-                        imageHeight = 200;
-                        imageX = canvas.width * 0.8;
-                        imageY = margin.top - 20;
-                        break;
-                    case 'seal'://==素材
-                        imageWidth = 300;
-                        imageHeight = 300;
-                        imageX = canvas.width - imageWidth;
-                        imageY = canvas.height - imageHeight - margin.bottom;
-                        break;
-                    case 'background'://==素材
-                        imageWidth = canvas.width;
-                        imageHeight = canvas.height;
-                        imageX = 0;
-                        imageY = 0;
-                        break;
+                            imageWidth = canvas.width * 0.75;
+                            imageHeight = imageWidth * 6 / 7;
+                            imageX = canvas.width * 0.05;
+                            imageY = canvas.height - imageHeight - margin.bottom - 20;
+                            break;
+                        case 'words'://==獎狀底   
+                            imageWidth = canvas.width;
+                            imageHeight = canvas.height;
+                            imageX = 0;
+                            imageY = 0;
+                            break;
+                        case 'photo':
+                            imageWidth = photoW;
+                            imageHeight = photoW;
+                            imageX = margin.left + 25;
+                            imageY = canvas.height * 0.2 + 20;
+                            break;
+                        case 'head_line'://==素材
+                            imageWidth = canvas.width;
+                            imageHeight = 30;
+                            imageX = 0;
+                            imageY = margin.top;
+                            break;
+                        case 'head_line2'://==素材
+                            imageWidth = canvas.width;
+                            imageHeight = 10;
+                            imageX = 0;
+                            imageY = margin.top + 50;
+                            break;
+                        case 'foot_line'://==素材
+                            imageWidth = canvas.width;
+                            imageHeight = 10;
+                            imageX = 0;
+                            imageY = canvas.height - margin.bottom * 1.5;
+                            break;
+                        case 'ribbon'://==素材
+                            imageWidth = 100;
+                            imageHeight = 200;
+                            imageX = canvas.width * 0.8;
+                            imageY = margin.top - 20;
+                            break;
+                        case 'seal'://==素材
+                            imageWidth = 300;
+                            imageHeight = 300;
+                            imageX = canvas.width - imageWidth;
+                            imageY = canvas.height - imageHeight - margin.bottom;
+                            break;
+                        case 'background'://==素材
+                            imageWidth = canvas.width;
+                            imageHeight = canvas.height;
+                            imageX = 0;
+                            imageY = 0;
+                            break;
 
 
-                };
-
-                var imgUrl = ((key == 'rankChart') || (key == 'words') || (key == 'photo')) ?
-                    await getBlobUrl(value, isSvg = !(key == 'photo')) :
-                    value;
-
-                var image = new Image();
-                image.src = imgUrl;
-                // console.debug(key, imgUrl);
-                await new Promise(r => {
-                    image.onload = () => {
-                        // 素材貼到畫布上
-
-                        context.globalAlpha = key == 'seal' ? 0.7 : 1;
-                        context.drawImage(image, imageX, imageY, imageWidth, imageHeight);
-
-                        // console.debug(index, key);
-                        //貼完輸出
-                        if (index == imgKeys.length - 1) {
-                            let certificateUrl = canvas.toDataURL('image/' + option);
-                            download(certificateUrl, fileName + '.' + option);
-                        };
-                        r();
                     };
-                });
-            };
+
+                    var imgUrl = ((key == 'rankChart') || (key == 'words') || (key == 'photo')) ?
+                        await getBlobUrl(value, isSvg = !(key == 'photo')) :
+                        value;
+
+                    var image = new Image();
+                    image.src = imgUrl;
+                    // console.debug(key, imgUrl);
+                    await new Promise(r => {
+                        image.onload = async () => {
+                            // 素材貼到畫布上
+                            context.globalAlpha = key == 'seal' ? 0.7 : 1;
+                            context.drawImage(image, imageX, imageY, imageWidth, imageHeight);
+
+                            // console.debug(index, key);
+                            //貼完輸出
+                            if (index == imgKeys.length - 1) {
+                                let certificateUrl = canvas.toDataURL('image/' + option);
+                                let imgName = await saveCertificate(certificateUrl);
+                                resolve(imgName);
+                            };
+                            r();
+                        };
+                    });
+                };
+            });
+
 
         };
         const width = 560;
@@ -2951,13 +2943,7 @@ function locatingGame() {
             seal: certificateDir + 'seal.png',
         };
 
-        composeCertificate(imgResource, 'AAA', 'png');
-
-        // $('.rankChart')
-        //     .append(svg.node())
-        //     .find('svg')
-        //     .width(height)
-        //     .height(height);
+        return composeCertificate(imgResource, 'AAA', 'jpeg');
     };
 
     return game;

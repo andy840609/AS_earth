@@ -340,6 +340,14 @@ svg {
     display: none;
 }
 
+#gameGroup .Congrats .shareSocial {
+    pointer-events: none;
+}
+
+#gameGroup .Congrats .shareSocial button {
+    pointer-events: auto;
+}
+
 /* fb Button */
 .fbGroup {
     opacity: 0;

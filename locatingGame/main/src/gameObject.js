@@ -1,4 +1,6 @@
-const assetsDir = '../data/assets/';
+// const assetsDir = '../data/assets/';
+const assetsDir = 'data/assets/';
+const datafileDir = 'data/datafile/';
 
 //載入字型
 // function loadFont(name, url) {
@@ -1134,7 +1136,12 @@ class RexTextBox extends RexPlugins.UI.TextBox {
             COLOR_DARK = 0x260e04;
 
         const GetValue = Phaser.Utils.Objects.GetValue;
-
+        const padding = {
+            left: 3,
+            right: 3,
+            top: 3,
+            bottom: 3,
+        };
         const iconW = 200;//==扣掉頭像和按鈕的空間
 
         var wrapWidth = GetValue(config, 'wrapWidth', 0) - iconW;
@@ -1156,7 +1163,8 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                     mode: 'word',
                     width: wrapWidth
                 },
-                maxLines: 3
+                maxLines: 3,
+                padding: padding,
             });
 
         const textBoxConfig = {
@@ -1237,11 +1245,20 @@ class RexDialog extends RexPlugins.UI.Dialog {
             COLOR_CORRECT = 0x009100,
             COLOR_WRONG = 0x750000;
         const GetValue = Phaser.Utils.Objects.GetValue;
+        const padding = {
+            left: 3,
+            right: 3,
+            top: 3,
+            bottom: 3,
+        };
 
         var createLabel = (scene, text, backgroundColor) => {
             return new RexPlugins.UI.Label(scene, {
                 background: scene.add.existing(new RexPlugins.UI.RoundRectangle(scene, 0, 0, 100, 40, 20, backgroundColor)),
-                text: scene.add.text(0, 0, text, { fontSize: '24px' }),
+                text: scene.add.text(0, 0, text, {
+                    fontSize: '24px',
+                    padding: padding,
+                }),
                 space: {
                     left: 10,
                     right: 10,
@@ -1296,7 +1313,10 @@ class RexDialog extends RexPlugins.UI.Dialog {
             width: 360,
             background: scene.add.existing(rexRect),
             title: scene.add.existing(createLabel(scene, ' ', COLOR_DARK)),
-            content: scene.add.text(0, 0, ' ', { fontSize: '36px' }),
+            content: scene.add.text(0, 0, ' ', {
+                fontSize: '36px',
+                padding: padding,
+            }),
             choices: [
                 createLabel(scene, ' ', COLOR_LIGHT),
                 createLabel(scene, ' ', COLOR_LIGHT),

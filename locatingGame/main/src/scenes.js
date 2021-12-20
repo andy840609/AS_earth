@@ -1988,7 +1988,7 @@ class LoadingScene extends Phaser.Scene {
                     //==對話框(已經在html引入了所以不用這段)
                     // this.load.scenePlugin({
                     //     key: 'rexuiplugin',
-                    //     url: '../src/phaser-3.55.2/plugins/rexplugins/rexuiplugin.min.js',
+                    //     url: 'src/phaser-3.55.2/plugins/rexplugins/rexuiplugin.min.js',
                     //     sceneKey: 'rexUI',// 'rexUI'
                     //     systemKey: 'rexUI',
                     // });
@@ -2143,13 +2143,13 @@ class DefendScene extends Phaser.Scene {
                     {//==讓preload()能await才create()[確定資源都讀取完成才執行create()]
                         type: 'plugin',
                         key: 'rexawaitloaderplugin',
-                        url: '../src/phaser-3.55.2/plugins/rexplugins/rexawaitloaderplugin.min.js',
+                        url: 'src/phaser-3.55.2/plugins/rexplugins/rexawaitloaderplugin.min.js',
                         start: true,
                     },
                     {//==旋轉特效
                         type: 'plugin',
                         key: 'rexswirlpipelineplugin',
-                        url: '../src/phaser-3.55.2/plugins/rexplugins/rexswirlpipelineplugin.min.js',
+                        url: 'src/phaser-3.55.2/plugins/rexplugins/rexswirlpipelineplugin.min.js',
                         start: true,
                     },
                 ]
@@ -2749,13 +2749,13 @@ class DigScene extends Phaser.Scene {
                     {//==讓preload()能await才create()[確定資源都讀取完成才執行create()]
                         type: 'plugin',
                         key: 'rexawaitloaderplugin',
-                        url: '../src/phaser-3.55.2/plugins/rexplugins/rexawaitloaderplugin.min.js',
+                        url: 'src/phaser-3.55.2/plugins/rexplugins/rexawaitloaderplugin.min.js',
                         start: true,
                     },
                     {//==旋轉特效
                         type: 'plugin',
                         key: 'rexswirlpipelineplugin',
-                        url: '../src/phaser-3.55.2/plugins/rexplugins/rexswirlpipelineplugin.min.js',
+                        url: 'src/phaser-3.55.2/plugins/rexplugins/rexswirlpipelineplugin.min.js',
                         start: true,
                     },
                 ]
@@ -3146,7 +3146,7 @@ class BossScene extends Phaser.Scene {
                     {//==讓preload()能await才create()[確定資源都讀取完成才執行create()]
                         type: 'plugin',
                         key: 'rexawaitloaderplugin',
-                        url: '../src/phaser-3.55.2/plugins/rexplugins/rexawaitloaderplugin.min.js',
+                        url: 'src/phaser-3.55.2/plugins/rexplugins/rexawaitloaderplugin.min.js',
                         start: true,
                     },
 

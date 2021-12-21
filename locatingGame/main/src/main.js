@@ -301,7 +301,7 @@ function locatingGame() {
                     //==test
                     initMap();
                     // gameStart('defend');
-                    // gameStart('dig');
+                    gameStart('dig');
 
                     //==test
                 };
@@ -414,47 +414,39 @@ function locatingGame() {
                                             } else {
                                                 // alert('Error while posting.');
                                             }
+
+                                            FB.api("/me/permissions", "DELETE", function (res) {
+                                                // 用戶登出
+
+                                            });
+
                                         }
                                     );
                                 };
+                                // FB.getLoginStatus((response) => {
+                                //     console.log(response);
+                                //     if (response.status == "connected")
+                                //         // FB.api('/' + response.authResponse.userID + '/picture', 'GET', {}, function (response) {
+                                //         //     console.log(response);
+                                //         // });
+                                //         FB.logout();
+                                // });
+
                                 FB.login(function (response) {
                                     if (response.authResponse) {
                                         console.log(response);
                                         console.log('Welcome!  Fetching your information.... ');
                                         share(getProfile());
+                                        FB.logout();
 
                                     } else {
                                         console.log('User cancelled login or did not fully authorize.');
-                                    }
-                                });
-
-                                // FB.getLoginStatus((response) => {
-                                //     console.log(response);
-                                //     if (response.status == "connected")
-                                //         FB.api('/' + response.authResponse.userID + '/picture', 'GET', {}, function (response) {
-                                //             console.log(response);
-                                //         });
-
-                                // });
-
-
-
+                                    };
+                                }, { auth_type: 'reauthenticate' });//, { auth_type: 'reauthenticate' }
 
 
 
                             });
-
-
-                        // (function (d) {
-                        //     var js, id = 'facebook-jssdk'; if (d.getElementById(id)) { return; }
-                        //     js = d.createElement('script'); js.id = id; js.async = true;
-                        //     js.src = "https://connect.facebook.net/es_LA/all.js";
-                        //     d.getElementsByTagName('head')[0].appendChild(js);
-                        // }(document));
-
-
-
-
 
                     };
 
@@ -1457,6 +1449,7 @@ function locatingGame() {
 
                         return;
                     };
+
                     // };
                 };
                 gameDisplay(false);

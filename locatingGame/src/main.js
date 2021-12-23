@@ -238,7 +238,7 @@ function locatingGame() {
             };
 
             function initGameData() {
-                let playerRole = 'Biker';//==之後能選其他
+                let playerRole = 'Biker';//==之後能選其他[Biker,Cyborg,Punk]
 
                 GameData = {
                     timeRemain: 5 * 60000,//1min=60000ms           
@@ -300,7 +300,7 @@ function locatingGame() {
 
                     //==test
                     initMap();
-                    gameStart('defend');
+                    // gameStart('defend');
                     // gameStart('dig');
 
                     //==test
@@ -987,11 +987,15 @@ function locatingGame() {
 
 
                     };
+                    var sidekickUI = () => {
+
+                    };
 
                     timeRemain();
                     UIbar();
                     confirmWindow();
                     congratsPage();
+                    sidekickUI();
                 };
                 function addMapEvent() {
                     const allowedErro = 10;//==容許與震央相差距離(km)
@@ -1421,7 +1425,7 @@ function locatingGame() {
                     }
 
                     // ===進王關
-                    if (1) {//gameResult.bossRoom
+                    if (gameResult.bossRoom) {//gameResult.bossRoom
                         const backgroundArr = Object.keys(BackGroundResources.boss);
                         let background = backgroundArr[getRandom(backgroundArr.length)];
 
@@ -1440,10 +1444,9 @@ function locatingGame() {
                         updateMapUI(playerInfo, 1000);
 
                         //==通關
-                        if (1) {//gameResult.bossDefeated
+                        if (gameResult.bossDefeated) {//gameResult.bossDefeated
                             // console.debug('通關');
                             initEndScene(true);
-
                             return;
                         };
 

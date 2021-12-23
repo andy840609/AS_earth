@@ -20,7 +20,7 @@ const GameObjectStats = {
         },
         cat: {
             HP: 800,
-            attackPower: 200,
+            attackPower: 800,
             movementSpeed: 200,
             jumpingPower: 200,
         },
@@ -39,6 +39,32 @@ const GameObjectStats = {
     },
     player: {
         Biker: {
+            movementSpeed: 300,
+            jumpingPower: 400,
+            attackSpeed: 800,
+            attackPower: 100,
+            knockBackSpeed: 200,//==擊退時間固定200ms,這個速度越大擊退越遠
+            manaCost: 10,
+            manaRegen: 10,//per 10 ms(game update per 10ms)0.1
+            HP: 100,
+            maxHP: 100,
+            MP: 150,
+            maxMP: 150,
+        },
+        Cyborg: {
+            movementSpeed: 300,
+            jumpingPower: 400,
+            attackSpeed: 800,
+            attackPower: 100,
+            knockBackSpeed: 200,//==擊退時間固定200ms,這個速度越大擊退越遠
+            manaCost: 10,
+            manaRegen: 10,//per 10 ms(game update per 10ms)0.1
+            HP: 100,
+            maxHP: 100,
+            MP: 150,
+            maxMP: 150,
+        },
+        Punk: {
             movementSpeed: 300,
             jumpingPower: 400,
             attackSpeed: 800,
@@ -325,7 +351,7 @@ const Enemy = new Phaser.Class({
 
             // this.onWorldBounds = true;
             this.body
-                .setSize(25, 18, true)
+                .setSize(25, 18)
                 .setGravityY(5000);
 
             // this.body.collideWorldBounds = true;
@@ -337,29 +363,14 @@ const Enemy = new Phaser.Class({
             // this.HPbar = scene.scene.add(null, new UIScene('statsBar', scene, this), true).HPbar;
             scene.scene.add(null, new UIScene('statsBar', scene, this), true);
 
-
-
             // this.setCollideWorldBounds(true);
             // console.debug(this);
         },
 
     //=處理轉向
-    filpFlag: false,
     filpHandler: function (filp) {
-        // console.debug(this);
-        let scale = Math.abs(this.scaleX);
-        if (filp) {
-            this.scaleX = -scale;
-            this.body.setOffset(30, 30);
-            this.filpFlag = true;
-        }
-        else {
-            this.scaleX = scale;
-            this.body.setOffset(5, 30);
-            this.filpFlag = false;
-        }
-        // this.refreshBody();//==停下 
-
+        this.flipX = filp;
+        this.body.setOffset(filp ? 18 : 5, 30);
     },
 
     //==血條顯示
@@ -495,7 +506,7 @@ const Enemy = new Phaser.Class({
 
                     //===判斷player相對敵人的位子來轉向(轉向時停下)
                     let filpDir = player.x < this.x;
-                    if (this.filpFlag != filpDir) {
+                    if (this.flipX != filpDir) {
                         this.filpHandler(filpDir);
                         this.body.reset(this.x, this.y);
                         // console.debug('filp');
@@ -585,7 +596,7 @@ const Enemy = new Phaser.Class({
 
                                     //===判斷player相對敵人的位子來轉向(轉向時停下)
                                     let filpDir = player.x < this.x;
-                                    if (this.filpFlag != filpDir)
+                                    if (this.flipX != filpDir)
                                         this.filpHandler(filpDir);
                                 };
 
@@ -598,7 +609,7 @@ const Enemy = new Phaser.Class({
                                 // console.debug('cat_cruising');
                                 this.anims.play('cat_Walk', true);
 
-                                let randomX = Phaser.Math.Between(16, scene.sys.game.canvas.width);//==隨機移動到螢幕內x;
+                                let randomX = Phaser.Math.Between(0, scene.sys.game.canvas.width - 16);//==隨機移動到螢幕內x;
                                 let speed = this.stats.movementSpeed;//pixel per sec
                                 let dist = Phaser.Math.Distance.BetweenPoints(this, { x: randomX, y: this.y });
                                 let cruisingDuration = dist / (speed / 1000);
@@ -618,7 +629,7 @@ const Enemy = new Phaser.Class({
 
                                 //===判斷移動位子來轉向
                                 let filpDir = randomX < this.x;
-                                if (this.filpFlag != filpDir)
+                                if (this.flipX != filpDir)
                                     this.filpHandler(filpDir);
                             };
                             break;
@@ -743,7 +754,7 @@ const Enemy = new Phaser.Class({
 
                     //===判斷player相對敵人的位子來轉向(轉向時停下)
                     let filpDir = player.x < this.x;
-                    if (this.filpFlag != filpDir) {
+                    if (this.flipX != filpDir) {
                         this.filpHandler(filpDir);
                         this.body.reset(this.x, this.y);
                     }
@@ -866,8 +877,6 @@ const Player = new Phaser.Class({
 
             this
                 .setScale(2)
-                // .setOrigin(0.5)
-                .setPosition(0, 0)
                 .setCollideWorldBounds(true)
                 .setPushable(false)
                 .setName('player')
@@ -875,7 +884,9 @@ const Player = new Phaser.Class({
 
             this.body
                 .setSize(18, 35, true)
+                .setOffset(4, 13)
                 .setGravityY(500);
+            // console.debug(this.body);
 
             //===init attack
             this.bullets = scene.physics.add.group({
@@ -894,22 +905,9 @@ const Player = new Phaser.Class({
 
         },
     //=處理轉向
-    filpFlag: false,
     filpHandler: function (filp) {
-        // console.debug(this);
-        let scale = Math.abs(this.scaleX);
-        if (filp) {
-            this.scaleX = -scale;
-            this.body.setOffset(22, 13);
-            this.filpFlag = true;
-        }
-        else {
-            this.scaleX = scale;
-            this.body.setOffset(4, 13);
-            this.filpFlag = false;
-        }
-        // this.refreshBody();//==停下 
-
+        this.setFlipX(filp);
+        this.body.offset.x = (filp ? 26 : 4);
     },
     doublejumpFlag: false,
     //==移動
@@ -927,13 +925,13 @@ const Player = new Phaser.Class({
 
         if (cursors[controllCursor['left']].isDown) {
             this.setVelocityX(-this.stats.movementSpeed);
-            this.filpHandler(true);
+            if (!this.flipX) this.filpHandler(true);
             if (isBusy) return;
             this.anims.play(!this.body.touching.down ? 'player_jump' : 'player_run', true);
         }
         else if (cursors[controllCursor['right']].isDown) {
             this.setVelocityX(this.stats.movementSpeed);
-            this.filpHandler(false);
+            if (this.flipX) this.filpHandler(false);
             if (isBusy) return;
             this.anims.play(!this.body.touching.down ? 'player_jump' : 'player_run', true);
         }
@@ -1034,9 +1032,6 @@ const Player = new Phaser.Class({
         if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['attack']])) {
             if (this.stats.MP < this.stats.manaCost) return;
 
-            // !this.body.touching.down 
-            //  === 'player_run'
-            console.debug();
             let currentAnims = this.anims.getName();
             let isJumping = !this.body.touching.down;
             let isRuning = (currentAnims === 'player_run' || currentAnims === 'player_runAttack');
@@ -1050,7 +1045,7 @@ const Player = new Phaser.Class({
             var bullet = this.bullets.get();
             // console.debug(bullet);
             if (bullet) {
-                bullet.fire(this.x, this.y, this.stats.attackSpeed * (this.filpFlag ? -1 : 1));
+                bullet.fire(this.x, this.y, this.stats.attackSpeed * (this.flipX ? -1 : 1));
                 bullet.anims.play('player_run', true);
                 // bullet.setMass(1);
                 bullet.body.setSize(30, 40);
@@ -1075,16 +1070,26 @@ const Player = new Phaser.Class({
             onComplete: () => this.invincibleFlag = false,
         });
     },
+    // dieHandler: () => {
+
+    // },
     //==HP/MP
     statsChangeHandler: function (statsObj) {
         Object.keys(statsObj).forEach(stats => this[stats + 'bar'].updateFlag = true);
 
         //==死
         if (this.stats.HP <= 0) {
+            this.stats.HP = 0;
+            const dieDuration = 200;
+
             this.anims.play('player_hurt', true);
             this.body.reset(this.x, this.y);
-            this.body.enable = false;
-            this.anims.play('player_death', true);
+            this.invincibleFlag = true;
+            this.scene.time.delayedCall(dieDuration, () => {
+                this.anims.play('player_death', true);
+                this.scene.gameOver.flag = true;
+            }, [], this);
+
         };
 
         // this.stats = Object.assign(this.stats, statsObj);

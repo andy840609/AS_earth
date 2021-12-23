@@ -93,7 +93,7 @@ svg {
 
 }
 
-/* *******************左邊UI列******************* */
+/* ====================================== UI ============================================= */
 
 #gameUI {
     position: absolute;
@@ -190,6 +190,13 @@ svg {
     pointer-events: none;
 }
 
+#gameUI .sidekickUI {
+    background: rgb(255, 255, 255);
+    border-style: double;
+    border-width: 10px;
+    border-radius: 5px;
+    padding: 10px 10px;
+}
 
 /* *******************速度圖手把動畫******************* */
 #velocityChartUI>svg .handle .anim {
@@ -222,7 +229,7 @@ svg {
 
 
 
-/* *******************confirmWindow******************* */
+/* *************confirmWindow************* */
 
 
 :root {
@@ -328,7 +335,7 @@ svg {
     }
 }
 
-/* 通關畫面 */
+/* ======================================通關畫面============================================= */
 #gameGroup .Congrats {
     background: #003652;
     position: absolute;

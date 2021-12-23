@@ -2193,6 +2193,7 @@ class DefendScene extends Phaser.Scene {
             },
             gameOver: {
                 flag: false,
+                delayedCall: null,
                 resolve: other.resolve,
             },
             gameData: Object.assign({ stationData: stationData }, GameData),
@@ -2554,9 +2555,6 @@ class DefendScene extends Phaser.Scene {
                 .setPosition(100, 450)
                 .setDepth(Depth.player);
 
-            this.player.filpHandler(false);
-            // console.debug(this.player);
-
             this.player.playerAttack = (bullet, enemy) => {
                 // console.debug(bullet, enemy);
                 let playerStats = this.player.stats;
@@ -2709,8 +2707,15 @@ class DefendScene extends Phaser.Scene {
         // console.debug(enemy.children.entries);
 
         if (this.gameOver.flag) {
-            //===time remove
-            this.gameTimer.remove();
+            const gameDestroyDelay = 5000;
+            const camera = this.cameras.main;
+            camera.pan(this.player.x, this.player.y, gameDestroyDelay * 0.5, 'Back', true);
+            camera.zoomTo(5, gameDestroyDelay * 0.5);
+
+            if (this.gameOver.delayedCall) return;
+
+            this.gameTimer.paused = true;
+            this.player.invincibleFlag = true;
 
             //===get gameResult 
             let orbStats = this.orbGroup.getChildren().map(orb => orb.orbStats);
@@ -2739,8 +2744,15 @@ class DefendScene extends Phaser.Scene {
                 },
             };
 
-            this.game.destroy(true, false);
-            this.gameOver.resolve(gameResult);
+            this.gameOver.delayedCall = this.time.delayedCall(gameDestroyDelay, () => {
+                //===time remove
+                // this.gameTimer.remove();
+                this.game.destroy(true, false);
+                this.gameOver.resolve(gameResult);
+            }, [], this);
+
+
+
         };
 
 

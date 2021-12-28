@@ -37,6 +37,15 @@
         "certLabel3": "完成日期",
         "certLabel4": "網站連結",
         "certLabel5": "勇者可靠度",
+        "velocityChartLock": "完成三個測站後解鎖",
+        "mapClickConfirm1": "出發前往",
+        "mapClickConfirm2": "探索嗎？",
+        "yes": "是",
+        "no": "不是",
+        "station": "測站",
+        "assumedEpicenter": "假設震央",
+        "rankChartStr1": "我超越了",
+        "rankChartStr2": "的勇者!",
         "a": "a"
     },
     "Load": {
@@ -46,15 +55,6 @@
         "aaa": "sss"
     },
     "Tip": {
-        "velocityChartLock": "完成兩個測站後解鎖",
-        "mapClickConfirm1": "出發前往",
-        "mapClickConfirm2": "探索嗎？",
-        "yes": "是",
-        "no": "不是",
-        "station": "測站",
-        "assumedEpicenter": "假設震央",
-        "rankChartStr1": "我超越了",
-        "rankChartStr2": "的勇者!",
         "aaa": "sss",
         "aaa": "sss",
         "aaa": "sss"
@@ -65,6 +65,20 @@
         },
         "boss": {
             "0": "果然到了這裡呢...\f\n接下來要考驗你的智慧了"
+        },
+        "sidekick": {
+            "0": {
+                "0": "你終於來了，\n為了找出震源魔王的藏身地點，\n我們必須先蒐集情報......",
+                "1": "地震測站可以得到許多情報，\n我幫你標示在地圖上了，\n事不宜遲馬上出發吧!",
+                "2": "( 點擊   \t   圖示 )"
+            },
+            "1": {
+                "0": "很好我們得到新情報了！\n再蒐集\t個情報或許就能\n找出震源城的位置"
+            },
+            "2": {
+                "0": "",
+                "1": "地震測站可以得到許多情報，\n我幫你標示在地圖上了，\n事不宜遲馬上出發吧!"
+            }
         }
     },
     "Quiz": {
@@ -167,6 +181,16 @@
                 "地牛發脾氣"
             ],
             "answer": "位於板塊交界處"
+        },
+        "10": {
+            "content": "臺灣本島的地震深度多在幾公里?",
+            "choices": [
+                "30",
+                "100",
+                "300",
+                "3"
+            ],
+            "answer": "30"
         }
     }
 }

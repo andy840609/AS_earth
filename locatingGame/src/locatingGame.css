@@ -10,12 +10,12 @@ font,
 h1,
 h2,
 h3,
-.UIicon {
+#gameUI {
     user-select: none;
     /* font-family: Pigmo; */
 }
 
-.UIicon img {
+#gameUI img {
     -webkit-user-drag: none;
 }
 
@@ -191,11 +191,34 @@ svg {
 }
 
 #gameUI .sidekickUI {
-    background: rgb(255, 255, 255);
-    border-style: double;
-    border-width: 10px;
-    border-radius: 5px;
-    padding: 10px 10px;
+    position: absolute;
+    right: 0px;
+    bottom: 0px;
+}
+
+#gameUI .sidekickUI .sidekick {
+    position: fixed;
+    right: 30px;
+    bottom: 10px;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+#gameUI .sidekickUI .sidekickTXB {
+    position: fixed;
+    right: 0px;
+    bottom: 210px;
+}
+
+#gameUI .sidekickUI .textImg {
+    position: fixed;
+}
+
+#gameUI .sidekickUI .sidekickText {
+    position: absolute;
+    font: small-caps bold 24px sans-serif;
+    top: 100px;
+    left: 90px;
 }
 
 /* *******************速度圖手把動畫******************* */

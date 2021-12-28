@@ -194,13 +194,11 @@ function locatingGame() {
                 <form id="form-game">
 
                 <div class="form-group row" id="gameGroup">
-
                   
                     <div id="bigMap" class="col-12"></div>
-                  
-                 
-                    <div id="gameOuter"  class="row">
-                        <div id="gameMain"></div>                      
+                                   
+                    <div id="gameOuter">
+                        <div id="gameMain"></div>                 
                     </div>
    
                     <div class="form-group" id="gameUI"></div>
@@ -222,6 +220,7 @@ function locatingGame() {
             var geoJSON;//===location data
             var assumedEpicenter;
             var rankingData;
+            const clearStationToUnlock = 2;
 
             var gameDisplay = (display) => {
 
@@ -239,6 +238,7 @@ function locatingGame() {
 
             function initGameData() {
                 let playerRole = 'Biker';//==之後能選其他[Biker,Cyborg,Punk]
+                let sidekick = 'owl';
 
                 GameData = {
                     timeRemain: 5 * 60000,//1min=60000ms           
@@ -267,6 +267,12 @@ function locatingGame() {
                     playerRole: playerRole,
                     playerStats: GameObjectStats.player[playerRole],
                     playerTimeUse: 0,//==圖表
+                    sidekick: {
+                        type: sidekick,
+                        lineStage: 0,
+                        talkSpeed: 3500,
+                        doneTalking: true,
+                    },
                 };
             };
             function initStartScene() {
@@ -509,9 +515,6 @@ function locatingGame() {
                         attribution: esriMap.attr,
                     }).addTo(mapObj);
 
-
-
-
                 };
                 async function addCounty() {
 
@@ -563,7 +566,7 @@ function locatingGame() {
                     data.forEach((d, i) => {
                         // console.debug(d);
                         // let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
-                        let enemy = ['cat'];//==之後隨機抽敵人組
+                        let enemy = [];//==之後隨機抽敵人組
                         let enemyStats = {};
 
                         enemy.forEach((key) => {
@@ -591,6 +594,7 @@ function locatingGame() {
                         let marker = L.marker(d['coordinate'], {
                             pane: 'markerPane',
                             data: d,
+                            opacity: 0,
                             // bubblingMouseEvents: true,
                         })
                             .on('mouseover', (e) => {
@@ -606,7 +610,7 @@ function locatingGame() {
                                 gameUI.find('.confirmWindow')
                                     .fadeIn(fadeInDuration)
                                     .find('.placeStr')
-                                    .text(`${d['station']}${GameData.localeJSON.Tip['station']}`)
+                                    .text(`${d['station']}${GameData.localeJSON.UI['station']}`)
                                     .data('gameStartParameters', ['defend', marker]);
 
                             });
@@ -615,6 +619,7 @@ function locatingGame() {
                             direction: 'top',
                             // permanent: true,
                             className: 'station-tooltip',
+                            opacity: 0,
                         });
 
                         //===station circle
@@ -631,7 +636,8 @@ function locatingGame() {
 
                         markerArr.push(marker);
                         circleArr.push(circle);
-                        updateStation(marker, { icon: 'default' });
+
+                        // updateStation(marker, { icon: 'default' });
                     });
 
                     L.layerGroup(markerArr, { key: 'markerGroup' }).addTo(mapObj);
@@ -722,7 +728,7 @@ function locatingGame() {
                             UIhint
                                 .animate({ "opacity": "show" }, 500)
                                 .children('.tooltipText')
-                                .text(GameData.localeJSON.Tip[`${target.id}Lock`]);
+                                .text(GameData.localeJSON.UI[`${target.id}Lock`]);
 
                             let top = targetDOMRect.top,
                                 left = targetDOMRect.left - bigMapDOMRect.left + imgNode.offsetWidth + 10;
@@ -742,6 +748,7 @@ function locatingGame() {
 
                             let bigMapDOMRect = bigMap.getBoundingClientRect();
                             let targetDOMRect = target.getBoundingClientRect();
+                            // console.debug(bigMapDOMRect);
 
                             let top = targetDOMRect.top - bigMapDOMRect.top,
                                 left = targetDOMRect.left - bigMapDOMRect.left + 80;
@@ -919,20 +926,20 @@ function locatingGame() {
                         let imgW = 10;
                         let confirmWindow = gameUI.append(`
                         <div class="confirmWindow">
-                            <text>${GameData.localeJSON.Tip['mapClickConfirm1']} 
+                            <text>${GameData.localeJSON.UI['mapClickConfirm1']} 
                                 <b class="placeStr"></b>
-                             ${GameData.localeJSON.Tip['mapClickConfirm2']}
+                             ${GameData.localeJSON.UI['mapClickConfirm2']}
                             </text>
                             <div class="d-flex justify-content-around" >
                                 <text name="confirm" value="yes">
                                     <img name="confirmImg" src="${ctrlDir}triangle_left.png" width="${imgW}px" height="${imgW}px">
-                                    ${GameData.localeJSON.Tip['yes']}
+                                    ${GameData.localeJSON.UI['yes']}
                                     <img name="confirmImg" src="${ctrlDir}triangle_right.png" width="${imgW}px" height="${imgW}px">
                                 </text>
 
                                 <text name="confirm" value="no">
                                     <img name="confirmImg" src="${ctrlDir}triangle_left.png" width="${imgW}px" height="${imgW}px">
-                                    ${GameData.localeJSON.Tip['no']}
+                                    ${GameData.localeJSON.UI['no']}
                                     <img name="confirmImg" src="${ctrlDir}triangle_right.png" width="${imgW}px" height="${imgW}px">
                                 </text>
                                 
@@ -987,15 +994,73 @@ function locatingGame() {
 
 
                     };
-                    var sidekickUI = () => {
+                    var sidekick = () => {
+                        const sidekickDir = assetsDir + 'ui/sidekick/';
+                        const sidekickW = 200;
+                        const textBoxW = 500;
 
+                        //===sidekickUI
+                        const sidekickUI = gameUI
+                            .append(`<div class="sidekickUI"></div>`)
+                            .find('.sidekickUI');
+
+                        let lines = GameData.localeJSON.Lines.sidekick;
+                        var init = () => {
+                            sidekickUI
+                                .append(`
+                                    <div class="sidekickTXB">
+                                        <img src="${sidekickDir}/textBox.png" width="${textBoxW}px">
+                                        <div class="sidekickText" style="white-space: pre-wrap">
+                                        <div class="changingText"><img></div>                                        
+                                    </div>`
+                                )
+                                .append(`
+                                    <div class="sidekick">
+                                        <img src="${sidekickDir}/${GameData.sidekick.type}.png" width="${sidekickW}px">
+                                    </div>`
+                                );
+
+                            sidekickUI.find('.sidekickTXB').hide();
+                            sidekickUI.find('.sidekick')
+                                .on('click', () => {
+                                    if (!GameData.sidekick.doneTalking) return;
+
+                                    let stage = GameData.sidekick.lineStage,
+                                        index = Object.keys(lines[stage]).length - 1;
+                                    updateSidekick(stage, index, true);
+                                })
+                                .on('mouseover', e => {
+
+                                })
+                                .on('mouseout', () => {
+
+                                });
+                        };
+                        var sidekickTalk = (stage) => {
+                            let statIdx = 0, endIdx = Object.keys(lines[stage]).length - 1;
+                            let talk = (stage, statIdx, islastLine) =>
+                                updateSidekick(stage, statIdx, islastLine);
+
+                            talk(stage, 0, statIdx == endIdx);
+                            let interval = setInterval(() => {
+                                ++statIdx;
+                                let islastLine = (statIdx == endIdx);
+                                if (islastLine) clearInterval(interval);
+                                talk(stage, statIdx, islastLine);
+
+                            }, GameData.sidekick.talkSpeed);
+                        };
+
+                        init();
+                        // sidekickTalk(GameData.sidekick.lineStage);
+                        updateSidekick(1, 0, true);
                     };
 
                     timeRemain();
                     UIbar();
                     confirmWindow();
                     congratsPage();
-                    sidekickUI();
+                    sidekick();
                 };
                 function addMapEvent() {
                     const allowedErro = 10;//==容許與震央相差距離(km)
@@ -1004,7 +1069,7 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
-                            if (GameData.timeRemain == 0) return;
+                            if (GameData.timeRemain == 0 || !GameData.velocityChartUnlock) return;
                             let lat = e.latlng.lat;
                             let lng = e.latlng.lng;
 
@@ -1113,6 +1178,8 @@ function locatingGame() {
 
                     }, delay);
 
+                    marker.setOpacity(1);
+                    marker.getTooltip().setOpacity(1);
                 };
                 var iconTriggerAnime = (marker, trigger = true, duration = 50) => {
                     if (interval) return;
@@ -1271,8 +1338,9 @@ function locatingGame() {
                 GameData.playerStats = Object.assign(GameData.playerStats, playerStats);
                 if (controllCursor) GameData.controllCursor = controllCursor;
 
-                if (!GameData.velocityChartUnlock)
-                    if (data.filter(d => d.stationStats.clear).length >= 2) {
+                if (!GameData.velocityChartUnlock) {
+                    let clearCount = data.filter(d => d.stationStats.clear).length;
+                    if (clearCount >= clearStationToUnlock) {
                         GameData.velocityChartUnlock = true;
 
                         //==延遲後移除lock.gif
@@ -1295,7 +1363,12 @@ function locatingGame() {
                             }, delay);
                         };
                         lockAnime();
+                    }
+                    else if (clearCount > 0) {
+                        console.debug('update')
+                        updateSidekick(1, 0, true);
                     };
+                }
 
                 //==gameover
                 if (GameData.timeRemain == 0) {
@@ -1331,7 +1404,62 @@ function locatingGame() {
                 };
 
             };
+            function updateSidekick(stage, index, islastLine) {
+                console.debug(stage, index, islastLine)
+                GameData.sidekick.doneTalking = false;
 
+                let sidekickUI = gameUI.find('.sidekickUI');
+                let sidekickTXB = sidekickUI.find('.sidekickTXB');
+                let changingText = sidekickTXB.find('.changingText');
+                let changingImg = changingText.find('.img');
+                let lines = GameData.localeJSON.Lines.sidekick;
+                let talkSpeed = GameData.sidekick.talkSpeed;
+
+                switch (`${stage}_${index}`) {
+                    case '0_1':
+                        data.forEach(d => updateStation(d.markerObj, { icon: 'default' }));
+                        break;
+                    case '0_2':
+
+                        changingText
+                            .css('right', '290px')
+                            .css('bottom', '480px');
+
+                        changingImg.hide()
+                            .attr('src', assetsDir + 'icon/home.png')
+                            .attr('width', '50px');
+
+                        changingImg.fadeIn();
+                        break;
+                    case '1_0':
+                        changingText.hide()
+                            .css('right', '290px')
+                            .css('bottom', '480px')
+                            .text('AAAAAAAAAAA');
+
+                        changingText.fadeIn();
+                        break;
+                    case '0_9':
+                        break;
+                    case '0_9':
+                        break;
+                };
+
+
+                sidekickTXB.fadeIn()
+                    .children('.sidekickText')
+                    .html(lines[stage][index]);
+
+
+                setTimeout(() => {
+                    sidekickTXB.fadeOut(talkSpeed * 0.4);
+                    if (islastLine) setTimeout(() => {
+                        GameData.sidekick.doneTalking = true;
+                        changingText.hide();
+                        changingImg.hide();
+                    }, talkSpeed * 0.45);
+                }, talkSpeed * 0.5);
+            };
             //===when map clicked
             async function gameStart(gameMode, siteData = null) {
                 // console.debug(gameMode, siteData);
@@ -1345,7 +1473,7 @@ function locatingGame() {
                         data[0].markerObj.options.data;//test
 
                     gameResult = await new Promise((resolve, reject) => {
-                        const config = Object.assign(getPhaserConfig(width * 0.9, height * 0.95), {
+                        const config = Object.assign(getPhaserConfig(width, height), {
                             scene: new DefendScene(stationData, GameData, {
                                 getWaveImg: getWaveImg,
                                 resolve: resolve,
@@ -1403,13 +1531,13 @@ function locatingGame() {
                         assumedEpicenter
                             .setLatLng(coordinate)
                             .getTooltip()
-                            .setContent(`${GameData.localeJSON.Tip['assumedEpicenter']} : ${coordinate.map(d => d.toFixed(2)).join(' , ')}`)
+                            .setContent(`${GameData.localeJSON.UI['assumedEpicenter']} : ${coordinate.map(d => d.toFixed(2)).join(' , ')}`)
                         assumedEpicenter.getElement().style.display = 'inline';
 
                         GameData.playerEpicenter = coordinate;
 
                         gameResult = await new Promise((resolve, reject) => {
-                            const config = Object.assign(getPhaserConfig(width * 0.9, height * 0.95), {
+                            const config = Object.assign(getPhaserConfig(width, height), {
                                 scene: new DigScene(placeData, GameData, {
                                     resolve: resolve,
                                 }),
@@ -1430,7 +1558,7 @@ function locatingGame() {
                         let background = backgroundArr[getRandom(backgroundArr.length)];
 
                         gameResult = await new Promise((resolve, reject) => {
-                            const config = Object.assign(getPhaserConfig(width * 0.9, height * 0.95), {
+                            const config = Object.assign(getPhaserConfig(width, height), {
                                 scene: new BossScene(GameData, background, {
                                     resolve: resolve,
                                 }),
@@ -1459,6 +1587,7 @@ function locatingGame() {
             initGameData();
             initStartScene();
         };
+
         //===init once
         if (!(chartContainerJQ.find('#form-game').length >= 1)) {
             initForm();
@@ -1466,6 +1595,7 @@ function locatingGame() {
         data = await data;
         console.log(data);
         gameGenerate();
+
 
     };
     //==================d3 chart================================================
@@ -2445,7 +2575,7 @@ function locatingGame() {
 
                                         title
                                             .select('text')
-                                            .text(GameData.localeJSON.Tip['rankChartStr1'])
+                                            .text(GameData.localeJSON.UI['rankChartStr1'])
                                             .append('tspan')
                                             .attr("fill", "red")
                                             .attr("font-size", "30")
@@ -2453,7 +2583,7 @@ function locatingGame() {
                                             .append('tspan')
                                             .attr("fill", textColor)
                                             .attr("font-size", "15")
-                                            .text(GameData.localeJSON.Tip['rankChartStr2']);
+                                            .text(GameData.localeJSON.UI['rankChartStr2']);
 
 
                                         title

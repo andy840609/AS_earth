@@ -2707,7 +2707,7 @@ class DefendScene extends Phaser.Scene {
         // console.debug(enemy.children.entries);
 
         if (this.gameOver.flag) {
-            const gameDestroyDelay = 5000;
+            const gameDestroyDelay = 2000;
             const camera = this.cameras.main;
             camera.pan(this.player.x, this.player.y, gameDestroyDelay * 0.5, 'Back', true);
             camera.zoomTo(5, gameDestroyDelay * 0.5);

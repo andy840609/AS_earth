@@ -220,7 +220,7 @@ function locatingGame() {
             var geoJSON;//===location data
             var assumedEpicenter;
             var rankingData;
-            const clearStationToUnlock = 2;
+            const clearStationToUnlock = 3;
 
             var gameDisplay = (display) => {
 
@@ -246,7 +246,6 @@ function locatingGame() {
                     timeMultiplier: 300,//real 1 ms = game x ms;
                     velocity: 7.5,//==速度參數預設7.5
                     playerEpicenter: null,
-                    velocityChartUnlock: false,
                     controllCursor: {
                         up: 'w',
                         down: 's',
@@ -267,6 +266,10 @@ function locatingGame() {
                     playerRole: playerRole,
                     playerStats: GameObjectStats.player[playerRole],
                     playerTimeUse: 0,//==圖表
+                    stationClear: {
+                        chartUnlock: false,
+                        count: 0,
+                    },
                     sidekick: {
                         type: sidekick,
                         lineStage: 0,
@@ -401,17 +404,27 @@ function locatingGame() {
                                     // console.debug(imgName);
 
                                     FB.ui(
+                                        // {
+                                        //     method: 'share_open_graph',
+                                        //     action_type: 'og.shares',
+                                        //     action_properties: JSON.stringify({
+                                        //         object: {
+                                        //             // 'og:url': certificateDir + imgName,
+                                        //             'og:url': certificateDir + 'AAA.jpeg',
+                                        //             'og:title': "your caption here",
+                                        //             'og:description': "your caption here",
+                                        //             // 'og:image': certificateDir + imgName,
+                                        //             'og:image': certificateDir + 'dude.png',
+                                        //         }
+                                        //     }),
+                                        // },
                                         {
-                                            method: 'share_open_graph',
-                                            action_type: 'og.likes',
-                                            action_properties: JSON.stringify({
-                                                object: {
-                                                    'og:url': certificateDir + imgName,
-                                                    'og:title': "your caption here",
-                                                    'og:description': "your caption here",
-                                                    'og:image': certificateDir + imgName,
-                                                }
-                                            }),
+                                            display: 'popup',
+                                            method: 'share',
+                                            href: certificateDir + imgName,
+                                            // picture: certificateDir + 'dude.png',
+                                            // caption: 'AAA',
+                                            // description: 'BBB',
                                         },
                                         // callback
                                         function (response) {
@@ -421,7 +434,9 @@ function locatingGame() {
                                                 // alert('Error while posting.');
                                             }
 
-                                            FB.api("/me/permissions", "DELETE", function (res) { });
+                                            FB.api("/me/permissions", "DELETE", function (res) {
+                                                FB.logout();
+                                            });
 
                                         }
                                     );
@@ -440,7 +455,6 @@ function locatingGame() {
                                         console.log(response);
                                         console.log('Welcome!  Fetching your information.... ');
                                         share(getProfile());
-                                        FB.logout();
 
                                     } else {
                                         console.log('User cancelled login or did not fully authorize.');
@@ -644,17 +658,18 @@ function locatingGame() {
                     L.layerGroup(circleArr, { key: 'circleGroup' }).addTo(mapObj);
 
 
-                    //＝＝test 震央
+
                     let size = 40;
-                    L.marker(data.epicenter['coordinate'], {
-                        icon: L.icon({
-                            iconUrl: assetsDir + 'icon/star.png',
-                            iconSize: [size, size],
-                            iconAnchor: [size / 2, size / 2],
-                        }),
-                        pane: 'markerPane',
-                        data: data.epicenter,
-                    }).addTo(mapObj);
+                    //＝＝test 震央
+                    // L.marker(data.epicenter['coordinate'], {
+                    //     icon: L.icon({
+                    //         iconUrl: assetsDir + 'icon/star.png',
+                    //         iconSize: [size, size],
+                    //         iconAnchor: [size / 2, size / 2],
+                    //     }),
+                    //     pane: 'markerPane',
+                    //     data: data.epicenter,
+                    // }).addTo(mapObj);
                     //＝＝test 震央
 
                     assumedEpicenter = L.marker(data.epicenter['coordinate'], {
@@ -722,8 +737,7 @@ function locatingGame() {
                         UItooltip.css({ top: top, left: left, });
 
 
-                        if (!GameData.velocityChartUnlock && target.id == UIbuttons[1]) {
-
+                        if (!GameData.stationClear.chartUnlock && target.id == UIbuttons[1]) {
 
                             UIhint
                                 .animate({ "opacity": "show" }, 500)
@@ -901,12 +915,12 @@ function locatingGame() {
                                     });
 
                                     UItooltip.hide();
-                                    if (!GameData.velocityChartUnlock && e.target.parentNode.id == UIbuttons[1])
+                                    if (!GameData.stationClear.chartUnlock && e.target.parentNode.id == UIbuttons[1])
                                         UIhint.hide();
                                 })
                                 .on('click', function (e) {
                                     //==速度參數要完成兩站才能調整
-                                    if (this.id == UIbuttons[1] && !GameData.velocityChartUnlock) return;
+                                    if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
 
                                     let button = $(this);
                                     let ckick = button.hasClass('clicked');
@@ -1010,8 +1024,8 @@ function locatingGame() {
                                 .append(`
                                     <div class="sidekickTXB">
                                         <img src="${sidekickDir}/textBox.png" width="${textBoxW}px">
-                                        <div class="sidekickText" style="white-space: pre-wrap">
-                                        <div class="changingText"><img></div>                                        
+                                        <div class="sidekickText" style="white-space: pre-wrap"></div>
+                                        <div class="changingDiv"><img><text></text></div>                                        
                                     </div>`
                                 )
                                 .append(`
@@ -1028,6 +1042,7 @@ function locatingGame() {
                                     let stage = GameData.sidekick.lineStage,
                                         index = Object.keys(lines[stage]).length - 1;
                                     updateSidekick(stage, index, true);
+                                    // updateSidekick(1, 1, false);
                                 })
                                 .on('mouseover', e => {
 
@@ -1036,24 +1051,10 @@ function locatingGame() {
 
                                 });
                         };
-                        var sidekickTalk = (stage) => {
-                            let statIdx = 0, endIdx = Object.keys(lines[stage]).length - 1;
-                            let talk = (stage, statIdx, islastLine) =>
-                                updateSidekick(stage, statIdx, islastLine);
 
-                            talk(stage, 0, statIdx == endIdx);
-                            let interval = setInterval(() => {
-                                ++statIdx;
-                                let islastLine = (statIdx == endIdx);
-                                if (islastLine) clearInterval(interval);
-                                talk(stage, statIdx, islastLine);
-
-                            }, GameData.sidekick.talkSpeed);
-                        };
 
                         init();
-                        // sidekickTalk(GameData.sidekick.lineStage);
-                        updateSidekick(1, 0, true);
+                        updateSidekick(0, 0, false);
                     };
 
                     timeRemain();
@@ -1069,7 +1070,7 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
-                            if (GameData.timeRemain == 0 || !GameData.velocityChartUnlock) return;
+                            if (GameData.timeRemain == 0 || !GameData.stationClear.chartUnlock) return;
                             let lat = e.latlng.lat;
                             let lng = e.latlng.lng;
 
@@ -1338,10 +1339,10 @@ function locatingGame() {
                 GameData.playerStats = Object.assign(GameData.playerStats, playerStats);
                 if (controllCursor) GameData.controllCursor = controllCursor;
 
-                if (!GameData.velocityChartUnlock) {
-                    let clearCount = data.filter(d => d.stationStats.clear).length;
-                    if (clearCount >= clearStationToUnlock) {
-                        GameData.velocityChartUnlock = true;
+                if (!GameData.stationClear.chartUnlock) {
+                    GameData.stationClear.count = data.filter(d => d.stationStats.clear).length;
+                    if (GameData.stationClear.count >= clearStationToUnlock) {
+                        GameData.stationClear.chartUnlock = true;
 
                         //==延遲後移除lock.gif
                         const lock = gameUI.find('#velocityChartLock');
@@ -1363,9 +1364,12 @@ function locatingGame() {
                             }, delay);
                         };
                         lockAnime();
+
+                        updateSidekick(1, 1, false);
+                        GameData.sidekick.lineStage = 1;
                     }
-                    else if (clearCount > 0) {
-                        console.debug('update')
+                    else if (GameData.stationClear.count > 0) {
+                        // console.debug('update')
                         updateSidekick(1, 0, true);
                     };
                 }
@@ -1405,60 +1409,88 @@ function locatingGame() {
 
             };
             function updateSidekick(stage, index, islastLine) {
-                console.debug(stage, index, islastLine)
-                GameData.sidekick.doneTalking = false;
-
-                let sidekickUI = gameUI.find('.sidekickUI');
-                let sidekickTXB = sidekickUI.find('.sidekickTXB');
-                let changingText = sidekickTXB.find('.changingText');
-                let changingImg = changingText.find('.img');
                 let lines = GameData.localeJSON.Lines.sidekick;
-                let talkSpeed = GameData.sidekick.talkSpeed;
 
-                switch (`${stage}_${index}`) {
-                    case '0_1':
-                        data.forEach(d => updateStation(d.markerObj, { icon: 'default' }));
-                        break;
-                    case '0_2':
+                var manyLines = (stage, index = 0) => {
+                    let startIdx = index, endIdx = Object.keys(lines[stage]).length - 1;
+                    let talk = (stage, startIdx, islastLine) =>
+                        showText(stage, startIdx, islastLine);
 
-                        changingText
-                            .css('right', '290px')
-                            .css('bottom', '480px');
+                    talk(stage, index, startIdx == endIdx);
+                    let interval = setInterval(() => {
 
-                        changingImg.hide()
-                            .attr('src', assetsDir + 'icon/home.png')
-                            .attr('width', '50px');
+                        ++startIdx;
+                        let islastLine = (startIdx == endIdx);
+                        if (islastLine) clearInterval(interval);
+                        // console.debug(startIdx + ' / ' + endIdx);
+                        talk(stage, startIdx, islastLine);
 
-                        changingImg.fadeIn();
-                        break;
-                    case '1_0':
-                        changingText.hide()
-                            .css('right', '290px')
-                            .css('bottom', '480px')
-                            .text('AAAAAAAAAAA');
-
-                        changingText.fadeIn();
-                        break;
-                    case '0_9':
-                        break;
-                    case '0_9':
-                        break;
+                    }, GameData.sidekick.talkSpeed);
                 };
 
+                var showText = (stage, index, islastLine) => {
+                    console.debug(stage, index, islastLine);
+                    GameData.sidekick.doneTalking = false;
 
-                sidekickTXB.fadeIn()
-                    .children('.sidekickText')
-                    .html(lines[stage][index]);
+                    let sidekickUI = gameUI.find('.sidekickUI');
+                    let sidekickTXB = sidekickUI.find('.sidekickTXB');
+                    let changingDiv = sidekickTXB.find('.changingDiv');
+                    let changingText = changingDiv.find('text');
+                    let changingImg = changingDiv.find('img');
 
+                    let talkSpeed = GameData.sidekick.talkSpeed;
 
-                setTimeout(() => {
-                    sidekickTXB.fadeOut(talkSpeed * 0.4);
-                    if (islastLine) setTimeout(() => {
-                        GameData.sidekick.doneTalking = true;
-                        changingText.hide();
-                        changingImg.hide();
-                    }, talkSpeed * 0.45);
-                }, talkSpeed * 0.5);
+                    changingText.hide();
+                    changingImg.hide();
+                    switch (`${stage}_${index}`) {
+                        case '0_1':
+                            data.forEach(d => updateStation(d.markerObj, { icon: 'default' }));
+                            break;
+                        case '0_2':
+                            changingImg
+                                .css('right', '290px')
+                                .css('bottom', '480px');
+
+                            changingImg
+                                .attr('src', assetsDir + 'icon/home.png')
+                                .attr('width', '50px');
+
+                            changingImg.fadeIn();
+                            break;
+                        case '1_0':
+                            changingText
+                                .css('right', '310px')
+                                .css('bottom', '440px')
+                                .text(clearStationToUnlock - GameData.stationClear.count);
+
+                            changingText.fadeIn();
+                            break;
+                        case '1_2':
+                            changingImg
+                                .css('right', '290px')
+                                .css('bottom', '480px');
+
+                            changingImg.hide()
+                                .attr('src', assetsDir + 'icon/velocityChart.png')
+                                .attr('width', '50px');
+
+                            changingImg.fadeIn();
+                            break;
+                        case '0_9':
+                            break;
+                    };
+
+                    sidekickTXB.fadeIn()
+                        .children('.sidekickText')
+                        .html(lines[stage][index]);
+
+                    setTimeout(() => {
+                        sidekickTXB.fadeOut(talkSpeed * 0.4);
+                        if (islastLine) setTimeout(() => GameData.sidekick.doneTalking = true, talkSpeed * 0.45);
+                    }, talkSpeed * 0.5);
+                };
+
+                islastLine ? showText(stage, index, islastLine) : manyLines(stage, index);
             };
             //===when map clicked
             async function gameStart(gameMode, siteData = null) {
@@ -1552,7 +1584,7 @@ function locatingGame() {
                         updateMapUI(playerInfo, 1000);
                     }
 
-                    // ===進王關
+                    // === 進王關
                     if (gameResult.bossRoom) {//gameResult.bossRoom
                         const backgroundArr = Object.keys(BackGroundResources.boss);
                         let background = backgroundArr[getRandom(backgroundArr.length)];
@@ -1856,7 +1888,7 @@ function locatingGame() {
                     .attr("font-size", "30")
                     .attr('x', width / 2)
                     .attr("y", margin.bottom * 0.7)
-                    .text('▵T ( Tₛ - Tₚ ) (s)');
+                    .text(`${GameData.localeJSON.UI['timeGap']} (s)`);//'▵T ( Tₛ - Tₚ ) (s)'
 
                 yAxis
                     .append('text')
@@ -1869,7 +1901,7 @@ function locatingGame() {
                     .attr("transform", "rotate(-90)")
                     .attr('x', -(height - margin.top - margin.bottom) / 2 - margin.top)
                     .attr("y", -margin.left * 1.05)
-                    .text('Distance (km)');
+                    .text(`${GameData.localeJSON.UI['distance']} (km)`);
             };
             function render() {
 
@@ -2196,7 +2228,7 @@ function locatingGame() {
 
                                     tooltip.html(`
                                     <h5>${station}</h5>
-                                    <h5>${GameData.localeJSON.UI['distance']} : ${dist} km</h5>
+                                    <h5>${GameData.localeJSON.UI['preDistance']} : ${dist} km</h5>
                                     <h5>${GameData.localeJSON.UI['estimatedTime']} : ${timeGap} s</h5>
                                     `);
 

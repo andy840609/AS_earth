@@ -210,8 +210,10 @@ svg {
     bottom: 210px;
 }
 
-#gameUI .sidekickUI .textImg {
+#gameUI .sidekickUI .changingDiv>* {
     position: fixed;
+    font: small-caps bold 36px sans-serif;
+    color: red;
 }
 
 #gameUI .sidekickUI .sidekickText {

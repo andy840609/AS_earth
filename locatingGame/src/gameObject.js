@@ -1001,7 +1001,7 @@ const Player = new Phaser.Class({
 
                 let colsestOrb;
                 scene.orbGroup.children.iterate(child => {
-                    console.debug(Phaser.Math.Distance.BetweenPoints(this, child));
+                    // console.debug(Phaser.Math.Distance.BetweenPoints(this, child));
                     if (Phaser.Math.Distance.BetweenPoints(this, child) <= piclUpDistance)
                         if (colsestOrb)
                             colsestOrb =

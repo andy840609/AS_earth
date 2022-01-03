@@ -8,9 +8,19 @@
 </head>
 
 <body>
-    <script src="test.js"></script>
+    <script src="jquery/jquery-3.5.1.min.js"></script>
+    <!-- <script src="test.js"></script> -->
     <script>
-
+        $.ajax({
+            type: 'GET',
+            url: "test.php",
+            data: { test: 999 },
+            async: true,
+            success: function (d) { console.debug(d); },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error(jqXHR, textStatus, errorThrown);
+            },
+        });
 
     </script>
 </body>

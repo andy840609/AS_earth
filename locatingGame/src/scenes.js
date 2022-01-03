@@ -373,35 +373,24 @@ class UIScene extends Phaser.Scene {
                         const handleW = 10,
                             handleXMin = rectX - handleW * 0.5,
                             handleXMax = rectX + rectW - handleW * 0.5;
-                        const scaleFun = gameScene.waveForm.overviewSvgArr.find(d => d.svgName == 'xAxis').x
+                        const scaleFun = gameScene.waveForm.overviewSvgObj.x
                             .range([handleXMin, handleXMax]);
 
                         var initOverview = () => {
                             initDetector();
                             var wave = () => {
-                                gameScene.waveForm.overviewSvgArr.forEach((d, i) => {
-                                    let dy, scaleY;
-                                    if (d.svgName == 'xAxis') {
-                                        dy = y + 70;
-                                        scaleY = 1;
-                                    }
-                                    else {
-                                        dy = y + (35 * i) - 65;
-                                        scaleY = 0.6;
-                                    };
+                                let screen = this.detectorScreen;
+                                let wave = this.add.image(x + 1, y - 25, 'overview_waveForm')
+                                    .setDepth(Depth.detector + 1);
 
-                                    this.add.image(x + 1, dy, 'overview_' + d.svgName)
-                                        .setScale(1, scaleY)
-                                        .setDepth(Depth.detector + 1);
-                                });
-
+                                wave.setScale(screen.displayWidth / wave.displayWidth, screen.displayHeight / wave.displayHeight * 0.9);
+                                console.debug(screen.displayWidth, screen.displayHeight)
                             };
                             wave();
                         };
                         var initBrushes = () => {
                             const stationData = gameScene.gameData.stationData;
                             const getTimePoint = gameScene.getTimePoint;
-                            const groundObj = gameScene.platforms.getChildren()[0];
 
                             let brushRect = this.add.rectangle(rectX, rectY, rectW, rectH, 0xEA7500)
                                 .setDepth(Depth.detector + 2)
@@ -447,30 +436,28 @@ class UIScene extends Phaser.Scene {
                             };
                             var updateWave = (domain = null) => {
                                 var action = () => {
+                                    const key = 'waveForm';
+                                    // console.debug(domain)
                                     gameScene.waveForm.getWaveImg(stationData, domain).then(success => {
-                                        let promises = success.map(d =>
-                                            new Promise((resolve, reject) => {
-                                                let key = d.svgName;
-                                                this.textures.removeKey(key);
-                                                this.load.svg(key, d.svg, { scale: 1 });
-                                                resolve();
-                                            })
-                                        );
+                                        // console.debug(success)
                                         //==避免波形沒更新到
-                                        Promise.all(promises).then(() => this.load.start());
-
+                                        new Promise((resolve, reject) => {
+                                            this.textures.removeKey(key);
+                                            this.load.svg(key, success.svg, { scale: 1 });
+                                            resolve();
+                                        }).then(() => this.load.start());
 
                                         //==更新寶珠位置（在固定時間點）
-                                        gameScene.waveForm.svgArr = success;
+                                        gameScene.waveForm.svgObj = success;
 
                                         this.orbs.forEach(orb => {
                                             if (orb.beholdingFlag) return;
 
                                             orb.orbStats = getTimePoint(orb.orbStats.time, true);
-                                            orb.setPosition(orb.orbStats.position, groundObj.y - 40);
+                                            orb.setPosition(orb.orbStats.position, height * 0.9);
                                             orb.laserUpdateFlag = true;
 
-                                            // console.debug(gameScene.waveForm.svgArr[3].x.domain());
+                                            // console.debug(gameScene.waveForm.svgObj[3].x.domain());
                                             orb.statusHadler(null, false, orb.orbStats.isInRange);
                                         });
 
@@ -589,10 +576,8 @@ class UIScene extends Phaser.Scene {
 
                         };
                         var initUpdateListener = () => {
-                            const keys = gameScene.waveForm.svgArr.map(d => d.svgName);
                             this.load.on('filecomplete', (key) => {
-                                let i = keys.indexOf(key);
-                                gameScene.waveForm.gameObjs[i].setTexture(key);
+                                gameScene.waveForm.gameObjs.setTexture(key);
                             });
                         };
                         var initMapIcon = () => {
@@ -1111,7 +1096,6 @@ class UIScene extends Phaser.Scene {
                 };
                 update = () => { };
                 break;
-
             case 'b':
                 preload = () => { };
                 create = () => { };
@@ -1500,10 +1484,9 @@ class UIScene extends Phaser.Scene {
 
                                 laserObj.setPosition(child.x, child.y + 20);
 
-                                let groundObj = gameScene.platforms.getChildren()[0];
                                 if (child.activateFlag)
                                     child.timeText
-                                        .setPosition(child.x, groundObj.y * 1.06)
+                                        .setPosition(child.x, height * 0.925 + 10)
                                         .setText(child.orbStats.time.toFixed(2));
 
                                 child.laserUpdateFlag = false;
@@ -1811,14 +1794,14 @@ class LoadingScene extends Phaser.Scene {
 
                         //==getWaveSVG
                         gameScene.waveForm.getWaveImg(stationData, xAxisDomain).then(success => {
-                            success.forEach(d => this.load.svg(d.svgName, d.svg, { scale: 1 }));
-                            gameScene.waveForm.svgArr = success;
+                            this.load.svg('waveForm', success.svg, { scale: 1 });
+                            gameScene.waveForm.svgObj = success;
                         });
 
                         //==getOverviewSVG
-                        gameScene.waveForm.getWaveImg(stationData).then(success => {
-                            success.forEach(d => this.load.svg('overview_' + d.svgName, d.svg, { width: 208, height: 200, }));
-                            gameScene.waveForm.overviewSvgArr = success;
+                        gameScene.waveForm.getWaveImg(stationData, null, true).then(success => {
+                            this.load.svg('overview_waveForm', success.svg, { scale: 1 });
+                            gameScene.waveForm.overviewSvgObj = success;
                         });
 
 
@@ -2184,8 +2167,8 @@ class DefendScene extends Phaser.Scene {
             gameTimer: null,
             cursors: null,
             waveForm: {
-                overviewSvgArr: null,
-                svgArr: null,
+                overviewSvgObj: null,
+                svgObj: null,
                 gameObjs: [],
                 getWaveImg: other.getWaveImg,
                 domain: stationData.stationStats.orbStats ?
@@ -2199,12 +2182,16 @@ class DefendScene extends Phaser.Scene {
             gameData: Object.assign({ stationData: stationData }, GameData),
             getTimePoint: (x, getPosition = false) => {
                 // console.debug(this);
-                let xAxisObj = this.waveForm.svgArr.find(svg => svg.svgName == 'xAxis');
-                let scaleFun = xAxisObj.x;
+                // let xAxisObj = this.waveForm.svgObj.find(svg => svg.svgName == 'xAxis');
+                // let scaleFun = xAxisObj.x;
+                // console.debug(this.waveForm);
+
+                let svgObj = this.waveForm.svgObj;
+                let scaleFun = svgObj.x;
 
                 let width = this.sys.game.canvas.width;
-                let waveObjWidth = this.waveForm.gameObjs[0].displayWidth;
-                let margin = xAxisObj.margin;
+                let waveObjWidth = this.waveForm.gameObjs.displayWidth;
+                let margin = svgObj.margin;
 
                 let xAxisRange = [
                     (width - waveObjWidth) * 0.5 + margin.right,
@@ -2299,24 +2286,24 @@ class DefendScene extends Phaser.Scene {
                     .setRotation(-0.1).setOrigin(0.5, 0.5).setDepth(Depth.station);
             };
             var background = () => {
-                const groundH = height * 0.5;
+                // const groundH = height * 0.5;
 
                 let resources = BackGroundResources.defend[this.background];
                 resources.static.forEach((res, i) => {
                     if (i == resources.static.length - 1) {
+
                         this.platforms = this.physics.add.staticGroup();
-                        let ground = this.platforms.create(width * 0.5, groundH * 1.8, 'staticBG_' + i);
+                        let ground = this.platforms.create(width * 0.5, height * 0.5, 'staticBG_' + i);
 
                         ground
-                            .setScale(width / ground.width, groundH / ground.height)
+                            .setScale(width / ground.width, height / ground.height * 0.5)
                             .setDepth(Depth.platform)
-                            .setOrigin(0.5, 0.8)
+                            .setOrigin(0.5, 0)
                             .refreshBody()
-                            .setSize(width, groundH * 0.15, false)
-                            .setOffset(0, groundH * 0.85)
+                            .setSize(width, height * 0.075, false)
+                            .setOffset(0, height * 0.425)
                             .setName('platform');
 
-                        // console.debug(res)
                     }
                     else {
                         let img = this.add.image(width * 0.5, height * 0.5, 'staticBG_' + i);
@@ -2523,20 +2510,14 @@ class DefendScene extends Phaser.Scene {
             };
             var wave = () => {
 
-                const keys = this.waveForm.svgArr.map(d => d.svgName);
+                let wave = this.add.image(width * 0.5, height * 0.5, 'waveForm')
+                    .setDepth(Depth.wave)
+                    .setAlpha(.7);
 
-                this.waveForm.gameObjs = keys.map((key, i) => {
+                wave.setScale(width * 0.8 / wave.width, 1);
 
-                    let wave = this.add.image(0, 0, key)
-                        .setDepth(Depth.wave)
-                        .setAlpha(.7);
+                this.waveForm.gameObjs = wave;
 
-                    wave.setScale(width * 0.8 / wave.width, 1)
-                        .setPosition(width * 0.5, key == 'xAxis' ?
-                            height + wave.height * 0.35 : height * (0.15 + 0.25 * i));
-
-                    return wave;
-                });
 
             };
             var overview = () => {

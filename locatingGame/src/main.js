@@ -220,7 +220,11 @@ function locatingGame() {
             var geoJSON;//===location data
             var assumedEpicenter;
             var rankingData;
+
+            //===遊戲相關
             const clearStationToUnlock = 3;
+
+
 
             var gameDisplay = (display) => {
 
@@ -241,8 +245,8 @@ function locatingGame() {
                 let sidekick = 'owl';
 
                 GameData = {
-                    timeRemain: 5 * 60000,//1min=60000ms           
-                    // timeRemain: 0.09 * 60000,//1min=60000ms
+                    // timeRemain: 5 * 60000,//1min=60000ms           
+                    timeRemain: 0.03 * 60000,//1min=60000ms
                     timeMultiplier: 300,//real 1 ms = game x ms;
                     velocity: 7.5,//==速度參數預設7.5
                     playerEpicenter: null,
@@ -574,13 +578,13 @@ function locatingGame() {
                 async function addStation() {
                     // console.debug(data);
                     const backgroundArr = Object.keys(BackGroundResources.defend);
-                    let markerArr = [],
-                        circleArr = [];
+                    // let markerArr = [],
+                    //     circleArr = [];
 
                     data.forEach((d, i) => {
                         // console.debug(d);
-                        // let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
-                        let enemy = [];//==之後隨機抽敵人組
+                        let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
+                        // let enemy = [];//==之後隨機抽敵人組
                         let enemyStats = {};
 
                         enemy.forEach((key) => {
@@ -608,7 +612,6 @@ function locatingGame() {
                         let marker = L.marker(d['coordinate'], {
                             pane: 'markerPane',
                             data: d,
-                            opacity: 0,
                             // bubblingMouseEvents: true,
                         })
                             .on('mouseover', (e) => {
@@ -633,7 +636,6 @@ function locatingGame() {
                             direction: 'top',
                             // permanent: true,
                             className: 'station-tooltip',
-                            opacity: 0,
                         });
 
                         //===station circle
@@ -647,17 +649,17 @@ function locatingGame() {
                             markerObj: marker,
                             circleObj: circle,
                         });
+                        // console.debug(marker.getIcon())
 
-                        markerArr.push(marker);
-                        circleArr.push(circle);
+
+                        // markerArr.push(marker);
+                        // circleArr.push(circle);
 
                         // updateStation(marker, { icon: 'default' });
                     });
 
-                    L.layerGroup(markerArr, { key: 'markerGroup' }).addTo(mapObj);
-                    L.layerGroup(circleArr, { key: 'circleGroup' }).addTo(mapObj);
-
-
+                    // L.layerGroup(markerArr, { key: 'markerGroup' }).addTo(mapObj);
+                    // L.layerGroup(circleArr, { key: 'circleGroup' }).addTo(mapObj);
 
                     let size = 40;
                     //＝＝test 震央
@@ -692,18 +694,29 @@ function locatingGame() {
                         })
                         .on('click', function (e) {
                             //==觸發畫面位置點擊(要在假設點上座標才對)
-                            let bigMapDOMRect = bigMap.getBoundingClientRect();
                             const event = new MouseEvent('click', {
                                 'view': window,
                                 'bubbles': true,
                                 'cancelable': true,
-                                'clientX': e.containerPoint.x + bigMapDOMRect.x,
-                                'clientY': e.containerPoint.y + bigMapDOMRect.y,
+                                'clientX': e.originalEvent.clientX,
+                                'clientY': e.originalEvent.clientY,
                             });
                             bigMap.dispatchEvent(event);
 
+                            // let bigMapDOMRect = bigMap.getBoundingClientRect();
+                            // const event = new MouseEvent('click', {
+                            //     'view': window,
+                            //     'bubbles': true,
+                            //     'cancelable': true,
+                            //     'clientX': e.containerPoint.x + bigMapDOMRect.x,
+                            //     'clientY': e.containerPoint.y + bigMapDOMRect.y,
+                            // });
+                            // bigMap.dispatchEvent(event);
+
                         }).addTo(mapObj);
+
                     assumedEpicenter.getElement().style.display = 'none';
+                    // console.debug(assumedEpicenter.getElement())
 
                 };
                 async function addUI() {
@@ -1065,8 +1078,8 @@ function locatingGame() {
                     sidekick();
                 };
                 function addMapEvent() {
-                    const allowedErro = 10;//==容許與震央相差距離(km)
-                    let bingo;//==找到震央布林值
+                    const allowedErro = 15;//==容許與震央相差距離(km)
+
                     let confirmWindow = gameUI.find('.confirmWindow');
 
                     mapObj
@@ -1077,14 +1090,18 @@ function locatingGame() {
 
                             let distToEpicenter = distanceByLnglat([lat, lng], data.epicenter.coordinate);
                             console.debug(distToEpicenter);
-                            bingo = distToEpicenter <= allowedErro;
+                            //==找到震央布林值 
+                            let bingo = distToEpicenter <= allowedErro;
 
                             requestTypingAnim();
 
                             confirmWindow.fadeIn(fadeInDuration)
                                 .find('.placeStr')
                                 .text(`${lat.toFixed(2)} , ${lng.toFixed(2)}`)
-                                .data('gameStartParameters', ['dig', bingo ? data.epicenter : { coordinate: [lat, lng] }]);
+                                .data('gameStartParameters', ['dig', {
+                                    coordinate: [lat, lng],
+                                    depth: bingo ? data.epicenter.depth : null,
+                                }]);
 
                         })
                         .on('move', function (e) {
@@ -1142,6 +1159,7 @@ function locatingGame() {
 
                     }, delay);
 
+
                     circleObj.setStyle({ opacity: 1 });//==一開始不顯示
                 };
 
@@ -1180,8 +1198,6 @@ function locatingGame() {
 
                     }, delay);
 
-                    marker.setOpacity(1);
-                    marker.getTooltip().setOpacity(1);
                 };
                 var iconTriggerAnime = (marker, trigger = true, duration = 50) => {
                     if (interval) return;
@@ -1373,7 +1389,7 @@ function locatingGame() {
                         // console.debug('update')
                         updateSidekick(1, 0, true);
                     };
-                }
+                };
 
                 //==gameover
                 if (GameData.timeRemain == 0) {
@@ -1445,7 +1461,14 @@ function locatingGame() {
                     changingImg.hide();
                     switch (`${stage}_${index}`) {
                         case '0_1':
-                            data.forEach(d => updateStation(d.markerObj, { icon: 'default' }));
+                            data.forEach(d => {
+                                let markerObj = d.markerObj;
+                                let circleObj = d.circleObj;
+                                markerObj.addTo(mapObj);
+                                circleObj.addTo(mapObj);
+
+                                updateStation(markerObj, { icon: 'default' });
+                            });
                             break;
                         case '0_2':
                             changingImg
@@ -1489,6 +1512,7 @@ function locatingGame() {
                         sidekickTXB.fadeOut(talkSpeed * 0.4);
                         if (islastLine) setTimeout(() => GameData.sidekick.doneTalking = true, talkSpeed * 0.45);
                     }, talkSpeed * 0.5);
+
                 };
 
                 islastLine ? showText(stage, index, islastLine) : manyLines(stage, index);
@@ -1532,6 +1556,7 @@ function locatingGame() {
                         let radius = timeGap * GameData.velocity * 1000;
 
                         //==半徑跟之前相差大於1不作動畫
+                        // console.debug(siteData);
                         let pre_radius = siteData.options.data.circleObj.getRadius();
                         if (Math.abs(radius - pre_radius) > 1)
                             updateStation(siteData, { circleRadius: radius });
@@ -1632,204 +1657,19 @@ function locatingGame() {
 
     };
     //==================d3 chart================================================
-    // async function getWaveImg(stationData, timeDomain = null) {
-
-    //     let waveData = await (stationData.waveData ? stationData.waveData : data[0].waveData);
-    //     // console.debug(waveData);
-
-    //     function getSvgUrlArr(data) {
-    //         //==max min要一樣起始點才會落在同位置(避免波形間隔看起來不同)
-    //         const xAxisDomain = timeDomain ? timeDomain : d3.extent(data[0].data.map(d => d.x));
-    //         const yAxisDomain = d3.extent([].concat(...data.map(d => d3.extent(d.data, d => d.y))));
-    //         // console.debug(xAxisDomain, yAxisDomain);
-
-    //         var getSvgObj = (d, axisSvg = false) => {
-    //             var svgObj = {};
-
-    //             const chaData = d.data;
-    //             const getColor = () => {
-    //                 let index = data.indexOf(d);
-    //                 let color;
-    //                 switch (index % 3) {
-    //                     case 0:
-    //                         color = "steelblue";
-    //                         break;
-    //                     case 1:
-    //                         color = "red";
-    //                         break;
-    //                     case 2:
-    //                         color = "green";
-    //                         break;
-    //                     default:
-    //                         color = "steelblue";
-    //                         break;
-    //                 };
-    //                 return color;
-    //             };
-    //             const width = 800;
-    //             const height = 300;
-    //             const margin = { top: 30, right: 30, bottom: 40, left: 30 };
-    //             const svg = d3.create("svg")
-    //                 .attr("viewBox", [0, 0, width, height]);
-    //             const xAxis = svg.append("g").attr("class", "xAxis");
-    //             // const yAxis = svg.append("g").attr("class", "yAxis");
-    //             const pathGroup = svg.append("g").attr('class', 'paths');
-
-    //             //==陰影
-    //             ~function initShadowDefs() {
-    //                 svg.append("defs")
-    //                     .append("filter")
-    //                     .attr("id", "pathShadow")
-    //                     .attr("x", "-0.5")
-    //                     .attr("y", "-0.5")
-    //                     .attr("width", "300%")
-    //                     .attr("height", "300%")
-    //                     .call(filter => {
-    //                         filter
-    //                             .append("feOffset")
-    //                             .attr("result", "offOut")
-    //                             .attr("in", "SourceAlpha")
-    //                             .attr("dx", "1")
-    //                             .attr("dy", "1");
-
-    //                         filter
-    //                             .append("feGaussianBlur")
-    //                             .attr("result", "blurOut")
-    //                             .attr("in", "offOut")
-    //                             .attr("stdDeviation", "2")
-
-    //                         filter
-    //                             .append("feBlend")
-    //                             .attr("in", "SourceGraphic")
-    //                             .attr("in2", "blurOut")
-    //                             .attr("mode", "normal");
-
-    //                     });
-
-    //             }();
-
-    //             function getChart() {
-    //                 function getNewData(timeDomain) {
-    //                     let timeArr = chaData.map(d => d.x);
-    //                     let i1 = d3.bisectCenter(timeArr, timeDomain[0]);
-    //                     let i2 = d3.bisectCenter(timeArr, timeDomain[1]) + 1;//包含最大範圍
-    //                     let newData = chaData.slice(i1, i2);
-    //                     return newData;
-    //                 };
-    //                 function getSvgUrl(svgNode) {
-    //                     let svgData = (new XMLSerializer()).serializeToString(svgNode);
-    //                     let svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-    //                     let svgUrl = URL.createObjectURL(svgBlob);
-    //                     return svgUrl;
-    //                 };
-
-    //                 let newData = timeDomain ? getNewData(timeDomain) : chaData;
-
-    //                 let x = d3.scaleLinear()
-    //                     .domain(xAxisDomain)
-    //                     .range([margin.right, width - margin.left]);
-
-    //                 var updateAxis = () => {
-    //                     var makeXAxis = g => g
-    //                         // .style('font', '20px sans-serif')
-    //                         // .style('font', 'italic small-caps bold 20px/2 cursive')
-    //                         .style('font', 'small-caps bold 20px/1 sans-serif')
-
-    //                         .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0))
-    //                         .call(g => g.append('text')
-    //                             .attr('fill', '#FBFBFF')
-    //                             .attr("font-weight", "bold")
-    //                             .attr("textLength", "150")
-    //                             .attr("lengthAdjust", "spacingAndGlyphs")
-    //                             .attr('stroke', 'grey')
-    //                             .attr("stroke-width", "0.5px")
-    //                             .attr('x', width / 2)
-    //                             .attr("y", margin.bottom)
-    //                             .text('Time(s)')
-    //                         )
-    //                         .call(g => g.selectAll('path,line')
-    //                             // .attr("stroke", "red")
-    //                             .attr("stroke-width", "5px")
-    //                             .attr("shape-rendering", "crispEdges")
-    //                         )
-    //                     // .call(g => g.select('text'))
-
-    //                     xAxis.call(makeXAxis);
-
-
-
-    //                 }
-    //                 var updatePaths = () => {
-
-    //                     let y = d3.scaleLinear()
-    //                         .domain(yAxisDomain)
-    //                         .range([height, 0]);
-
-    //                     var line = d3.line()
-    //                         .defined(d => !isNaN(d.x))
-    //                         .x(d => x(d.x))
-    //                         .y(d => y(d.y));
-
-
-    //                     var makePaths = pathGroup => pathGroup
-    //                         .attr("filter", "url(#pathShadow)")
-    //                         .append("path")
-    //                         .style("mix-blend-mode", "luminosity")
-    //                         .attr("fill", "none")
-    //                         .attr("stroke-width", 2)
-    //                         .attr("stroke-linejoin", "bevel")//arcs | bevel |miter | miter-clip | round
-    //                         .attr("stroke-linecap", "butt")//butt,square,round
-    //                         // .attr("stroke-opacity", 0.9)
-    //                         .attr("stroke", getColor(d))
-    //                         .attr("d", line(newData))
-
-
-    //                     pathGroup.call(makePaths);
-
-    //                 };
-    //                 if (axisSvg) {
-    //                     updateAxis();
-    //                     Object.assign(svgObj, {
-    //                         x: x,
-    //                         margin: margin,
-    //                     });
-    //                 }
-    //                 else
-    //                     updatePaths();
-
-    //                 svgObj.svg = getSvgUrl(svg.node());
-
-    //             };
-
-    //             getChart();
-    //             return svgObj;
-    //         };
-
-    //         //==get ENZ channel svg
-    //         let svgArr = data.map(d => Object.assign({ svgName: d.channel }, getSvgObj(d)));
-    //         //==get xAxis svg
-    //         svgArr.push(Object.assign({ svgName: 'xAxis' }, getSvgObj(data[0], true)));
-    //         // console.debug(svgArr);
-    //         return svgArr;
-    //     };
-
-    //     var SvgUrlArr = getSvgUrlArr(waveData);
-    //     console.debug(SvgUrlArr);
-    //     return SvgUrlArr;
-    // };
-    async function getWaveImg(stationData, timeDomain = null) {
-        console.debug(stationData, timeDomain);
+    //==取得波形svg圖
+    async function getWaveImg(stationData, timeDomain = null, overview = false) {
+        // console.debug(stationData, timeDomain);
         let waveData = await (stationData.waveData ? stationData.waveData : data[0].waveData);
         // console.debug(waveData);
 
-        function getSvgUrlArr(data) {
+        function getSvgUrl(data) {
             //==max min要一樣起始點才會落在同位置(避免波形間隔看起來不同)
             const xAxisDomain = timeDomain ? timeDomain : d3.extent(data[0].data.map(d => d.x));
             const yAxisDomain = d3.extent([].concat(...data.map(d => d3.extent(d.data, d => d.y))));
             // console.debug(xAxisDomain, yAxisDomain);
 
-            const getColor = () => {
-                let index = data.indexOf(d);
+            const getColor = (index) => {
                 let color;
                 switch (index % 3) {
                     case 0:
@@ -1847,9 +1687,11 @@ function locatingGame() {
                 };
                 return color;
             };
-            const width = 800;
-            const height = 300;
-            const margin = { top: 30, right: 30, bottom: 40, left: 30 };
+            // const width = 800;
+            // const height = 600;
+            const width = window.innerWidth,
+                height = window.innerHeight;
+            const margin = { top: 30, right: 30, bottom: height * 0.075, left: 30 };
             const svg = d3.create("svg")
                 .attr("viewBox", [0, 0, width, height]);
             const xAxis = svg.append("g").attr("class", "xAxis");
@@ -1894,7 +1736,15 @@ function locatingGame() {
                     let timeArr = data[0].data.map(d => d.x);
                     let i1 = d3.bisectCenter(timeArr, timeDomain[0]);
                     let i2 = d3.bisectCenter(timeArr, timeDomain[1]) + 1;//包含最大範圍
-                    let newData = data.map(d => d.data.slice(i1, i2));
+                    // let newData = data.map(d => new Object({
+                    //     channel: d.channel,
+                    //     data: d.data.slice(i1, i2)
+                    // }));
+
+                    let newData = data.map(d =>
+                        Object.assign({ ...d }, { data: d.data.slice(i1, i2) })
+                    );
+
                     return newData;
                 };
                 function getSvgUrl(svgNode) {
@@ -1905,17 +1755,18 @@ function locatingGame() {
                 };
 
                 let newData = timeDomain ? getNewData(timeDomain) : data;
+                // console.debug(newData);
+                // console.debug(data);
 
                 let x = d3.scaleLinear()
                     .domain(xAxisDomain)
                     .range([margin.right, width - margin.left]);
 
                 var updateAxis = () => {
-                    var makeXAxis = g => g
-                        // .style('font', '20px sans-serif')
-                        // .style('font', 'italic small-caps bold 20px/2 cursive')
-                        .style('font', 'small-caps bold 20px/1 sans-serif')
 
+                    var makeXAxis = g => g
+                        .attr("transform", `translate(0,${height - margin.bottom})`)
+                        .style('font', 'small-caps bold 20px/1 sans-serif')
                         .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0))
                         .call(g => g.append('text')
                             .attr('fill', '#FBFBFF')
@@ -1925,7 +1776,7 @@ function locatingGame() {
                             .attr('stroke', 'grey')
                             .attr("stroke-width", "0.5px")
                             .attr('x', width / 2)
-                            .attr("y", margin.bottom)
+                            .attr("y", margin.bottom * 0.8)
                             .text('Time(s)')
                         )
                         .call(g => g.selectAll('path,line')
@@ -1937,254 +1788,61 @@ function locatingGame() {
 
                     xAxis.call(makeXAxis);
 
-
-
                 }
                 var updatePaths = () => {
 
-                    let y = d3.scaleLinear()
-                        .domain(yAxisDomain)
-                        .range([height, 0]);
+                    let eachHeight = overview ?
+                        (height - margin.bottom) / 3 :
+                        (height - margin.bottom - margin.top) / 3;
 
-                    var line = d3.line()
+                    let y = d3.scaleLinear()
+                        .domain(yAxisDomain);
+
+                    let line = d3.line()
                         .defined(d => !isNaN(d.x))
                         .x(d => x(d.x))
                         .y(d => y(d.y));
 
 
                     var makePaths = pathGroup => pathGroup
-                        .attr("filter", "url(#pathShadow)")
-                        .append("path")
+                        .attr("filter", overview ? null : "url(#pathShadow)")
+                        .selectAll('path')
+                        .data(newData)
+                        .join("path")
                         .style("mix-blend-mode", "luminosity")
                         .attr("fill", "none")
-                        .attr("stroke-width", 2)
+                        .attr("stroke-width", overview ? 5 : 2)
                         .attr("stroke-linejoin", "bevel")//arcs | bevel |miter | miter-clip | round
                         .attr("stroke-linecap", "butt")//butt,square,round
                         // .attr("stroke-opacity", 0.9)
-                        .attr("stroke", getColor(d))
-                        .attr("d", line(newData))
+                        .attr("stroke", (d, i) => getColor(i))
+                        .attr("d", (d, i) => {
+                            // console.debug(d, i)
+                            y.range([eachHeight * (i + 1) + margin.top, eachHeight * i + margin.top]);
+                            return line(d.data);
+                        });
 
 
                     pathGroup.call(makePaths);
 
                 };
+                updateAxis();
+                updatePaths();
 
-                if (axisSvg) {
-                    updateAxis();
-                    Object.assign(svgObj, {
-                        x: x,
-                        margin: margin,
-                    });
-                }
-                else
-                    updatePaths();
-
-                svgObj.svg = getSvgUrl(svg.node());
-
+                return {
+                    svg: getSvgUrl(svg.node()),
+                    x: x,
+                    margin: margin,
+                };
             };
 
-            getChart();
-
-
-
-            //==get ENZ channel svg
-            // let svgArr = data.map(d => Object.assign({ svgName: d.channel }, getSvgObj(d)));
-            //==get xAxis svg
-            // svgArr.push(Object.assign({ svgName: 'xAxis' }, getSvgObj(data[0], true)));
-            // console.debug(svgArr);
-            return svgArr;
+            return getChart();
         };
 
-        var SvgUrlArr = getSvgUrlArr(waveData);
-        console.debug(SvgUrlArr);
+        var SvgUrlArr = getSvgUrl(waveData);
+        // console.debug(SvgUrlArr);
         return SvgUrlArr;
     };
-    //==取得波形svg圖
-    // async function getWaveImg(stationData, timeDomain = null) {
-
-    //     let waveData = await (stationData.waveData ? stationData.waveData : data[0].waveData);
-    //     // console.debug(waveData);
-
-    //     function getSvgUrlArr(data) {
-    //         //==max min要一樣起始點才會落在同位置(避免波形間隔看起來不同)
-    //         const xAxisDomain = timeDomain ? timeDomain : d3.extent(data[0].data.map(d => d.x));
-    //         const yAxisDomain = d3.extent([].concat(...data.map(d => d3.extent(d.data, d => d.y))));
-    //         // console.debug(xAxisDomain, yAxisDomain);
-
-    //         var getSvgObj = (d, axisSvg = false) => {
-    //             var svgObj = {};
-
-    //             const chaData = d.data;
-    //             const getColor = () => {
-    //                 let index = data.indexOf(d);
-    //                 let color;
-    //                 switch (index % 3) {
-    //                     case 0:
-    //                         color = "steelblue";
-    //                         break;
-    //                     case 1:
-    //                         color = "red";
-    //                         break;
-    //                     case 2:
-    //                         color = "green";
-    //                         break;
-    //                     default:
-    //                         color = "steelblue";
-    //                         break;
-    //                 };
-    //                 return color;
-    //             };
-    //             const width = 800;
-    //             const height = 300;
-    //             const margin = { top: 30, right: 30, bottom: 40, left: 30 };
-    //             const svg = d3.create("svg")
-    //                 .attr("viewBox", [0, 0, width, height]);
-    //             const xAxis = svg.append("g").attr("class", "xAxis");
-    //             // const yAxis = svg.append("g").attr("class", "yAxis");
-    //             const pathGroup = svg.append("g").attr('class', 'paths');
-
-    //             //==陰影
-    //             ~function initShadowDefs() {
-    //                 svg.append("defs")
-    //                     .append("filter")
-    //                     .attr("id", "pathShadow")
-    //                     .attr("x", "-0.5")
-    //                     .attr("y", "-0.5")
-    //                     .attr("width", "300%")
-    //                     .attr("height", "300%")
-    //                     .call(filter => {
-    //                         filter
-    //                             .append("feOffset")
-    //                             .attr("result", "offOut")
-    //                             .attr("in", "SourceAlpha")
-    //                             .attr("dx", "1")
-    //                             .attr("dy", "1");
-
-    //                         filter
-    //                             .append("feGaussianBlur")
-    //                             .attr("result", "blurOut")
-    //                             .attr("in", "offOut")
-    //                             .attr("stdDeviation", "2")
-
-    //                         filter
-    //                             .append("feBlend")
-    //                             .attr("in", "SourceGraphic")
-    //                             .attr("in2", "blurOut")
-    //                             .attr("mode", "normal");
-
-    //                     });
-
-    //             }();
-
-    //             function getChart() {
-    //                 function getNewData(timeDomain) {
-    //                     let timeArr = chaData.map(d => d.x);
-    //                     let i1 = d3.bisectCenter(timeArr, timeDomain[0]);
-    //                     let i2 = d3.bisectCenter(timeArr, timeDomain[1]) + 1;//包含最大範圍
-    //                     let newData = chaData.slice(i1, i2);
-    //                     return newData;
-    //                 };
-    //                 function getSvgUrl(svgNode) {
-    //                     let svgData = (new XMLSerializer()).serializeToString(svgNode);
-    //                     let svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-    //                     let svgUrl = URL.createObjectURL(svgBlob);
-    //                     return svgUrl;
-    //                 };
-
-    //                 let newData = timeDomain ? getNewData(timeDomain) : chaData;
-
-    //                 let x = d3.scaleLinear()
-    //                     .domain(xAxisDomain)
-    //                     .range([margin.right, width - margin.left]);
-
-    //                 var updateAxis = () => {
-    //                     var makeXAxis = g => g
-    //                         // .style('font', '20px sans-serif')
-    //                         // .style('font', 'italic small-caps bold 20px/2 cursive')
-    //                         .style('font', 'small-caps bold 20px/1 sans-serif')
-
-    //                         .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0))
-    //                         .call(g => g.append('text')
-    //                             .attr('fill', '#FBFBFF')
-    //                             .attr("font-weight", "bold")
-    //                             .attr("textLength", "150")
-    //                             .attr("lengthAdjust", "spacingAndGlyphs")
-    //                             .attr('stroke', 'grey')
-    //                             .attr("stroke-width", "0.5px")
-    //                             .attr('x', width / 2)
-    //                             .attr("y", margin.bottom)
-    //                             .text('Time(s)')
-    //                         )
-    //                         .call(g => g.selectAll('path,line')
-    //                             // .attr("stroke", "red")
-    //                             .attr("stroke-width", "5px")
-    //                             .attr("shape-rendering", "crispEdges")
-    //                         )
-    //                     // .call(g => g.select('text'))
-
-    //                     xAxis.call(makeXAxis);
-
-
-
-    //                 }
-    //                 var updatePaths = () => {
-
-    //                     let y = d3.scaleLinear()
-    //                         .domain(yAxisDomain)
-    //                         .range([height, 0]);
-
-    //                     var line = d3.line()
-    //                         .defined(d => !isNaN(d.x))
-    //                         .x(d => x(d.x))
-    //                         .y(d => y(d.y));
-
-
-    //                     var makePaths = pathGroup => pathGroup
-    //                         .attr("filter", "url(#pathShadow)")
-    //                         .append("path")
-    //                         .style("mix-blend-mode", "luminosity")
-    //                         .attr("fill", "none")
-    //                         .attr("stroke-width", 2)
-    //                         .attr("stroke-linejoin", "bevel")//arcs | bevel |miter | miter-clip | round
-    //                         .attr("stroke-linecap", "butt")//butt,square,round
-    //                         // .attr("stroke-opacity", 0.9)
-    //                         .attr("stroke", getColor(d))
-    //                         .attr("d", line(newData))
-
-
-    //                     pathGroup.call(makePaths);
-
-    //                 };
-    //                 if (axisSvg) {
-    //                     updateAxis();
-    //                     Object.assign(svgObj, {
-    //                         x: x,
-    //                         margin: margin,
-    //                     });
-    //                 }
-    //                 else
-    //                     updatePaths();
-
-    //                 svgObj.svg = getSvgUrl(svg.node());
-
-    //             };
-
-    //             getChart();
-    //             return svgObj;
-    //         };
-
-    //         //==get ENZ channel svg
-    //         let svgArr = data.map(d => Object.assign({ svgName: d.channel }, getSvgObj(d)));
-    //         //==get xAxis svg
-    //         svgArr.push(Object.assign({ svgName: 'xAxis' }, getSvgObj(data[0], true)));
-    //         // console.debug(svgArr);
-    //         return svgArr;
-    //     };
-
-    //     var SvgUrlArr = getSvgUrlArr(waveData);
-    //     // console.debug(SvgUrlArr);
-    //     return SvgUrlArr;
-    // };
     //==取得速度參數svg
     function getVelocityChart() {
         const width = 560;

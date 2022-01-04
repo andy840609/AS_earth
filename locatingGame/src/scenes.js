@@ -384,7 +384,7 @@ class UIScene extends Phaser.Scene {
                                     .setDepth(Depth.detector + 1);
 
                                 wave.setScale(screen.displayWidth / wave.displayWidth, screen.displayHeight / wave.displayHeight * 0.9);
-                                console.debug(screen.displayWidth, screen.displayHeight)
+                                // console.debug(screen.displayWidth, screen.displayHeight)
                             };
                             wave();
                         };
@@ -1914,8 +1914,21 @@ class LoadingScene extends Phaser.Scene {
                 sprite();
                 UIbar();
             };
+            var sidekick = () => {
+                var sprite = () => {
+                    const sidekick = gameData.sidekick.type;
+                    const dir = gameObjDir + 'sidekick/' + sidekick + '/';
+                    const frameObj = { frameWidth: 32, frameHeight: 32 };
+                    this.load.spritesheet('sidekick_idle', dir + sidekick + '_Monster_Idle_4.png', frameObj);
+                    this.load.spritesheet('sidekick_run', dir + sidekick + '_Monster_Run_6.png', frameObj);
+                    this.load.spritesheet('sidekick_jump', dir + sidekick + '_Monster_Jump_8.png', frameObj);
+                    this.load.spritesheet('sidekick_attack', dir + sidekick + '_Monster_Attack2_6.png', frameObj);
+                };
+                sprite();
+            };
             environment();
             player();
+            sidekick();
 
             if (packNum == 1) {
                 var enemy = () => {
@@ -2255,6 +2268,7 @@ class DefendScene extends Phaser.Scene {
             station: 4,
             laser: 5,
             wave: 6,
+            tips: 6,
             orbs: 7,
             enemy: 9,
             player: 10,
@@ -2274,6 +2288,7 @@ class DefendScene extends Phaser.Scene {
               20(UI:HP bar...)
             */
         };
+        this.Depth = Depth;//==gameObject.js用到
 
         var initEnvironment = () => {
             var station = () => {
@@ -2555,6 +2570,13 @@ class DefendScene extends Phaser.Scene {
             };
 
         };
+        var initSidekick = () => {
+            this.sidekick = this.add.existing(new Sidekick(this, this.gameData.sidekick.type))
+                .setPosition(100, 450)
+                .setDepth(Depth.player - 1);
+
+            this.physics.add.collider(this.sidekick, this.platforms);
+        };
         var initEnemy = () => {
             if (stationStats.liberate) return;
 
@@ -2620,7 +2642,7 @@ class DefendScene extends Phaser.Scene {
         initEnvironment();
         initEnemy();
         initPlayer();
-
+        initSidekick();
 
         //==UI
         initCursors();
@@ -2662,6 +2684,9 @@ class DefendScene extends Phaser.Scene {
 
 
         };
+        var updateSidekick = () => {
+            this.sidekick.behaviorHandler(this.player, this);
+        };
         var updateOrb = () => {
 
             let pickUpObj = this.player.pickUpObj;
@@ -2682,6 +2707,7 @@ class DefendScene extends Phaser.Scene {
         };
 
         updatePlayer();
+        updateSidekick();
         updateOrb();
         updateEnemy();
         // console.debug(gameTimer.getOverallProgress());

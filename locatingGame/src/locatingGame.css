@@ -22,7 +22,30 @@ h3,
 #bigMap {
     height: 700px;
     width: 700px;
-    margin: 0px auto;
+    padding: 0px;
+}
+
+#blackout {
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0);
+    animation: blackout 3s ease-in 0s forwards;
+    display: none;
+    z-index: 999;
+}
+
+@keyframes blackout {
+    0% {
+        opacity: 0;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
 }
 
 #gameOuter {

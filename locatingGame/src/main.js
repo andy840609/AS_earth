@@ -195,7 +195,9 @@ function locatingGame() {
 
                 <div class="form-group row" id="gameGroup">
                   
-                    <div id="bigMap" class="col-12"></div>
+                    <div id="bigMap" class="col-12">
+                        <div id="blackout" class="col-12"></div>   
+                    </div>
                                    
                     <div id="gameOuter">
                         <div id="gameMain"></div>                 
@@ -222,8 +224,10 @@ function locatingGame() {
             var rankingData;
 
             //===遊戲相關
-            const clearStationToUnlock = 3;
-
+            const clearStationToUnlock = 3;//==完成幾個解鎖第二關
+            const allowedErro = 15;//==容許與震央相差距離(km)
+            let gameStartFlag = false;//==取消助手對話
+            let stopClickFlag = false;//==gameOver暫停點擊關卡
 
 
             var gameDisplay = (display) => {
@@ -234,19 +238,21 @@ function locatingGame() {
                     //==遊戲開始UI關閉
                     gameUI.find('.UIicon').toggleClass('clicked', false);
                     gameUI.find('.UI').hide();
-
+                    gameStartFlag = true;
                 }
-                else
+                else {
                     gameOuterDiv.fadeOut();
+                    gameStartFlag = false;
+                }
             };
 
             function initGameData() {
                 let playerRole = 'Biker';//==之後能選其他[Biker,Cyborg,Punk]
-                let sidekick = 'owl';
+                let sidekick = 'Owlet';
 
                 GameData = {
-                    // timeRemain: 5 * 60000,//1min=60000ms           
-                    timeRemain: 0.03 * 60000,//1min=60000ms
+                    timeRemain: 5 * 60000,//1min=60000ms           
+                    // timeRemain: 0.03 * 60000,//1min=60000ms
                     timeMultiplier: 300,//real 1 ms = game x ms;
                     velocity: 7.5,//==速度參數預設7.5
                     playerEpicenter: null,
@@ -276,7 +282,7 @@ function locatingGame() {
                     },
                     sidekick: {
                         type: sidekick,
-                        lineStage: 0,
+                        lineStage: 1,
                         talkSpeed: 3500,
                         doneTalking: true,
                     },
@@ -325,6 +331,7 @@ function locatingGame() {
 
                 var gameOverScene = async () => {
                     gameDisplay(true);
+                    const rewindTime = 5 * 60000;
 
                     let newGameData = await new Promise((resolve, reject) => {
                         const config = Object.assign(getPhaserConfig(width, height), {
@@ -335,11 +342,16 @@ function locatingGame() {
 
                     // Object.assign(GameData, newGameData);
                     gameDisplay(false);
-                    updateMapUI({ timeRemain: 80000 }, 800);
+
+                    updateMapUI({ timeRemain: rewindTime }, 800);
+                    updateSidekick(0, 2, true);
+
+
                     data.forEach(d => {
                         let icon = d.stationStats.clear ? 'clear' : 'default';
                         updateStation(d.markerObj, { icon: icon });
                     });
+
                 };
                 var congratsScene = async () => {
                     let congrats = chartContainerJQ.find('#gameGroup .Congrats');
@@ -583,8 +595,8 @@ function locatingGame() {
 
                     data.forEach((d, i) => {
                         // console.debug(d);
-                        let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
-                        // let enemy = [];//==之後隨機抽敵人組
+                        // let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
+                        let enemy = [];//==之後隨機抽敵人組
                         let enemyStats = {};
 
                         enemy.forEach((key) => {
@@ -621,7 +633,7 @@ function locatingGame() {
                                 updateStation(marker, { mouseEvent: 0 });
                             })
                             .on('click', function (e) {
-                                if (GameData.timeRemain == 0) return;
+                                if (stopClickFlag) return;
                                 requestTypingAnim();
 
                                 gameUI.find('.confirmWindow')
@@ -1051,7 +1063,7 @@ function locatingGame() {
                             sidekickUI.find('.sidekickTXB').hide();
                             sidekickUI.find('.sidekick')
                                 .on('click', () => {
-                                    if (!GameData.sidekick.doneTalking) return;
+                                    if (!GameData.sidekick.doneTalking || stopClickFlag) return;
 
                                     let stage = GameData.sidekick.lineStage,
                                         index = Object.keys(lines[stage]).length - 1;
@@ -1068,7 +1080,7 @@ function locatingGame() {
 
 
                         init();
-                        updateSidekick(0, 0, false);
+                        updateSidekick(1, 0, false);
                     };
 
                     timeRemain();
@@ -1078,13 +1090,11 @@ function locatingGame() {
                     sidekick();
                 };
                 function addMapEvent() {
-                    const allowedErro = 15;//==容許與震央相差距離(km)
-
                     let confirmWindow = gameUI.find('.confirmWindow');
 
                     mapObj
                         .on('click', function (e) {
-                            if (GameData.timeRemain == 0 || !GameData.stationClear.chartUnlock) return;
+                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             let lat = e.latlng.lat;
                             let lng = e.latlng.lng;
 
@@ -1306,7 +1316,7 @@ function locatingGame() {
 
             };
             function updateMapUI(gameResult, duration = 600) {
-                let timeRemain = gameResult.timeRemain;
+                let timeRemain = gameResult.timeRemain < 0 ? 0 : gameResult.timeRemain;
                 let playerStats = gameResult.playerStats;
                 let controllCursor = gameResult.controllCursor;
 
@@ -1356,48 +1366,52 @@ function locatingGame() {
                 GameData.playerStats = Object.assign(GameData.playerStats, playerStats);
                 if (controllCursor) GameData.controllCursor = controllCursor;
 
-                if (!GameData.stationClear.chartUnlock) {
-                    GameData.stationClear.count = data.filter(d => d.stationStats.clear).length;
-                    if (GameData.stationClear.count >= clearStationToUnlock) {
-                        GameData.stationClear.chartUnlock = true;
+                //==gameover
+                var stageUnlock = () => {
+                    if (!GameData.stationClear.chartUnlock) {
+                        GameData.stationClear.count = data.filter(d => d.stationStats.clear).length;
+                        if (GameData.stationClear.count >= clearStationToUnlock) {
+                            GameData.stationClear.chartUnlock = true;
 
-                        //==延遲後移除lock.gif
-                        const lock = gameUI.find('#velocityChartLock');
-                        var lockAnime = () => {
-                            const delay = 10;
-                            const step = 1 / (duration * 1.5 / delay);//==opacity預設1
+                            //==延遲後移除lock.gif
+                            const lock = gameUI.find('#velocityChartLock');
+                            var lockAnime = () => {
+                                const delay = 10;
+                                const step = 1 / (duration * 1.5 / delay);//==opacity預設1
 
-                            var opacity = 1;
-                            let interval = setInterval(() => {
-                                if (opacity <= 0) {
-                                    opacity = 0;
-                                    clearInterval(interval);
-                                    lock.remove();
-                                }
-                                else {
-                                    lock.css('opacity', opacity);
-                                    opacity -= step;
-                                };
-                            }, delay);
+                                var opacity = 1;
+                                let interval = setInterval(() => {
+                                    if (opacity <= 0) {
+                                        opacity = 0;
+                                        clearInterval(interval);
+                                        lock.remove();
+                                    }
+                                    else {
+                                        lock.css('opacity', opacity);
+                                        opacity -= step;
+                                    };
+                                }, delay);
+                            };
+                            lockAnime();
+
+                            updateSidekick(2, 1, false);
+                            GameData.sidekick.lineStage = 1;
+                        }
+                        else if (GameData.stationClear.count > 0) {
+                            // console.debug('update')
+                            updateSidekick(2, 0, true);
                         };
-                        lockAnime();
-
-                        updateSidekick(1, 1, false);
-                        GameData.sidekick.lineStage = 1;
-                    }
-                    else if (GameData.stationClear.count > 0) {
-                        // console.debug('update')
-                        updateSidekick(1, 0, true);
                     };
                 };
 
-                //==gameover
-                if (GameData.timeRemain == 0) {
+                // console.debug(GameData);
+                if (GameData.timeRemain <= 0) {
+                    stopClickFlag = true;
                     var apocalypse = () => {
                         const bigMapJQ = $(bigMap);
 
                         const delay = 50;
-                        const step = duration * 0.5 / delay;
+                        const step = duration * 0.6 / delay;
                         // console.debug(duration)
                         let distance = 3, nowStep = 0;
                         let interval = setInterval(() => {
@@ -1420,8 +1434,46 @@ function locatingGame() {
                         }));
                     };
 
-                    setTimeout(() => apocalypse(), duration * 1);
-                    setTimeout(() => initEndScene(false), duration * 5);
+                    //==說世界毀滅
+                    updateSidekick(0, 1, true);
+
+                    setTimeout(() => apocalypse(), duration);
+                    setTimeout(() => {
+                        initEndScene(false);
+                        stopClickFlag = false;
+                    }, duration * 6);
+                }
+                else if (GameData.playerStats.HP == 0) {
+                    stopClickFlag = true;
+                    const restTimeCost = 10 * 60000;//1min=60000ms    
+                    const restAnimDelay = 3000;
+
+                    var resting = () => {
+                        const blackout = $('#blackout');
+
+
+                        blackout.show();
+                        setTimeout(() => {
+                            blackout.hide();
+                        }, restAnimDelay);
+
+                    };
+
+                    //==說需要恢復
+                    updateSidekick(0, 0, true);
+
+                    //==休息動畫
+                    setTimeout(() => {
+                        resting();
+                        GameData.playerStats.HP = GameData.playerStats.maxHP;
+                        stopClickFlag = false;
+                        setTimeout(() => updateMapUI({ timeRemain: GameData.timeRemain - restTimeCost }, 800), restAnimDelay * 0.5);
+                    }, GameData.sidekick.talkSpeed * 0.5);
+
+
+                }
+                else {
+                    stageUnlock();
                 };
 
             };
@@ -1437,8 +1489,8 @@ function locatingGame() {
                     let interval = setInterval(() => {
 
                         ++startIdx;
-                        let islastLine = (startIdx == endIdx);
-                        if (islastLine) clearInterval(interval);
+                        let islastLine = ((startIdx == endIdx) || gameStartFlag);
+                        if (islastLine) clearInterval(interval)
                         // console.debug(startIdx + ' / ' + endIdx);
                         talk(stage, startIdx, islastLine);
 
@@ -1446,7 +1498,7 @@ function locatingGame() {
                 };
 
                 var showText = (stage, index, islastLine) => {
-                    console.debug(stage, index, islastLine);
+                    // console.debug(stage, index, islastLine);
                     GameData.sidekick.doneTalking = false;
 
                     let sidekickUI = gameUI.find('.sidekickUI');
@@ -1460,7 +1512,7 @@ function locatingGame() {
                     changingText.hide();
                     changingImg.hide();
                     switch (`${stage}_${index}`) {
-                        case '0_1':
+                        case '1_1':
                             data.forEach(d => {
                                 let markerObj = d.markerObj;
                                 let circleObj = d.circleObj;
@@ -1470,7 +1522,7 @@ function locatingGame() {
                                 updateStation(markerObj, { icon: 'default' });
                             });
                             break;
-                        case '0_2':
+                        case '1_2':
                             changingImg
                                 .css('right', '290px')
                                 .css('bottom', '480px');
@@ -1481,7 +1533,7 @@ function locatingGame() {
 
                             changingImg.fadeIn();
                             break;
-                        case '1_0':
+                        case '2_0':
                             changingText
                                 .css('right', '310px')
                                 .css('bottom', '440px')
@@ -1489,7 +1541,7 @@ function locatingGame() {
 
                             changingText.fadeIn();
                             break;
-                        case '1_2':
+                        case '2_2':
                             changingImg
                                 .css('right', '290px')
                                 .css('bottom', '480px');
@@ -1510,7 +1562,7 @@ function locatingGame() {
 
                     setTimeout(() => {
                         sidekickTXB.fadeOut(talkSpeed * 0.4);
-                        if (islastLine) setTimeout(() => GameData.sidekick.doneTalking = true, talkSpeed * 0.45);
+                        if (islastLine) setTimeout(() => GameData.sidekick.doneTalking = true, talkSpeed * 0.6);
                     }, talkSpeed * 0.5);
 
                 };
@@ -1570,48 +1622,48 @@ function locatingGame() {
                 }
                 else if (gameMode == 'dig') {
                     // console.debug(siteData);
-                    {
-                        const backgroundArr = Object.keys(BackGroundResources.dig);
+                    // {
+                    //     const backgroundArr = Object.keys(BackGroundResources.dig);
 
-                        let coordinate = siteData.coordinate;
-                        // let background = 'halloween_4';//==之後經緯度判斷？
-                        let background = backgroundArr[getRandom(backgroundArr.length)];
-                        let mineBGindex = 0;//==之後經緯度判斷？
+                    //     let coordinate = siteData.coordinate;
+                    //     // let background = 'halloween_4';//==之後經緯度判斷？
+                    //     let background = backgroundArr[getRandom(backgroundArr.length)];
+                    //     let mineBGindex = 0;//==之後經緯度判斷？
 
-                        let placeData = {
-                            coordinate: coordinate,
-                            background: background,
-                            mineBGindex: mineBGindex,
-                            depth: siteData.depth ? siteData.depth : null,
-                        };
+                    //     let placeData = {
+                    //         coordinate: coordinate,
+                    //         background: background,
+                    //         mineBGindex: mineBGindex,
+                    //         depth: siteData.depth ? siteData.depth : null,
+                    //     };
 
-                        //==顯示假設點
-                        assumedEpicenter
-                            .setLatLng(coordinate)
-                            .getTooltip()
-                            .setContent(`${GameData.localeJSON.UI['assumedEpicenter']} : ${coordinate.map(d => d.toFixed(2)).join(' , ')}`)
-                        assumedEpicenter.getElement().style.display = 'inline';
+                    //     //==顯示假設點
+                    //     assumedEpicenter
+                    //         .setLatLng(coordinate)
+                    //         .getTooltip()
+                    //         .setContent(`${GameData.localeJSON.UI['assumedEpicenter']} : ${coordinate.map(d => d.toFixed(2)).join(' , ')}`)
+                    //     assumedEpicenter.getElement().style.display = 'inline';
 
-                        GameData.playerEpicenter = coordinate;
+                    //     GameData.playerEpicenter = coordinate;
 
-                        gameResult = await new Promise((resolve, reject) => {
-                            const config = Object.assign(getPhaserConfig(width, height), {
-                                scene: new DigScene(placeData, GameData, {
-                                    resolve: resolve,
-                                }),
-                            });
-                            new Phaser.Game(config);
-                        });
+                    //     gameResult = await new Promise((resolve, reject) => {
+                    //         const config = Object.assign(getPhaserConfig(width, height), {
+                    //             scene: new DigScene(placeData, GameData, {
+                    //                 resolve: resolve,
+                    //             }),
+                    //         });
+                    //         new Phaser.Game(config);
+                    //     });
 
-                        console.debug(gameResult);
-                        let playerInfo = gameResult.playerInfo;
+                    //     console.debug(gameResult);
+                    //     let playerInfo = gameResult.playerInfo;
 
-                        //===更新人物資料
-                        updateMapUI(playerInfo, 1000);
-                    }
+                    //     //===更新人物資料
+                    //     updateMapUI(playerInfo, 1000);
+                    // }
 
                     // === 進王關
-                    if (gameResult.bossRoom) {//gameResult.bossRoom
+                    if (1) {//gameResult.bossRoom
                         const backgroundArr = Object.keys(BackGroundResources.boss);
                         let background = backgroundArr[getRandom(backgroundArr.length)];
 

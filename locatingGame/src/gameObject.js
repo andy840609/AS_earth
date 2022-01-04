@@ -78,7 +78,47 @@ const GameObjectStats = {
             maxMP: 150,
         },
     },
-
+    sidekick: {
+        Dude: {
+            movementSpeed: 300,
+            jumpingPower: 400,
+            attackSpeed: 800,
+            attackPower: 100,
+            knockBackSpeed: 200,//==擊退時間固定200ms,這個速度越大擊退越遠
+            manaCost: 10,
+            manaRegen: 10,//per 10 ms(game update per 10ms)0.1
+            HP: 100,
+            maxHP: 100,
+            MP: 150,
+            maxMP: 150,
+        },
+        Owlet: {
+            movementSpeed: 300,
+            jumpingPower: 300,
+            attackSpeed: 800,
+            attackPower: 100,
+            knockBackSpeed: 200,//==擊退時間固定200ms,這個速度越大擊退越遠
+            manaCost: 10,
+            manaRegen: 10,//per 10 ms(game update per 10ms)0.1
+            HP: 100,
+            maxHP: 100,
+            MP: 150,
+            maxMP: 150,
+        },
+        Pink: {
+            movementSpeed: 300,
+            jumpingPower: 400,
+            attackSpeed: 800,
+            attackPower: 100,
+            knockBackSpeed: 200,//==擊退時間固定200ms,這個速度越大擊退越遠
+            manaCost: 10,
+            manaRegen: 10,//per 10 ms(game update per 10ms)0.1
+            HP: 100,
+            maxHP: 100,
+            MP: 150,
+            maxMP: 150,
+        },
+    },
 };
 
 //==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
@@ -263,7 +303,7 @@ const Bullet = new Phaser.Class({
         let outOfWindow = !this.scene.cameras.main.worldView.contains(this.x, this.y);
         if (outOfWindow)
             this.disableBody(true, true);
-    }
+    },
 
 });
 
@@ -1098,6 +1138,198 @@ const Player = new Phaser.Class({
 
 });
 
+const Sidekick = new Phaser.Class({
+
+    Extends: Phaser.Physics.Arcade.Sprite,
+
+    initialize:
+        function Sidekick(scene, key) {
+            console.debug(RexPlugins);
+            // console.debug(key);
+            Phaser.Physics.Arcade.Sprite.call(this, scene);
+            scene.physics.world.enableBody(this, 0);
+
+            //==anims
+            var animsCreate = () => {
+                scene.anims.create({
+                    key: 'sidekick_idle',
+                    frames: scene.anims.generateFrameNumbers('sidekick_idle'),
+                    frameRate: 7,
+                    repeat: -1,
+                });
+
+                scene.anims.create({
+                    key: 'sidekick_run',
+                    frames: scene.anims.generateFrameNumbers('sidekick_run'),
+                    frameRate: 7,
+                    repeat: -1,
+                });
+
+                scene.anims.create({
+                    key: 'sidekick_jump',
+                    frames: scene.anims.generateFrameNumbers('sidekick_jump'),
+                    frameRate: 10,
+                    repeat: 0,
+                });
+
+                scene.anims.create({
+                    key: 'sidekick_attack',
+                    frames: scene.anims.generateFrameNumbers('sidekick_attack'),
+                    frameRate: 7,
+                    repeat: -1,
+                });
+
+            };
+            animsCreate();
+
+            this
+                .setScale(1.5)
+                .setCollideWorldBounds(true)
+                .setPushable(false)
+                .setName(key)
+                .play('sidekick_idle');
+
+            this.body
+                .setSize(18, 26, true)
+                .setOffset(5, 6)
+                .setGravityY(200);
+
+            this.stats = GameObjectStats.sidekick[key];
+
+            // console.debug(this.body);
+
+            //===init attack
+            // this.bullets = scene.physics.add.group({
+            //     classType: Bullet,
+            //     maxSize: 10,
+            //     runChildUpdate: true,
+            //     maxVelocityY: 0,
+            // });
+
+            //===init tip
+            const tipWrapW = 200;
+            this.dialog = new RexTextBox(scene, 0, 0, { wrapWidth: tipWrapW })
+                .setAlpha(0)
+                .setDepth(scene.Depth.tips);
+
+            //==tips總數量
+            this.tips = scene.gameData.localeJSON.Tip;
+            this.tipAmount = Object.keys(this.tips).length - 1;
+
+        },
+    //=處理轉向
+    filpHandler: function (filp) {
+        this.setFlipX(filp);
+    },
+    behavior: null,
+    // behaviorCallback: null,//
+    talkingCallback: null,//為了計時器不重複註冊多個
+    behaviorHandler: function (player, scene) {
+        // console.debug(this.body.speed);
+
+        //==離玩家太遠才移動
+        if (Phaser.Math.Distance.BetweenPoints(player, this) > 100)
+            this.behavior = 'following';
+        else
+            this.behavior = 'standstill';
+
+        //==動作
+        switch (this.behavior) {
+            default:
+            case 'following':
+                if (this.body.touching.down) {
+                    //==玩家跳起時距離小於某數貓也跳起
+                    if (!player.body.touching.down && Phaser.Math.Distance.BetweenPoints(player, this) < 200) {
+                        // console.debug(this.body.speed);
+                        this.anims.play('sidekick_jump', true);
+
+                        let speed = this.body.speed > 800 ? 800 : this.body.speed;
+                        this.body.reset(this.x, this.y)//==停下
+                        this.body.setVelocity(speed * (player.x > this.x ? 1 : -1), -this.stats.jumpingPower);
+                    }
+                    //==以加速度追
+                    else {
+                        this.anims.play('sidekick_run', true);
+                        // ==== accelerateToObject(gameObject, destination, acceleration, xSpeedMax, ySpeedMax);
+                        let speed = this.stats.movementSpeed;
+                        scene.physics.accelerateToObject(this, player, speed, speed * 1.1);
+                        // this.physics.moveToObject(this, player, 500, chasingDuration);
+                    };
+
+                    //===判斷player相對敵人的位子來轉向(轉向時停下)
+                    // let filpDir = player.x < this.x;
+                    // if (this.flipX != filpDir)
+                    //     this.filpHandler(filpDir);
+                };
+
+                break;
+            case 'standstill':
+                if (this.body.touching.down) {
+                    this.anims.play('sidekick_idle', true);
+                    // if (this.body.touching.down)
+                    //     this.body.reset(this.x, this.y);
+                    this.body.acceleration.x = 0;
+                    this.body.velocity.x = 0;
+                };
+
+                break;
+            case 'attack':
+                this.anims.play('sidekick_attack', true);
+
+                break;
+
+        };
+
+        //==助手知識補充
+        this.dialog.setPosition(this.x, this.y - 100);
+
+        if (!this.talkingCallback) {
+            const tipDuration = Phaser.Math.Between(3, 5) * 1000,//==對話框持續時間(包含淡入淡出時間)
+                //  tipDelay = Phaser.Math.Between(2, 8) * 1000,//==每則知識間隔
+                tipDelay = 1000,//==每則知識間隔
+                tipIdx = Phaser.Math.Between(0, this.tipAmount),//==tip index
+                tipText = this.tips[tipIdx];
+            // console.debug(tipIdx, tipText)
+
+            this.talkingCallback = scene.time.delayedCall(tipDelay, () => {
+
+                //==開始打字
+                this.dialog.start(tipText, 50);//==(text,typeSpeed(ms per word))
+                scene.tweens.add({
+                    targets: this.dialog,
+                    alpha: 1,
+                    duration: tipDuration * 0.1,
+                    repeat: 0,
+                    yoyo: true,
+                    hold: tipDuration * 0.6,//==yoyo delay
+                    ease: 'Linear',
+                });
+
+                //==一次對話結束
+                scene.time.delayedCall(tipDuration, () => this.talkingCallback = null, [], scene);
+
+            }, [], scene);
+
+
+        };
+
+
+
+        // .start(content, 50);
+
+        // console.debug(RexPlugins);
+
+        //===判斷player相對敵人的位子來轉向(轉向時停下)
+        let filpDir = player.x < this.x;
+        if (this.flipX != filpDir) {
+            this.filpHandler(filpDir);
+            this.body.reset(this.x, this.y);
+            // console.debug('filp');
+        };
+
+    },
+});
+
 //==地底用
 class Chunk {
     constructor(scene, x, y) {
@@ -1263,8 +1495,10 @@ class Tile extends Phaser.GameObjects.Sprite {
 
 //===對話框
 class RexTextBox extends RexPlugins.UI.TextBox {
-    constructor(scene, x, y, config, resolve) {
-        // console.debug(scene);
+    constructor(scene, x, y, config, resolve = null) {
+        // console.debug(scene, x, y, config);
+
+        let tips = resolve ? false : true;//==助手知識
 
         const
             COLOR_PRIMARY = 0x4e342e,//==box背景色
@@ -1278,16 +1512,16 @@ class RexTextBox extends RexPlugins.UI.TextBox {
             top: 3,
             bottom: 3,
         };
-        const iconW = 200;//==扣掉頭像和按鈕的空間
+        const iconW = tips ? 0 : 200;//==扣掉頭像和按鈕的空間
 
         var wrapWidth = GetValue(config, 'wrapWidth', 0) - iconW;
         var fixedWidth = GetValue(config, 'fixedWidth', 0) - iconW;
         var fixedHeight = GetValue(config, 'fixedHeight', 0);
         var character = config.character;
 
-
         //===textBox config
-        let rexRect = new RexPlugins.UI.RoundRectangle(scene, 0, 0, 2, 2, 20, COLOR_PRIMARY)
+        let roundCorner = tips ? 40 : 20;
+        let rexRect = new RexPlugins.UI.RoundRectangle(scene, 0, 0, 2, 2, roundCorner, COLOR_PRIMARY)
             .setStrokeStyle(2, COLOR_LIGHT);
 
         let rexBBText = new RexPlugins.UI.BBCodeText(scene, 0, 0, '',
@@ -1299,17 +1533,18 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                     mode: 'word',
                     width: wrapWidth
                 },
-                maxLines: 3,
+                // maxLines: 3,
                 padding: padding,
             });
+
 
         const textBoxConfig = {
             x: x,
             y: y,
             background: scene.add.existing(rexRect),
-            icon: scene.add.image(0, 0, character + 'Avatar'),
+            icon: tips ? null : scene.add.image(0, 0, character + 'Avatar'),
             text: scene.add.existing(rexBBText),
-            action: scene.add.image(0, 0, 'dialogButton').setVisible(false).setScale(0.1),
+            action: tips ? null : scene.add.image(0, 0, 'dialogButton').setVisible(false).setScale(0.1),
             space: {
                 left: 20,
                 right: 20,
@@ -1321,50 +1556,54 @@ class RexTextBox extends RexPlugins.UI.TextBox {
         };
         super(scene, textBoxConfig);
         // scene.add.existing(this);
+        // console.debug(this);
 
         this
             .setOrigin(0.5)
-            .layout()
-            .setInteractive()
-            .on('pointerdown', function () {
-                let action = this.getElement('action');
-                action.setVisible(false);
-                this.resetChildVisibleState(action);
+            .layout();
 
-                if (this.isTyping) {
-                    this.stop(true);
-                } else {
-                    if (this.isLastPage) {
-                        this.destroy();
-                        if (resolve) resolve();
-                        return;
+        if (!tips)
+            this
+                .setInteractive()
+                .on('pointerdown', function () {
+                    let action = this.getElement('action');
+                    action.setVisible(false);
+                    this.resetChildVisibleState(action);
+
+                    if (this.isTyping) {
+                        this.stop(true);
+                    } else {
+                        if (this.isLastPage) {
+                            this.destroy();
+                            if (resolve) resolve();
+                            return;
+                        };
+                        this.typeNextPage();
                     };
-                    this.typeNextPage();
-                };
 
 
-            }, this)
-            .on('pageend', function () {
-                if (this.isLastPage) return;
+                }, this)
+                .on('pageend', function () {
+                    if (this.isLastPage) return;
 
-                let action = this.getElement('action');
-                action.setVisible(true);
-                this.resetChildVisibleState(action);
+                    let action = this.getElement('action');
+                    action.setVisible(true);
+                    this.resetChildVisibleState(action);
 
-                const endY = this.y + this.displayHeight * 0.5 - 50;
+                    const endY = this.y + this.displayHeight * 0.5 - 50;
 
-                scene.tweens.add({
-                    targets: action,
-                    y: {
-                        start: endY - 20,
-                        to: endY,
-                    },
-                    ease: 'Bounce', // 'Cubic', 'Elastic', 'Bounce', 'Back'
-                    duration: 500,
-                    repeat: 0, // -1: infinity
-                    yoyo: false
-                });
-            }, this)
+                    scene.tweens.add({
+                        targets: action,
+                        y: {
+                            start: endY - 20,
+                            to: endY,
+                        },
+                        ease: 'Bounce', // 'Cubic', 'Elastic', 'Bounce', 'Back'
+                        duration: 500,
+                        repeat: 0, // -1: infinity
+                        yoyo: false
+                    });
+                }, this)
         //.on('type', function () {
         //})
         // console.debug(scene);

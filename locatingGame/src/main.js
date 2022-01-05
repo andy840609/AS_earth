@@ -248,7 +248,7 @@ function locatingGame() {
 
             function initGameData() {
                 let playerRole = 'Biker';//==之後能選其他[Biker,Cyborg,Punk]
-                let sidekick = 'Owlet';
+                let sidekick = 'Owlet';//=='Owlet,Dude,Pink'
 
                 GameData = {
                     timeRemain: 5 * 60000,//1min=60000ms           
@@ -595,8 +595,8 @@ function locatingGame() {
 
                     data.forEach((d, i) => {
                         // console.debug(d);
-                        // let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
-                        let enemy = [];//==之後隨機抽敵人組
+                        let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
+                        // let enemy = [];//==之後隨機抽敵人組
                         let enemyStats = {};
 
                         enemy.forEach((key) => {
@@ -705,6 +705,7 @@ function locatingGame() {
                             updateStation(e.target, { mouseEvent: 0 });
                         })
                         .on('click', function (e) {
+                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             //==觸發畫面位置點擊(要在假設點上座標才對)
                             const event = new MouseEvent('click', {
                                 'view': window,
@@ -1056,7 +1057,7 @@ function locatingGame() {
                                 )
                                 .append(`
                                     <div class="sidekick">
-                                        <img src="${sidekickDir}/${GameData.sidekick.type}.png" width="${sidekickW}px">
+                                        <img src="${sidekickDir}${GameData.sidekick.type}.png" width="${sidekickW}px">
                                     </div>`
                                 );
 
@@ -1094,7 +1095,7 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
-                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             let lat = e.latlng.lat;
                             let lng = e.latlng.lng;
 
@@ -1393,13 +1394,12 @@ function locatingGame() {
                                 }, delay);
                             };
                             lockAnime();
-
                             updateSidekick(2, 1, false);
-                            GameData.sidekick.lineStage = 1;
                         }
                         else if (GameData.stationClear.count > 0) {
                             // console.debug('update')
                             updateSidekick(2, 0, true);
+                            GameData.sidekick.lineStage = 2;
                         };
                     };
                 };
@@ -1411,7 +1411,7 @@ function locatingGame() {
                         const bigMapJQ = $(bigMap);
 
                         const delay = 50;
-                        const step = duration * 0.6 / delay;
+                        const step = duration * 0.5 / delay;
                         // console.debug(duration)
                         let distance = 3, nowStep = 0;
                         let interval = setInterval(() => {
@@ -1622,45 +1622,45 @@ function locatingGame() {
                 }
                 else if (gameMode == 'dig') {
                     // console.debug(siteData);
-                    // {
-                    //     const backgroundArr = Object.keys(BackGroundResources.dig);
+                    {
+                        const backgroundArr = Object.keys(BackGroundResources.dig);
 
-                    //     let coordinate = siteData.coordinate;
-                    //     // let background = 'halloween_4';//==之後經緯度判斷？
-                    //     let background = backgroundArr[getRandom(backgroundArr.length)];
-                    //     let mineBGindex = 0;//==之後經緯度判斷？
+                        let coordinate = siteData.coordinate;
+                        // let background = 'halloween_4';//==之後經緯度判斷？
+                        let background = backgroundArr[getRandom(backgroundArr.length)];
+                        let mineBGindex = 0;//==之後經緯度判斷？
 
-                    //     let placeData = {
-                    //         coordinate: coordinate,
-                    //         background: background,
-                    //         mineBGindex: mineBGindex,
-                    //         depth: siteData.depth ? siteData.depth : null,
-                    //     };
+                        let placeData = {
+                            coordinate: coordinate,
+                            background: background,
+                            mineBGindex: mineBGindex,
+                            depth: siteData.depth ? siteData.depth : null,
+                        };
 
-                    //     //==顯示假設點
-                    //     assumedEpicenter
-                    //         .setLatLng(coordinate)
-                    //         .getTooltip()
-                    //         .setContent(`${GameData.localeJSON.UI['assumedEpicenter']} : ${coordinate.map(d => d.toFixed(2)).join(' , ')}`)
-                    //     assumedEpicenter.getElement().style.display = 'inline';
+                        //==顯示假設點
+                        assumedEpicenter
+                            .setLatLng(coordinate)
+                            .getTooltip()
+                            .setContent(`${GameData.localeJSON.UI['assumedEpicenter']} : ${coordinate.map(d => d.toFixed(2)).join(' , ')}`)
+                        assumedEpicenter.getElement().style.display = 'inline';
 
-                    //     GameData.playerEpicenter = coordinate;
+                        GameData.playerEpicenter = coordinate;
 
-                    //     gameResult = await new Promise((resolve, reject) => {
-                    //         const config = Object.assign(getPhaserConfig(width, height), {
-                    //             scene: new DigScene(placeData, GameData, {
-                    //                 resolve: resolve,
-                    //             }),
-                    //         });
-                    //         new Phaser.Game(config);
-                    //     });
+                        gameResult = await new Promise((resolve, reject) => {
+                            const config = Object.assign(getPhaserConfig(width, height), {
+                                scene: new DigScene(placeData, GameData, {
+                                    resolve: resolve,
+                                }),
+                            });
+                            new Phaser.Game(config);
+                        });
 
-                    //     console.debug(gameResult);
-                    //     let playerInfo = gameResult.playerInfo;
+                        console.debug(gameResult);
+                        let playerInfo = gameResult.playerInfo;
 
-                    //     //===更新人物資料
-                    //     updateMapUI(playerInfo, 1000);
-                    // }
+                        //===更新人物資料
+                        updateMapUI(playerInfo, 1000);
+                    }
 
                     // === 進王關
                     if (1) {//gameResult.bossRoom

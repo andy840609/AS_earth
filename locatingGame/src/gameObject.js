@@ -81,7 +81,7 @@ const GameObjectStats = {
     sidekick: {
         Dude: {
             movementSpeed: 300,
-            jumpingPower: 400,
+            jumpingPower: 300,
             attackSpeed: 800,
             attackPower: 100,
             knockBackSpeed: 200,//==擊退時間固定200ms,這個速度越大擊退越遠
@@ -107,7 +107,7 @@ const GameObjectStats = {
         },
         Pink: {
             movementSpeed: 300,
-            jumpingPower: 400,
+            jumpingPower: 300,
             attackSpeed: 800,
             attackPower: 100,
             knockBackSpeed: 200,//==擊退時間固定200ms,這個速度越大擊退越遠
@@ -983,7 +983,6 @@ const Player = new Phaser.Class({
                 this.anims.play('player_idle', true);
         };
 
-
         switch (scene.name) {
             case 'defend':
 
@@ -1070,6 +1069,7 @@ const Player = new Phaser.Class({
         let controllCursor = scene.gameData.controllCursor;
 
         if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['attack']])) {
+            // if (cursors[controllCursor['attack']].isDown) {//==按著連續攻擊
             if (this.stats.MP < this.stats.manaCost) return;
 
             let currentAnims = this.anims.getName();
@@ -1128,6 +1128,7 @@ const Player = new Phaser.Class({
             this.scene.time.delayedCall(dieDuration, () => {
                 this.anims.play('player_death', true);
                 this.scene.gameOver.flag = true;
+                this.scene.gameOver.status = 2;
             }, [], this);
 
         };
@@ -1144,7 +1145,7 @@ const Sidekick = new Phaser.Class({
 
     initialize:
         function Sidekick(scene, key) {
-            console.debug(RexPlugins);
+            // console.debug(RexPlugins);
             // console.debug(key);
             Phaser.Physics.Arcade.Sprite.call(this, scene);
             scene.physics.world.enableBody(this, 0);
@@ -1179,6 +1180,20 @@ const Sidekick = new Phaser.Class({
                     repeat: -1,
                 });
 
+                scene.anims.create({
+                    key: 'sidekick_jumpDust',
+                    frames: scene.anims.generateFrameNumbers('sidekick_jumpDust'),
+                    frameRate: 8,
+                    repeat: -1,
+                });
+
+                scene.anims.create({
+                    key: 'sidekick_runDust',
+                    frames: scene.anims.generateFrameNumbers('sidekick_runDust'),
+                    frameRate: 10,
+                    repeat: -1,
+                });
+
             };
             animsCreate();
 
@@ -1194,9 +1209,17 @@ const Sidekick = new Phaser.Class({
                 .setOffset(5, 6)
                 .setGravityY(200);
 
+
+            //===custom
             this.stats = GameObjectStats.sidekick[key];
 
             // console.debug(this.body);
+
+            //===init dust(run or jump effect)
+            this.dust = scene.add.sprite(200, 200)
+                .setScale(1.5)
+                .setDepth(scene.Depth.player)
+                .setAlpha(0);
 
             //===init attack
             // this.bullets = scene.physics.add.group({
@@ -1212,18 +1235,17 @@ const Sidekick = new Phaser.Class({
                 .setAlpha(0)
                 .setDepth(scene.Depth.tips);
 
-            //==tips總數量
             this.tips = scene.gameData.localeJSON.Tip;
-            this.tipAmount = Object.keys(this.tips).length - 1;
+            this.tipAmount = Object.keys(this.tips).length - 1; //==tips總數量
 
         },
     //=處理轉向
     filpHandler: function (filp) {
         this.setFlipX(filp);
+        this.dust.setFlipX(filp);
     },
+    talkingCallback: null,
     behavior: null,
-    // behaviorCallback: null,//
-    talkingCallback: null,//為了計時器不重複註冊多個
     behaviorHandler: function (player, scene) {
         // console.debug(this.body.speed);
 
@@ -1232,6 +1254,7 @@ const Sidekick = new Phaser.Class({
             this.behavior = 'following';
         else
             this.behavior = 'standstill';
+
 
         //==動作
         switch (this.behavior) {
@@ -1242,6 +1265,9 @@ const Sidekick = new Phaser.Class({
                     if (!player.body.touching.down && Phaser.Math.Distance.BetweenPoints(player, this) < 200) {
                         // console.debug(this.body.speed);
                         this.anims.play('sidekick_jump', true);
+                        this.dust
+                            .setAlpha(1)
+                            .play('sidekick_jumpDust', true);
 
                         let speed = this.body.speed > 800 ? 800 : this.body.speed;
                         this.body.reset(this.x, this.y)//==停下
@@ -1250,6 +1276,10 @@ const Sidekick = new Phaser.Class({
                     //==以加速度追
                     else {
                         this.anims.play('sidekick_run', true);
+                        this.dust
+                            .setAlpha(1)
+                            .play('sidekick_runDust', true);
+
                         // ==== accelerateToObject(gameObject, destination, acceleration, xSpeedMax, ySpeedMax);
                         let speed = this.stats.movementSpeed;
                         scene.physics.accelerateToObject(this, player, speed, speed * 1.1);
@@ -1266,6 +1296,7 @@ const Sidekick = new Phaser.Class({
             case 'standstill':
                 if (this.body.touching.down) {
                     this.anims.play('sidekick_idle', true);
+                    this.dust.setAlpha(0);
                     // if (this.body.touching.down)
                     //     this.body.reset(this.x, this.y);
                     this.body.acceleration.x = 0;
@@ -1282,11 +1313,12 @@ const Sidekick = new Phaser.Class({
 
         //==助手知識補充
         this.dialog.setPosition(this.x, this.y - 100);
+        this.dust.setPosition(this.x, this.y);//揚起灰塵效果跟隨
 
         if (!this.talkingCallback) {
             const tipDuration = Phaser.Math.Between(3, 5) * 1000,//==對話框持續時間(包含淡入淡出時間)
-                //  tipDelay = Phaser.Math.Between(2, 8) * 1000,//==每則知識間隔
-                tipDelay = 1000,//==每則知識間隔
+                tipDelay = Phaser.Math.Between(2, 5) * 1000,//==每則知識間隔
+                // tipDelay = 1000,//==每則知識間隔
                 tipIdx = Phaser.Math.Between(0, this.tipAmount),//==tip index
                 tipText = this.tips[tipIdx];
             // console.debug(tipIdx, tipText)
@@ -1337,7 +1369,10 @@ class Chunk {
         this.x = x;
         this.y = y;
         this.tiles = scene.physics.add.staticGroup();
+
+        //==碰撞
         scene.physics.add.collider(this.gameScene.player, this.tiles, this.gameScene.player.playerDig, null, this);
+        scene.physics.add.collider(this.gameScene.sidekick, this.tiles);
         this.isLoaded = false;
         // console.debug(this.tiles)
 
@@ -1499,10 +1534,29 @@ class RexTextBox extends RexPlugins.UI.TextBox {
         // console.debug(scene, x, y, config);
 
         let tips = resolve ? false : true;//==助手知識
+        var getTipColor = (isBox = true) => {//==每個助手對話框不同色
+            let sidekick = scene.gameData.sidekick.type;
+            let color;
+
+            switch (sidekick) {
+                default:
+                case 'Owlet':
+                    color = isBox ? 0x7B7B7B : 0xffffff;
+                    break;
+                case 'Dude':
+                    color = isBox ? 0x004B97 : 0xAE0000;
+                    break;
+                case 'Pink':
+                    color = isBox ? 0xBF0060 : 0x000000;
+                    break;
+            };
+
+            return color;
+        };
 
         const
-            COLOR_PRIMARY = 0x4e342e,//==box背景色
-            COLOR_LIGHT = 0x7b5e57,//==box框線色
+            COLOR_PRIMARY = !tips ? 0x4e342e : getTipColor(true),//==box背景色
+            COLOR_LIGHT = !tips ? 0x7b5e57 : getTipColor(false),//==box框線色
             COLOR_DARK = 0x260e04;
 
         const GetValue = Phaser.Utils.Objects.GetValue;
@@ -1529,6 +1583,7 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                 fixedWidth: fixedWidth,
                 fixedHeight: fixedHeight,
                 fontSize: '20px',
+                color: tips ? '#fff' : '#fff',
                 wrap: {
                     mode: 'word',
                     width: wrapWidth
@@ -1537,12 +1592,20 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                 padding: padding,
             });
 
+        //==頭像調整爲150*150
+        // let icon = null;
+        // if (!tips) {
+        //     const iconW = 150;
+        //     icon = new Phaser.GameObjects.Image(scene, 0, 0, character + 'Avatar');
+        //     icon.setScale(iconW / icon.width);
+        //     // console.debug(character + 'Avatar');
+        // };
 
         const textBoxConfig = {
             x: x,
             y: y,
             background: scene.add.existing(rexRect),
-            icon: tips ? null : scene.add.image(0, 0, character + 'Avatar'),
+            icon: tips ? null : scene.add.image(0, 0, character + 'Avatar'),//==scene.add.existing(icon)
             text: scene.add.existing(rexBBText),
             action: tips ? null : scene.add.image(0, 0, 'dialogButton').setVisible(false).setScale(0.1),
             space: {
@@ -1562,7 +1625,7 @@ class RexTextBox extends RexPlugins.UI.TextBox {
             .setOrigin(0.5)
             .layout();
 
-        if (!tips)
+        if (!tips) {
             this
                 .setInteractive()
                 .on('pointerdown', function () {
@@ -1603,7 +1666,20 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                         repeat: 0, // -1: infinity
                         yoyo: false
                     });
-                }, this)
+                }, this);
+
+
+            //==攻擊鍵也觸發下一句對話
+            let gameScene = scene.game.scene.getScene('gameScene'),
+                cursors = gameScene.cursors,
+                controllCursor = gameScene.gameData.controllCursor,
+                keyObj = cursors[controllCursor['attack']];  // Get key object
+
+            keyObj.on('down', () => this.emit('pointerdown'));
+
+        };
+
+
         //.on('type', function () {
         //})
         // console.debug(scene);
@@ -1770,7 +1846,6 @@ class RexDialog extends RexPlugins.UI.Dialog {
             });
 
         setDialog(data).layout();
-
 
     };
 

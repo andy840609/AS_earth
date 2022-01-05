@@ -867,7 +867,10 @@ class UIScene extends Phaser.Scene {
 
                     var initTimer = () => {
                         //==計時,時間到進入結算
-                        this.gameTimer = this.time.delayedCall(timeRemain, () => gameScene.gameOver.flag = true, [], this);
+                        this.gameTimer = this.time.delayedCall(timeRemain, () => {
+                            gameScene.gameOver.flag = true;
+                            gameScene.gameOver.status = 1;
+                        }, [], this);
                         this.gameTimer.timeText = {};
 
                         gameScene.gameTimer = this.gameTimer;
@@ -1289,8 +1292,8 @@ class UIScene extends Phaser.Scene {
                             // .setDepth(50)
                             // this.add.existing(mask)
 
-                            this.add.image(headX + headW * 0.5, headY, 'player')
-                                .setScale(2)
+                            this.add.image(headX + headW * 0.5, headY, 'playerAvatar')
+                                .setScale(0.5)
                                 .setOrigin(0.5)
                                 .setDepth(Depth.headBox)
                                 .setMask(mask);
@@ -1882,15 +1885,10 @@ class LoadingScene extends Phaser.Scene {
             };
             var player = () => {
                 var sprite = () => {
-                    // this.load.spritesheet('player',
-                    //     gameObjDir + 'dude.png',
-                    //     { frameWidth: 32, frameHeight: 48 }
-                    // );
-
-
                     const playerRole = gameData.playerRole;
                     const dir = gameObjDir + 'player/' + playerRole + '/';
                     const frameObj = { frameWidth: 48, frameHeight: 48 };
+
                     this.load.spritesheet('player_attack1', dir + playerRole + '_attack1.png', frameObj);
                     this.load.spritesheet('player_attack2', dir + playerRole + '_attack2.png', frameObj);
                     this.load.spritesheet('player_attack3', dir + playerRole + '_attack3.png', frameObj);
@@ -1919,10 +1917,15 @@ class LoadingScene extends Phaser.Scene {
                     const sidekick = gameData.sidekick.type;
                     const dir = gameObjDir + 'sidekick/' + sidekick + '/';
                     const frameObj = { frameWidth: 32, frameHeight: 32 };
+
+                    //==action
                     this.load.spritesheet('sidekick_idle', dir + sidekick + '_Monster_Idle_4.png', frameObj);
                     this.load.spritesheet('sidekick_run', dir + sidekick + '_Monster_Run_6.png', frameObj);
                     this.load.spritesheet('sidekick_jump', dir + sidekick + '_Monster_Jump_8.png', frameObj);
                     this.load.spritesheet('sidekick_attack', dir + sidekick + '_Monster_Attack2_6.png', frameObj);
+                    //==dust
+                    this.load.spritesheet('sidekick_jumpDust', dir + 'Double_Jump_Dust_5.png', frameObj);
+                    this.load.spritesheet('sidekick_runDust', dir + 'Walk_Run_Push_Dust_6.png', frameObj);
                 };
                 sprite();
             };
@@ -2016,6 +2019,9 @@ class LoadingScene extends Phaser.Scene {
                 var avatar = () => {
                     const avatarDir = assetsDir + 'avatar/';
                     if (packNum == 1) {
+                        if (gameScene.firstTimeEvent.isFirstTime) {
+                            this.load.image('enemyAvatar', avatarDir + gameScene.aliveEnemy[0] + '.png');
+                        };
 
                     }
                     else if (packNum == 2) {
@@ -2024,6 +2030,8 @@ class LoadingScene extends Phaser.Scene {
                     else if (packNum == 3) {
                         this.load.image('bossAvatar', avatarDir + 'boss.jpg');
                     };
+                    this.load.image('playerAvatar', avatarDir + gameData.playerRole + '.png');
+                    this.load.image('sidekickAvatar', avatarDir + gameData.sidekick.type + '.png');
                 };
                 textBox();
                 quiz();
@@ -2171,6 +2179,9 @@ class DefendScene extends Phaser.Scene {
         super(sceneConfig);
         // console.debug(stationData);
 
+        //==第一次有對話
+        let firstTimeEvent = GameData.sidekick.lineStage == 1;
+
         Object.assign(this, {
             name: 'defend',
             player: null,
@@ -2189,6 +2200,7 @@ class DefendScene extends Phaser.Scene {
             },
             gameOver: {
                 flag: false,
+                status: 0,//==0:玩家退出,1:時間到,2:死亡
                 delayedCall: null,
                 resolve: other.resolve,
             },
@@ -2240,7 +2252,10 @@ class DefendScene extends Phaser.Scene {
                 return statsObj;
 
             },
-
+            firstTimeEvent: {
+                isFirstTime: firstTimeEvent,
+                eventComplete: !firstTimeEvent,
+            },
         });
 
         let stationStats = stationData.stationStats;
@@ -2255,6 +2270,8 @@ class DefendScene extends Phaser.Scene {
         this.plugins.get('rexawaitloaderplugin').addToScene(this);
         var callback = (resolve) => this.scene.add(null, new LoadingScene(this, resolve), true);
         this.load.rexAwait(callback);//==等LoadingScene完成素材載入
+
+        this.scene.add(null, new UIScene('dialogUI', this), true);
     };
     create() {
         const canvas = this.sys.game.canvas;
@@ -2572,7 +2589,7 @@ class DefendScene extends Phaser.Scene {
         };
         var initSidekick = () => {
             this.sidekick = this.add.existing(new Sidekick(this, this.gameData.sidekick.type))
-                .setPosition(100, 450)
+                .setPosition(40, 500)
                 .setDepth(Depth.player - 1);
 
             this.physics.add.collider(this.sidekick, this.platforms);
@@ -2637,7 +2654,10 @@ class DefendScene extends Phaser.Scene {
             //===init cursors
             this.scene.add(null, new UIScene('cursors', this), true);
         };
-
+        var initCamera = () => {
+            this.cameras.main.setBounds(0, 0, width, height);
+            this.cameras.main.flash(500, 0, 0, 0);
+        };
         //==gameScene
         initEnvironment();
         initEnemy();
@@ -2648,7 +2668,7 @@ class DefendScene extends Phaser.Scene {
         initCursors();
         initIconBar();
         initTimer();
-
+        initCamera();
 
         // var postFxPlugin = this.plugins.get('rexswirlpipelineplugin');
         // this.cameraFilter = postFxPlugin.add(this.cameras.main);
@@ -2666,11 +2686,32 @@ class DefendScene extends Phaser.Scene {
 
         // this.time.slowMotion = 5.0;
         // this.time.paused = true;
-        this.cameras.main.flash(500, 0, 0, 0);
+
     };
     update() {
+        //==第一次的對話
+        if (this.firstTimeEvent.isFirstTime) {
+            const speakDelay = 1300;
 
-        // return;
+            this.gameTimer.paused = true;//==說話時暫停
+            this.time.delayedCall(speakDelay, async () => {
+                //==對話完才開始
+                let lines = this.gameData.localeJSON.Lines;
+                let sidekickContent = lines.sidekick['defend'];
+                let enemyContent = lines.enemy;
+
+                await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[0], { character: 'sidekick' }, resolve));
+                await new Promise(resolve => this.dialogUI.newDialog(enemyContent[0], { character: 'enemy' }, resolve));
+                await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[1], { character: 'sidekick' }, resolve));
+
+                this.firstTimeEvent.eventComplete = true;
+                this.gameTimer.paused = false;//==時間繼續
+            }, [], this);
+
+            this.firstTimeEvent.isFirstTime = false;
+        };
+        if (!this.firstTimeEvent.eventComplete) return;
+
         // console.debug('game update');
         var updatePlayer = () => {
 
@@ -2715,14 +2756,30 @@ class DefendScene extends Phaser.Scene {
 
         if (this.gameOver.flag) {
             const gameDestroyDelay = 2000;
+            //===camera effect
             const camera = this.cameras.main;
+
             camera.pan(this.player.x, this.player.y, gameDestroyDelay * 0.5, 'Back', true);
             camera.zoomTo(5, gameDestroyDelay * 0.5);
 
-            if (this.gameOver.delayedCall) return;
 
+            //==
+            camera.on("PAN_COMPLETE", (e) => {
+                console.debug('AAAA');
+            });
+
+            if (this.gameOver.delayedCall) return;
             this.gameTimer.paused = true;
-            this.player.invincibleFlag = true;
+
+            //==玩家停止行爲並無敵
+            if (this.gameOver.status == 0) {
+                this.player.invincibleFlag = true;
+                this.player.stopCursorsFlag = true;
+                this.player.play('player_idle');
+            };
+            //==助手對話框不顯示
+            this.sidekick.dialog.setAlpha(0);
+            this.sidekick.talkingCallback.remove();
 
             //===get gameResult 
             let orbStats = this.orbGroup.getChildren().map(orb => orb.orbStats);
@@ -2751,14 +2808,13 @@ class DefendScene extends Phaser.Scene {
                 },
             };
 
+            this.time.delayedCall(gameDestroyDelay * 0.5, () => camera.fadeOut(500, 0, 0, 0), [], this);
             this.gameOver.delayedCall = this.time.delayedCall(gameDestroyDelay, () => {
                 //===time remove
                 // this.gameTimer.remove();
                 this.game.destroy(true, false);
                 this.gameOver.resolve(gameResult);
             }, [], this);
-
-
 
         };
 
@@ -2798,6 +2854,9 @@ class DigScene extends Phaser.Scene {
         };
         super(sceneConfig);
 
+        //==第一次有對話
+        let firstTimeEvent = GameData.sidekick.lineStage == 1;
+
         Object.assign(this, {
             name: 'dig',
             player: null,
@@ -2816,7 +2875,13 @@ class DigScene extends Phaser.Scene {
             },
             gameOver: {
                 flag: false,
+                status: 0,//==0:玩家退出,1:時間到,2:死亡
+                delayedCall: null,
                 resolve: other.resolve,
+            },
+            firstTimeEvent: {
+                isFirstTime: firstTimeEvent,
+                eventComplete: !firstTimeEvent,
             },
         });
         // console.debug(placeData);
@@ -2826,6 +2891,8 @@ class DigScene extends Phaser.Scene {
         this.plugins.get('rexawaitloaderplugin').addToScene(this);
         var callback = (resolve) => this.scene.add(null, new LoadingScene(this, resolve), true);
         this.load.rexAwait(callback);//==等LoadingScene完成素材載入
+
+        this.scene.add(null, new UIScene('dialogUI', this), true);
     };
     create() {
         const canvas = this.sys.game.canvas;
@@ -2834,6 +2901,7 @@ class DigScene extends Phaser.Scene {
 
         const Depth = {
             platform: 5,
+            tips: 6,
             enemy: 9,
             player: 10,
             pickUpObj: 11,
@@ -2852,6 +2920,7 @@ class DigScene extends Phaser.Scene {
               20(UI:HP bar...)
             */
         };
+        this.Depth = Depth;//==gameObject.js用到
 
         var initEnvironment = () => {
             var background = () => {
@@ -3020,6 +3089,13 @@ class DigScene extends Phaser.Scene {
             });
 
         };
+        var initSidekick = () => {
+            this.sidekick = this.add.existing(new Sidekick(this, this.gameData.sidekick.type))
+                .setPosition(width * 0.5, 0)
+                .setDepth(Depth.player - 1);
+
+            // this.physics.add.collider(this.sidekick, this.platforms);
+        };
         var initCamera = () => {
             var camera = () => {
                 let camera = this.cameras.main;
@@ -3052,6 +3128,7 @@ class DigScene extends Phaser.Scene {
             camera();
             bounds();
             overview();
+            this.cameras.main.flash(500, 0, 0, 0);
         };
         var initDepthCounter = () => {
             this.scene.add(null, new UIScene('depthCounterUI', this), true);
@@ -3084,6 +3161,7 @@ class DigScene extends Phaser.Scene {
         //==gameScene
         initEnvironment();
         initPlayer();
+        initSidekick();
         initCamera();
 
         //==UI
@@ -3092,10 +3170,33 @@ class DigScene extends Phaser.Scene {
         initTimer();
         initDepthCounter();
 
-        this.cameras.main.flash(500, 0, 0, 0);
+
 
     };
     update() {
+        //==第一次的對話
+        // if (this.firstTimeEvent.isFirstTime) {
+        //     const speakDelay = 1300;
+
+        //     this.gameTimer.paused = true;//==說話時暫停
+        //     this.time.delayedCall(speakDelay, async () => {
+        //         //==對話完才開始
+        //         let lines = this.gameData.localeJSON.Lines;
+        //         let sidekickContent = lines.sidekick['defend'];
+        //         let enemyContent = lines.enemy;
+
+        //         await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[0], { character: 'sidekick' }, resolve));
+        //         await new Promise(resolve => this.dialogUI.newDialog(enemyContent[0], { character: 'enemy' }, resolve));
+        //         await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[1], { character: 'sidekick' }, resolve));
+
+        //         this.firstTimeEvent.eventComplete = true;
+        //         this.gameTimer.paused = false;//==時間繼續
+        //     }, [], this);
+
+        //     this.firstTimeEvent.isFirstTime = false;
+        // };
+        // if (!this.firstTimeEvent.eventComplete) return;
+
         var updatePlayer = () => {
 
             this.player.movingHadler(this);
@@ -3106,6 +3207,9 @@ class DigScene extends Phaser.Scene {
             if (playerStats.MP < playerStats.maxMP)
                 this.player.statsChangeHandler({ MP: playerStats.MP += playerStats.manaRegen }, this);//自然回魔
 
+        };
+        var updateSidekick = () => {
+            this.sidekick.behaviorHandler(this.player, this);
         };
         var updateChunks = () => {
             var snappedChunkX = Math.round(this.player.x / this.chunkWidth);
@@ -3146,14 +3250,30 @@ class DigScene extends Phaser.Scene {
         };
 
         updatePlayer();
+        updateSidekick();
         updateChunks();
 
         if (this.gameOver.flag) {
-            //===time remove
-            this.gameTimer.remove();
+            const gameDestroyDelay = 2000;
+            const camera = this.cameras.main;
+            camera.pan(this.player.x, this.player.y, gameDestroyDelay * 0.5, 'Back', true);
+            camera.zoomTo(5, gameDestroyDelay * 0.5);
+
+            if (this.gameOver.delayedCall) return;
+
+            this.gameTimer.paused = true;
+
+            //==玩家停止行爲並無敵
+            if (this.gameOver.status == 0) {
+                this.player.invincibleFlag = true;
+                this.player.stopCursorsFlag = true;
+                this.player.play('player_idle');
+            };
+            //==助手對話框不顯示
+            this.sidekick.dialog.setAlpha(0);
+            this.sidekick.talkingCallback.remove();
 
             //===get gameResult 
-
             let gameResult = {
                 //==更新角色資料(剩餘時間、能力值...)
                 playerInfo: {
@@ -3166,8 +3286,16 @@ class DigScene extends Phaser.Scene {
                 },
                 bossRoom: this.depthCounter.bossRoom,
             };
-            this.game.destroy(true, false);
-            this.gameOver.resolve(gameResult);
+
+            this.time.delayedCall(gameDestroyDelay * 0.5, () => camera.fadeOut(500, 0, 0, 0), [], this);
+            this.gameOver.delayedCall = this.time.delayedCall(gameDestroyDelay, () => {
+                //===time remove
+                // this.gameTimer.remove();
+
+                this.game.destroy(true, false);
+                this.gameOver.resolve(gameResult);
+            }, [], this);
+
         };
     };
 };
@@ -3218,6 +3346,7 @@ class BossScene extends Phaser.Scene {
         const height = canvas.height;
         const localeJSON = this.gameData.localeJSON;
         const Depth = {
+            tips: 6,
             flame: 8,
             player: 10,
             boss: 11,
@@ -3235,7 +3364,7 @@ class BossScene extends Phaser.Scene {
               20(UI:HP bar...)
             */
         };
-
+        this.Depth = Depth;//==gameObject.js用到
         const flameCount = 4;
         const animeDelay = 500;
 
@@ -3324,6 +3453,7 @@ class BossScene extends Phaser.Scene {
         };
         var initTimer = () => {
             this.scene.add(null, new UIScene('timerUI', this), true);
+            this.gameTimer.paused = true;
         };
         var initIconBar = () => {
             this.scene.add(null, new UIScene('iconBar', this), true);
@@ -3367,6 +3497,13 @@ class BossScene extends Phaser.Scene {
 
                 },
             });
+        };
+        var initSidekick = () => {
+            this.sidekick = this.add.existing(new Sidekick(this, this.gameData.sidekick.type))
+                .setPosition(width * 0.1, height * 0.65)
+                .setDepth(Depth.player);
+
+            this.sidekick.body.setMaxVelocity(0);
         };
         var initBoss = () => {
             var animsCreate = () => {
@@ -3488,6 +3625,7 @@ class BossScene extends Phaser.Scene {
                 this.time.delayedCall(speakDelay, async () => {
                     //==對話完才開始問題
                     await new Promise(resolve => this.dialogUI.newDialog(bossContent, { character: 'boss' }, resolve));
+                    this.gameTimer.paused = false;
                     boss.play('boss_Idle');
                     this.time.delayedCall(animeDelay, () => initQuiz(), [], this);
 
@@ -3636,25 +3774,35 @@ class BossScene extends Phaser.Scene {
             };
             showQuiz();
         };
+        var initCamera = () => {
+            this.cameras.main.setBounds(0, 0, width, height);
+            this.cameras.main.flash(500, 0, 0, 0);
+        };
+
         //==gameScene
         initEnvironment();
         initPlayer();
+        initSidekick();
         initBoss();
 
         //==UI
         initCursors();
         initIconBar();
         initTimer();
+        initCamera();
         // initQuiz();
 
-        this.cameras.main.flash(500, 0, 0, 0);
     };
     update() {
         var updateBoss = () => {
             let boss = this.boss;
             boss.HPbar.setXY(boss.x, boss.y - boss.displayHeight);
         };
+        var updateSidekick = () => {
+            this.sidekick.behaviorHandler(this.player, this);
+        };
         updateBoss();
+        updateSidekick();
 
         if (this.gameOver.flag) {
             //===time remove

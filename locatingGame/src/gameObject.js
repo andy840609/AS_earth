@@ -20,7 +20,7 @@ const GameObjectStats = {
         },
         cat: {
             HP: 800,
-            attackPower: 800,
+            attackPower: 1,
             movementSpeed: 200,
             jumpingPower: 200,
         },
@@ -39,19 +39,23 @@ const GameObjectStats = {
     },
     player: {
         Biker: {
+            class: 'melee',//==近戰
             movementSpeed: 300,
             jumpingPower: 400,
-            attackSpeed: 800,
-            attackPower: 100,
+            attackSpeed: 1000,
+            attackPower: 120,
+            attackRange: 55,
+            bulletSize: [80, 120],
             knockBackSpeed: 200,//==擊退時間固定200ms,這個速度越大擊退越遠
-            manaCost: 10,
-            manaRegen: 10,//per 10 ms(game update per 10ms)0.1
-            HP: 100,
-            maxHP: 100,
-            MP: 150,
-            maxMP: 150,
+            manaCost: 6,
+            manaRegen: 0.1,//per 10 ms(game update per 10ms)0.1
+            HP: 150,
+            maxHP: 150,
+            MP: 60,
+            maxMP: 60,
         },
         Cyborg: {
+            class: 'ranged',//==遠程
             movementSpeed: 300,
             jumpingPower: 400,
             attackSpeed: 800,
@@ -65,6 +69,7 @@ const GameObjectStats = {
             maxMP: 150,
         },
         Punk: {
+            class: 'ranged',//==遠程
             movementSpeed: 300,
             jumpingPower: 400,
             attackSpeed: 800,
@@ -284,24 +289,28 @@ const Bullet = new Phaser.Class({
 
     initialize:
         function Bullet(scene) {
-            Phaser.Physics.Arcade.Sprite.call(this, scene, 0, 0, 'instrument');
+            Phaser.Physics.Arcade.Sprite.call(this, scene, 0, 0);
             this.setDepth(15);
         },
 
-    fire: function (x, y, speed) {
-        this.enableBody(true, x, y, true, true)
-            .setVelocityX(speed);
-        // this.speed = Phaser.Math.GetSpeed(speed, 1);
-        // console.debug(this.speed)
+    fire: function (x, y, attackSpeed, attackRange = false, onXaxis = true) {
+        this
+            .enableBody(true, x, y, true, true)
+        [onXaxis ? 'setVelocityX' : 'setVelocityY'](attackSpeed);//==不同軸向的攻擊
 
+        this.attackRange = attackRange;
+        this.attackOrigin = {
+            x: x,
+            y: y
+        };
     },
 
     update: function (time, delta) {
-        // console.debug(this.body)
-        // this.x += this.speed * delta;
-
+        let outOfRange = this.attackRange ?
+            Phaser.Math.Distance.BetweenPoints(this.attackOrigin, this) > this.attackRange : false;
         let outOfWindow = !this.scene.cameras.main.worldView.contains(this.x, this.y);
-        if (outOfWindow)
+
+        if (outOfWindow || outOfRange)
             this.disableBody(true, true);
     },
 
@@ -857,16 +866,9 @@ const Player = new Phaser.Class({
                 });
 
                 scene.anims.create({
-                    key: 'player_attack1',
-                    frames: scene.anims.generateFrameNumbers('player_attack1'),
-                    frameRate: 15,
-                    repeat: 0,
-                });
-
-                scene.anims.create({
-                    key: 'player_attack2',
-                    frames: scene.anims.generateFrameNumbers('player_attack2'),
-                    frameRate: 15,
+                    key: 'player_attack',
+                    frames: scene.anims.generateFrameNumbers('player_attack'),
+                    frameRate: 20,
                     repeat: 0,
                 });
 
@@ -912,6 +914,37 @@ const Player = new Phaser.Class({
                     repeat: 0,
                 });
 
+                //==effect
+
+                scene.anims.create({
+                    key: 'player_jumpDust',
+                    frames: scene.anims.generateFrameNumbers('player_jumpDust'),
+                    frameRate: 15,
+                    repeat: 0,
+                });
+
+                scene.anims.create({
+                    key: 'player_attackEffect',
+                    frames: scene.anims.generateFrameNumbers('player_attackEffect'),
+                    frameRate: 10,
+                    repeat: 0,
+                });
+
+                scene.anims.create({
+                    key: 'player_jumpAttackEffect',
+                    frames: scene.anims.generateFrameNumbers('player_jumpAttackEffect'),
+                    frameRate: 10,
+                    repeat: 0,
+                });
+
+                scene.anims.create({
+                    key: 'player_runAttackEffect',
+                    frames: scene.anims.generateFrameNumbers('player_runAttackEffect'),
+                    frameRate: 10,
+                    repeat: 0,
+                });
+
+
             };
             animsCreate();
 
@@ -934,7 +967,22 @@ const Player = new Phaser.Class({
                 maxSize: 10,
                 runChildUpdate: true,
                 maxVelocityY: 0,
-            });
+            })
+                .setOrigin(1, 0);
+
+
+            //===init effect sprite
+            this.dust = scene.add.sprite(0, 0)
+                .setScale(2.5)
+                .setOrigin(1, 0.4)
+                .setDepth(scene.Depth.player - 1);
+
+
+            this.attackEffect = scene.add.sprite(0, 0)
+                .setScale(2)
+                .setOrigin(0.5, 0.4)
+                .setDepth(scene.Depth.player - 1);
+
 
             //======custom
             this.stats = Object.assign({}, stats);
@@ -943,11 +991,22 @@ const Player = new Phaser.Class({
             scene.scene.add(null, new UIScene('statsBar', scene, this), true);
             // console.debug(statsBarUI);
 
+
+
         },
     //=處理轉向
     filpHandler: function (filp) {
         this.setFlipX(filp);
         this.body.offset.x = (filp ? 26 : 4);
+
+        //==effect
+        this.dust.setFlipX(filp);
+        this.dust.originX = !filp;
+
+        this.attackEffect.setFlipX(filp);
+        // this.attackEffect.originX = filp;//1;
+
+        this.bullets.originX = filp;
     },
     doublejumpFlag: false,
     //==移動
@@ -979,7 +1038,8 @@ const Player = new Phaser.Class({
             this.setVelocityX(0);
             // console.debug(this.anims.getName())
             let currentAnims = this.anims.getName();
-            if (!this.anims.isPlaying || (currentAnims === 'player_run' || currentAnims === 'player_runAttack'))
+            if ((!this.anims.isPlaying ||
+                (currentAnims === 'player_run' || currentAnims === 'player_runAttack')) && this.body.touching.down)
                 this.anims.play('player_idle', true);
         };
 
@@ -988,9 +1048,14 @@ const Player = new Phaser.Class({
 
                 if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['up']])) {
                     //==跳
+
                     if (this.body.touching.down) {
                         this.setVelocityY(-this.stats.jumpingPower);
                         this.anims.play('player_jump', true);
+                        this.dust.setPosition(this.x, this.y)
+                            // .setPosition(this.x + 40 * (this.flipX ? 1 : - 1), this.y + 15)
+                            .play('player_jumpDust');
+
                         this.doublejumpFlag = true;
                     }
                     //==二段跳
@@ -1017,6 +1082,7 @@ const Player = new Phaser.Class({
                 };
                 break;
         };
+
 
     },
     //==撿起
@@ -1068,30 +1134,55 @@ const Player = new Phaser.Class({
         let cursors = scene.cursors;
         let controllCursor = scene.gameData.controllCursor;
 
-        if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['attack']])) {
-            // if (cursors[controllCursor['attack']].isDown) {//==按著連續攻擊
-            if (this.stats.MP < this.stats.manaCost) return;
 
+        this.attackEffect.setPosition(this.x, this.y);
+        if (cursors[controllCursor['attack']].isDown) {//==按著連續攻擊
             let currentAnims = this.anims.getName();
-            let isJumping = !this.body.touching.down;
-            let isRuning = (currentAnims === 'player_run' || currentAnims === 'player_runAttack');
-            let isAttacking = (currentAnims === 'player_attack1');
-            let attackAnims = isJumping ? 'player_jumpAttack' :
-                isRuning ? 'player_runAttack' :
-                    isAttacking ? 'player_attack2' : 'player_attack1';
-            if (currentAnims === 'player_attack2' && this.anims.isPlaying) return;
-            this.anims.play(attackAnims);
+            let attacking =
+                (currentAnims === 'player_attack' ||
+                    currentAnims === 'player_runAttack' || currentAnims === 'player_jumpAttack')
+                && this.anims.isPlaying;
 
+            if ((this.stats.MP < this.stats.manaCost) || attacking) return;
+
+            //==bullet
             var bullet = this.bullets.get();
             // console.debug(bullet);
             if (bullet) {
-                bullet.fire(this.x, this.y, this.stats.attackSpeed * (this.flipX ? -1 : 1));
-                bullet.anims.play('player_run', true);
-                // bullet.setMass(1);
-                bullet.body.setSize(30, 40);
+                let attackSpeed = this.stats.attackSpeed * (this.flipX ? -1 : 1),
+                    attackRange = this.stats.attackRange,
+                    onXaxis = true;
+
+                bullet.fire(this.x, this.y, attackSpeed, attackRange, onXaxis);
+
+                // .setOffset(4, 13)//==box大小
+
+                bullet.body.setSize(...this.stats.bulletSize);
+
                 this.statsChangeHandler({ MP: this.stats.MP -= this.stats.manaCost }, this);
             };
+
+
+            //==anims
+            // console.debug(this.anims);
+            let isJumping = !this.body.touching.down;
+            let isRuning = (currentAnims === 'player_run' || currentAnims === 'player_runAttack');
+            // let isAttacking = (currentAnims === 'player_attack1');
+            let attackAnims = isJumping ? 'player_jumpAttack' :
+                isRuning ? 'player_runAttack' : 'player_attack';
+            let attackEffectAnims = isJumping ? 'player_jumpAttackEffect' :
+                isRuning ? 'player_runAttackEffect' : 'player_attackEffect';
+            this.attackEffect.play(attackEffectAnims);
+
+            if (currentAnims === 'player_attack' && this.anims.isPlaying) return;
+            this.anims.play(attackAnims);
+
+
+
+
         };
+
+
     },
     //==受擊
     stopCursorsFlag: false,
@@ -1132,7 +1223,9 @@ const Player = new Phaser.Class({
             }, [], this);
 
         };
-
+        //==不溢回
+        if (this.stats.MP > this.stats.maxMP)
+            this.stats.MP = this.stats.maxMP;
         // this.stats = Object.assign(this.stats, statsObj);
         // console.debug(statsObj);
     },
@@ -1216,7 +1309,7 @@ const Sidekick = new Phaser.Class({
             // console.debug(this.body);
 
             //===init dust(run or jump effect)
-            this.dust = scene.add.sprite(200, 200)
+            this.dust = scene.add.sprite(0, 0)
                 .setScale(1.5)
                 .setDepth(scene.Depth.player)
                 .setAlpha(0);

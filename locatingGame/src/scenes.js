@@ -1889,8 +1889,7 @@ class LoadingScene extends Phaser.Scene {
                     const dir = gameObjDir + 'player/' + playerRole + '/';
                     const frameObj = { frameWidth: 48, frameHeight: 48 };
 
-                    this.load.spritesheet('player_attack1', dir + playerRole + '_attack1.png', frameObj);
-                    this.load.spritesheet('player_attack2', dir + playerRole + '_attack2.png', frameObj);
+                    this.load.spritesheet('player_attack', dir + playerRole + '_attack2.png', frameObj);
                     this.load.spritesheet('player_attack3', dir + playerRole + '_attack3.png', frameObj);
                     this.load.spritesheet('player_punch', dir + playerRole + '_punch.png', frameObj);
                     this.load.spritesheet('player_death', dir + playerRole + '_death.png', frameObj);
@@ -1900,6 +1899,35 @@ class LoadingScene extends Phaser.Scene {
                     this.load.spritesheet('player_idle', dir + playerRole + '_idle.png', frameObj);
                     this.load.spritesheet('player_run', dir + playerRole + '_run.png', frameObj);
                     this.load.spritesheet('player_runAttack', dir + playerRole + '_run_attack.png', frameObj);
+
+                    //==effect
+                    const effectDir = gameObjDir + 'player/effect/';
+                    const effectFrameObj = {
+                        Biker: {
+                            attack: [126, 60],
+                            jump: [120, 80],
+                            run: [120, 60],
+                        },
+                        Cyborg: {
+                            attack: [126, 60],
+                            jump: [65, 60],
+                        },
+                        Punk: {
+                            attack: [126, 60],
+                            jump: [65, 60],
+                        },
+                    }[playerRole];
+
+                    this.load.spritesheet('player_jumpDust', effectDir + 'jump_dust.png', { frameWidth: 38, frameHeight: 60 });
+
+                    this.load.spritesheet('player_attackEffect', effectDir + 'attack_effect.png',
+                        { frameWidth: effectFrameObj.attack[0], frameHeight: effectFrameObj.attack[1] });
+                    this.load.spritesheet('player_jumpAttackEffect', effectDir + 'jumpAttack_effect.png',
+                        { frameWidth: effectFrameObj.jump[0], frameHeight: effectFrameObj.jump[1] });
+                    this.load.spritesheet('player_runAttackEffect', effectDir + 'runAttack_effect.png',
+                        { frameWidth: effectFrameObj.run[0], frameHeight: effectFrameObj.run[1] });
+
+                    // this.load.spritesheet('player_jumpDust', effectDir + 'jump_dust.png', { frameWidth: 35, frameHeight: 55 });
                 };
                 var UIbar = () => {
                     const playerBarDir = assetsDir + 'ui/playerBar/';
@@ -2771,8 +2799,8 @@ class DefendScene extends Phaser.Scene {
             if (this.gameOver.delayedCall) return;
             this.gameTimer.paused = true;
 
-            //==玩家停止行爲並無敵
-            if (this.gameOver.status == 0) {
+            //==玩家停止行爲並無敵(死亡時不用)
+            if (this.gameOver.status != 2) {
                 this.player.invincibleFlag = true;
                 this.player.stopCursorsFlag = true;
                 this.player.play('player_idle');

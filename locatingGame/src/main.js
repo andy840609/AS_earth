@@ -40,7 +40,7 @@ function locatingGame() {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 300 },
-                    debug: true,
+                    // debug: true,
                 },
             },
         };
@@ -319,7 +319,7 @@ function locatingGame() {
 
                     //==test
                     initMap();
-                    gameStart('defend');
+                    // gameStart('defend');
                     // gameStart('dig');
 
                     //==test
@@ -596,7 +596,7 @@ function locatingGame() {
                     data.forEach((d, i) => {
                         // console.debug(d);
                         let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
-                        // let enemy = [];//==之後隨機抽敵人組
+                        // let enemy = ['dog'];//==之後隨機抽敵人組
                         let enemyStats = {};
 
                         enemy.forEach((key) => {

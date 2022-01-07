@@ -251,7 +251,7 @@ function locatingGame() {
                 let sidekick = 'Owlet';//=='Owlet,Dude,Pink'
 
                 GameData = {
-                    timeRemain: 5 * 60000,//1min=60000ms           
+                    timeRemain: 10 * 60000,//1min=60000ms           
                     // timeRemain: 0.03 * 60000,//1min=60000ms
                     timeMultiplier: 300,//real 1 ms = game x ms;
                     velocity: 7.5,//==速度參數預設7.5
@@ -282,8 +282,8 @@ function locatingGame() {
                     },
                     sidekick: {
                         type: sidekick,
-                        lineStage: 1,
-                        talkSpeed: 3500,
+                        lineStage: 2,
+                        talkSpeed: 6000,
                         doneTalking: true,
                     },
                 };
@@ -947,13 +947,19 @@ function locatingGame() {
                                 })
                                 .on('click', function (e) {
                                     //==速度參數要完成兩站才能調整
-                                    if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
+                                    // if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
 
                                     let button = $(this);
                                     let ckick = button.hasClass('clicked');
                                     button.toggleClass('clicked', !ckick);
 
                                     updateUI(this, !ckick);
+
+                                    //===第一次開速度圖
+                                    if (this.id == UIbuttons[1] && GameData.sidekick.lineStage == 2) {
+                                        updateSidekick(3, 0, true);
+                                        GameData.sidekick.lineStage = 3;
+                                    };
                                 });
 
                         };
@@ -1081,7 +1087,8 @@ function locatingGame() {
 
 
                         init();
-                        updateSidekick(1, 0, false);
+                        // updateSidekick(1, 0, false);
+                        updateSidekick(GameData.sidekick.lineStage, 0, false);
                     };
 
                     timeRemain();
@@ -1395,11 +1402,11 @@ function locatingGame() {
                             };
                             lockAnime();
                             updateSidekick(2, 1, false);
+                            GameData.sidekick.lineStage = 2;
                         }
                         else if (GameData.stationClear.count > 0) {
                             // console.debug('update')
                             updateSidekick(2, 0, true);
-                            GameData.sidekick.lineStage = 2;
                         };
                     };
                 };
@@ -1445,12 +1452,11 @@ function locatingGame() {
                 }
                 else if (GameData.playerStats.HP == 0) {
                     stopClickFlag = true;
-                    const restTimeCost = 10 * 60000;//1min=60000ms    
+                    const restTimeCost = 1 * 60000;//1min=60000ms    
                     const restAnimDelay = 3000;
 
                     var resting = () => {
                         const blackout = $('#blackout');
-
 
                         blackout.show();
                         setTimeout(() => {
@@ -1541,7 +1547,7 @@ function locatingGame() {
 
                             changingText.fadeIn();
                             break;
-                        case '2_2':
+                        case '2_4':
                             changingImg
                                 .css('right', '290px')
                                 .css('bottom', '480px');
@@ -1663,7 +1669,7 @@ function locatingGame() {
                     }
 
                     // === 進王關
-                    if (1) {//gameResult.bossRoom
+                    if (gameResult.bossRoom) {//gameResult.bossRoom
                         const backgroundArr = Object.keys(BackGroundResources.boss);
                         let background = backgroundArr[getRandom(backgroundArr.length)];
 
@@ -2350,7 +2356,7 @@ function locatingGame() {
             afterOpacity = 0.7;
 
         function getNewData() {
-            const gap = 10,//==每10分鐘一組(>10,10-20)
+            const gap = 3,//==每10分鐘一組(>10,10-20)
                 groupCount = 10;//==暫定10組(最大90-100)
 
             // console.debug(GameData.playerTimeUse);
@@ -2699,7 +2705,7 @@ function locatingGame() {
                                             .attr('opacity', 0)
                                             .transition().duration(appearDuration).delay(titleDelay)
                                             .ease(d3.easeCubicIn)
-                                            .attr('opacity', 1)
+                                            .attr('opacity', 1);
                                     };
 
                                     d3.timeout(() => replayFlag = true, bossT1 + bossT2 + bossT3);

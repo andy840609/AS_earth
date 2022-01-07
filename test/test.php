@@ -1,3 +1,3 @@
 <?php
 // echo $_GET['test'];
-echo 'HELLO';
+echo 'HELLO' . 'AAA';

@@ -319,7 +319,6 @@ class UIScene extends Phaser.Scene {
                         scaleX: {
                             from: 0, to: (target) => buttonGroup[0].text.height * 2 / target.height
                         },
-
                     });
 
 
@@ -1906,7 +1905,7 @@ class LoadingScene extends Phaser.Scene {
                         Biker: {
                             attack: [126, 60],
                             jump: [120, 80],
-                            run: [120, 60],
+                            run: [110, 60],
                         },
                         Cyborg: {
                             attack: [126, 60],
@@ -2600,6 +2599,7 @@ class DefendScene extends Phaser.Scene {
                 // console.debug(bullet, enemy);
                 let playerStats = this.player.stats;
 
+                // if (playerStats.class != 'melee')//近戰能打多體（會重複判斷秒殺）
                 bullet.disableBody(true, true);
                 enemy.body.setVelocityX(playerStats.knockBackSpeed * (bullet.x < enemy.x ? 1 : -1));
 
@@ -2610,7 +2610,7 @@ class DefendScene extends Phaser.Scene {
             this.physics.add.collider(this.player, this.platforms);
             //==敵人玩家相關碰撞
             if (!stationStats.liberate) {
-                this.physics.add.collider(this.player.bullets, this.enemy, this.player.playerAttack, null, this);
+                this.physics.add.overlap(this.player.bullets, this.enemy, this.player.playerAttack, null, this);
                 this.physics.add.overlap(this.enemy, this.player, this.enemy.enemyAttack, null, this);
             };
 
@@ -2718,27 +2718,27 @@ class DefendScene extends Phaser.Scene {
     };
     update() {
         //==第一次的對話
-        if (this.firstTimeEvent.isFirstTime) {
-            const speakDelay = 1300;
+        // if (this.firstTimeEvent.isFirstTime) {
+        //     const speakDelay = 1300;
 
-            this.gameTimer.paused = true;//==說話時暫停
-            this.time.delayedCall(speakDelay, async () => {
-                //==對話完才開始
-                let lines = this.gameData.localeJSON.Lines;
-                let sidekickContent = lines.sidekick['defend'];
-                let enemyContent = lines.enemy;
+        //     this.gameTimer.paused = true;//==說話時暫停
+        //     this.time.delayedCall(speakDelay, async () => {
+        //         //==對話完才開始
+        //         let lines = this.gameData.localeJSON.Lines;
+        //         let sidekickContent = lines.sidekick['defend'];
+        //         let enemyContent = lines.enemy;
 
-                await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[0], { character: 'sidekick' }, resolve));
-                await new Promise(resolve => this.dialogUI.newDialog(enemyContent[0], { character: 'enemy' }, resolve));
-                await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[1], { character: 'sidekick' }, resolve));
+        //         await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[0], { character: 'sidekick' }, resolve));
+        //         await new Promise(resolve => this.dialogUI.newDialog(enemyContent[0], { character: 'enemy' }, resolve));
+        //         await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[1], { character: 'sidekick' }, resolve));
 
-                this.firstTimeEvent.eventComplete = true;
-                this.gameTimer.paused = false;//==時間繼續
-            }, [], this);
+        //         this.firstTimeEvent.eventComplete = true;
+        //         this.gameTimer.paused = false;//==時間繼續
+        //     }, [], this);
 
-            this.firstTimeEvent.isFirstTime = false;
-        };
-        if (!this.firstTimeEvent.eventComplete) return;
+        //     this.firstTimeEvent.isFirstTime = false;
+        // };
+        // if (!this.firstTimeEvent.eventComplete) return;
 
         // console.debug('game update');
         var updatePlayer = () => {

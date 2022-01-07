@@ -42,13 +42,13 @@ const GameObjectStats = {
             class: 'melee',//==近戰
             movementSpeed: 300,
             jumpingPower: 400,
-            attackSpeed: 1000,
+            attackSpeed: 200,
             attackPower: 120,
             attackRange: 55,
             bulletSize: [80, 120],
             knockBackSpeed: 200,//==擊退時間固定200ms,這個速度越大擊退越遠
             manaCost: 6,
-            manaRegen: 0.1,//per 10 ms(game update per 10ms)0.1
+            manaRegen: 10,//per 10 ms(game update per 10ms)0.1
             HP: 150,
             maxHP: 150,
             MP: 60,
@@ -861,7 +861,7 @@ const Player = new Phaser.Class({
                 scene.anims.create({
                     key: 'player_runAttack',
                     frames: scene.anims.generateFrameNumbers('player_runAttack'),
-                    frameRate: 18,
+                    frameRate: 10,
                     repeat: 0,
                 });
 
@@ -872,12 +872,12 @@ const Player = new Phaser.Class({
                     repeat: 0,
                 });
 
-                scene.anims.create({
-                    key: 'player_attack3',
-                    frames: scene.anims.generateFrameNumbers('player_attack3'),
-                    frameRate: 30,
-                    repeat: 0,
-                });
+                // scene.anims.create({
+                //     key: 'player_attack3',
+                //     frames: scene.anims.generateFrameNumbers('player_attack3'),
+                //     frameRate: 30,
+                //     repeat: 0,
+                // });
 
                 scene.anims.create({
                     key: 'player_hurt',
@@ -910,7 +910,7 @@ const Player = new Phaser.Class({
                 scene.anims.create({
                     key: 'player_jumpAttack',
                     frames: scene.anims.generateFrameNumbers('player_punch'),
-                    frameRate: 20,
+                    frameRate: 10,
                     repeat: 0,
                 });
 
@@ -940,7 +940,7 @@ const Player = new Phaser.Class({
                 scene.anims.create({
                     key: 'player_runAttackEffect',
                     frames: scene.anims.generateFrameNumbers('player_runAttackEffect'),
-                    frameRate: 10,
+                    frameRate: 8,
                     repeat: 0,
                 });
 
@@ -1000,8 +1000,11 @@ const Player = new Phaser.Class({
         this.body.offset.x = (filp ? 26 : 4);
 
         //==effect
-        this.dust.setFlipX(filp);
-        this.dust.originX = !filp;
+        //==沙子動畫不突然轉向
+        this.scene.time.delayedCall(this.dust.anims.isPlaying ? 500 : 0, () => {
+            this.dust.setFlipX(filp);
+            this.dust.originX = !filp;
+        }, [], this.scene);
 
         this.attackEffect.setFlipX(filp);
         // this.attackEffect.originX = filp;//1;

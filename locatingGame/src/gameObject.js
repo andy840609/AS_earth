@@ -13,14 +13,14 @@ const datafileDir = 'data/datafile/';
 const GameObjectStats = {
     creature: {
         dog: {
-            HP: 1000,
+            HP: 10000,
             attackPower: 10,
             movementSpeed: 200,
             jumpingPower: 0,
         },
         cat: {
-            HP: 800,
-            attackPower: 1,
+            HP: 8000,
+            attackPower: 800,
             movementSpeed: 200,
             jumpingPower: 200,
         },
@@ -46,7 +46,7 @@ const GameObjectStats = {
             attackPower: 120,
             attackRange: 55,
             bulletSize: [80, 120],
-            knockBackSpeed: 200,//==擊退時間固定200ms,這個速度越大擊退越遠
+            knockBackSpeed: 250,//==擊退時間固定200ms,這個速度越大擊退越遠
             manaCost: 6,
             manaRegen: 10,//per 10 ms(game update per 10ms)0.1
             HP: 150,
@@ -1152,8 +1152,9 @@ const Player = new Phaser.Class({
             var bullet = this.bullets.get();
             // console.debug(bullet);
             if (bullet) {
-                let attackSpeed = this.stats.attackSpeed * (this.flipX ? -1 : 1),
-                    attackRange = this.stats.attackRange,
+                let moveSpeed = Math.abs(this.body.velocity.x);
+                let attackSpeed = (this.stats.attackSpeed + moveSpeed * 1.5) * (this.flipX ? -1 : 1),
+                    attackRange = this.stats.attackRange + moveSpeed * 0.5,
                     onXaxis = true;
 
                 bullet.fire(this.x, this.y, attackSpeed, attackRange, onXaxis);

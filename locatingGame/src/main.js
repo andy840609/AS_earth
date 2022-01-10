@@ -40,7 +40,7 @@ function locatingGame() {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 300 },
-                    // debug: true,
+                    debug: true,
                 },
             },
         };
@@ -226,23 +226,19 @@ function locatingGame() {
             //===遊戲相關
             const clearStationToUnlock = 3;//==完成幾個解鎖第二關
             const allowedErro = 15;//==容許與震央相差距離(km)
-            let gameStartFlag = false;//==取消助手對話
             let stopClickFlag = false;//==gameOver暫停點擊關卡
 
-
             var gameDisplay = (display) => {
-
                 if (display) {
                     gameOuterDiv.fadeIn();
 
                     //==遊戲開始UI關閉
                     gameUI.find('.UIicon').toggleClass('clicked', false);
                     gameUI.find('.UI').hide();
-                    gameStartFlag = true;
+                    gameUI.find('.sidekickUI .sidekickTXB').hide();
                 }
                 else {
                     gameOuterDiv.fadeOut();
-                    gameStartFlag = false;
                 }
             };
 
@@ -282,9 +278,9 @@ function locatingGame() {
                     },
                     sidekick: {
                         type: sidekick,
-                        lineStage: 2,
-                        talkSpeed: 6000,
-                        doneTalking: true,
+                        lineStage: [3, 0],//==第2-0句
+                        talkSpeed: 1000,
+                        doneTalking: false,
                     },
                 };
             };
@@ -956,9 +952,8 @@ function locatingGame() {
                                     updateUI(this, !ckick);
 
                                     //===第一次開速度圖
-                                    if (this.id == UIbuttons[1] && GameData.sidekick.lineStage == 2) {
-                                        updateSidekick(3, 0, true);
-                                        GameData.sidekick.lineStage = 3;
+                                    if (this.id == UIbuttons[1] && GameData.sidekick.lineStage[0] == 3) {
+                                        updateSidekick(4, 0, false);
                                     };
                                 });
 
@@ -1051,14 +1046,13 @@ function locatingGame() {
                             .append(`<div class="sidekickUI"></div>`)
                             .find('.sidekickUI');
 
-                        let lines = GameData.localeJSON.Lines.sidekick;
                         var init = () => {
                             sidekickUI
                                 .append(`
                                     <div class="sidekickTXB">
                                         <img src="${sidekickDir}/textBox.png" width="${textBoxW}px">
                                         <div class="sidekickText" style="white-space: pre-wrap"></div>
-                                        <div class="changingDiv"><img><text></text></div>                                        
+                                        <div class="hint">( ${GameData.localeJSON.UI.sidekickHint} )</div>                                
                                     </div>`
                                 )
                                 .append(`
@@ -1067,15 +1061,17 @@ function locatingGame() {
                                     </div>`
                                 );
 
-                            sidekickUI.find('.sidekickTXB').hide();
-                            sidekickUI.find('.sidekick')
-                                .on('click', () => {
-                                    if (!GameData.sidekick.doneTalking || stopClickFlag) return;
 
-                                    let stage = GameData.sidekick.lineStage,
-                                        index = Object.keys(lines[stage]).length - 1;
-                                    updateSidekick(stage, index, true);
-                                    // updateSidekick(1, 1, false);
+                            let sidekick = sidekickUI.find('.sidekick')
+                                .on('click', () => {
+                                    // if (!GameData.sidekick.doneTalking || stopClickFlag) return;
+
+                                    // let lineStage = GameData.sidekick.lineStage;
+                                    // let stage = lineStage[0],
+                                    //     index = lineStage[1];
+
+                                    // Object.keys(lines[stage]).length - 1
+                                    updateSidekick(...GameData.sidekick.lineStage);
                                 })
                                 .on('mouseover', e => {
 
@@ -1083,12 +1079,17 @@ function locatingGame() {
                                 .on('mouseout', () => {
 
                                 });
+
+
+                            sidekickUI.find('.sidekickTXB').hide()
+                                .on('click', () => sidekick.trigger("click"));
                         };
 
 
                         init();
                         // updateSidekick(1, 0, false);
-                        updateSidekick(GameData.sidekick.lineStage, 0, false);
+
+                        updateSidekick(...GameData.sidekick.lineStage);
                     };
 
                     timeRemain();
@@ -1401,12 +1402,11 @@ function locatingGame() {
                                 }, delay);
                             };
                             lockAnime();
-                            updateSidekick(2, 1, false);
-                            GameData.sidekick.lineStage = 2;
+                            updateSidekick(3, 0, false);
                         }
                         else if (GameData.stationClear.count > 0) {
                             // console.debug('update')
-                            updateSidekick(2, 0, true);
+                            updateSidekick(2, 0, false);
                         };
                     };
                 };
@@ -1483,97 +1483,73 @@ function locatingGame() {
                 };
 
             };
-            function updateSidekick(stage, index, islastLine) {
+            function updateSidekick(stage, index, doneTalking = false) {
                 let lines = GameData.localeJSON.Lines.sidekick;
 
-                var manyLines = (stage, index = 0) => {
-                    let startIdx = index, endIdx = Object.keys(lines[stage]).length - 1;
-                    let talk = (stage, startIdx, islastLine) =>
-                        showText(stage, startIdx, islastLine);
-
-                    talk(stage, index, startIdx == endIdx);
-                    let interval = setInterval(() => {
-
-                        ++startIdx;
-                        let islastLine = ((startIdx == endIdx) || gameStartFlag);
-                        if (islastLine) clearInterval(interval)
-                        // console.debug(startIdx + ' / ' + endIdx);
-                        talk(stage, startIdx, islastLine);
-
-                    }, GameData.sidekick.talkSpeed);
-                };
-
-                var showText = (stage, index, islastLine) => {
+                var showText = (stage, index, doneTalking) => {
                     // console.debug(stage, index, islastLine);
-                    GameData.sidekick.doneTalking = false;
 
-                    let sidekickUI = gameUI.find('.sidekickUI');
-                    let sidekickTXB = sidekickUI.find('.sidekickTXB');
-                    let changingDiv = sidekickTXB.find('.changingDiv');
-                    let changingText = changingDiv.find('text');
-                    let changingImg = changingDiv.find('img');
 
-                    let talkSpeed = GameData.sidekick.talkSpeed;
+                    let sidekickTXB = gameUI.find('.sidekickUI .sidekickTXB');
 
-                    changingText.hide();
-                    changingImg.hide();
-                    switch (`${stage}_${index}`) {
-                        case '1_1':
-                            data.forEach(d => {
-                                let markerObj = d.markerObj;
-                                let circleObj = d.circleObj;
-                                markerObj.addTo(mapObj);
-                                circleObj.addTo(mapObj);
+                    // console.debug(line);
+                    if (!GameData.sidekick.doneTalking) {
 
-                                updateStation(markerObj, { icon: 'default' });
-                            });
-                            break;
-                        case '1_2':
-                            changingImg
-                                .css('right', '290px')
-                                .css('bottom', '480px');
+                        let line = lines[stage][index];
+                        let replaceHTML;
 
-                            changingImg
-                                .attr('src', assetsDir + 'icon/home.png')
-                                .attr('width', '50px');
+                        switch (`${stage}_${index}`) {
+                            case '1_1':
+                                data.forEach(d => {
+                                    let markerObj = d.markerObj;
+                                    let circleObj = d.circleObj;
+                                    markerObj.addTo(mapObj);
+                                    circleObj.addTo(mapObj);
 
-                            changingImg.fadeIn();
-                            break;
-                        case '2_0':
-                            changingText
-                                .css('right', '310px')
-                                .css('bottom', '440px')
-                                .text(clearStationToUnlock - GameData.stationClear.count);
+                                    updateStation(markerObj, { icon: 'default' });
+                                });
+                                break;
+                            case '1_2':
+                            case '2_1':
+                                replaceHTML = `<img src='${assetsDir}icon/home.png' width='50px'></img>`;
+                                line = line.replace('\t', replaceHTML);
+                                break;
+                            case '2_0':
+                                replaceHTML = `<text>${clearStationToUnlock - GameData.stationClear.count}</text>`;
+                                line = line.replace('\t', replaceHTML);
+                                break;
+                            case '3_1':
+                                replaceHTML = `<img src='${assetsDir}icon/velocityChart.png' width='50px'></img>`;
+                                line = line.replace('\t', replaceHTML);
+                                break;
+                            case '0_9':
+                                break;
+                        };
 
-                            changingText.fadeIn();
-                            break;
-                        case '2_4':
-                            changingImg
-                                .css('right', '290px')
-                                .css('bottom', '480px');
+                        sidekickTXB.fadeIn()
+                            .children('.sidekickText')
+                            .html(line);
 
-                            changingImg.hide()
-                                .attr('src', assetsDir + 'icon/velocityChart.png')
-                                .attr('width', '50px');
+                        let endIdx = Object.keys(lines[stage]).length - 1;
+                        if (index > endIdx) {
+                            index = endIdx;
+                            GameData.sidekick.doneTalking = true;
+                        } else GameData.sidekick.doneTalking = doneTalking;
 
-                            changingImg.fadeIn();
-                            break;
-                        case '0_9':
-                            break;
+                        if (stage != 0)//==失敗對話不紀錄
+                            GameData.sidekick.lineStage = [stage, ++index];
+
+                        console.debug(GameData.sidekick.lineStage);
+                    }
+                    else {
+                        sidekickTXB.fadeOut(500);
+                        GameData.sidekick.doneTalking = false;
                     };
 
-                    sidekickTXB.fadeIn()
-                        .children('.sidekickText')
-                        .html(lines[stage][index]);
-
-                    setTimeout(() => {
-                        sidekickTXB.fadeOut(talkSpeed * 0.4);
-                        if (islastLine) setTimeout(() => GameData.sidekick.doneTalking = true, talkSpeed * 0.6);
-                    }, talkSpeed * 0.5);
 
                 };
+                showText(stage, index, doneTalking);
 
-                islastLine ? showText(stage, index, islastLine) : manyLines(stage, index);
             };
             //===when map clicked
             async function gameStart(gameMode, siteData = null) {

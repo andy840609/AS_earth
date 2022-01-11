@@ -1192,6 +1192,7 @@ const Player = new Phaser.Class({
     stopCursorsFlag: false,
     invincibleFlag: false,//無敵時間
     gotHurtHandler: function (scene) {
+        if (scene.gameOver.flag) return;
         const invincibleDuration = 800;
 
         this.anims.play('player_hurt', true);
@@ -1383,10 +1384,8 @@ const Sidekick = new Phaser.Class({
                         // this.physics.moveToObject(this, player, 500, chasingDuration);
                     };
 
-                    //===判斷player相對敵人的位子來轉向(轉向時停下)
-                    // let filpDir = player.x < this.x;
-                    // if (this.flipX != filpDir)
-                    //     this.filpHandler(filpDir);
+                    if (Phaser.Math.Distance.BetweenPoints(player, this) > 1000)
+                        this.setPosition(player.x + 30 * (player.flipX ? 1 : -1), player.y)
                 };
 
                 break;
@@ -1744,7 +1743,7 @@ class RexTextBox extends RexPlugins.UI.TextBox {
 
                 }, this)
                 .on('pageend', function () {
-                    if (this.isLastPage) return;
+                    // if (this.isLastPage) return;
 
                     let action = this.getElement('action');
                     action.setVisible(true);

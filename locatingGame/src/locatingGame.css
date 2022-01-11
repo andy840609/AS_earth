@@ -29,9 +29,10 @@ h3,
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0);
-    animation: blackout 3s ease-in 0s forwards;
+    /* animation: blackout 3s ease-in 0s forwards; */
     display: none;
     z-index: 999;
+    /* pointer-events: all; */
 }
 
 @keyframes blackout {
@@ -110,10 +111,7 @@ svg {
     stroke-width: 5;
     /* stroke-linecap: "round"; */
     /* stroke-linejoin: "round"; */
-    fill: blue;
-
-
-
+    fill: rgba(238, 255, 0, 0.404);
 }
 
 /* ====================================== UI ============================================= */
@@ -170,6 +168,13 @@ svg {
     position: absolute;
     z-index: 999;
     background: rgba(119, 119, 119, 0.8);
+    display: none;
+    pointer-events: none;
+}
+
+#gameUI .guideArrow {
+    position: absolute;
+    z-index: 999;
     display: none;
     pointer-events: none;
 }
@@ -239,17 +244,19 @@ svg {
 
 #gameUI .sidekickUI .hint {
     position: absolute;
-    font: small-caps bold 16px sans-serif;
+    font: italic small-caps bold 16px sans-serif;
+    color: rgba(0, 0, 0, 0.7);
     top: 300px;
-    left: 180px;
+    left: 130px;
+
 }
 
 #gameUI .sidekickText>img {
-    margin: 0 0 20px 22px;
+    margin: 0px 22px 20px;
 }
 
 #gameUI .sidekickText>text {
-    margin-left: 8px;
+    margin: 0px 8px;
     font: small-caps bold 36px sans-serif;
     color: red;
 }
@@ -257,8 +264,8 @@ svg {
 #gameUI .sidekickUI .sidekickText {
     position: absolute;
     font: small-caps bold 24px sans-serif;
-    top: 100px;
-    left: 90px;
+    top: 85px;
+    left: 80px;
 }
 
 /* *******************速度圖手把動畫******************* */

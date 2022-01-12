@@ -240,7 +240,7 @@ function locatingGame() {
                     gameUI.find('.sidekickUI .sidekickTXB').hide();
                     gameUI.find('.guideArrow').hide();
                     $('#blackout').hide();
-                    GameData.sidekick.isTalking = false;
+                    GameData.sidekick.doneTalking = false;
                 }
                 else {
                     gameOuterDiv.fadeOut();
@@ -285,8 +285,8 @@ function locatingGame() {
                     sidekick: {
                         type: sidekick,
                         lineStage: [1, 0],//==第2-0句
-                        talkSpeed: 1000,
-                        isTalking: false,
+                        doneTalking: false,
+                        stopHotkey: false,//==對話完空白鍵不再出現對話（只能滑鼠點）
                     },
                 };
             };
@@ -347,7 +347,6 @@ function locatingGame() {
 
                     updateMapUI({ timeRemain: rewindTime }, 800);
                     updateSidekick(0, 2, true);
-
 
                     data.forEach(d => {
                         let icon = d.stationStats.clear ? 'clear' : 'default';
@@ -597,8 +596,8 @@ function locatingGame() {
 
                     data.forEach((d, i) => {
                         // console.debug(d);
-                        let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
-                        // let enemy = ['dog'];//==之後隨機抽敵人組
+                        // let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
+                        let enemy = ['dog'];//==之後隨機抽敵人組
                         let enemyStats = {};
 
                         enemy.forEach((key) => {
@@ -761,9 +760,12 @@ function locatingGame() {
                         let targetDOMRect = target.getBoundingClientRect();
                         let imgNode = target.children[0];
 
+                        let UI_index = UIbuttons.indexOf(target.id),
+                            hotKey = (UI_index != -1 ? UIbuttons[UI_index][0].toUpperCase() : null);
+
                         UItooltip.show()//==先show才能得到寬高
                             .children('.tooltipText')
-                            .text(GameData.localeJSON.UI[target.id]);
+                            .text(GameData.localeJSON.UI[target.id] + (hotKey ? ` (${hotKey}) ` : ''));
 
                         // UItooltip
                         let top = targetDOMRect.top - bigMapDOMRect.top - imgNode.offsetHeight * 0.7,
@@ -987,13 +989,13 @@ function locatingGame() {
                             <div class="d-flex justify-content-around" >
                                 <text name="confirm" value="yes">
                                     <img name="confirmImg" src="${ctrlDir}triangle_left.png" width="${imgW}px" height="${imgW}px">
-                                    ${GameData.localeJSON.UI['yes']}
+                                    ${GameData.localeJSON.UI['yes']} (Y)
                                     <img name="confirmImg" src="${ctrlDir}triangle_right.png" width="${imgW}px" height="${imgW}px">
                                 </text>
 
                                 <text name="confirm" value="no">
                                     <img name="confirmImg" src="${ctrlDir}triangle_left.png" width="${imgW}px" height="${imgW}px">
-                                    ${GameData.localeJSON.UI['no']}
+                                    ${GameData.localeJSON.UI['no']} (N)
                                     <img name="confirmImg" src="${ctrlDir}triangle_right.png" width="${imgW}px" height="${imgW}px">
                                 </text>
                                 
@@ -1082,11 +1084,6 @@ function locatingGame() {
                                 .on('click', () => {
                                     if (stopClickFlag) return;
 
-                                    // let lineStage = GameData.sidekick.lineStage;
-                                    // let stage = lineStage[0],
-                                    //     index = lineStage[1];
-
-                                    // Object.keys(lines[stage]).length - 1
                                     updateSidekick(...GameData.sidekick.lineStage);
                                 })
                                 .on('mouseover', e => {
@@ -1098,7 +1095,8 @@ function locatingGame() {
 
 
                             sidekickUI.find('.sidekickTXB').hide()
-                                .on('click', () => sidekick.trigger("click"));
+                                .on('click', () => GameData.sidekick.stopHotkey ?
+                                    false : sidekick.trigger("click"));
 
                         };
 
@@ -1153,6 +1151,7 @@ function locatingGame() {
 
                             switch (e.code) {
                                 case 'Space':
+                                    if (GameData.sidekick.stopHotkey) return;
                                     gameUI.find('.sidekick').trigger("click");
                                     break;
                                 case 'KeyC':
@@ -1387,8 +1386,9 @@ function locatingGame() {
                     end = timeRemain * GameData.timeMultiplier;
                 const increase = start > end ? false : true;
 
-
                 // console.debug(GameData.playerTimeUse);
+                // console.debug(start, end);
+
                 var timerAnime = (increase) => {
                     const delay = 10;
                     const sign = increase ? 1 : -1;
@@ -1524,7 +1524,7 @@ function locatingGame() {
                         GameData.playerStats.HP = GameData.playerStats.maxHP;
                         stopClickFlag = false;
                         setTimeout(() => updateMapUI({ timeRemain: GameData.timeRemain - restTimeCost }, 2000), restAnimDelay * 0.8);
-                    }, GameData.sidekick.talkSpeed * 0.5);
+                    }, 1000);
 
 
                 }
@@ -1533,15 +1533,15 @@ function locatingGame() {
                 };
 
             };
-            function updateSidekick(stage, index, isTalking = undefined) {
+            function updateSidekick(stage, index, doneTalking = undefined) {
                 let lines = GameData.localeJSON.Lines.sidekick;
 
-                var showText = (stage, index, isTalking) => {
+                var showText = (stage, index, doneTalking) => {
                     // console.debug(stage, index, islastLine);
                     let sidekickTXB = gameUI.find('.sidekickUI .sidekickTXB');
 
                     // console.debug(line);
-                    if (!GameData.sidekick.isTalking || isTalking == false) {
+                    if (!GameData.sidekick.doneTalking || doneTalking == false) {
 
                         let line = lines[stage][index];
                         let replaceHTML;
@@ -1626,24 +1626,26 @@ function locatingGame() {
                             .html(line);
 
                         let endIdx = Object.keys(lines[stage]).length - 1;
-                        GameData.sidekick.isTalking = isTalking == undefined ?
-                            (index == endIdx) : isTalking;
+                        GameData.sidekick.doneTalking = doneTalking == undefined ?
+                            (index == endIdx) : doneTalking;
                         if (++index > endIdx) index = endIdx;
 
                         if (stage != 0)//==失敗對話不紀錄
                             GameData.sidekick.lineStage = [stage, index];
 
-                        console.debug(GameData.sidekick.lineStage);
-                        // console.debug(GameData.sidekick.isTalking);
+                        GameData.sidekick.stopHotkey = false;
+                        // console.debug(GameData.sidekick.lineStage);
+                        // console.debug(GameData.sidekick.doneTalking);
                     }
                     else {
                         sidekickTXB.fadeOut(500);
-                        GameData.sidekick.isTalking = false;
+                        GameData.sidekick.doneTalking = false;
+                        GameData.sidekick.stopHotkey = true;
                     };
 
 
                 };
-                showText(stage, index, isTalking);
+                showText(stage, index, doneTalking);
 
             };
             //===when map clicked
@@ -1921,8 +1923,8 @@ function locatingGame() {
                 var updatePaths = () => {
 
                     let eachHeight = overview ?
-                        (height - margin.bottom) / 3 :
-                        (height - margin.bottom - margin.top) / 3;
+                        (height - margin.bottom) * 0.8 / 3 :
+                        (height - margin.bottom - margin.top) * 0.8 / 3;
 
                     let y = d3.scaleLinear()
                         .domain(yAxisDomain);

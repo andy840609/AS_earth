@@ -229,8 +229,11 @@ class UIScene extends Phaser.Scene {
                 // =When the pause button is pressed, we pause the game and time scene
 
                 const timerUI = gameScene.game.scene.getScene('timerUI');
+                const doctorUI = gameScene.game.scene.getScene('doctorUI');
+
                 timerUI.gameTimer.paused = true;
                 timerUI.scene.pause();
+                doctorUI.scene.pause();
                 gameScene.scene.pause();
 
                 preload = () => { };
@@ -286,6 +289,7 @@ class UIScene extends Phaser.Scene {
                                         gameScene.scene.resume();
                                         timerUI.scene.resume();
                                         timerUI.gameTimer.paused = false;
+                                        doctorUI.scene.resume();
                                         this.scene.remove();
                                         break;
 
@@ -336,6 +340,7 @@ class UIScene extends Phaser.Scene {
                         gameScene.scene.resume();
                         timerUI.scene.resume();
                         timerUI.gameTimer.paused = false;
+                        doctorUI.scene.resume();
                     });
                 };
                 update = () => { };
@@ -872,7 +877,11 @@ class UIScene extends Phaser.Scene {
                         }, [], this);
                         this.gameTimer.timeText = {};
 
+
                         gameScene.gameTimer = this.gameTimer;
+
+                        if (gameScene.firstTimeEvent.isFirstTime)//==說話時暫停
+                            this.gameTimer.paused = true;
 
                         //test
                         // this.gameTimer.timerText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#fff' });
@@ -1098,10 +1107,36 @@ class UIScene extends Phaser.Scene {
                 };
                 update = () => { };
                 break;
-            case 'b':
+            case 'doctorUI':
                 preload = () => { };
-                create = () => { };
-                update = () => { };
+                create = () => {
+                    this.doctor = this.add.existing(new Doctor(this, gameScene.gameData.localeJSON.Tips))
+                        .setDepth(Depth.UI);
+
+                    this.doctor.setPosition(-30, height - this.doctor.displayHeight);
+                    this.doctor.dialog.setDepth(Depth.UI - 1);
+
+                    gameScene.doctor = this.doctor;
+                };
+                update = () => {
+                    console.debug(gameScene.gameTimer.pause)
+                    if (gameScene.gameTimer.pause) return;
+                    this.doctor.behaviorHandler(gameScene.player, this);
+
+                    //==玩家靠近變透明
+                    let playerApproach = Phaser.Math.Distance.BetweenPoints(gameScene.player, this.doctor) < 320;
+                    if (playerApproach && this.doctor.dialog.alpha == 1) {
+                        this.tweens.add({
+                            targets: [this.doctor, this.doctor.dialog],
+                            alpha: 0.8,
+                            duration: 200,
+                            repeat: 0,
+                            ease: 'Linear',
+                        });
+
+                    };
+
+                };
                 break;
             case 'statsBar':
                 // console.debug(gameObj.name);
@@ -1500,6 +1535,13 @@ class UIScene extends Phaser.Scene {
 
                 };
                 break;
+
+            case 'b':
+                preload = () => { };
+                create = () => { };
+                update = () => { };
+                break;
+
             default:
                 preload = () => { };
                 create = () => { console.debug('undefine UI: ' + UIkey); };
@@ -1940,10 +1982,8 @@ class LoadingScene extends Phaser.Scene {
                 UIbar();
             };
             var sidekick = () => {
-
                 var doctor = () => {
-                    const dir = gameObjDir + 'sidekick/' + sidekick + '/';
-                    this.load.spritesheet('doctorOwl', dir + sidekick + 'Doctor2.png', frameObj);
+                    this.load.image('doctorOwl', assetsDir + 'ui/sidekick/Doctor2.png');
                 };
                 var sidekick = () => {
                     const sidekick = gameData.sidekick.type;
@@ -2607,7 +2647,7 @@ class DefendScene extends Phaser.Scene {
 
                 // if (playerStats.class != 'melee')//近戰能打多體（會重複判斷秒殺）
                 bullet.disableBody(true, true);
-                enemy.body.setVelocityX(playerStats.knockBackSpeed * (bullet.x < enemy.x ? 1 : -1));
+                enemy.body.setVelocityX(playerStats.knockBackSpeed * bullet.fireDir);
 
                 enemy.behavior = 'hurt';
                 enemy.statsChangeHandler({ HP: enemy.stats.HP -= playerStats.attackPower }, this);
@@ -2622,11 +2662,18 @@ class DefendScene extends Phaser.Scene {
 
         };
         var initSidekick = () => {
-            this.sidekick = this.add.existing(new Sidekick(this, this.gameData.sidekick.type))
-                .setPosition(40, 500)
-                .setDepth(Depth.player - 1);
 
-            this.physics.add.collider(this.sidekick, this.platforms);
+            var sidekick = () => {
+                this.sidekick = this.add.existing(new Sidekick(this, this.gameData.sidekick.type))
+                    .setPosition(40, 500);
+
+                this.physics.add.collider(this.sidekick, this.platforms);
+            };
+            var doctor = () => {
+                this.scene.add(null, new UIScene('doctorUI', this), true);
+            };
+            sidekick();
+            doctor();
         };
         var initEnemy = () => {
             if (stationStats.liberate) return;
@@ -2723,7 +2770,8 @@ class DefendScene extends Phaser.Scene {
 
     };
     update() {
-        //==第一次的對話
+        // this.gameTimer.paused = false;//==時間繼續
+        // ==第一次的對話
         if (this.firstTimeEvent.isFirstTime) {
             const speakDelay = 1300;
 
@@ -2803,9 +2851,9 @@ class DefendScene extends Phaser.Scene {
 
 
             //==
-            camera.on("PAN_COMPLETE", (e) => {
-                console.debug('AAAA');
-            });
+            // camera.on("PAN_COMPLETE", (e) => {
+            //     console.debug('AAAA');
+            // });
 
             if (this.gameOver.delayedCall) return;
             this.gameTimer.paused = true;
@@ -2817,9 +2865,13 @@ class DefendScene extends Phaser.Scene {
                 this.player.body.reset(this.player.x, this.player.y);
                 this.player.play('player_idle');
             };
+
             //==助手對話框不顯示
-            this.sidekick.dialog.setAlpha(0);
             this.sidekick.talkingCallback.remove();
+            this.sidekick.dialog.setAlpha(0);
+            this.doctor.talkingCallback.remove();
+            this.doctor.setAlpha(0);
+            this.doctor.dialog.setAlpha(0);
 
             //===get gameResult 
             let orbStats = this.orbGroup.getChildren().map(orb => orb.orbStats);
@@ -3130,11 +3182,16 @@ class DigScene extends Phaser.Scene {
 
         };
         var initSidekick = () => {
-            this.sidekick = this.add.existing(new Sidekick(this, this.gameData.sidekick.type))
-                .setPosition(width * 0.5, 0)
-                .setDepth(Depth.player - 1);
-
-            // this.physics.add.collider(this.sidekick, this.platforms);
+            var sidekick = () => {
+                this.sidekick = this.add.existing(new Sidekick(this, this.gameData.sidekick.type))
+                    .setPosition(width * 0.5, 0)
+                    .setDepth(Depth.player - 1);
+            };
+            var doctor = () => {
+                this.scene.add(null, new UIScene('doctorUI', this), true);
+            };
+            sidekick();
+            doctor();
         };
         var initCamera = () => {
             var camera = () => {
@@ -3312,8 +3369,11 @@ class DigScene extends Phaser.Scene {
                 this.player.play('player_idle');
             };
             //==助手對話框不顯示
-            this.sidekick.dialog.setAlpha(0);
             this.sidekick.talkingCallback.remove();
+            this.sidekick.dialog.setAlpha(0);
+            this.doctor.talkingCallback.remove();
+            this.doctor.setAlpha(0);
+            this.doctor.dialog.setAlpha(0);
 
             //===get gameResult 
             let gameResult = {

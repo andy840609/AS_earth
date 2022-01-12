@@ -14,7 +14,7 @@ const GameObjectStats = {
     creature: {
         dog: {
             HP: 10000,
-            attackPower: 10,
+            attackPower: 1,
             movementSpeed: 200,
             jumpingPower: 0,
         },
@@ -37,25 +37,25 @@ const GameObjectStats = {
             jumpingPower: 0,
         },
     },
-    player: {
+    player: {//==class: 0:'melee近戰',1:'ranged遠程'
         Biker: {
-            class: 'melee',//==近戰
+            class: 0,//==近戰
             movementSpeed: 300,
             jumpingPower: 400,
-            attackSpeed: 200,
+            attackSpeed: 400,//一發持續300ms
             attackPower: 120,
             attackRange: 55,
-            bulletSize: [80, 120],
+            bulletSize: [120, 130],
             knockBackSpeed: 250,//==擊退時間固定200ms,這個速度越大擊退越遠
             manaCost: 6,
-            manaRegen: 10,//per 10 ms(game update per 10ms)0.1
+            manaRegen: 1,//per 10 ms(game update per 10ms)0.1
             HP: 150,
             maxHP: 150,
             MP: 60,
             maxMP: 60,
         },
         Cyborg: {
-            class: 'ranged',//==遠程
+            class: 1,//==遠程
             movementSpeed: 300,
             jumpingPower: 400,
             attackSpeed: 800,
@@ -69,7 +69,7 @@ const GameObjectStats = {
             maxMP: 150,
         },
         Punk: {
-            class: 'ranged',//==遠程
+            class: 1,//==遠程
             movementSpeed: 300,
             jumpingPower: 400,
             attackSpeed: 800,
@@ -290,28 +290,53 @@ const Bullet = new Phaser.Class({
     initialize:
         function Bullet(scene) {
             Phaser.Physics.Arcade.Sprite.call(this, scene, 0, 0);
-            this.setDepth(15);
+            this.setDepth(scene.Depth.bullet);
         },
 
-    fire: function (x, y, attackSpeed, attackRange = false, onXaxis = true) {
-        this
-            .enableBody(true, x, y, true, true)
-        [onXaxis ? 'setVelocityX' : 'setVelocityY'](attackSpeed);//==不同軸向的攻擊
+    fire: function (attacker, attackSpeed, attackRange = false, onXaxis = true) {
 
-        this.attackRange = attackRange;
-        this.attackOrigin = {
-            x: x,
-            y: y
-        };
+        let fireDir = attacker.flipX ? -1 : 1,
+            fixedRange = attacker.stats.class == 0 ? attackRange : 0,
+            fireX = attacker.x + (onXaxis ? fixedRange : 0) * fireDir,
+            fireY = attacker.y + (!onXaxis ? fixedRange : 0) * fireDir;
+
+        this.enableBody(true, fireX, fireY, true, true);
+
+        if (attacker.stats.class != 0)
+            this[onXaxis ? 'setVelocityX' : 'setVelocityY'](attackSpeed * fireDir);//==不同軸向的攻擊
+
+        Object.assign(this, {
+            fireDir: fireDir,
+            attacker: attacker,
+            attackSpeed: attackSpeed,
+            attackRange: attackRange,
+            fireTime: undefined,
+        });
     },
 
     update: function (time, delta) {
-        let outOfRange = this.attackRange ?
-            Phaser.Math.Distance.BetweenPoints(this.attackOrigin, this) > this.attackRange : false;
-        let outOfWindow = !this.scene.cameras.main.worldView.contains(this.x, this.y);
 
-        if (outOfWindow || outOfRange)
-            this.disableBody(true, true);
+        //==進戰遠程不同
+        if (this.attacker.stats.class == 0) {
+            // console.debug(this.fireTime);
+            if (!this.fireTime) this.fireTime = time;
+
+            this
+                .setVelocityX(this.attacker.body.velocity.x)
+                .setVelocityY(this.attacker.body.velocity.y);
+
+            if ((time - this.fireTime) > this.attackSpeed)
+                this.disableBody(true, true);
+        }
+        else {
+            let outOfRange = this.attackRange ?
+                Phaser.Math.Distance.BetweenPoints(this.attacker, this) > this.attackRange : false;
+            let outOfWindow = !this.scene.cameras.main.worldView.contains(this.x, this.y);
+
+            if (outOfWindow || outOfRange)
+                this.disableBody(true, true);
+        }
+
     },
 
 });
@@ -964,9 +989,9 @@ const Player = new Phaser.Class({
             //===init attack
             this.bullets = scene.physics.add.group({
                 classType: Bullet,
-                maxSize: 10,
+                maxSize: stats.class == 0 ? 1 : 5,
                 runChildUpdate: true,
-                maxVelocityY: 0,
+                // maxVelocityY: 0,
             })
                 .setOrigin(1, 0);
 
@@ -989,7 +1014,8 @@ const Player = new Phaser.Class({
 
             //==get HP/MP statsBar
             scene.scene.add(null, new UIScene('statsBar', scene, this), true);
-            // console.debug(statsBarUI);
+
+            // console.debug();
 
 
 
@@ -1152,16 +1178,8 @@ const Player = new Phaser.Class({
             var bullet = this.bullets.get();
             // console.debug(bullet);
             if (bullet) {
-                let moveSpeed = Math.abs(this.body.velocity.x);
-                let attackSpeed = (this.stats.attackSpeed + moveSpeed * 1.5) * (this.flipX ? -1 : 1),
-                    attackRange = this.stats.attackRange + moveSpeed * 0.5,
-                    onXaxis = true;
-
-                bullet.fire(this.x, this.y, attackSpeed, attackRange, onXaxis);
-
-                // .setOffset(4, 13)//==box大小
-
                 bullet.body.setSize(...this.stats.bulletSize);
+                bullet.fire(this, this.stats.attackSpeed, this.stats.attackRange);
 
                 this.statsChangeHandler({ MP: this.stats.MP -= this.stats.manaCost }, this);
             };
@@ -1233,6 +1251,8 @@ const Player = new Phaser.Class({
             this.stats.MP = this.stats.maxMP;
         // this.stats = Object.assign(this.stats, statsObj);
         // console.debug(statsObj);
+
+        // this.scene.talkingHandler
     },
 
 });
@@ -1299,6 +1319,7 @@ const Sidekick = new Phaser.Class({
                 .setScale(1.5)
                 .setCollideWorldBounds(true)
                 .setPushable(false)
+                .setDepth(scene.Depth.player - 1)
                 .setName(key)
                 .play('sidekick_idle');
 
@@ -1327,14 +1348,17 @@ const Sidekick = new Phaser.Class({
             //     maxVelocityY: 0,
             // });
 
-            //===init tip
+            //===init hints
             const tipWrapW = 200;
-            this.dialog = new RexTextBox(scene, 0, 0, { wrapWidth: tipWrapW })
+            this.dialog = new RexTextBox(scene, 0, 0, {
+                wrapWidth: tipWrapW,
+                character: 'sidekick'
+            })
                 .setAlpha(0)
                 .setDepth(scene.Depth.tips);
 
-            this.tips = scene.gameData.localeJSON.Tip;
-            this.tipAmount = Object.keys(this.tips).length - 1; //==tips總數量
+            this.hints = scene.gameData.localeJSON.Hints[scene.name];
+            this.hintAmount = Object.keys(this.hints).length - 1; //==hints總數量
 
         },
     //=處理轉向
@@ -1343,6 +1367,32 @@ const Sidekick = new Phaser.Class({
         this.dust.setFlipX(filp);
     },
     talkingCallback: null,
+    talkingHandler: function (scene, hint) {
+        if (this.talkingCallback) this.talkingCallback.remove();
+
+        const
+            hintDuration = hint.length * 300,//==對話框持續時間(包含淡入淡出時間)一個字x秒
+            // hintDelay = Phaser.Math.Between(2, 5) * 1000;//==每則知識間隔
+            hintDelay = 500;//==每則知識間隔
+
+        this.talkingCallback = scene.time.delayedCall(hintDelay, () => {
+
+            //==開始打字
+            scene.tweens.add({
+                targets: this.dialog,
+                alpha: 1,
+                duration: hintDuration * 0.1,
+                repeat: 0,
+                yoyo: true,
+                hold: hintDuration * 0.6,//==yoyo delay
+                ease: 'Linear',
+                onStart: () => this.dialog.start(hint, 50),//==(text,typeSpeed(ms per word))
+            });
+
+            //==一次對話結束
+            scene.time.delayedCall(hintDuration, () => this.talkingCallback = null, [], scene);
+        }, [], scene);
+    },
     behavior: null,
     behaviorHandler: function (player, scene) {
         // console.debug(this.body.speed);
@@ -1407,30 +1457,127 @@ const Sidekick = new Phaser.Class({
 
         };
 
-        //==助手知識補充
-        this.dialog.setPosition(this.x, this.y - 100);
+        //==助手提示
+        this.dialog.setPosition(this.x, this.y - 70);
         this.dust.setPosition(this.x, this.y);//揚起灰塵效果跟隨
 
-        if (!this.talkingCallback) {
-            const tipDuration = Phaser.Math.Between(3, 5) * 1000,//==對話框持續時間(包含淡入淡出時間)
-                tipDelay = Phaser.Math.Between(2, 5) * 1000,//==每則知識間隔
-                // tipDelay = 1000,//==每則知識間隔
-                tipIdx = Phaser.Math.Between(0, this.tipAmount),//==tip index
-                tipText = this.tips[tipIdx];
-            // console.debug(tipIdx, tipText)
+        var getHint = () => {
+            const replaceStr = '	';
+            const controllCursor = scene.gameData.controllCursor;
 
+            let hint = 'AAA';
+            switch (scene.name) {
+                case 'defend':
+                    let pickUpKey = controllCursor['down'];
+
+                    if (!player.pickUpObj)
+                        hint = this.hints[0].replace(replaceStr, pickUpKey);
+                    else {
+                        hint = this.hints[1].replace(replaceStr, pickUpKey);
+                    };
+                    break;
+                case 'dig':
+                    break;
+                case 'boss':
+                    break;
+            };
+
+            return hint;
+        };
+
+        if (!this.talkingCallback) {
+            const hint = getHint();
+            // console.debug(hint);
+
+            this.talkingHandler(scene, hint);
+        };
+
+        //===判斷player相對敵人的位子來轉向(轉向時停下)
+        let filpDir = player.x < this.x;
+        if (this.flipX != filpDir) {
+            this.filpHandler(filpDir);
+            this.body.reset(this.x, this.y);
+            // console.debug('filp');
+        };
+
+    },
+});
+
+//==貓頭鷹知識
+const Doctor = new Phaser.Class({
+
+    Extends: Phaser.GameObjects.Sprite,
+
+    initialize:
+        function Doctor(scene, tips) {
+            Phaser.GameObjects.Sprite.call(this, scene, 0, 0, 'doctorOwl');
+
+            this
+                .setScale(0.8)
+                .setOrigin(0)
+                .setAlpha(0)
+                .setName('doctor');
+
+            // ===init tip
+            const tipWrapW = 210,
+                tipWrapH = 100;
+
+            this.dialog = new RexTextBox(scene, 0, 0, {
+                wrapWidth: tipWrapW,
+                fixedWidth: tipWrapW,
+                fixedHeight: tipWrapH,
+                character: this.name
+            }).setAlpha(0);
+
+
+            this.tips = tips;
+            this.tipAmount = Object.keys(this.tips).length - 1; //==tips總數量
+
+        },
+    talkingCallback: null,
+    behavior: null,
+    behaviorHandler: function (player, scene) {
+        // console.debug(this.body.speed);
+
+        //==Doctor知識補充
+        this.dialog.setPosition(this.x + this.displayWidth * 1.9, this.y + this.displayHeight * 0.5);
+
+        if (!this.talkingCallback) {
+            const
+                tipIdx = Phaser.Math.Between(0, this.tipAmount),  //==tip index
+                tipText = this.tips[tipIdx];
+
+            const
+                tipDuration = tipText.length * 300,//==對話框持續時間(包含淡入淡出時間)一個字x秒
+                tipDelay = Phaser.Math.Between(2, 5) * 1000;//==每則知識間隔
+            // tipDelay = 500;//==每則知識間隔
+
+            // console.debug(tipDuration,)
             this.talkingCallback = scene.time.delayedCall(tipDelay, () => {
 
-                //==開始打字
-                this.dialog.start(tipText, 50);//==(text,typeSpeed(ms per word))
+                //==博士出現
                 scene.tweens.add({
-                    targets: this.dialog,
+                    targets: this,
                     alpha: 1,
+                    x: 0,
                     duration: tipDuration * 0.1,
                     repeat: 0,
                     yoyo: true,
                     hold: tipDuration * 0.6,//==yoyo delay
                     ease: 'Linear',
+                });
+
+                //==開始打字
+                scene.tweens.add({
+                    targets: this.dialog,
+                    alpha: 1,
+                    duration: tipDuration * 0.1 - 200,
+                    repeat: 0,
+                    yoyo: true,
+                    hold: tipDuration * 0.6,//==yoyo delay
+                    ease: 'Linear',
+                    delay: 200,
+                    onStart: () => this.dialog.start(tipText, 70),//==(text,typeSpeed(ms per word))
                 });
 
                 //==一次對話結束
@@ -1442,18 +1589,6 @@ const Sidekick = new Phaser.Class({
         };
 
 
-
-        // .start(content, 50);
-
-        // console.debug(RexPlugins);
-
-        //===判斷player相對敵人的位子來轉向(轉向時停下)
-        let filpDir = player.x < this.x;
-        if (this.flipX != filpDir) {
-            this.filpHandler(filpDir);
-            this.body.reset(this.x, this.y);
-            // console.debug('filp');
-        };
 
     },
 });
@@ -1629,12 +1764,15 @@ class RexTextBox extends RexPlugins.UI.TextBox {
     constructor(scene, x, y, config, resolve = null) {
         // console.debug(scene, x, y, config);
 
-        let tips = resolve ? false : true;//==助手知識
-        var getTipColor = (isBox = true) => {//==每個助手對話框不同色
-            let sidekick = scene.gameData.sidekick.type;
-            let color;
+        var tips = resolve ? false : true;//==助手知識
+        var character = config.character;
 
-            switch (sidekick) {
+        var getTipColor = (isBox = true) => {//==每個助手對話框不同色
+            let name = character == 'sidekick' ?
+                scene.gameData.sidekick.type : character;
+
+            let color;
+            switch (name) {
                 default:
                 case 'Owlet':
                     color = isBox ? 0x7B7B7B : 0xffffff;
@@ -1645,8 +1783,10 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                 case 'Pink':
                     color = isBox ? 0xBF0060 : 0x000000;
                     break;
+                case 'doctor':  //==doctor
+                    color = isBox ? 0xD9B300 : 0xffffff;
+                    break;
             };
-
             return color;
         };
 
@@ -1667,10 +1807,11 @@ class RexTextBox extends RexPlugins.UI.TextBox {
         var wrapWidth = GetValue(config, 'wrapWidth', 0) - iconW;
         var fixedWidth = GetValue(config, 'fixedWidth', 0) - iconW;
         var fixedHeight = GetValue(config, 'fixedHeight', 0);
-        var character = config.character;
+
 
         //===textBox config
-        let roundCorner = tips ? 40 : 20;
+        let roundCorner = tips ?
+            (character == 'doctor' ? 10 : 40) : 20;
         let rexRect = new RexPlugins.UI.RoundRectangle(scene, 0, 0, 2, 2, roundCorner, COLOR_PRIMARY)
             .setStrokeStyle(2, COLOR_LIGHT);
 
@@ -1679,7 +1820,8 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                 fixedWidth: fixedWidth,
                 fixedHeight: fixedHeight,
                 fontSize: '20px',
-                color: tips ? '#fff' : '#fff',
+                color: character == 'doctor' ?
+                    '#272727' : '#fff',
                 wrap: {
                     mode: 'word',
                     width: wrapWidth

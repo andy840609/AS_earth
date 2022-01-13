@@ -347,9 +347,10 @@ body {
 }
 
 /*----- legendGroup -----*/
-#legend {
-    position: fixed;
+.legendGroup {
+    /* position: fixed;
     bottom: 10%;
-    z-index: 10;
+    z-index: 10; */
     /* width: 100%; */
+    position: fixed; left: 0; right: 0; top: auto; bottom:0;
 }

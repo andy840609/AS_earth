@@ -46,9 +46,6 @@ export default function define(runtime, observer) {
 
 
   //==========Scrubber======================================================
-
-
-
   main.define("delay", ["data", "d3", "speed"], function (data, d3, speed) {
     var domain = data[data.length - 1].date - data[0].date;
     var oneDayEqualMs = 86400000;
@@ -181,47 +178,13 @@ export default function define(runtime, observer) {
   //for legendGroup
   var depth_domain, ML_range2;
   main.variable(observer("chart")).define("chart", ["d3", "data", "topojson", "tw", "mutable date", "legend", "projection", "svg", "invalidation"], function (d3, data, topojson, tw, $0, legend, projection, svg, invalidation) {
-    // replay;
-    // const width = 960;
-    // const height = 600;
-    // window.alert(data.length);
-    // window.alert("chart~");
-    // if (!speedChange) {
-
     const path = d3.geoPath().projection(
       projection
     );
     //===========range1:紅圈半徑範圍==range2：留下點半徑範圍===========================
     const range1 = [10, 100];
-    const range2 = [3, 8];
+    const range2 = [3, 12];//[3, 8]
     //=================================================================================
-    // window.alert("HI");
-
-    // const delay = d3.scaleTime()
-    //   .domain([data[0].date, data[data.length - 1].date])
-    //   // .range([0, 100000]);
-    //   .range([0, 10]);
-
-    // const div = d3.select('body')
-    //   .append('div')
-    //   .attr("id", "map");
-    // const map = new L.Map("map", { center: [24, 121], zoom: 7 })
-    //   .addLayer(new L.TileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"));
-    // const svg = d3.select(map.getPanes().overlayPane)
-    //   .append("svg")
-    //   .attr('width', width)
-    //   .attr('height', height);
-    // g = svg.append("g").attr("class", "leaflet-zoom-hide");
-
-
-    // const svg = d3.select(DOM.svg(width, height));
-    // window.alert(DOM.svg(width, height));
-
-
-    // .style("width", "100%")
-    // .style("height", "auto");
-    // .style("width", "auto")
-    // .style("height", "auto");
 
 
     svg.append("path")
@@ -260,119 +223,103 @@ export default function define(runtime, observer) {
       .domain(ML_domain)
       .range(range2);
 
-
-    // var Turbo = function (t) {
-    //   t = Math.max(0, Math.min(1, t));
-    //   return "rgb("
-    //     + Math.max(0, Math.min(255, Math.round(34.61 + t * (1172.33 - t * (10793.56 - t * (33300.12 - t * (38394.49 - t * 14825.05))))))) + ", "
-    //     + Math.max(0, Math.min(255, Math.round(23.31 + t * (557.33 + t * (1225.33 - t * (3574.96 - t * (1073.77 + t * 707.56))))))) + ", "
-    //     + Math.max(0, Math.min(255, Math.round(27.2 + t * (3211.1 - t * (15327.97 - t * (27814 - t * (22569.18 - t * 6838.66)))))))
-    //     + ")";
-    // }
-    // depth_range = d3.scaleSequentialSqrt([depth_domain[0], 0], Turbo);
+    // var depth_range = d3.scaleSequentialSqrt([0, depth_domain[0]], d3.interpolateTurbo);
     var depth_range = d3.scaleSequentialSqrt([depth_domain[0], 0], d3.interpolateTurbo);
+    // console.debug(depth_range);
 
-    // window.alert(d3.interpolateTurbo(255));
+    const legend_translate = [10, 400];
+    const legendGroup = svg.append("g")
+      .attr("transform", `translate(${legend_translate})`)
+      .attr("class", "legendGroup");
 
-    // const legend_translate = [10, 500];
-    // svg.append("g")
-    //   .attr("transform", `translate(${legend_translate})`)
-    //   .append(() => legend({
-    //     color: depth_range,
-    //     title: "Depth (km)",
-    //     width: 240,
-    //     // ticks: 5,
-    //     tickValues: [0, 50, 100, 200, 300],
-    //   }))
-    //   ;
-    // //===========rlegend=====================
-    // // var linearScale = d3.scaleLinear()
-    // //   .domain([4.5, 8])
-    // //   .range([0, 300]);
-
-    // // var sqrtScale = d3.scaleSqrt()
-    // //   .domain(ML_domain)
-    // //   .range(range2);
-    // var cx = 50;
-    // var legend_ML = [4.5, 5, 6, 7, 8];
-
-    // // for (const d of legend_ML)
-    // //   window.alert(d.index);
-    // // var difference = (ML_domain[1] - ML_domain[0]);
-    // // for (var i = 0; i <= 5; i++)
-    // //   myData.push(ML_domain[0] + difference / 5 * i);
-
-    // const rlegend_g = svg.append("g");
-
-    // rlegend_g
-    //   .append("rect")
-    //   .attr("height", 23)
-    //   .attr("width", cx * 4 + 30)
-    //   .attr("fill", "#BEBEBE")
-    //   .attr("y", -12)
-    //   .attr("rx", 12);
-
-    // rlegend_g
-    //   .attr("transform", `translate(${legend_translate[0] + 10},${legend_translate[1] - 50})`)
-    //   .selectAll('circle')
-    //   .data(legend_ML)
-    //   .enter()
-    //   .append('circle')
-    //   .attr("fill", "#888")
-    //   .attr('r', function (d) {
-    //     return ML_range2(d);
-    //   })
-    //   .attr('cx', function (d, i) {
-    //     // window.alert(i);
-    //     return i * cx + 10;
-    //   })
-    //   .attr("stroke-opacity", 1)
-    //   .attr("stroke", "white");
-
-    // // window.alert(legend_translate);
+    legendGroup.append("g")
+      .attr("transform", `translate(0,35)`)
+      .append(() => legend({
+        color: d3.scaleSequentialSqrt([0, depth_domain[0]], d3.interpolateTurbo),
+        // color: depth_range,
+        title: "Depth (km)",
+        width: 240,
+        // ticks: 5,
+        tickValues: [0, 50, 100, 200, 300],
+      }));
 
 
+    //===========rlegend=====================
+    // var linearScale = d3.scaleLinear()
+    //   .domain([4.5, 8])
+    //   .range([0, 300]);
 
+    // var sqrtScale = d3.scaleSqrt()
+    //   .domain(ML_domain)
+    //   .range(range2);
+    var cx = 50;
+    var legend_ML = [4.5, 5, 6, 7, 8];
 
+    // for (const d of legend_ML)
+    //   window.alert(d.index);
+    // var difference = (ML_domain[1] - ML_domain[0]);
+    // for (var i = 0; i <= 5; i++)
+    //   myData.push(ML_domain[0] + difference / 5 * i);
 
+    const rlegend_g = legendGroup.append("g")
+      .attr("transform", `translate(10,0)`);
 
-    // //--------------rlegend_g text
-    // rlegend_g.append('text')
-    //   .attr("x", -20)
-    //   .attr("y", 0)
-    //   .attr("fill", "currentColor")
-    //   .attr("text-anchor", "start")
-    //   .attr("font-weight", "bold")
-    //   .attr("font-size", "13")
-    //   .text("M")
-    //   .append('tspan')
-    //   .attr("dy", "4")
-    //   .attr("font-size", "10")
-    //   .text('L');
+    rlegend_g
+      .append("rect")
+      .attr("height", 23)
+      .attr("width", cx * 4 + 30)
+      .attr("fill", "#BEBEBE")
+      .attr("y", -12)
+      .attr("rx", 12);
 
-    // rlegend_g.selectAll('g')
-    //   .data(legend_ML)
-    //   .enter()
-    //   .append('text')
-    //   .attr('id', 'DDDDD')
-    //   .attr('fill', 'currentColor')
-    //   .attr("font-weight", "lighter")
-    //   .text(function (d) {
-    //     return d.toFixed(1);
-    //   })
-    //   .attr('x', function (d, i) {
-    //     return i * cx;
-    //   })
-    //   .attr('y', "25");
+    rlegend_g
+      .selectAll('circle')
+      .data(legend_ML)
+      .enter()
+      .append('circle')
+      .attr("fill", "#888")
+      .attr('r', function (d) {
+        return ML_range2(d);
+      })
+      .attr('cx', function (d, i) {
+        // window.alert(i);
+        return i * cx + 10;
+      })
+      .attr("stroke-opacity", 1)
+      .attr("stroke", "white");
+
+    // window.alert(legend_translate);
+
+    //--------------rlegend_g text
+    rlegend_g.append('text')
+      .attr("x", -20)
+      .attr("y", 0)
+      .attr("fill", "currentColor")
+      .attr("text-anchor", "start")
+      .attr("font-weight", "bold")
+      .attr("font-size", "13")
+      .text("M")
+      .append('tspan')
+      .attr("dy", "4")
+      .attr("font-size", "10")
+      .text('L');
+
+    rlegend_g.selectAll('g')
+      .data(legend_ML)
+      .enter()
+      .append('text')
+      .attr('id', 'DDDDD')
+      .attr('fill', 'currentColor')
+      .attr("font-weight", "lighter")
+      .text(function (d) {
+        return d.toFixed(1);
+      })
+      .attr('x', function (d, i) {
+        return i * cx;
+      })
+      .attr('y', "25");
 
     //============================================
-    // svg.append("circle")
-    //   .attr("fill", "blue")
-    //   .attr("transform", `translate(${data[0]})`)
-    //   .attr("r", 3);
-
-
-
 
 
     const g = svg.append("g").attr("id", "foo");
@@ -611,102 +558,95 @@ export default function define(runtime, observer) {
   );
 
   //====================legendGroup
-  main.variable(observer("legendGroup")).define("lengendGroup", ["d3", "legend", "chart", "DOM"], function (d3, legend, chart, DOM) {
-    const legend_translate = [10, 60];
+  // main.variable(observer("a")).define("lendGroup", ["d3", "legend", "chart", "DOM", "svg"], function (d3, legend, chart, DOM, svg) {
+  //   const legend_translate = [10, 60];
 
-    const width = 400;
-    const height = 150;
-    const legendGroup = d3.create('svg')
-      .attr('class', 'legendGroup')
-      .attr("viewBox", "0 0 " + width + " " + height)
-      .style("width", "150%")
-      .style("height", "100%")
-      ;
-    // .attr("transform", "translate(0,0)");
-    // const legendGroup = d3.create('svg').attr('class', 'legendGroup');
+  //   const width = 400;
+  //   const height = 150;
+  //   const legendGroup = svg.append('g')
+  //     // d3.create('svg')
+  //     .attr('class', 'legendGroup')
+  //   // .attr("viewBox", "0 0 " + width + " " + height)
+  //   // .style("width", "100%")
+  //   // .style("height", "100%");
+  //   // .attr("transform", "translate(0,0)");
+  //   // const legendGroup = d3.create('svg').attr('class', 'legendGroup');
 
-    legendGroup.append("g")
-      .attr("transform", `translate(${legend_translate})`)
-      .append(() => legend({
-        color: d3.scaleSequentialSqrt([0, depth_domain[0]], d3.interpolateTurbo),
-        title: "Depth (km)",
-        width: 240,
-        // ticks: 5,
-        tickValues: [0, 50, 100, 200, 300],
-      }))
-      ;
-    //===========rlegend=====================
+  //   legendGroup.append("g")
+  //     .attr("transform", `translate(${legend_translate})`)
+  //     .append(() => legend({
+  //       color: d3.scaleSequentialSqrt([0, depth_domain[0]], d3.interpolateTurbo),
+  //       title: "Depth (km)",
+  //       width: 240,
+  //       // ticks: 5,
+  //       tickValues: [0, 50, 100, 200, 300],
+  //     }));
+  //   //===========rlegend=====================
 
-    var cx = 50;
-    var legend_ML = [4.5, 5, 6, 7, 8];
+  //   var cx = 50;
+  //   var legend_ML = [4.5, 5, 6, 7, 8];
 
+  //   const rlegend_g = legendGroup.append("g");
 
+  //   rlegend_g
+  //     .append("rect")
+  //     .attr("height", 23)
+  //     .attr("width", cx * 4 + 30)
+  //     .attr("fill", "#BEBEBE")
+  //     .attr("y", -12)
+  //     .attr("rx", 12);
 
-    const rlegend_g = legendGroup.append("g");
+  //   rlegend_g
+  //     .attr("transform", `translate(${legend_translate[0] + 10},${legend_translate[1] - 35})`)
+  //     .selectAll('circle')
+  //     .data(legend_ML)
+  //     .enter()
+  //     .append('circle')
+  //     .attr("fill", "#888")
+  //     .attr('r', function (d) {
+  //       return ML_range2(d);
+  //     })
+  //     .attr('cx', function (d, i) {
+  //       // window.alert(i);
+  //       return i * cx + 10;
+  //     })
+  //     .attr("stroke-opacity", 1)
+  //     .attr("stroke", "white");
 
-    rlegend_g
-      .append("rect")
-      .attr("height", 23)
-      .attr("width", cx * 4 + 30)
-      .attr("fill", "#BEBEBE")
-      .attr("y", -12)
-      .attr("rx", 12);
-
-    rlegend_g
-      .attr("transform", `translate(${legend_translate[0] + 10},${legend_translate[1] - 35})`)
-      .selectAll('circle')
-      .data(legend_ML)
-      .enter()
-      .append('circle')
-      .attr("fill", "#888")
-      .attr('r', function (d) {
-        return ML_range2(d);
-      })
-      .attr('cx', function (d, i) {
-        // window.alert(i);
-        return i * cx + 10;
-      })
-      .attr("stroke-opacity", 1)
-      .attr("stroke", "white");
-
-    // window.alert(legend_translate);
+  //   // window.alert(legend_translate);
 
 
+  //   //--------------rlegend_g text
+  //   rlegend_g.append('text')
+  //     .attr("x", -20)
+  //     .attr("y", 0)
+  //     .attr("fill", "currentColor")
+  //     .attr("text-anchor", "start")
+  //     .attr("font-weight", "bold")
+  //     .attr("font-size", "13")
+  //     .text("M")
+  //     .append('tspan')
+  //     .attr("dy", "4")
+  //     .attr("font-size", "10")
+  //     .text('L');
 
+  //   rlegend_g.selectAll('g')
+  //     .data(legend_ML)
+  //     .enter()
+  //     .append('text')
+  //     .attr('id', 'DDDDD')
+  //     .attr('fill', 'currentColor')
+  //     .attr("font-weight", "lighter")
+  //     .text(function (d) {
+  //       return d.toFixed(1);
+  //     })
+  //     .attr('x', function (d, i) {
+  //       return i * cx;
+  //     })
+  //     .attr('y', "25");
 
-
-
-    //--------------rlegend_g text
-    rlegend_g.append('text')
-      .attr("x", -20)
-      .attr("y", 0)
-      .attr("fill", "currentColor")
-      .attr("text-anchor", "start")
-      .attr("font-weight", "bold")
-      .attr("font-size", "13")
-      .text("M")
-      .append('tspan')
-      .attr("dy", "4")
-      .attr("font-size", "10")
-      .text('L');
-
-    rlegend_g.selectAll('g')
-      .data(legend_ML)
-      .enter()
-      .append('text')
-      .attr('id', 'DDDDD')
-      .attr('fill', 'currentColor')
-      .attr("font-weight", "lighter")
-      .text(function (d) {
-        return d.toFixed(1);
-      })
-      .attr('x', function (d, i) {
-        return i * cx;
-      })
-      .attr('y', "25");
-
-    return legendGroup.node();
-  });
+  //   // return legendGroup.node();
+  // });
   //====================UD
   main.variable(observer).define(["chart", "keyframe", "keyframes", "delay"], function (chart, keyframe, keyframes, delay) {
     // console.log("KF=" + keyframe);
@@ -892,8 +832,8 @@ export default function define(runtime, observer) {
             .attr("height", height - marginTop - marginBottom)
             .attr("preserveAspectRatio", "none")
             .attr("xlink:href", ramp(color.interpolator()).toDataURL())
-            .attr("transform", `translate(${width - marginLeft - marginRight})scale(-1,1)`)
-            ;
+            .attr("transform", `translate(${width - marginLeft - marginRight}) scale(-1,1)`);
+
 
           // scaleSequentialQuantile doesn’t implement ticks or tickFormat.
           // if (!x.ticks) {
@@ -957,7 +897,7 @@ export default function define(runtime, observer) {
         // }
 
         svg.append("g")
-          .attr("transform", `translate(0,${height - marginBottom})`)
+          .attr("transform", `translate(0,${height - marginBottom}) `)
           .call(d3.axisBottom(x)
             .ticks(ticks, typeof tickFormat === "string" ? tickFormat : undefined)
             .tickFormat(typeof tickFormat === "function" ? tickFormat : undefined)

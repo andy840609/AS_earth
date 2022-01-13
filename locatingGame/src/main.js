@@ -1154,7 +1154,7 @@ function locatingGame() {
                                     if (GameData.sidekick.stopHotkey) return;
                                     gameUI.find('.sidekick').trigger("click");
                                     break;
-                                case 'KeyC':
+                                case 'KeyP':
                                     gameUI.find('#playerStats').trigger("click");
                                     break;
                                 case 'KeyV':
@@ -1398,7 +1398,7 @@ function locatingGame() {
 
                     var now = start;
                     let interval = setInterval(() => {
-                        if ((now - end) * sign > 0) {
+                        if ((now - end) * sign >= 0) {
                             now = end;
                             clearInterval(interval);
                         };

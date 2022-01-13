@@ -229,12 +229,15 @@ class UIScene extends Phaser.Scene {
                 // =When the pause button is pressed, we pause the game and time scene
 
                 const timerUI = gameScene.game.scene.getScene('timerUI');
-                const doctorUI = gameScene.game.scene.getScene('doctorUI');
+
 
                 timerUI.gameTimer.paused = true;
                 timerUI.scene.pause();
-                doctorUI.scene.pause();
                 gameScene.scene.pause();
+
+                const hasDoctorUI = (gameScene.name != 'boss');
+                const doctorUI = gameScene.game.scene.getScene('doctorUI');
+                if (hasDoctorUI) doctorUI.scene.pause();
 
                 preload = () => { };
                 create = () => {
@@ -289,7 +292,7 @@ class UIScene extends Phaser.Scene {
                                         gameScene.scene.resume();
                                         timerUI.scene.resume();
                                         timerUI.gameTimer.paused = false;
-                                        doctorUI.scene.resume();
+                                        if (hasDoctorUI) doctorUI.scene.resume();
                                         this.scene.remove();
                                         break;
 
@@ -340,7 +343,7 @@ class UIScene extends Phaser.Scene {
                         gameScene.scene.resume();
                         timerUI.scene.resume();
                         timerUI.gameTimer.paused = false;
-                        doctorUI.scene.resume();
+                        if (hasDoctorUI) doctorUI.scene.resume();
                     });
                 };
                 update = () => { };
@@ -880,7 +883,7 @@ class UIScene extends Phaser.Scene {
 
                         gameScene.gameTimer = this.gameTimer;
 
-                        if (gameScene.firstTimeEvent.isFirstTime)//==說話時暫停
+                        if (gameScene.name != 'boss' && gameScene.firstTimeEvent.isFirstTime)//==說話時暫停
                             this.gameTimer.paused = true;
 
                         //test
@@ -1119,8 +1122,8 @@ class UIScene extends Phaser.Scene {
                     gameScene.doctor = this.doctor;
                 };
                 update = () => {
-                    console.debug(gameScene.gameTimer.pause)
-                    if (gameScene.gameTimer.pause) return;
+                    if (gameScene.gameTimer.paused) return;
+
                     this.doctor.behaviorHandler(gameScene.player, this);
 
                     //==玩家靠近變透明
@@ -1535,13 +1538,39 @@ class UIScene extends Phaser.Scene {
 
                 };
                 break;
+            case 'blackOut'://==教學用黑幕
+                preload = () => { };
+                create = () => {
+                    var init = () => {
+                        this.cameras.main.setBackgroundColor('rgba(0,0,0,0.5)');
+                        // gameScene.blackOut = this;
+                    };
 
+                    var guideSword = () => {
+                        this.anims.create({
+                            key: 'guideSword_swing',
+                            frames: this.anims.generateFrameNumbers('guideSword', { start: 0, end: 16 }),
+                            frameRate: 20,
+                            repeat: -1,
+                        });
+
+                        this.guideSword = this.add.sprite(0, 0)
+                            .setScale(0.8)
+                            .setAlpha(0)
+                            .play('guideSword_swing');
+                    };
+
+                    init();
+                    guideSword();
+
+                };
+                update = () => { };
+                break;
             case 'b':
                 preload = () => { };
                 create = () => { };
                 update = () => { };
                 break;
-
             default:
                 preload = () => { };
                 create = () => { console.debug('undefine UI: ' + UIkey); };
@@ -2110,12 +2139,21 @@ class LoadingScene extends Phaser.Scene {
                 quiz();
                 avatar();
             };
+            var tutorial = () => {
+                if (packNum == 3 || !gameScene.firstTimeEvent.isFirstTime) return;
+
+                this.load.spritesheet('guideSword', ctrlDir + 'guideSword.png',
+                    { frameWidth: 500, frameHeight: 200 });
+
+            };
+
             UIButtons();
             pauseMenu();
             detector();
             tooltip();
             timeRemain();
             dialog();
+            tutorial();
         };
         var makeProgressBar = () => {
             const canvas = gameScene.sys.game.canvas;
@@ -2253,8 +2291,10 @@ class DefendScene extends Phaser.Scene {
         // console.debug(stationData);
 
         //==第一次有對話
-        let firstTimeEvent = GameData.sidekick.lineStage[0] == 1;
+        let lineStage = GameData.sidekick.lineStage[0],
+            firstTimeEvent = lineStage == 1;
 
+        // console.debug(lineStage);
         Object.assign(this, {
             name: 'defend',
             player: null,
@@ -2772,34 +2812,62 @@ class DefendScene extends Phaser.Scene {
     update() {
         // this.gameTimer.paused = false;//==時間繼續
         // ==第一次的對話
-        if (this.firstTimeEvent.isFirstTime) {
-            const speakDelay = 1300;
+        var firstTimeEvent = () => {
+            if (this.firstTimeEvent.isFirstTime) {
+                this.gameTimer.paused = true;//==說話時暫停
+                const speakDelay = 1300;
 
-            this.gameTimer.paused = true;//==說話時暫停
-            this.time.delayedCall(speakDelay, async () => {
-                //==對話完才開始
-                let lines = this.gameData.localeJSON.Lines;
-                let sidekickContent = lines.sidekick['defend'];
-                let enemyContent = lines.enemy;
-                let sidekickName = this.gameData.sidekick.type;
+                let tutorial = (content, sidekickName) => {
+                    return new Promise(async (r) => {
+                        //各個UIScene
+                        let blackOut = this.scene.add(null, new UIScene('blackOut', this), true);
+                        let dialogUI = this.dialogUI;
+                        let iconBar = this.game.scene.getScene('iconBar');
+                        let detectorUI = this.game.scene.getScene('detectorUI');
 
-                await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[0] + sidekickName, { character: 'sidekick' }, resolve));
+                        let guideSword = blackOut.guideSword
+                            .setAlpha(1);
+                        //==說明探測器的zoom
+                        dialogUI.scene.bringToTop();
+                        iconBar.scene.bringToTop();
+                        detectorUI.scene.bringToTop();
+                        guideSword.setPosition(iconBar.x, iconBar.y);
 
-                //==停頓在說
-                await new Promise(resolve => this.time.delayedCall(speakDelay * 0.5, () => resolve()));
-                await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[1], { character: 'sidekick' }, resolve));
-                await new Promise(resolve => this.dialogUI.newDialog(enemyContent[0], { character: 'enemy' }, resolve));
-                await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[2], { character: 'sidekick' }, resolve));
 
-                this.firstTimeEvent.eventComplete = true;
-                this.gameTimer.paused = false;//==時間繼續
-            }, [], this);
+                        console.debug()//.bringToTop()
 
-            this.firstTimeEvent.isFirstTime = false;
+                        await new Promise(resolve => this.dialogUI.newDialog('教學', { character: 'sidekick' }, resolve));
+                        blackOut.scene.remove();
+                        r();
+                    });
+                };
+
+
+                this.time.delayedCall(speakDelay, async () => {
+
+                    //==對話完才開始
+                    let lines = this.gameData.localeJSON.Lines;
+                    let sidekickContent = lines.sidekick['defend'];
+                    let enemyContent = lines.enemy;
+                    let sidekickName = this.gameData.sidekick.type;
+
+                    await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[0] + sidekickName, { character: 'sidekick' }, resolve));
+
+                    await tutorial(sidekickContent, sidekickName);
+
+                    //==停頓在說
+                    await new Promise(resolve => this.time.delayedCall(speakDelay * 0.5, () => resolve()));
+                    await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[1], { character: 'sidekick' }, resolve));
+                    await new Promise(resolve => this.dialogUI.newDialog(enemyContent[0], { character: 'enemy' }, resolve));
+                    await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[2], { character: 'sidekick' }, resolve));
+
+                    this.firstTimeEvent.eventComplete = true;
+                    this.gameTimer.paused = false;//==時間繼續
+                }, [], this);
+
+                this.firstTimeEvent.isFirstTime = false;
+            };
         };
-        if (!this.firstTimeEvent.eventComplete) return;
-
-        // console.debug('game update');
         var updatePlayer = () => {
 
             this.player.movingHadler(this);
@@ -2834,6 +2902,10 @@ class DefendScene extends Phaser.Scene {
 
         };
 
+
+        firstTimeEvent();
+        if (!this.firstTimeEvent.eventComplete) return;
+
         updatePlayer();
         updateSidekick();
         updateOrb();
@@ -2867,9 +2939,9 @@ class DefendScene extends Phaser.Scene {
             };
 
             //==助手對話框不顯示
-            this.sidekick.talkingCallback.remove();
+            if (this.sidekick.talkingCallback) this.sidekick.talkingCallback.remove();
+            if (this.doctor.talkingCallback) this.doctor.talkingCallback.remove();
             this.sidekick.dialog.setAlpha(0);
-            this.doctor.talkingCallback.remove();
             this.doctor.setAlpha(0);
             this.doctor.dialog.setAlpha(0);
 
@@ -2947,7 +3019,10 @@ class DigScene extends Phaser.Scene {
         super(sceneConfig);
 
         //==第一次有對話
-        let firstTimeEvent = GameData.sidekick.lineStage == 1;
+        let lineStage = GameData.sidekick.lineStage[0],
+            firstTimeEvent = (lineStage == 3 || lineStage == 4);
+
+        console.debug(lineStage);
 
         Object.assign(this, {
             name: 'dig',
@@ -3138,6 +3213,7 @@ class DigScene extends Phaser.Scene {
             Object.assign(this.player, {
                 playerDig: (player, tile) => {
                     // if (this.tile) return;
+                    if (!this.firstTimeEvent.eventComplete) return;
                     // console.debug(tile);
                     let cursors = this.cursors;
                     let controllCursor = this.gameData.controllCursor;
@@ -3272,28 +3348,26 @@ class DigScene extends Phaser.Scene {
     };
     update() {
         //==第一次的對話
-        // if (this.firstTimeEvent.isFirstTime) {
-        //     const speakDelay = 1300;
+        var firstTimeEvent = () => {
+            if (this.firstTimeEvent.isFirstTime) {
+                const speakDelay = 1300;
 
-        //     this.gameTimer.paused = true;//==說話時暫停
-        //     this.time.delayedCall(speakDelay, async () => {
-        //         //==對話完才開始
-        //         let lines = this.gameData.localeJSON.Lines;
-        //         let sidekickContent = lines.sidekick['defend'];
-        //         let enemyContent = lines.enemy;
+                this.gameTimer.paused = true;//==說話時暫停
+                this.time.delayedCall(speakDelay, async () => {
+                    //==對話完才開始
+                    let lines = this.gameData.localeJSON.Lines;
+                    let sidekickContent = lines.sidekick['dig'];
+                    let enemyContent = lines.enemy;
 
-        //         await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[0], { character: 'sidekick' }, resolve));
-        //         await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[1], { character: 'sidekick' }, resolve));
-        //         await new Promise(resolve => this.dialogUI.newDialog(enemyContent[0], { character: 'enemy' }, resolve));
-        //         await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[2], { character: 'sidekick' }, resolve));
+                    await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[0], { character: 'sidekick' }, resolve));
 
-        //         this.firstTimeEvent.eventComplete = true;
-        //         this.gameTimer.paused = false;//==時間繼續
-        //     }, [], this);
+                    this.firstTimeEvent.eventComplete = true;
+                    this.gameTimer.paused = false;//==時間繼續
+                }, [], this);
 
-        //     this.firstTimeEvent.isFirstTime = false;
-        // };
-        // if (!this.firstTimeEvent.eventComplete) return;
+                this.firstTimeEvent.isFirstTime = false;
+            };
+        };
 
         var updatePlayer = () => {
 
@@ -3347,9 +3421,12 @@ class DigScene extends Phaser.Scene {
 
         };
 
+        updateChunks();
+        firstTimeEvent();
+        if (!this.firstTimeEvent.eventComplete) return;
+
         updatePlayer();
         updateSidekick();
-        updateChunks();
 
         if (this.gameOver.flag) {
             const gameDestroyDelay = 2000;
@@ -3368,10 +3445,11 @@ class DigScene extends Phaser.Scene {
                 this.player.body.reset(this.player.x, this.player.y);
                 this.player.play('player_idle');
             };
+
             //==助手對話框不顯示
-            this.sidekick.talkingCallback.remove();
+            if (this.sidekick.talkingCallback) this.sidekick.talkingCallback.remove();
+            if (this.doctor.talkingCallback) this.doctor.talkingCallback.remove();
             this.sidekick.dialog.setAlpha(0);
-            this.doctor.talkingCallback.remove();
             this.doctor.setAlpha(0);
             this.doctor.dialog.setAlpha(0);
 

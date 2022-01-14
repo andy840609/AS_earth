@@ -224,7 +224,7 @@ function locatingGame() {
             var rankingData;
 
             //===遊戲相關
-            const clearStationToUnlock = 2;//==完成幾個解鎖第二關
+            const clearStationToUnlock = 3;//==完成幾個解鎖第二關
             const allowedErro = 15;//==容許與震央相差距離(km)
             let stopClickFlag = false;//==gameOver暫停點擊關卡
             let gameStartFlag = false;//==停止map快捷鍵
@@ -253,7 +253,7 @@ function locatingGame() {
                 let sidekick = 'Owlet';//=='Owlet,Dude,Pink'
 
                 GameData = {
-                    timeRemain: 10 * 60000,//1min=60000ms           
+                    timeRemain: 30 * 60000,//1min=60000ms           
                     // timeRemain: 0.03 * 60000,//1min=60000ms
                     timeMultiplier: 300,//real 1 ms = game x ms;
                     velocity: 7.5,//==速度參數預設7.5
@@ -333,7 +333,7 @@ function locatingGame() {
 
                 var gameOverScene = async () => {
                     gameDisplay(true);
-                    const rewindTime = 5 * 60000;
+                    const rewindTime = 10 * 60000;
 
                     let newGameData = await new Promise((resolve, reject) => {
                         const config = Object.assign(getPhaserConfig(width, height), {
@@ -596,8 +596,8 @@ function locatingGame() {
 
                     data.forEach((d, i) => {
                         // console.debug(d);
-                        // let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
-                        let enemy = ['dog'];//==之後隨機抽敵人組
+                        let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
+                        // let enemy = ['dog'];//==之後隨機抽敵人組
                         let enemyStats = {};
 
                         enemy.forEach((key) => {
@@ -957,7 +957,7 @@ function locatingGame() {
                                 })
                                 .on('click', function (e) {
                                     //==速度參數要完成兩站才能調整
-                                    // if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
+                                    if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
 
                                     let button = $(this);
                                     let ckick = button.hasClass('clicked');
@@ -1118,7 +1118,7 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
-                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             let lat = e.latlng.lat;
                             let lng = e.latlng.lng;
 
@@ -1499,7 +1499,7 @@ function locatingGame() {
                 }
                 else if (GameData.playerStats.HP == 0) {
                     stopClickFlag = true;
-                    const restTimeCost = 10 * 60000;//1min=60000ms    
+                    const restTimeCost = 1 * 60000;//1min=60000ms    
                     const restAnimDelay = 3000;
 
                     var resting = () => {

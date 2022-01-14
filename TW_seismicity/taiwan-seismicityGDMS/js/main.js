@@ -132,66 +132,36 @@ $(function () {
 
 
     //=================legend onScroll
-    window.addEventListener("scroll", function (evt) {
-        document.querySelector('.legendGroup')
-            .setAttribute("y", screenYtoSVGUnits(window.scrollY) + 10);
-    });
-
+    $('#film').height(window.innerHeight * 1.3);
 
     // Converts a screen Y position to SVG units which have a viewBox transform
-    function screenYtoSVGUnits(val) {
+    var originTrans = null;
+    function getTranslate(val) {
+        if (!originTrans) {
+            let matrix = document.querySelector('.legendGroup').transform.baseVal.getItem(0).matrix;
+            originTrans = [matrix.e, matrix.f];
+        };
+
         const svg = document.querySelector("#film>svg");
         let pt = svg.createSVGPoint();
         pt.x = 0;
         pt.y = val;
         pt = pt.matrixTransform(svg.getCTM().inverse());
-        return pt.y;
+
+        // console.debug(svg.getBBox().height);
+
+        return [originTrans[0], pt.y + originTrans[1]];
     };
 
 
+    window.addEventListener("scroll", function (evt) {
+        let translate = getTranslate(window.scrollY);
+        document.querySelector('.legendGroup')
+            .setAttribute("transform", `translate(${translate[0]},${translate[1]})`);
 
-    // from http://www.howtocreate.co.uk/tutorials/javascript/browserwindow
-    //     function getScrollXY() {
-    //         var scrOfX = 0, scrOfY = 0;
-    //         // if (typeof (window.pageYOffset) == 'number') {
-    //         //     //Netscape compliant
-    //         //     scrOfY = window.pageYOffset;
-    //         //     scrOfX = window.pageXOffset;
-    //         // } else if (document.body && (document.body.scrollLeft || document.body.scrollTop)) {
-    //         //     //DOM compliant
-    //         //     scrOfY = document.body.scrollTop;
-    //         //     scrOfX = document.body.scrollLeft;
-    //         // } else if (document.documentElement && (document.documentElement.scrollLeft || document.documentElement.scrollTop)) {
-    //         //     //IE6 standards compliant mode
-    //         //     scrOfY = document.documentElement.scrollTop;
-    //         //     scrOfX = document.documentElement.scrollLeft;
-    //         // }
-    //         scrOfY = document.documentElement.scrollTop;
-    //         scrOfX = document.documentElement.scrollLeft;
-    //         return [scrOfX, scrOfY];
-    //     }
+        // console.debug(translate);
+    });
 
-
-
-    //     var originTrans = null;
-    //     function moveFixed(evt) {
-    //         var scrollpos = getScrollXY();
-    //         var fixed = document.querySelector('.legendGroup');
-    //         var tfm = fixed.transform.baseVal.getItem(0);
-
-    //         if (!originTrans) originTrans = [tfm.matrix.e, tfm.matrix.f];
-    //         // console.debug(originTrans);
-    //         // console.debug(scrollpos);
-    //         // tfm.setTranslate(scrollpos[0], scrollpos[1]);
-    //         // tfm.setTranslate(scrollpos[0] + originTrans[0], scrollpos[1] + originTrans[1]);
-
-    //         // tfm.setTranslate(window.innerWidth * 0.5, window.innerHeight * 0.5);
-    //         tfm.setTranslate(0, 0);
-    //         console.debug(evt);
-    //         console.debug(fixed.transform);
-    //     }
-
-    //     window.onscroll = moveFixed;
 
 });
 

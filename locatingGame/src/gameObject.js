@@ -13,14 +13,14 @@ const datafileDir = 'data/datafile/';
 const GameObjectStats = {
     creature: {
         dog: {
-            HP: 10000,
-            attackPower: 1,
+            HP: 1000,
+            attackPower: 5,
             movementSpeed: 200,
             jumpingPower: 0,
         },
         cat: {
-            HP: 8000,
-            attackPower: 800,
+            HP: 800,
+            attackPower: 10,
             movementSpeed: 200,
             jumpingPower: 200,
         },
@@ -1358,7 +1358,10 @@ const Sidekick = new Phaser.Class({
                 .setDepth(scene.Depth.tips);
 
             this.hints = scene.gameData.localeJSON.Hints[scene.name];
-            this.hintAmount = Object.keys(this.hints).length - 1; //==hints總數量
+            this.hintAmount = [//==hints總數量 0:提示 1:閒聊
+                Object.keys(this.hints[0]).length - 1,
+                Object.keys(this.hints[1]).length - 1
+            ];
 
         },
     //=處理轉向
@@ -1368,7 +1371,12 @@ const Sidekick = new Phaser.Class({
     },
     talkingCallback: null,
     talkingHandler: function (scene, hint) {
-        if (this.talkingCallback) this.talkingCallback.remove();
+        if (this.talkingCallback) {
+            this.talkingCallback.remove();
+            this.talkingCallback = true;//==避免又馬上註冊
+        };
+        // console.debug(this.talkingCallback);
+
 
         const
             hintDuration = hint.length * 300,//==對話框持續時間(包含淡入淡出時間)一個字x秒
@@ -1434,8 +1442,12 @@ const Sidekick = new Phaser.Class({
                         // this.physics.moveToObject(this, player, 500, chasingDuration);
                     };
 
-                    if (Phaser.Math.Distance.BetweenPoints(player, this) > 1000)
-                        this.setPosition(player.x + 30 * (player.flipX ? 1 : -1), player.y)
+                    //==離玩家太遠瞬移
+                    if (Phaser.Math.Distance.BetweenPoints(player, this) > 1000) {
+                        this.setPosition(player.x + 30 * (player.flipX ? 1 : -1), player.y);
+                        this.talkingHandler(scene, scene.gameData.localeJSON.Hints['dig'][1][0]);
+                        console.debug('flash');
+                    };
                 };
 
                 break;
@@ -1462,23 +1474,41 @@ const Sidekick = new Phaser.Class({
         this.dust.setPosition(this.x, this.y);//揚起灰塵效果跟隨
 
         var getHint = () => {
-            const replaceStr = '	';
+            const replaceStr = '\t';
             const controllCursor = scene.gameData.controllCursor;
 
-            let hint = 'AAA';
+
+            let hintType = Phaser.Math.Between(0, 1),  //==0:提示 1:閒聊
+                hintIdx = Phaser.Math.Between(0, this.hintAmount[hintType]),
+                hint = '';
+
+
             switch (scene.name) {
                 case 'defend':
                     let pickUpKey = controllCursor['down'];
 
-                    if (!player.pickUpObj)
-                        hint = this.hints[0].replace(replaceStr, pickUpKey);
-                    else {
-                        hint = this.hints[1].replace(replaceStr, pickUpKey);
+                    //==有些提示不合時機就不出現
+                    if (!hintType && player.pickUpObj) {
+                        let isPickUpHint = (hintIdx == 2 || hintIdx == 3);
+                        hint = isPickUpHint ?
+                            this.hints[hintType][3].replace(replaceStr, pickUpKey) :
+                            this.hints[hintType][hintIdx];
+                    }
+                    else if (!hintType && !player.pickUpObj) {
+                        let isPickUpHint = (hintIdx == 2 || hintIdx == 3);
+                        hint = isPickUpHint ?
+                            this.hints[hintType][2].replace(replaceStr, pickUpKey) :
+                            this.hints[hintType][hintIdx];
+                    } else {
+                        hint = this.hints[hintType][hintIdx];
                     };
+
                     break;
                 case 'dig':
+                    hint = this.hints[hintType][hintIdx];
                     break;
                 case 'boss':
+                    hint = this.hints[hintType][hintIdx];
                     break;
             };
 

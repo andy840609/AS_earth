@@ -1103,7 +1103,28 @@ class UIScene extends Phaser.Scene {
                                     .setDepth(Depth.UI);
                             };
                     };
+                    var guideSword = () => {
+                        if (gameScene.name == 'boss' || !gameScene.firstTimeEvent.isFirstTime) return;
+                        var animsCreate = () => {
+                            this.anims.create({
+                                key: 'guideSword_swing',
+                                frames: this.anims.generateFrameNumbers('guideSword', { start: 0, end: 16 }),
+                                frameRate: 20,
+                                repeat: -1,
+                            });
+                        };
+                        animsCreate();
+
+                        this.guideSword = this.add.sprite(0, 0)
+                            .setScale(0.8)
+                            .setOrigin(1, 0.5)
+                            .setAlpha(0)
+                            .play('guideSword_swing');
+
+                    };
                     addDialog();
+                    guideSword();
+
 
                     gameScene.dialogUI = this;
                     // console.debug(this);
@@ -1542,27 +1563,11 @@ class UIScene extends Phaser.Scene {
                 preload = () => { };
                 create = () => {
                     var init = () => {
-                        this.cameras.main.setBackgroundColor('rgba(0,0,0,0.5)');
-                        // gameScene.blackOut = this;
+                        this.cameras.main.setBackgroundColor('rgba(0,0,0,0.7)');
+                        this.scene.setVisible(false);
+                        gameScene.blackOut = this;
                     };
-
-                    var guideSword = () => {
-                        this.anims.create({
-                            key: 'guideSword_swing',
-                            frames: this.anims.generateFrameNumbers('guideSword', { start: 0, end: 16 }),
-                            frameRate: 20,
-                            repeat: -1,
-                        });
-
-                        this.guideSword = this.add.sprite(0, 0)
-                            .setScale(0.8)
-                            .setAlpha(0)
-                            .play('guideSword_swing');
-                    };
-
                     init();
-                    guideSword();
-
                 };
                 update = () => { };
                 break;
@@ -2383,8 +2388,6 @@ class DefendScene extends Phaser.Scene {
         this.plugins.get('rexawaitloaderplugin').addToScene(this);
         var callback = (resolve) => this.scene.add(null, new LoadingScene(this, resolve), true);
         this.load.rexAwait(callback);//==等LoadingScene完成素材載入
-
-        this.scene.add(null, new UIScene('dialogUI', this), true);
     };
     create() {
         const canvas = this.sys.game.canvas;
@@ -2779,6 +2782,12 @@ class DefendScene extends Phaser.Scene {
             this.cameras.main.setBounds(0, 0, width, height);
             this.cameras.main.flash(500, 0, 0, 0);
         };
+        var initDialog = () => {
+            this.scene.add(null, new UIScene('dialogUI', this), true);
+
+            if (this.firstTimeEvent.isFirstTime)
+                this.scene.add(null, new UIScene('blackOut', this), true);
+        };
         //==gameScene
         initEnvironment();
         initEnemy();
@@ -2790,6 +2799,7 @@ class DefendScene extends Phaser.Scene {
         initIconBar();
         initTimer();
         initCamera();
+        initDialog();
 
         // var postFxPlugin = this.plugins.get('rexswirlpipelineplugin');
         // this.cameraFilter = postFxPlugin.add(this.cameras.main);
@@ -2817,27 +2827,66 @@ class DefendScene extends Phaser.Scene {
                 this.gameTimer.paused = true;//==說話時暫停
                 const speakDelay = 1300;
 
-                let tutorial = (content, sidekickName) => {
+                let tutorial = (content) => {
                     return new Promise(async (r) => {
                         //各個UIScene
-                        let blackOut = this.scene.add(null, new UIScene('blackOut', this), true);
+                        let blackOut = this.blackOut;
                         let dialogUI = this.dialogUI;
                         let iconBar = this.game.scene.getScene('iconBar');
                         let detectorUI = this.game.scene.getScene('detectorUI');
+                        let playerUI = this.game.scene.getScene('playerUI');
+                        let timerUI = this.game.scene.getScene('timerUI');
 
-                        let guideSword = blackOut.guideSword
-                            .setAlpha(1);
-                        //==說明探測器的zoom
-                        dialogUI.scene.bringToTop();
+                        let guideSword = dialogUI.guideSword.setAlpha(1),
+                            swordWidth = guideSword.displayWidth,
+                            swordHeight = guideSword.displayHeight;
+
+                        blackOut.scene.setVisible(true);
+
+
+                        //==1.UI bar
+                        let iconButton = iconBar.iconButtons[0];
                         iconBar.scene.bringToTop();
-                        detectorUI.scene.bringToTop();
-                        guideSword.setPosition(iconBar.x, iconBar.y);
+                        dialogUI.scene.bringToTop();
+                        guideSword
+                            .setPosition(iconButton.x - swordWidth * 0.3, iconButton.y);
+                        await new Promise(resolve => this.dialogUI.newDialog(content[1], { character: 'sidekick' }, resolve));
 
+                        //==2.說明探測器的zoom
+                        blackOut.scene.bringToTop();
+                        detectorUI ?
+                            detectorUI.scene.bringToTop() :
+                            detectorUI = this.scene.add(null, new UIScene('detectorUI', this), true);
+                        dialogUI.scene.bringToTop();
+                        // console.debug(detectorUI);
 
-                        console.debug()//.bringToTop()
+                        guideSword
+                            .setPosition(detectorUI.detector.x, detectorUI.detector.y);
+                        await new Promise(resolve => this.dialogUI.newDialog(content[2], { character: 'sidekick' }, resolve));
 
-                        await new Promise(resolve => this.dialogUI.newDialog('教學', { character: 'sidekick' }, resolve));
+                        //==3.HP/MP
+                        blackOut.scene.bringToTop();
+                        playerUI.scene.bringToTop();
+                        dialogUI.scene.bringToTop();
+
+                        guideSword
+                            .setFlipX(true)
+                            .setPosition(playerUI.HPbar.x + swordWidth * 1.5, playerUI.HPbar.y + swordHeight * 0.2);
+                        await new Promise(resolve => this.dialogUI.newDialog(content[3], { character: 'sidekick' }, resolve));
+
+                        //==4.time remain
+                        blackOut.scene.bringToTop();
+                        timerUI.scene.bringToTop();
+                        dialogUI.scene.bringToTop();
+
+                        guideSword
+                            .setPosition(timerUI.hourglass.x + swordWidth * 1.3, timerUI.hourglass.y);
+                        await new Promise(resolve => this.dialogUI.newDialog(content[4], { character: 'sidekick' }, resolve));
+
+                        // console.debug(timerUI);
+
                         blackOut.scene.remove();
+                        guideSword.destroy();
                         r();
                     });
                 };
@@ -2851,15 +2900,16 @@ class DefendScene extends Phaser.Scene {
                     let enemyContent = lines.enemy;
                     let sidekickName = this.gameData.sidekick.type;
 
-                    await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[0] + sidekickName, { character: 'sidekick' }, resolve));
-
-                    await tutorial(sidekickContent, sidekickName);
+                    //==填入名子
+                    let intro = sidekickContent[0].replace('\t', '').replace('\t', sidekickName);
+                    await new Promise(resolve => this.dialogUI.newDialog(intro, { character: 'sidekick' }, resolve));
+                    await tutorial(sidekickContent);
 
                     //==停頓在說
                     await new Promise(resolve => this.time.delayedCall(speakDelay * 0.5, () => resolve()));
-                    await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[1], { character: 'sidekick' }, resolve));
+                    await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[5], { character: 'sidekick' }, resolve));
                     await new Promise(resolve => this.dialogUI.newDialog(enemyContent[0], { character: 'enemy' }, resolve));
-                    await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[2], { character: 'sidekick' }, resolve));
+                    await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[6], { character: 'sidekick' }, resolve));
 
                     this.firstTimeEvent.eventComplete = true;
                     this.gameTimer.paused = false;//==時間繼續
@@ -2904,7 +2954,7 @@ class DefendScene extends Phaser.Scene {
 
 
         firstTimeEvent();
-        if (!this.firstTimeEvent.eventComplete) return;
+        if (!this.firstTimeEvent.eventComplete && !this.gameOver.flag) return;
 
         updatePlayer();
         updateSidekick();
@@ -2944,6 +2994,7 @@ class DefendScene extends Phaser.Scene {
             this.sidekick.dialog.setAlpha(0);
             this.doctor.setAlpha(0);
             this.doctor.dialog.setAlpha(0);
+            // this.dialogUI.scene.remove();
 
             //===get gameResult 
             let orbStats = this.orbGroup.getChildren().map(orb => orb.orbStats);
@@ -3022,7 +3073,7 @@ class DigScene extends Phaser.Scene {
         let lineStage = GameData.sidekick.lineStage[0],
             firstTimeEvent = (lineStage == 3 || lineStage == 4);
 
-        console.debug(lineStage);
+        // console.debug(lineStage);
 
         Object.assign(this, {
             name: 'dig',
@@ -3058,8 +3109,6 @@ class DigScene extends Phaser.Scene {
         this.plugins.get('rexawaitloaderplugin').addToScene(this);
         var callback = (resolve) => this.scene.add(null, new LoadingScene(this, resolve), true);
         this.load.rexAwait(callback);//==等LoadingScene完成素材載入
-
-        this.scene.add(null, new UIScene('dialogUI', this), true);
     };
     create() {
         const canvas = this.sys.game.canvas;
@@ -3330,6 +3379,9 @@ class DigScene extends Phaser.Scene {
                 animsCreate();
             };
         };
+        var initDialog = () => {
+            this.scene.add(null, new UIScene('dialogUI', this), true);
+        };
 
         //==gameScene
         initEnvironment();
@@ -3342,7 +3394,7 @@ class DigScene extends Phaser.Scene {
         initIconBar();
         initTimer();
         initDepthCounter();
-
+        initDialog();
 
 
     };
@@ -3517,8 +3569,6 @@ class BossScene extends Phaser.Scene {
         this.plugins.get('rexawaitloaderplugin').addToScene(this);
         var callback = (resolve) => this.scene.add(null, new LoadingScene(this, resolve), true);
         this.load.rexAwait(callback);//==等LoadingScene完成素材載入
-
-        this.scene.add(null, new UIScene('dialogUI', this), true);
     };
     create() {
         const canvas = this.sys.game.canvas;
@@ -3958,6 +4008,10 @@ class BossScene extends Phaser.Scene {
             this.cameras.main.setBounds(0, 0, width, height);
             this.cameras.main.flash(500, 0, 0, 0);
         };
+        var initDialog = () => {
+            this.scene.add(null, new UIScene('dialogUI', this), true);
+        };
+
 
         //==gameScene
         initEnvironment();
@@ -3970,6 +4024,7 @@ class BossScene extends Phaser.Scene {
         initIconBar();
         initTimer();
         initCamera();
+        initDialog();
         // initQuiz();
 
     };

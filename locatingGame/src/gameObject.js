@@ -124,6 +124,23 @@ const GameObjectStats = {
             maxMP: 150,
         },
     },
+    tile: {//==破壞需要的攻擊次數
+        terrain1: {//沉積岩
+            hardness: 2,
+        },
+        terrain2: {//火成岩
+            hardness: 3,
+        },
+        terrain3: {//花崗岩
+            hardness: 4,
+        },
+        sprSand: {
+            hardness: 1,
+        },
+        sprWater: {
+            hardness: 1,
+        }
+    },
 };
 
 //==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
@@ -897,12 +914,12 @@ const Player = new Phaser.Class({
                     repeat: 0,
                 });
 
-                // scene.anims.create({
-                //     key: 'player_attack3',
-                //     frames: scene.anims.generateFrameNumbers('player_attack3'),
-                //     frameRate: 30,
-                //     repeat: 0,
-                // });
+                scene.anims.create({
+                    key: 'player_specialAttack',
+                    frames: scene.anims.generateFrameNumbers('player_specialAttack'),
+                    frameRate: 30,
+                    repeat: 0,
+                });
 
                 scene.anims.create({
                     key: 'player_hurt',
@@ -1073,8 +1090,8 @@ const Player = new Phaser.Class({
         };
 
         switch (scene.name) {
+            default:
             case 'defend':
-
                 if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['up']])) {
                     //==跳
 
@@ -1103,13 +1120,13 @@ const Player = new Phaser.Class({
                     }
                 };
                 break;
-            case 'dig':
-                //==飛(dig)
-                if (cursors[controllCursor['up']].isDown) {
-                    this.setVelocityY(-this.stats.jumpingPower);
-                    this.anims.play('player_jump', true);
-                };
-                break;
+            // case 'dig':
+            //     //==飛(dig)
+            //     if (cursors[controllCursor['up']].isDown) {
+            //         this.setVelocityY(-this.stats.jumpingPower);
+            //         this.anims.play('player_jump', true);
+            //     };
+            //     break;
         };
 
 
@@ -1217,7 +1234,7 @@ const Player = new Phaser.Class({
         scene.tweens.add({
             targets: this,
             alpha: 0.5,
-            duration: invincibleDuration / 20,//==   20=repeat(10)*yoyo(=2)
+            duration: invincibleDuration / 20, //== 20=repeat(10)*yoyo(=2)
             yoyo: true,
             repeat: 10,
             ease: 'Sine.easeInOut',
@@ -1369,37 +1386,35 @@ const Sidekick = new Phaser.Class({
         this.setFlipX(filp);
         this.dust.setFlipX(filp);
     },
+    talkingTween: null,
     talkingCallback: null,
     talkingHandler: function (scene, hint) {
-        if (this.talkingCallback) {
+        const hintDuration = hint.length * 300;//==對話框持續時間(包含淡入淡出時間)一個字x秒
+        // hintDelay = Phaser.Math.Between(2, 5) * 1000;//==每則知識間隔
+        var hintDelay = 1000;//==每則知識間隔
+
+        if (this.talkingCallback) {//==特殊對話馬上出現
+            this.talkingTween.remove();
             this.talkingCallback.remove();
-            this.talkingCallback = true;//==避免又馬上註冊
+            this.dialog.alpha = 0;
+            hintDelay = 200;
         };
-        // console.debug(this.talkingCallback);
-
-
-        const
-            hintDuration = hint.length * 300,//==對話框持續時間(包含淡入淡出時間)一個字x秒
-            // hintDelay = Phaser.Math.Between(2, 5) * 1000;//==每則知識間隔
-            hintDelay = 500;//==每則知識間隔
 
         this.talkingCallback = scene.time.delayedCall(hintDelay, () => {
-
             //==開始打字
-            scene.tweens.add({
+            this.talkingTween = scene.tweens.add({
                 targets: this.dialog,
-                alpha: 1,
+                alpha: { start: 0, to: 1 },
                 duration: hintDuration * 0.1,
                 repeat: 0,
                 yoyo: true,
                 hold: hintDuration * 0.6,//==yoyo delay
                 ease: 'Linear',
                 onStart: () => this.dialog.start(hint, 50),//==(text,typeSpeed(ms per word))
+                onComplete: () => this.talkingCallback = null,
             });
-
-            //==一次對話結束
-            scene.time.delayedCall(hintDuration, () => this.talkingCallback = null, [], scene);
         }, [], scene);
+
     },
     behavior: null,
     behaviorHandler: function (player, scene) {
@@ -1446,7 +1461,6 @@ const Sidekick = new Phaser.Class({
                     if (Phaser.Math.Distance.BetweenPoints(player, this) > 1000) {
                         this.setPosition(player.x + 30 * (player.flipX ? 1 : -1), player.y);
                         this.talkingHandler(scene, scene.gameData.localeJSON.Hints['dig'][1][0]);
-                        console.debug('flash');
                     };
                 };
 
@@ -1505,6 +1519,10 @@ const Sidekick = new Phaser.Class({
 
                     break;
                 case 'dig':
+                    if (hintType) {
+                        hintIdx = hintIdx == 0 ? Phaser.Math.Between(1, this.hintAmount[hintType]) : hintIdx;
+                    };
+
                     hint = this.hints[hintType][hintIdx];
                     break;
                 case 'boss':
@@ -1518,7 +1536,7 @@ const Sidekick = new Phaser.Class({
         if (!this.talkingCallback) {
             const hint = getHint();
             // console.debug(hint);
-
+            // console.log('start talking');
             this.talkingHandler(scene, hint);
         };
 
@@ -1588,7 +1606,7 @@ const Doctor = new Phaser.Class({
                 //==博士出現
                 scene.tweens.add({
                     targets: this,
-                    alpha: 1,
+                    alpha: { start: 0, to: 1 },
                     x: 0,
                     duration: tipDuration * 0.1,
                     repeat: 0,
@@ -1600,7 +1618,7 @@ const Doctor = new Phaser.Class({
                 //==開始打字
                 scene.tweens.add({
                     targets: this.dialog,
-                    alpha: 1,
+                    alpha: { start: 0, to: 1 },
                     duration: tipDuration * 0.1 - 200,
                     repeat: 0,
                     yoyo: true,
@@ -1608,10 +1626,9 @@ const Doctor = new Phaser.Class({
                     ease: 'Linear',
                     delay: 200,
                     onStart: () => this.dialog.start(tipText, 70),//==(text,typeSpeed(ms per word))
+                    onComplete: () => this.talkingCallback = null,//==一次對話結束
+                    onActive: () => console.debug('onUpdate'),
                 });
-
-                //==一次對話結束
-                scene.time.delayedCall(tipDuration, () => this.talkingCallback = null, [], scene);
 
             }, [], scene);
 
@@ -1653,6 +1670,7 @@ class Chunk {
     };
 
     load() {
+
         // noise.seed(Math.random());
 
         if (!this.isLoaded) {
@@ -1728,7 +1746,7 @@ class Chunk {
                     var key = "";
                     var animationKey = "";
 
-                    //==terrain1:沉積岩 terrain2:火成岩 terrain3:花崗岩
+                    //==terrain1:沉積岩 terrain2:火成岩 terrain3:花崗岩 sprSand sprWater
 
                     if (tileY <= this.yRange[0]) {
                         if (perlinValue < this.pRange[0])
@@ -1785,6 +1803,10 @@ class Tile extends Phaser.GameObjects.Sprite {
         super(scene, x, y, key);
         scene.add.existing(this);
         this.setOrigin(0);
+
+        //==custom
+        this.attribute = { ...GameObjectStats.tile[key] };//JSON.parse(JSON.stringify(tmp))
+
 
     };
 };

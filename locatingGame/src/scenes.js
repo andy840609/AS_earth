@@ -1149,15 +1149,16 @@ class UIScene extends Phaser.Scene {
 
                     //==玩家靠近變透明
                     let playerApproach = Phaser.Math.Distance.BetweenPoints(gameScene.player, this.doctor) < 320;
-                    if (playerApproach && this.doctor.dialog.alpha == 1) {
-                        this.tweens.add({
-                            targets: [this.doctor, this.doctor.dialog],
-                            alpha: 0.8,
-                            duration: 200,
-                            repeat: 0,
-                            ease: 'Linear',
-                        });
-
+                    if (playerApproach && this.doctor.dialog.alpha >= 0.6) {
+                        // this.tweens.add({
+                        //     targets: [this.doctor, this.doctor.dialog],
+                        //     alpha: 0.8,
+                        //     duration: 200,
+                        //     repeat: 0,
+                        //     ease: 'Linear',
+                        // });
+                        this.doctor.dialog.alpha = 0.6;
+                        this.doctor.alpha = 0.6;
                     };
 
                 };
@@ -1538,7 +1539,7 @@ class UIScene extends Phaser.Scene {
                     var updateOrb = () => {
                         gameScene.orbGroup.children.iterate(child => {
 
-                            if (child.beholdingFlag || (child.laserUpdateFlag && child.body.touching.down)) {
+                            if (child.beholdingFlag || (child.laserUpdateFlag || !child.body.touching.down)) {//(child.laserUpdateFlag && child.body.touching.down)
                                 // console.debug('update orb');
                                 child.orbStats = gameScene.getTimePoint(child.x);
                                 let laserObj = child.laserObj;
@@ -1965,7 +1966,7 @@ class LoadingScene extends Phaser.Scene {
                     const frameObj = { frameWidth: 48, frameHeight: 48 };
 
                     this.load.spritesheet('player_attack', dir + playerRole + '_attack2.png', frameObj);
-                    this.load.spritesheet('player_attack3', dir + playerRole + '_attack3.png', frameObj);
+                    this.load.spritesheet('player_specialAttack', dir + playerRole + '_attack3.png', frameObj);
                     this.load.spritesheet('player_punch', dir + playerRole + '_punch.png', frameObj);
                     this.load.spritesheet('player_death', dir + playerRole + '_death.png', frameObj);
                     this.load.spritesheet('player_jump', dir + playerRole + '_jump.png', frameObj);
@@ -2297,7 +2298,8 @@ class DefendScene extends Phaser.Scene {
 
         //==第一次有對話
         let lineStage = GameData.sidekick.lineStage[0],
-            firstTimeEvent = lineStage == 1;
+            firstTimeEvent = lineStage == 999;//1
+
 
         // console.debug(lineStage);
         Object.assign(this, {
@@ -2560,13 +2562,12 @@ class DefendScene extends Phaser.Scene {
                     //=====custom
 
                     //=laser
-                    child.laserObj =
-                        this.physics.add.sprite(child.x, child.y + 20, 'laser')
-                            .setScale(0.3, 1)
-                            .setOrigin(0.5, 1)
-                            .setDepth(Depth.laser)
-                            .setVisible(false);
+                    child.laserObj = this.physics.add.sprite(child.x, child.y + 20, 'laser')
+                        .setOrigin(0.5, 1)
+                        .setDepth(Depth.laser)
+                        .setVisible(false);
 
+                    child.laserObj.setScale(0.3, height * 0.9 / child.laserObj.displayHeight);
                     // console.debug(orbStats);
 
                     child.laserObj.body
@@ -2885,6 +2886,7 @@ class DefendScene extends Phaser.Scene {
 
                         // console.debug(timerUI);
 
+                        iconBar.scene.bringToTop();//不讓探測器蓋過
                         blackOut.scene.remove();
                         guideSword.destroy();
                         r();
@@ -3089,6 +3091,7 @@ class DigScene extends Phaser.Scene {
                 epicenter: placeData.depth,
                 depthScale: 0.034,//0.003
                 // depthScale: 0.01,//0.003
+                coordinate: placeData.coordinate,
                 bossRoom: false,
             },
             gameOver: {
@@ -3209,6 +3212,11 @@ class DigScene extends Phaser.Scene {
                 this.chunkWidth = this.chunkSize * this.tileSize;
                 // this.chunkWidth = this.chunkSize * this.tileSize;
 
+
+                let seed = Math.abs(this.depthCounter.coordinate.reduce((p, c) => parseFloat(p) + parseFloat(c))) * 200;
+                noise.seed(seed);//==以座標當亂數因子
+                // console.debug(this.depthCounter.coordinate, seed);
+
                 //隨機生成的一大塊chunkSize*chunkSize個的地底構造
                 this.chunks = [];
                 this.getChunk = (x, y) => {
@@ -3255,36 +3263,49 @@ class DigScene extends Phaser.Scene {
 
             // console.debug(this.player);
 
-            this.player.body
-                .setGravityY(2000)
+            // this.player.body
+            // .setGravityY(2000)
             // .setMaxVelocity(0);
 
             Object.assign(this.player, {
+                diggingFlag: false,
+                diggingHadler: function (player, tile) {
+                    this.diggingFlag = true;
+
+                    tile.attribute.hardness--;
+
+                    player.body.reset(player.x, player.y);
+                    player.play('player_specialAttack');
+
+                    console.debug(tile.attribute.hardness);
+
+                    this.scene.time.delayedCall(this.stats.attackSpeed, () => this.diggingFlag = false, [], this);
+                },
                 playerDig: (player, tile) => {
                     // if (this.tile) return;
-                    if (!this.firstTimeEvent.eventComplete) return;
-                    // console.debug(tile);
+                    if (player.diggingFlag || !this.firstTimeEvent.eventComplete) return;
+
                     let cursors = this.cursors;
                     let controllCursor = this.gameData.controllCursor;
 
-                    if (cursors[controllCursor['up']].isDown) {
-                        // console.debug(tile.body)
-                        if (tile.body.touching.down)
-                            tile.destroy();
-                    }
-                    else if (cursors[controllCursor['down']].isDown) {
-                        if (tile.body.touching.up)
-                            tile.destroy();
 
+                    if (cursors[controllCursor['down']].isDown) {
+                        if (tile.body.touching.up) player.diggingHadler(player, tile);
                     }
                     else if (cursors[controllCursor['left']].isDown) {
-                        if (tile.body.touching.right)
-                            tile.destroy();
+                        if (tile.body.touching.right) player.diggingHadler(player, tile);
                     }
                     else if (cursors[controllCursor['right']].isDown) {
-                        if (tile.body.touching.left)
-                            tile.destroy();
+                        if (tile.body.touching.left) player.diggingHadler(player, tile);
                     };
+                    // else if (cursors[controllCursor['up']].isDown) {
+                    //     // console.debug(tile.body)
+                    //     if (tile.body.touching.down) player.diggingHadler(player, tile);
+
+                    // };
+
+
+                    if (tile.attribute.hardness <= 0) tile.destroy();
 
                 },
                 playerOpenGate: (player, gate) => {
@@ -3303,6 +3324,7 @@ class DigScene extends Phaser.Scene {
 
 
                 },
+
             });
 
         };
@@ -3395,8 +3417,6 @@ class DigScene extends Phaser.Scene {
         initTimer();
         initDepthCounter();
         initDialog();
-
-
     };
     update() {
         //==第一次的對話
@@ -3423,7 +3443,7 @@ class DigScene extends Phaser.Scene {
 
         var updatePlayer = () => {
 
-            this.player.movingHadler(this);
+            if (!this.player.diggingFlag) this.player.movingHadler(this);//==挖掘時不動
             // this.player.pickingHadler(this);
             this.player.attackHandler(this);
 

@@ -706,7 +706,7 @@ function locatingGame() {
                             updateStation(e.target, { mouseEvent: 0 });
                         })
                         .on('click', function (e) {
-                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             //==觸發畫面位置點擊(要在假設點上座標才對)
                             const event = new MouseEvent('click', {
                                 'view': window,
@@ -957,7 +957,7 @@ function locatingGame() {
                                 })
                                 .on('click', function (e) {
                                     //==速度參數要完成兩站才能調整
-                                    if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
+                                    // if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
 
                                     let button = $(this);
                                     let ckick = button.hasClass('clicked');
@@ -1118,9 +1118,9 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
-                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
-                            let lat = e.latlng.lat;
-                            let lng = e.latlng.lng;
+                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            let lat = e.latlng.lat,
+                                lng = e.latlng.lng
 
                             let distToEpicenter = distanceByLnglat([lat, lng], data.epicenter.coordinate);
                             console.debug(distToEpicenter);
@@ -1129,9 +1129,12 @@ function locatingGame() {
 
                             requestTypingAnim();
 
+                            lat = lat.toFixed(2);
+                            lng = lng.toFixed(2);
+
                             confirmWindow.fadeIn(fadeInDuration)
                                 .find('.placeStr')
-                                .text(`${lat.toFixed(2)} , ${lng.toFixed(2)}`)
+                                .text(`${lat} , ${lng}`)
                                 .data('gameStartParameters', ['dig', {
                                     coordinate: [lat, lng],
                                     depth: bingo ? data.epicenter.depth : null,
@@ -1584,6 +1587,11 @@ function locatingGame() {
                                 });
                                 break;
                             case '1_4':
+                                replaceHTML = `<img src='${assetsDir}icon/home.png' width='50px'></img>`;
+                                line = line.replace('\t', replaceHTML);
+                                replaceHTML = `<img src='${assetsDir}ui/map/sidekick/Doctor.png' width='50px'></img>`;
+                                line = line.replace('\t', replaceHTML);
+                                break;
                             case '2_1':
                                 replaceHTML = `<img src='${assetsDir}icon/home.png' width='50px'></img>`;
                                 line = line.replace('\t', replaceHTML);
@@ -1613,7 +1621,7 @@ function locatingGame() {
                                 gameUI.find('.guideArrow').hide();
                                 break;
                             case '4_3':
-                                replaceHTML = `<img src='${assetsDir}ui/chartHandle.png' width='50px'></img>`;
+                                replaceHTML = `<img src='${assetsDir}ui/map/chartHandle.png' width='50px'></img>`;
                                 line = line.replace('\t', replaceHTML);
                                 break;
 
@@ -1638,9 +1646,14 @@ function locatingGame() {
                         // console.debug(GameData.sidekick.doneTalking);
                     }
                     else {
+                        if (stage != 0)//==失敗對話不紀錄
+                            GameData.sidekick.lineStage = [stage, 0];
+
                         sidekickTXB.fadeOut(500);
                         GameData.sidekick.doneTalking = false;
                         GameData.sidekick.stopHotkey = true;
+
+
                     };
 
 
@@ -1720,7 +1733,7 @@ function locatingGame() {
                         assumedEpicenter
                             .setLatLng(coordinate)
                             .getTooltip()
-                            .setContent(`${GameData.localeJSON.UI['assumedEpicenter']} : ${coordinate.map(d => d.toFixed(2)).join(' , ')}`)
+                            .setContent(`${GameData.localeJSON.UI['assumedEpicenter']} : ${coordinate.join(' , ')}`)
                         assumedEpicenter.getElement().style.display = 'inline';
 
                         GameData.playerEpicenter = coordinate;

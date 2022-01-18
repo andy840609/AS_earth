@@ -152,7 +152,7 @@ svg {
     z-index: 999;
     border-radius: 5px;
     opacity: .9;
-    background-image: url(../data/assets/ui/mapTooltipBG.jpg);
+    background-image: url(../data/assets/ui/map/mapTooltipBG.jpg);
     background-size: 150%;
     display: none;
     pointer-events: none;

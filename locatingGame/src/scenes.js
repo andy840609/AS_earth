@@ -1050,13 +1050,23 @@ class UIScene extends Phaser.Scene {
 
                 preload = () => { };
                 create = () => {
-                    var initCounter = () => {
-                        gameScene.depthCounter.text =
-                            this.add.text(20, 300, 'AAA', { fontSize: '32px', fill: '#000' })
-                                .setDepth(Depth.UI);
-                        this.add.text(20, 350, 'Km', { fontSize: '32px', fill: '#000' })
+                    let x = 20, y = 300;
+
+
+                    var initRuler = () => {
+                        this.add.image(x, y, 'depthRuler')
+                            .setScale(0.2, 0.3)
+                            .setOrigin(0, 0.5)
+                            .setAlpha(0.9)
                             .setDepth(Depth.UI);
                     };
+                    var initCounter = () => {
+                        gameScene.depthCounter.text =
+                            this.add.text(x + 10, y, '', { fontSize: '32px', fill: '#000' })
+                                .setDepth(Depth.UI);
+                    };
+
+                    initRuler();
                     initCounter();
                 };
                 update = () => {
@@ -1064,8 +1074,8 @@ class UIScene extends Phaser.Scene {
                     var updateCounter = () => {
 
                         let depth = gameScene.player.y + gameScene.player.height * 0.5 - gameScene.groundY;
-                        depth = depth < 0 ? 0 : parseFloat((depth * depthScale).toFixed(2));
-                        gameScene.depthCounter.text.setText(depth);
+                        depth = depth < 0 ? 0 : ((depth * depthScale).toFixed(2));
+                        gameScene.depthCounter.text.setText(depth + ' km');
                     };
                     updateCounter();
                 };
@@ -1895,9 +1905,12 @@ class LoadingScene extends Phaser.Scene {
                     var groundMatters = () => {
                         let terrainDir = envDir + 'terrain/'
 
-                        this.load.image('sprSand', gameObjDir + 'sprSand.png');
-                        this.load.spritesheet('sprWater', gameObjDir + 'sprWater.png',
+                        this.load.image('sprSand', terrainDir + 'sprSand.png');
+                        this.load.spritesheet('sprWater', terrainDir + 'sprWater.png',
                             { frameWidth: 60, frameHeight: 60 });
+                        this.load.image('gateStone', terrainDir + 'gateStone.png');
+
+
                         this.load.image('terrain1', terrainDir + '1.png');
                         this.load.image('terrain2', terrainDir + '2.png');
                         this.load.image('terrain3', terrainDir + '3.png');
@@ -1950,7 +1963,7 @@ class LoadingScene extends Phaser.Scene {
                         );
                     };
                     var bossBar = () => {
-                        let bossBarDir = assetsDir + 'ui/bossBar/';
+                        let bossBarDir = assetsDir + 'ui/game/bossBar/';
                         this.load.image('bossBar', bossBarDir + 'bossBar.png');
                     };
                     bossRoom();
@@ -1983,6 +1996,7 @@ class LoadingScene extends Phaser.Scene {
                             attack: [126, 60],
                             jump: [120, 80],
                             run: [110, 60],
+                            ult: [300, 150],
                         },
                         Cyborg: {
                             attack: [126, 60],
@@ -2003,10 +2017,12 @@ class LoadingScene extends Phaser.Scene {
                     this.load.spritesheet('player_runAttackEffect', effectDir + 'runAttack_effect.png',
                         { frameWidth: effectFrameObj.run[0], frameHeight: effectFrameObj.run[1] });
 
-                    // this.load.spritesheet('player_jumpDust', effectDir + 'jump_dust.png', { frameWidth: 35, frameHeight: 55 });
+                    if (packNum == 3)
+                        this.load.spritesheet('player_ultAttackEffect', effectDir + 'ult_effect.png',
+                            { frameWidth: effectFrameObj.ult[0], frameHeight: effectFrameObj.ult[1] });
                 };
                 var UIbar = () => {
-                    const playerBarDir = assetsDir + 'ui/playerBar/';
+                    const playerBarDir = assetsDir + 'ui/game/playerBar/';
 
                     this.load.image('UIbar_HPlabel', playerBarDir + 'UIbar_HPlabel.png');
                     this.load.image('UIbar_MPlabel', playerBarDir + 'UIbar_MPlabel.png');
@@ -2018,7 +2034,7 @@ class LoadingScene extends Phaser.Scene {
             };
             var sidekick = () => {
                 var doctor = () => {
-                    this.load.image('doctorOwl', assetsDir + 'ui/sidekick/Doctor2.png');
+                    this.load.image('doctorOwl', assetsDir + 'ui/map/sidekick/Doctor2.png');
                 };
                 var sidekick = () => {
                     const sidekick = gameData.sidekick.type;
@@ -2060,7 +2076,7 @@ class LoadingScene extends Phaser.Scene {
             };
         };
         var UI = () => {
-            const ctrlDir = assetsDir + 'ui/controller/';
+            const uiDir = assetsDir + 'ui/game/';
             var UIButtons = () => {
                 const iconDir = assetsDir + 'icon/';
 
@@ -2086,9 +2102,9 @@ class LoadingScene extends Phaser.Scene {
                 gameScene.UIButtonArr = UIButtonArr;
             };
             var pauseMenu = () => {
-                this.load.image('menu', ctrlDir + 'menu.png');
-                this.load.image('menuButton', ctrlDir + 'menuButton.png');
-                // this.load.spritesheet('menuButton', ctrlDir + 'menuButton.png');
+                this.load.image('menu', uiDir + 'menu.png');
+                this.load.image('menuButton', uiDir + 'menuButton.png');
+                // this.load.spritesheet('menuButton', uiDir + 'menuButton.png');
             };
             var detector = () => {
                 const dir = assetsDir + 'gameObj/environment/overview/';
@@ -2096,13 +2112,15 @@ class LoadingScene extends Phaser.Scene {
                 this.load.image('detectorScreen', dir + 'detectorScreen.png');
             };
             var tooltip = () => {
-                this.load.image('tooltipButton', ctrlDir + 'tooltipButton.png');
+                this.load.image('tooltipButton', uiDir + 'tooltipButton.png');
             };
             var timeRemain = () => {
                 this.load.spritesheet('hourglass',
-                    ctrlDir + 'hourglass.png',
+                    uiDir + 'hourglass.png',
                     { frameWidth: 200, frameHeight: 310 }
                 );
+
+                if (packNum == 2) this.load.image('depthRuler', uiDir + 'ruler.png');
             };
             var dialog = () => {
 
@@ -2116,13 +2134,13 @@ class LoadingScene extends Phaser.Scene {
                     //     systemKey: 'rexUI',
                     // });
 
-                    this.load.image('dialogButton', ctrlDir + 'dialogButton.png');
+                    this.load.image('dialogButton', uiDir + 'dialogButton.png');
 
                 };
                 var quiz = () => {
                     if (packNum != 3) return;
-                    this.load.image('quizCorrect', ctrlDir + 'correct.png');
-                    this.load.image('quizWrong', ctrlDir + 'wrong.png');
+                    this.load.image('quizCorrect', uiDir + 'correct.png');
+                    this.load.image('quizWrong', uiDir + 'wrong.png');
                 };
                 var avatar = () => {
                     const avatarDir = assetsDir + 'avatar/';
@@ -2148,10 +2166,11 @@ class LoadingScene extends Phaser.Scene {
             var tutorial = () => {
                 if (packNum == 3 || !gameScene.firstTimeEvent.isFirstTime) return;
 
-                this.load.spritesheet('guideSword', ctrlDir + 'guideSword.png',
+                this.load.spritesheet('guideSword', uiDir + 'guideSword.png',
                     { frameWidth: 500, frameHeight: 200 });
 
             };
+
 
             UIButtons();
             pauseMenu();
@@ -2174,7 +2193,7 @@ class LoadingScene extends Phaser.Scene {
                 //==為了作dude動畫
                 var loadDude = () => {
                     this.load.spritesheet('dude',
-                        gameObjDir + 'dude.png',
+                        assetsDir + 'ui/game/dude.png',
                         { frameWidth: 32, frameHeight: 48 }
                     );
                 };
@@ -3269,17 +3288,19 @@ class DigScene extends Phaser.Scene {
 
             Object.assign(this.player, {
                 diggingFlag: false,
-                diggingHadler: function (player, tile) {
-                    this.diggingFlag = true;
-
-                    tile.attribute.hardness--;
-
+                diggingHadler: (player, tile) => {
+                    player.diggingFlag = true;
                     player.body.reset(player.x, player.y);
                     player.play('player_specialAttack');
-
+                    player.stopCursorsFlag = true;
                     console.debug(tile.attribute.hardness);
 
-                    this.scene.time.delayedCall(this.stats.attackSpeed, () => this.diggingFlag = false, [], this);
+                    this.time.delayedCall(player.stats.attackSpeed, () => {
+                        player.diggingFlag = false;
+                        // tile.attribute.hardness--;
+                        if (--tile.attribute.hardness <= 0) tile.destroy();
+                        player.stopCursorsFlag = false;
+                    }, [], this);
                 },
                 playerDig: (player, tile) => {
                     // if (this.tile) return;
@@ -3287,7 +3308,6 @@ class DigScene extends Phaser.Scene {
 
                     let cursors = this.cursors;
                     let controllCursor = this.gameData.controllCursor;
-
 
                     if (cursors[controllCursor['down']].isDown) {
                         if (tile.body.touching.up) player.diggingHadler(player, tile);
@@ -3303,9 +3323,6 @@ class DigScene extends Phaser.Scene {
                     //     if (tile.body.touching.down) player.diggingHadler(player, tile);
 
                     // };
-
-
-                    if (tile.attribute.hardness <= 0) tile.destroy();
 
                 },
                 playerOpenGate: (player, gate) => {
@@ -3714,21 +3731,84 @@ class BossScene extends Phaser.Scene {
         };
         var initPlayer = () => {
             this.player = this.add.existing(new Player(this, this.gameData.playerRole, this.gameData.playerStats))
-                .setPosition(width * 0.1, height * 0.65)
-                .setOrigin(0.5, 1)
+                .setPosition(width * 0.15, height * 0.65)
                 .setDepth(Depth.player);
 
             this.player.body
                 // .setGravityY(2000)
                 .setMaxVelocity(0);
 
+            this.player.attackEffect
+                .setDepth(Depth.boss + 1);
+
             Object.assign(this.player, {
+                attackingFlag: false,
                 attackAnims: (resolve) => {
-                    let hurtDuration = 1000;
+                    let hurtDuration = 2000;
                     let duration = 500 + hurtDuration;
 
-                    //==playerAttack之後作
-                    this.boss.gotHurtAnims(hurtDuration);
+                    //==playerAttack
+                    this.tweens.add({
+                        targets: this.player,
+                        ease: 'Linear',
+                        // delay: showDelay,
+                        duration: hurtDuration * 0.3,
+                        hold: hurtDuration * 0.5,//==yoyo delay
+                        yoyo: true,
+                        x: this.boss.x * 0.6,
+                        // y: this.boss.y,
+                        onUpdate: (t) => {
+                            // console.debug( this.anims);
+                            // console.debug(t.countdown);
+                            if (!this.player.attackingFlag && t.elapsed > hurtDuration * 0.3) {
+                                let effectShowDuration = hurtDuration * 0.2,
+                                    effectMoveDuration = hurtDuration * 0.6;
+
+                                this.player
+                                    .play('player_attack')
+                                    .anims.setRepeat(-1);
+
+                                this.player.attackEffect
+                                    .setAlpha(0)
+                                    .setTexture('player_ultAttackEffect')
+                                    .setPosition(this.player.x + 120, this.player.y * 0.9);
+
+                                this.tweens.add({
+                                    targets: this.player.attackEffect,
+                                    ease: 'Linear',
+                                    duration: effectShowDuration,
+                                    alpha: { start: 0, to: 1 },
+                                    onComplete: () => this.player.attackEffect.play('player_ultAttackEffect'),
+                                });
+
+                                this.tweens.add({
+                                    targets: this.player.attackEffect,
+                                    ease: 'Linear.Out',
+                                    delay: effectShowDuration,
+                                    duration: effectMoveDuration,
+                                    x: width + this.player.attackEffect.displayWidth,
+                                    scale: { start: 2, to: 3 },
+                                });
+
+                                // console.debug(this.player.anims.repeat);
+
+                                this.player.attackingFlag = true;
+                            };
+                        },
+                        onStart: () => this.player.play('player_run'),
+                        onYoyo: () => {
+                            this.player.play('player_run').filpHandler(true);
+                            this.boss.gotHurtAnims(hurtDuration * 0.5);
+                        },
+                        onComplete: () => {
+                            this.player
+                                .play('player_idle')
+                                .filpHandler(false);
+
+                            this.player.attackingFlag = false;
+                        },
+                    });
+
 
                     this.time.delayedCall(duration, () => resolve(), [], this);
                 },
@@ -3792,7 +3872,7 @@ class BossScene extends Phaser.Scene {
             animsCreate();
 
             const bossScale = 3;
-            this.boss = this.add.sprite(width * 0.8, height * 0.7, 'boss_Fly');
+            this.boss = this.add.sprite(width * 0.8, height * 0.75, 'boss_Fly');
 
             this.boss
                 .setScale(-bossScale, bossScale)
@@ -3862,7 +3942,7 @@ class BossScene extends Phaser.Scene {
                     delay: showDelay,
                     duration: animeDelay,
                     yoyo: yoyoFlag,
-                    y: { from: height * 0.7, to: height * 0.7 - 15 },
+                    y: { from: this.boss.y, to: this.boss.y - 15 },
                 });
 
                 //==攻擊動畫
@@ -4056,6 +4136,7 @@ class BossScene extends Phaser.Scene {
         var updateSidekick = () => {
             this.sidekick.behaviorHandler(this.player, this);
         };
+
         updateBoss();
         updateSidekick();
 

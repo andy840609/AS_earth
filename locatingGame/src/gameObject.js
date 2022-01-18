@@ -126,13 +126,13 @@ const GameObjectStats = {
     },
     tile: {//==破壞需要的攻擊次數
         terrain1: {//沉積岩
-            hardness: 2,
+            hardness: 1,
         },
         terrain2: {//火成岩
-            hardness: 3,
+            hardness: 2,
         },
         terrain3: {//花崗岩
-            hardness: 4,
+            hardness: 2,
         },
         sprSand: {
             hardness: 1,
@@ -625,7 +625,6 @@ const Enemy = new Phaser.Class({
                 //===開始行爲模式(0.受傷 1.追擊(被攻擊時) 2.遊走 3.休息 )
                 else {
                     // if (!this.behavior) this.behavior = 'cruising';
-
                     switch (this.behavior) {
                         case 'hurt':
                             // console.debug(this.body);
@@ -738,10 +737,7 @@ const Enemy = new Phaser.Class({
                                 }, [], scene);
                             }
                             break;
-                    }
-
-
-
+                    };
 
                 };
                 // console.debug();
@@ -917,7 +913,7 @@ const Player = new Phaser.Class({
                 scene.anims.create({
                     key: 'player_specialAttack',
                     frames: scene.anims.generateFrameNumbers('player_specialAttack'),
-                    frameRate: 30,
+                    frameRate: 20,
                     repeat: 0,
                 });
 
@@ -986,6 +982,13 @@ const Player = new Phaser.Class({
                     repeat: 0,
                 });
 
+                if (scene.name == "boss")
+                    scene.anims.create({
+                        key: 'player_ultAttackEffect',
+                        frames: scene.anims.generateFrameNumbers('player_ultAttackEffect'),
+                        frameRate: 7,
+                        repeat: 0,
+                    });
 
             };
             animsCreate();
@@ -1049,7 +1052,7 @@ const Player = new Phaser.Class({
             this.dust.originX = !filp;
         }, [], this.scene);
 
-        this.attackEffect.setFlipX(filp);
+        if (this.scene.name != "boss") this.attackEffect.setFlipX(filp);
         // this.attackEffect.originX = filp;//1;
 
         this.bullets.originX = filp;
@@ -1217,8 +1220,6 @@ const Player = new Phaser.Class({
             this.anims.play(attackAnims);
 
 
-
-
         };
 
 
@@ -1238,7 +1239,10 @@ const Player = new Phaser.Class({
             yoyo: true,
             repeat: 10,
             ease: 'Sine.easeInOut',
-            onComplete: () => this.invincibleFlag = false,
+            onComplete: () => {
+                this.invincibleFlag = false;
+                this.play('player_idle', true);
+            },
         });
     },
     // dieHandler: () => {
@@ -1674,38 +1678,41 @@ class Chunk {
         // noise.seed(Math.random());
 
         if (!this.isLoaded) {
+            let tileSize = this.gameScene.tileSize;
+
             // console.debug(this.gameScene.groundY)
             for (var y = 0; y < this.gameScene.chunkSize; y++) {
-                var tileY = (this.y * this.gameScene.chunkWidth) + (y * this.gameScene.tileSize);
+                var tileY = (this.y * this.gameScene.chunkWidth) + (y * tileSize);
                 if (tileY < this.gameScene.groundY) continue;//==地面上不鋪
 
                 for (var x = 0; x < this.gameScene.chunkSize; x++) {
-                    var tileX = (this.x * this.gameScene.chunkWidth) + (x * this.gameScene.tileSize);
+                    var tileX = (this.x * this.gameScene.chunkWidth) + (x * tileSize);
                     if (tileX < 0 || tileX >= this.gameScene.groundW) continue;
 
                     //==魔王城
                     let depthCounter = this.gameScene.depthCounter;
                     let tileXRange = [
-                        Math.floor(this.gameScene.groundW / 4 / this.gameScene.tileSize) * this.gameScene.tileSize,
-                        Math.floor(this.gameScene.groundW / 4 * 3 / this.gameScene.tileSize) * this.gameScene.tileSize];
+                        Math.floor(this.gameScene.groundW / 4 / tileSize) * tileSize,
+                        Math.floor(this.gameScene.groundW / 4 * 3 / tileSize) * tileSize];
 
-                    let ECtileCount = Math.ceil(depthCounter.epicenter / depthCounter.depthScale / this.gameScene.tileSize);
+                    let ECtileCount = Math.ceil(depthCounter.epicenter / depthCounter.depthScale / tileSize);
                     let tileYRange = [
-                        this.gameScene.groundY + (ECtileCount - 7) * this.gameScene.tileSize,
-                        this.gameScene.groundY + ECtileCount * this.gameScene.tileSize];
+                        this.gameScene.groundY + (ECtileCount - 7) * tileSize,
+                        this.gameScene.groundY + ECtileCount * tileSize];
 
+                    //出現門的空白區
                     if (depthCounter.epicenter !== null &&
                         (tileX >= tileXRange[0] && tileX < tileXRange[1]) &&
                         (tileY >= tileYRange[0] && tileY < tileYRange[1])) {
 
-                        let bossX = Math.ceil(tileXRange.reduce((p, c) => (c + p) / 2) / this.gameScene.tileSize) * this.gameScene.tileSize,
-                            bossY = tileYRange[1] - this.gameScene.tileSize;
+                        let bossX = Math.ceil(tileXRange.reduce((p, c) => (c + p) / 2) / tileSize) * tileSize,
+                            bossY = tileYRange[1] - tileSize;
 
                         //門
                         if (tileX == bossX && tileY == bossY) {
-                            console.debug('gate');
-                            let bossCastle = this.gameScene.add.sprite(bossX, bossY + this.gameScene.tileSize * 1.15, 0, 0, 'bossDoor');
-                            let doorW = Math.ceil(bossCastle.width / this.gameScene.tileSize) * this.gameScene.tileSize;
+                            // console.debug('gate');
+                            let bossCastle = this.gameScene.add.sprite(bossX, bossY + tileSize * 1.15, 0, 0, 'bossDoor');
+                            let doorW = Math.ceil(bossCastle.width / tileSize) * tileSize;
 
                             bossCastle
                                 .setScale(doorW / bossCastle.width * 2)
@@ -1723,12 +1730,16 @@ class Chunk {
                             this.gameScene.physics.add.overlap(this.gameScene.player, bossCastle, this.gameScene.player.playerOpenGate, null, this);
 
                         }
+                        // else if (tileX == bossX && tileY == bossY + 60) {
+
+
+                        // }
                         //火把
                         // else if (tileX == bossX - 60 && tileY == bossY) {
-                        //     let bossTorch = this.gameScene.add.sprite(bossX, bossY + this.gameScene.tileSize, 0, 0, 'bossTorch');
+                        //     let bossTorch = this.gameScene.add.sprite(bossX, bossY + tileSize, 0, 0, 'bossTorch');
 
                         //     bossTorch
-                        //         // .setScale(this.gameScene.tileSize / bossTorch.width)
+                        //         // .setScale(tileSize / bossTorch.width)
                         //         .setOrigin(0.5, 1)
                         //         .setDepth(99)
                         //         .play('bossTorch_burn');
@@ -1737,6 +1748,16 @@ class Chunk {
                         // };
                         continue;
 
+                    }
+                    //門下無法破壞石塊
+                    else if (depthCounter.epicenter !== null &&
+                        (tileX >= tileXRange[0] && tileX < tileXRange[1]) &&
+                        (tileY >= tileYRange[0] + 1 * tileSize && tileY < tileYRange[1] + 1 * tileSize)) {
+
+                        var tile = new Tile(this.gameScene, tileX, tileY, "gateStone");
+                        this.tiles.add(tile);
+
+                        continue;
                     };
 
                     // console.debug(tileX, tileY)
@@ -1859,7 +1880,6 @@ class RexTextBox extends RexPlugins.UI.TextBox {
         var wrapWidth = GetValue(config, 'wrapWidth', 0) - iconW;
         var fixedWidth = GetValue(config, 'fixedWidth', 0) - iconW;
         var fixedHeight = GetValue(config, 'fixedHeight', 0);
-
 
         //===textBox config
         let roundCorner = tips ?

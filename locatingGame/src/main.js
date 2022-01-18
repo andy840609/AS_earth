@@ -229,7 +229,6 @@ function locatingGame() {
             let stopClickFlag = false;//==gameOver暫停點擊關卡
             let gameStartFlag = false;//==停止map快捷鍵
 
-
             var gameDisplay = (display) => {
                 if (display) {
                     gameOuterDiv.fadeIn();
@@ -734,7 +733,7 @@ function locatingGame() {
 
                 };
                 async function addUI() {
-                    const ctrlDir = assetsDir + 'ui/controller/';
+                    const ctrlDir = assetsDir + 'ui/map/controller/';
 
                     //===UIBar
                     const UIbuttons = ['playerStats', 'velocityChart'];
@@ -751,7 +750,7 @@ function locatingGame() {
 
                     //===guideArrow
                     const guideArrow = gameUI
-                        .append(`<div class="guideArrow"><img src="${assetsDir}ui/guideArrow.gif"></img></div>`)
+                        .append(`<div class="guideArrow"><img src="${assetsDir}ui/map/guideArrow.gif"></img></div>`)
                         .find('.guideArrow');
 
 
@@ -1051,7 +1050,7 @@ function locatingGame() {
 
                     };
                     var sidekick = () => {
-                        const sidekickDir = assetsDir + 'ui/sidekick/';
+                        const sidekickDir = assetsDir + 'ui/map/sidekick/';
                         const sidekickW = 200;
                         const textBoxW = 500;
 
@@ -1798,7 +1797,6 @@ function locatingGame() {
         console.log(data);
         gameGenerate();
 
-
     };
     //==================d3 chart================================================
     //==取得波形svg圖
@@ -1835,7 +1833,7 @@ function locatingGame() {
             // const height = 600;
             const width = window.innerWidth,
                 height = window.innerHeight;
-            const margin = { top: 30, right: 30, bottom: height * 0.075, left: 30 };
+            const margin = { top: 30, right: 30, bottom: height * 0.075, left: 45 };
             const svg = d3.create("svg")
                 .attr("viewBox", [0, 0, width, height]);
             const xAxis = svg.append("g").attr("class", "xAxis");
@@ -1904,7 +1902,7 @@ function locatingGame() {
 
                 let x = d3.scaleLinear()
                     .domain(xAxisDomain)
-                    .range([margin.right, width - margin.left]);
+                    .range([margin.left, width - margin.right]);
 
                 var updateAxis = () => {
 
@@ -1940,7 +1938,8 @@ function locatingGame() {
                         (height - margin.bottom - margin.top) * 0.8 / 3;
 
                     let y = d3.scaleLinear()
-                        .domain(yAxisDomain);
+                        .domain(yAxisDomain)
+                        .range([eachHeight, 0]);
 
                     let line = d3.line()
                         .defined(d => !isNaN(d.x))
@@ -1950,22 +1949,44 @@ function locatingGame() {
 
                     var makePaths = pathGroup => pathGroup
                         .attr("filter", overview ? null : "url(#pathShadow)")
-                        .selectAll('path')
+                        .selectAll('g')
                         .data(newData)
-                        .join("path")
-                        .style("mix-blend-mode", "luminosity")
-                        .attr("fill", "none")
-                        .attr("stroke-width", overview ? 5 : 2)
-                        .attr("stroke-linejoin", "bevel")//arcs | bevel |miter | miter-clip | round
-                        .attr("stroke-linecap", "butt")//butt,square,round
-                        // .attr("stroke-opacity", 0.9)
-                        .attr("stroke", (d, i) => getColor(i))
-                        .attr("d", (d, i) => {
-                            // console.debug(d, i)
-                            y.range([eachHeight * (i + 1) + margin.top, eachHeight * i + margin.top]);
-                            return line(d.data);
-                        });
+                        .join("g")
+                        .attr("transform", (d, i) => `translate(0,${eachHeight * i + margin.top})`)
+                        .call(gCollection => {
+                            gCollection.each(function (d, i) {
+                                let g = d3.select(this),
+                                    color = getColor(i),
+                                    data = d.data;
 
+                                g
+                                    .append("path")
+                                    .style("mix-blend-mode", "luminosity")
+                                    .attr("fill", "none")
+                                    .attr("stroke-width", overview ? 5 : 2)
+                                    .attr("stroke-linejoin", "bevel")//arcs | bevel |miter | miter-clip | round
+                                    .attr("stroke-linecap", "butt")//butt,square,round
+                                    // .attr("stroke-opacity", 0.9)
+                                    .attr("stroke", color)
+                                    .attr("d", line(data));
+
+                                g
+                                    .append("text")
+                                    .attr("transform", `translate(${margin.left - 2},${y(data[0].y)})`)
+                                    .attr("fill", color)
+                                    .attr("text-anchor", "end")
+                                    // .attr("alignment-baseline", "before-edge")
+                                    .attr("font-weight", "bold")
+                                    .attr("font-size", "20")
+                                    .text(d.channel);
+
+                            })
+
+
+
+
+
+                        });
 
                     pathGroup.call(makePaths);
 
@@ -2401,7 +2422,7 @@ function locatingGame() {
                                     <h5>${GameData.localeJSON.UI['estimatedTime']} : ${timeGap} s</h5>
                                     `);
 
-                                    console.debug();
+                                    // console.debug();
                                 })
 
                         };
@@ -2512,7 +2533,7 @@ function locatingGame() {
                 runDuration = 3000,//3000
                 attackDuration = 1200,
                 fallDuration = 600;
-            const braveDir = assetsDir + 'gameObj/brave/';
+            const braveDir = assetsDir + 'ui/map/brave/';
             const braveW = 70;
             const devilW = 130;
 

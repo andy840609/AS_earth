@@ -139,7 +139,11 @@ const GameObjectStats = {
         },
         sprWater: {
             hardness: 1,
-        }
+        },
+        gateStone: {
+            hardness: 999,
+        },
+
     },
 };
 
@@ -433,7 +437,7 @@ const Enemy = new Phaser.Class({
                 .setScale(2)
                 .setOrigin(0.4)
                 .setPosition(canvas.width * 0.8 + 30 * i, canvas.height * 0.8)
-                .setDepth(9)
+                .setDepth(scene.Depth.enemy)
                 .setPushable(false)
                 // .setImmovable(true)
                 .setName(key)
@@ -1012,8 +1016,7 @@ const Player = new Phaser.Class({
                 maxSize: stats.class == 0 ? 1 : 5,
                 runChildUpdate: true,
                 // maxVelocityY: 0,
-            })
-                .setOrigin(1, 0);
+            }).setOrigin(1, 0);
 
 
             //===init effect sprite
@@ -1495,11 +1498,9 @@ const Sidekick = new Phaser.Class({
             const replaceStr = '\t';
             const controllCursor = scene.gameData.controllCursor;
 
-
             let hintType = Phaser.Math.Between(0, 1),  //==0:提示 1:閒聊
                 hintIdx = Phaser.Math.Between(0, this.hintAmount[hintType]),
                 hint = '';
-
 
             switch (scene.name) {
                 case 'defend':
@@ -1523,7 +1524,9 @@ const Sidekick = new Phaser.Class({
 
                     break;
                 case 'dig':
+
                     if (hintType) {
+                        //==隨機選到隱藏對話就從其他隨機挑一次
                         hintIdx = hintIdx == 0 ? Phaser.Math.Between(1, this.hintAmount[hintType]) : hintIdx;
                     };
 
@@ -1650,7 +1653,16 @@ class Chunk {
         this.gameScene = scene;
         this.x = x;
         this.y = y;
-        this.tiles = scene.physics.add.staticGroup();
+        // this.tiles = scene.physics.add.staticGroup({
+        //     allowGravity: false,
+        //     immovable: true
+        // });
+
+        //==staticGroup touching不會更新(碰過就一直判斷成touching)
+        this.tiles = scene.physics.add.group({
+            allowGravity: false,
+            immovable: true
+        });
 
         //==碰撞
         scene.physics.add.collider(this.gameScene.player, this.tiles, this.gameScene.player.playerDig, null, this);
@@ -1674,13 +1686,9 @@ class Chunk {
     };
 
     load() {
-
-        // noise.seed(Math.random());
-
         if (!this.isLoaded) {
             let tileSize = this.gameScene.tileSize;
 
-            // console.debug(this.gameScene.groundY)
             for (var y = 0; y < this.gameScene.chunkSize; y++) {
                 var tileY = (this.y * this.gameScene.chunkWidth) + (y * tileSize);
                 if (tileY < this.gameScene.groundY) continue;//==地面上不鋪
@@ -1688,6 +1696,11 @@ class Chunk {
                 for (var x = 0; x < this.gameScene.chunkSize; x++) {
                     var tileX = (this.x * this.gameScene.chunkWidth) + (x * tileSize);
                     if (tileX < 0 || tileX >= this.gameScene.groundW) continue;
+
+
+                    //==地磚
+                    let key, animationKey;
+
 
                     //==魔王城
                     let depthCounter = this.gameScene.depthCounter;
@@ -1698,42 +1711,45 @@ class Chunk {
                     let ECtileCount = Math.ceil(depthCounter.epicenter / depthCounter.depthScale / tileSize);
                     let tileYRange = [
                         this.gameScene.groundY + (ECtileCount - 7) * tileSize,
-                        this.gameScene.groundY + ECtileCount * tileSize];
+                        this.gameScene.groundY + (ECtileCount + 1) * tileSize];
 
-                    //出現門的空白區
+                    //出現門的區域(包含地板)
                     if (depthCounter.epicenter !== null &&
                         (tileX >= tileXRange[0] && tileX < tileXRange[1]) &&
                         (tileY >= tileYRange[0] && tileY < tileYRange[1])) {
 
                         let bossX = Math.ceil(tileXRange.reduce((p, c) => (c + p) / 2) / tileSize) * tileSize,
-                            bossY = tileYRange[1] - tileSize;
+                            bossY = tileYRange[1] - tileSize * 2;
 
                         //門
                         if (tileX == bossX && tileY == bossY) {
-                            // console.debug('gate');
-                            let bossCastle = this.gameScene.add.sprite(bossX, bossY + tileSize * 1.15, 0, 0, 'bossDoor');
+                            // console.debug(this);
+                            let bossCastle = this.gameScene.physics.add.sprite(bossX, bossY + tileSize * 1.15, 0, 0, 'bossDoor');
                             let doorW = Math.ceil(bossCastle.width / tileSize) * tileSize;
 
                             bossCastle
                                 .setScale(doorW / bossCastle.width * 2)
                                 .setOrigin(0.5, 1)
-                                .setDepth(9)
+                                .setDepth(this.gameScene.Depth.gate)
                                 .play('bossDoor_shine');
 
-                            this.gameScene.physics.world.enable(bossCastle, 1);
-
-                            let bodySizeW = bossCastle.displayWidth * 0.6;
                             bossCastle.body
-                                .setSize(bodySizeW, bodySizeW)
-                                .setOffset(bossCastle.displayWidth * 0.2, bossCastle.displayWidth * 0.38);
+                                .setAllowGravity(false)
+                                .setImmovable(true)
+                                .setSize(doorW, doorW)
+                                .setOffset(bossCastle.body.offset.x, doorW * 0.6);
 
-                            this.gameScene.physics.add.overlap(this.gameScene.player, bossCastle, this.gameScene.player.playerOpenGate, null, this);
-
+                            // this.gameScene.physics.add.overlap(this.gameScene.player, bossCastle, this.gameScene.player.playerOpenGate, null, this);
+                            this.gameScene.physics.add.overlap(this.gameScene.player, bossCastle);
+                            this.gameScene.bossCastle = bossCastle;
                         }
-                        // else if (tileX == bossX && tileY == bossY + 60) {
-
-
-                        // }
+                        //門下一排石塊
+                        else if ((tileX >= tileXRange[0] && tileX < tileXRange[1]) &&
+                            tileY == tileYRange[1] - tileSize) {
+                            //門下無法破壞石塊
+                            key = (tileX >= bossX - 3 * tileSize && tileX < bossX + 3 * tileSize) ?
+                                "gateStone" : "";
+                        };
                         //火把
                         // else if (tileX == bossX - 60 && tileY == bossY) {
                         //     let bossTorch = this.gameScene.add.sprite(bossX, bossY + tileSize, 0, 0, 'bossTorch');
@@ -1746,67 +1762,56 @@ class Chunk {
 
                         //     console.debug(tileX, tileY)
                         // };
-                        continue;
 
-                    }
-                    //門下無法破壞石塊
-                    else if (depthCounter.epicenter !== null &&
-                        (tileX >= tileXRange[0] && tileX < tileXRange[1]) &&
-                        (tileY >= tileYRange[0] + 1 * tileSize && tileY < tileYRange[1] + 1 * tileSize)) {
-
-                        var tile = new Tile(this.gameScene, tileX, tileY, "gateStone");
-                        this.tiles.add(tile);
-
-                        continue;
+                        if (key === undefined) continue;
+                        // console.debug(key);
                     };
 
                     // console.debug(tileX, tileY)
                     var perlinValue = noise.perlin2(tileX / 100, tileY / 100);
                     // Math.abs(perlinValue) > 0.7 ? console.debug('high : ' + perlinValue.toFixed(2)) : console.debug(perlinValue);
 
-                    var key = "";
-                    var animationKey = "";
 
                     //==terrain1:沉積岩 terrain2:火成岩 terrain3:花崗岩 sprSand sprWater
-
-                    if (tileY <= this.yRange[0]) {
-                        if (perlinValue < this.pRange[0])
-                            key = "sprSand"
-                        else if (perlinValue < this.pRange[1]) {
+                    if (key == "" || !key)
+                        if (tileY <= this.yRange[0]) {
+                            if (perlinValue < this.pRange[0])
+                                key = "sprSand"
+                            else if (perlinValue < this.pRange[1]) {
+                                key = "sprWater";
+                                animationKey = "sprWater";
+                            }
+                            else
+                                key = "terrain1";
+                        }
+                        else if (tileY <= this.yRange[1]) {
+                            if (perlinValue < this.pRange[0])
+                                key = "sprSand"
+                            else if (perlinValue < this.pRange[1]) {
+                                key = "sprWater";
+                                animationKey = "sprWater";
+                            }
+                            else
+                                key = "terrain2";
+                        }
+                        else if (tileY <= this.yRange[2]) {
+                            if (perlinValue < this.pRange[0])
+                                key = "sprSand"
+                            else if (perlinValue < this.pRange[1]) {
+                                key = "sprWater";
+                                animationKey = "sprWater";
+                            }
+                            else
+                                key = "terrain3";
+                        }
+                        else {
                             key = "sprWater";
                             animationKey = "sprWater";
-                        }
-                        else
-                            key = "terrain1";
-                    }
-                    else if (tileY <= this.yRange[1]) {
-                        if (perlinValue < this.pRange[0])
-                            key = "sprSand"
-                        else if (perlinValue < this.pRange[1]) {
-                            key = "sprWater";
-                            animationKey = "sprWater";
-                        }
-                        else
-                            key = "terrain2";
-                    }
-                    else if (tileY <= this.yRange[2]) {
-                        if (perlinValue < this.pRange[0])
-                            key = "sprSand"
-                        else if (perlinValue < this.pRange[1]) {
-                            key = "sprWater";
-                            animationKey = "sprWater";
-                        }
-                        else
-                            key = "terrain3";
-                    }
-                    else {
-                        key = "sprWater";
-                        animationKey = "sprWater";
-                    };
+                        };
 
                     var tile = new Tile(this.gameScene, tileX, tileY, key);
 
-                    if (animationKey !== "") {
+                    if (animationKey) {
                         tile.play(animationKey);
                     };
 
@@ -1827,7 +1832,6 @@ class Tile extends Phaser.GameObjects.Sprite {
 
         //==custom
         this.attribute = { ...GameObjectStats.tile[key] };//JSON.parse(JSON.stringify(tmp))
-
 
     };
 };
@@ -1957,7 +1961,7 @@ class RexTextBox extends RexPlugins.UI.TextBox {
 
                 }, this)
                 .on('pageend', function () {
-                    // if (this.isLastPage) return;
+                    if (this.isLastPage && config.pageendEvent) return;
 
                     let action = this.getElement('action');
                     action.setVisible(true);
@@ -1998,10 +2002,16 @@ class RexTextBox extends RexPlugins.UI.TextBox {
 
 //==問答UI
 class RexDialog extends RexPlugins.UI.Dialog {
-    constructor(scene, x, y, data, locale, resolve) {
+    constructor(scene, x, y, config, resolve) {
+        // console.debug(scene, x, y, config, resolve);
+
+        var data = config.data,
+            locale = config.locale,
+            bossQuiz = config.bossQuiz;
+
         const
-            COLOR_PRIMARY = 0x333333,//==box背景色
-            COLOR_LIGHT = 0x7A7A7A,//==選項顏色
+            COLOR_PRIMARY = bossQuiz ? 0x333333 : 0x003c8f,//==box背景色
+            COLOR_LIGHT = bossQuiz ? 0x7A7A7A : 0x1565c0,//==選項顏色
             COLOR_DARK = 0xD0B625,//==標題顏色
             COLOR_CORRECT = 0x009100,
             COLOR_WRONG = 0x750000;
@@ -2012,6 +2022,7 @@ class RexDialog extends RexPlugins.UI.Dialog {
             top: 3,
             bottom: 3,
         };
+
 
         var createLabel = (scene, text, backgroundColor) => {
             return new RexPlugins.UI.Label(scene, {
@@ -2026,41 +2037,55 @@ class RexDialog extends RexPlugins.UI.Dialog {
                     top: 10,
                     bottom: 10
                 },
+                align: bossQuiz ? 'left' : 'center',
             });
         };
         var setDialog = (data) => {
             // console.debug(scene);
+            if (bossQuiz) {
+                //==分行
+                const
+                    charInLine = locale == "zh-TW" ? 8 : 15,//每行字數
+                    lineCount = parseInt((data.content.length - 1) / charInLine);//總行數
+                let newStr = lineCount ? '' : data.content;
+                for (let i = 0; i < lineCount; i++) {
+                    let lastIdx = (i + 1) * charInLine;
 
-            //==分行
-            const
-                charInLine = locale == "zh-TW" ? 8 : 15,//每行字數
-                lineCount = parseInt((data.content.length - 1) / charInLine);//總行數
-            let newStr = lineCount ? '' : data.content;
-            for (let i = 0; i < lineCount; i++) {
-                let lastIdx = (i + 1) * charInLine;
-
-                let line = data.content.slice(i * charInLine, lastIdx) + '\n';
-                if (i == lineCount - 1) line += data.content.slice(lastIdx);//==不足一行
-                newStr += line;
-            };
-            // console.debug(data, data.content);
-
-            // Set content
-            this.getElement('content').text = newStr;
-            // Set title
-            this.getElement('title').text = GetValue(data, 'title', ' ');
-            // Set choices
-            var choiceTextArray = GetValue(data, 'choices', []).sort(() => 0.5 - Math.random());
-            var choiceText;
-            var choices = this.getElement('choices');
-            for (var i = 0, cnt = choices.length; i < cnt; i++) {
-                choiceText = choiceTextArray[i];
-                if (choiceText != null) {
-                    this.showChoice(i);
-                    choices[i].text = choiceText;
-                } else {
-                    this.hideChoice(i);
+                    let line = data.content.slice(i * charInLine, lastIdx) + '\n';
+                    if (i == lineCount - 1) line += data.content.slice(lastIdx);//==不足一行
+                    newStr += line;
                 };
+                // console.debug(data, data.content);
+
+                // Set content
+                this.getElement('content').text = newStr;
+                // Set title
+                this.getElement('title').text = GetValue(data, 'title', ' ');
+                // Set choices
+                var choiceTextArray = GetValue(data, 'choices', []).sort(() => 0.5 - Math.random());
+                var choiceText;
+                var choices = this.getElement('choices');
+                for (var i = 0, cnt = choices.length; i < cnt; i++) {
+                    choiceText = choiceTextArray[i];
+                    if (choiceText != null) {
+                        this.showChoice(i);
+                        choices[i].text = choiceText;
+                    } else {
+                        this.hideChoice(i);
+                    };
+                };
+            }
+            else {
+                this.getElement('content').text = data.question;
+                this.getElement('actions').forEach((ele, i) => Object.assign(ele, {
+                    minWidth: 80,  //===每個選項長度一樣
+                    text: data.options[i],
+                }));
+                // this.getElement('actions').forEach((ele, i) =>
+                //     ele.text = data.options[i].length < maxLength ?
+                //         data.options[i] + Array.from(new Array(maxLength - data.options[i].length), () => "  ").join("") :
+                //         data.options[i]
+                // );
             };
             return this;
         };
@@ -2071,19 +2096,28 @@ class RexDialog extends RexPlugins.UI.Dialog {
         const dialogConfig = {
             x: x,
             y: y,
-            width: 360,
+            width: bossQuiz ? 360 : false,
             background: scene.add.existing(rexRect),
-            title: scene.add.existing(createLabel(scene, ' ', COLOR_DARK)),
-            content: scene.add.text(0, 0, ' ', {
+            title: bossQuiz ? scene.add.existing(createLabel(scene, ' ', COLOR_DARK)) : null,
+            content: scene.add.text(0, 0, '', {
                 fontSize: '36px',
                 padding: padding,
             }),
-            choices: [
-                createLabel(scene, ' ', COLOR_LIGHT),
-                createLabel(scene, ' ', COLOR_LIGHT),
-                createLabel(scene, ' ', COLOR_LIGHT),
-                createLabel(scene, ' ', COLOR_LIGHT),
-            ],
+            choices: bossQuiz ?
+                [
+                    createLabel(scene, ' ', COLOR_LIGHT),
+                    createLabel(scene, ' ', COLOR_LIGHT),
+                    createLabel(scene, ' ', COLOR_LIGHT),
+                    createLabel(scene, ' ', COLOR_LIGHT),
+                ] : false,
+            actions: !bossQuiz ?
+                [
+                    createLabel(scene, '', COLOR_LIGHT),
+                    createLabel(scene, '', COLOR_LIGHT)
+                ] : false,
+            align: !bossQuiz ? {
+                actions: 'right', // 'center'|'left'|'right'
+            } : false,
             space: {
                 title: 25,
                 content: 25,
@@ -2097,6 +2131,7 @@ class RexDialog extends RexPlugins.UI.Dialog {
             },
             expand: {
                 content: false,  // Content is a pure text object
+                // actions: true,
             }
         };
 
@@ -2104,40 +2139,54 @@ class RexDialog extends RexPlugins.UI.Dialog {
 
         this.isClicked = false;
         this
-            .setOrigin(0.5)
-            .layout()
+            // .setOrigin(0.5)
+            // .layout()
             .on('button.click', (button, groupName, index) => {
                 // console.debug();
                 if (this.isClicked) return;
-                let text = this.getElement('choices[' + index + ']').text;
-                let correct = (text == data.answer);
-                let color = correct ? COLOR_CORRECT : COLOR_WRONG;
 
-                const duration = 500;
-                button.getElement('background').setFillStyle(color);
+                let answer, tweenTarget, duration;
 
-                let sign = scene.add.image(button.x + button.displayWidth * 0.5, button.y, 'quiz' + (correct ? 'Correct' : 'Wrong'))
-                    .setScale(0.1)
-                    .setDepth(button.depth + 1);
+                if (bossQuiz) {
+                    let text = this.getElement('choices[' + index + ']').text;
+                    answer = (text == data.answer);
 
-                scene.tweens.add({
-                    targets: sign,
-                    y: { start: button.y - 50, to: button.y },
-                    ease: 'Cubic', // 'Cubic', 'Elastic', 'Bounce', 'Back'
-                    duration: duration,
-                });
+                    let color = answer ? COLOR_CORRECT : COLOR_WRONG;
 
+                    button.getElement('background').setFillStyle(color);
+
+                    let sign = scene.add.image(button.x + button.displayWidth * 0.5, button.y, 'quiz' + (answer ? 'Correct' : 'Wrong'))
+                        .setScale(0.1)
+                        .setDepth(button.depth + 1);
+
+                    duration = 500;
+                    //V or X
+                    scene.tweens.add({
+                        targets: sign,
+                        y: { start: button.y - 50, to: button.y },
+                        ease: 'Cubic', // 'Cubic', 'Elastic', 'Bounce', 'Back'
+                        duration: duration,
+                    });
+
+                    tweenTarget = [this, sign];
+                } else {
+                    duration = 80;
+                    answer = !index;
+                    tweenTarget = [this];
+
+                };
+
+                //視窗縮小
                 scene.time.delayedCall(duration * 2, () => {
                     scene.tweens.add({
-                        targets: [this, sign],
+                        targets: tweenTarget,
                         scaleX: { start: t => t.scaleX, to: 0 },
                         scaleY: { start: t => t.scaleY, to: 0 },
                         ease: 'Bounce', // 'Cubic', 'Elastic', 'Bounce', 'Back'
                         duration: duration,
                         onComplete: () => {
-                            this.destroy();
-                            sign.destroy();
-                            resolve(correct);
+                            tweenTarget.forEach(t => t.destroy());
+                            resolve(answer);
                         },
                     });
                 }, [], scene);
@@ -2156,6 +2205,8 @@ class RexDialog extends RexPlugins.UI.Dialog {
             });
 
         setDialog(data).layout();
+
+
 
     };
 

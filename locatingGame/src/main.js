@@ -1623,7 +1623,12 @@ function locatingGame() {
                                 replaceHTML = `<img src='${assetsDir}ui/map/chartHandle.png' width='50px'></img>`;
                                 line = line.replace('\t', replaceHTML);
                                 break;
-
+                            case '5_2':
+                                replaceHTML = `<img src='${assetsDir}ui/map/chartHandle.png' width='50px'></img>`;
+                                line = line.replace('\t', replaceHTML);
+                                replaceHTML = `<img src='${assetsDir}icon/home_clear.png' width='50px'></img>`;
+                                line = line.replace('\t', replaceHTML);
+                                break;
                             // case '3_1':
                             //     break;
                         };
@@ -1753,7 +1758,7 @@ function locatingGame() {
                         updateMapUI(playerInfo, 1000);
                     }
 
-                    // === 進王關
+                    //=== 進王關
                     if (gameResult.bossRoom) {//gameResult.bossRoom
                         const backgroundArr = Object.keys(BackGroundResources.boss);
                         let background = backgroundArr[getRandom(backgroundArr.length)];
@@ -1779,7 +1784,10 @@ function locatingGame() {
                             return;
                         };
 
-                    };
+                    }
+                    else { //=== 沒找到
+                        updateSidekick(5, 0);
+                    }
                 };
                 gameDisplay(false);
 

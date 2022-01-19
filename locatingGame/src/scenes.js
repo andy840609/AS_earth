@@ -1051,8 +1051,6 @@ class UIScene extends Phaser.Scene {
                 preload = () => { };
                 create = () => {
                     let x = 20, y = 300;
-
-
                     var initRuler = () => {
                         this.add.image(x, y, 'depthRuler')
                             .setScale(0.2, 0.3)
@@ -1100,6 +1098,7 @@ class UIScene extends Phaser.Scene {
                                 fixedWidth: DLconfig.dialogWidth,
                                 fixedHeight: DLconfig.dialogHeight,
                                 character: DLconfig.character,
+                                pageendEvent: DLconfig.pageendEvent ? DLconfig.pageendEvent : false,
                             }, resolve)
                                 .setDepth(Depth.UI)
                                 .start(content, 50);
@@ -1107,11 +1106,15 @@ class UIScene extends Phaser.Scene {
                         };
 
                         //==問答題
-                        if (gameScene.name == 'boss')
-                            this.newQuiz = (data, resolve) => {
-                                new RexDialog(this, DLconfig.dialogX, DLconfig.dialogY * 0.5, data, gameScene.gameData.locale, resolve)
-                                    .setDepth(Depth.UI);
-                            };
+                        this.newQuiz = (data, bossQuiz = true, resolve) => {
+                            new RexDialog(this, DLconfig.dialogX, DLconfig.dialogY * 0.5, {
+                                data: data,
+                                locale: gameScene.gameData.locale,
+                                bossQuiz: bossQuiz,
+                            }, resolve)
+                                .setDepth(Depth.UI)
+                                .popUp(500);
+                        };
                     };
                     var guideSword = () => {
                         if (gameScene.name == 'boss' || !gameScene.firstTimeEvent.isFirstTime) return;
@@ -1744,7 +1747,7 @@ class GameOverScene extends Phaser.Scene {
         });
     };
     preload() {
-        const UIDir = assetsDir + 'ui/';
+        const UIDir = assetsDir + 'ui/game/Transitions/';
         this.load.image('gameOverScene', UIDir + 'gameOverScene.jpg');
         this.load.image('startButton', UIDir + 'startButton.png');
 
@@ -2317,7 +2320,7 @@ class DefendScene extends Phaser.Scene {
 
         //==第一次有對話
         let lineStage = GameData.sidekick.lineStage[0],
-            firstTimeEvent = lineStage == 999;//1
+            firstTimeEvent = lineStage == 1;//1
 
 
         // console.debug(lineStage);
@@ -2901,7 +2904,7 @@ class DefendScene extends Phaser.Scene {
 
                         guideSword
                             .setPosition(timerUI.hourglass.x + swordWidth * 1.3, timerUI.hourglass.y);
-                        await new Promise(resolve => this.dialogUI.newDialog(content[4], { character: 'sidekick' }, resolve));
+                        await new Promise(resolve => this.dialogUI.newDialog(content[4], { character: 'sidekick', pageendEvent: true }, resolve));
 
                         // console.debug(timerUI);
 
@@ -2928,9 +2931,9 @@ class DefendScene extends Phaser.Scene {
 
                     //==停頓在說
                     await new Promise(resolve => this.time.delayedCall(speakDelay * 0.5, () => resolve()));
-                    await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[5], { character: 'sidekick' }, resolve));
-                    await new Promise(resolve => this.dialogUI.newDialog(enemyContent[0], { character: 'enemy' }, resolve));
-                    await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[6], { character: 'sidekick' }, resolve));
+                    await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[5], { character: 'sidekick', pageendEvent: true }, resolve));
+                    await new Promise(resolve => this.dialogUI.newDialog(enemyContent[0], { character: 'enemy', pageendEvent: true }, resolve));
+                    await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[6], { character: 'sidekick', pageendEvent: true }, resolve));
 
                     this.firstTimeEvent.eventComplete = true;
                     this.gameTimer.paused = false;//==時間繼續
@@ -2991,7 +2994,6 @@ class DefendScene extends Phaser.Scene {
 
             camera.pan(this.player.x, this.player.y, gameDestroyDelay * 0.5, 'Back', true);
             camera.zoomTo(5, gameDestroyDelay * 0.5);
-
 
             //==
             // camera.on("PAN_COMPLETE", (e) => {
@@ -3231,7 +3233,6 @@ class DigScene extends Phaser.Scene {
                 this.chunkWidth = this.chunkSize * this.tileSize;
                 // this.chunkWidth = this.chunkSize * this.tileSize;
 
-
                 let seed = Math.abs(this.depthCounter.coordinate.reduce((p, c) => parseFloat(p) + parseFloat(c))) * 200;
                 noise.seed(seed);//==以座標當亂數因子
                 // console.debug(this.depthCounter.coordinate, seed);
@@ -3280,12 +3281,6 @@ class DigScene extends Phaser.Scene {
                 .setPosition(width * 0.5, 0)
                 .setDepth(Depth.player);
 
-            // console.debug(this.player);
-
-            // this.player.body
-            // .setGravityY(2000)
-            // .setMaxVelocity(0);
-
             Object.assign(this.player, {
                 diggingFlag: false,
                 diggingHadler: (player, tile) => {
@@ -3293,12 +3288,16 @@ class DigScene extends Phaser.Scene {
                     player.body.reset(player.x, player.y);
                     player.play('player_specialAttack');
                     player.stopCursorsFlag = true;
-                    console.debug(tile.attribute.hardness);
+                    // console.debug(tile.attribute.hardness);
+
+                    // console.debug(tile);
+                    // let touching = tile.body.touching;
+                    // console.debug(`left:${touching.left},right:${touching.right},up:${touching.up},down:${touching.down}`);
 
                     this.time.delayedCall(player.stats.attackSpeed, () => {
                         player.diggingFlag = false;
-                        // tile.attribute.hardness--;
                         if (--tile.attribute.hardness <= 0) tile.destroy();
+                        player.setVelocityY(400);
                         player.stopCursorsFlag = false;
                     }, [], this);
                 },
@@ -3321,23 +3320,50 @@ class DigScene extends Phaser.Scene {
                     // else if (cursors[controllCursor['up']].isDown) {
                     //     // console.debug(tile.body)
                     //     if (tile.body.touching.down) player.diggingHadler(player, tile);
-
                     // };
 
                 },
-                playerOpenGate: (player, gate) => {
-                    // if (this.tile) return;
-                    // console.debug(player, gate);
+                playerOpenGate: async () => {
+
+                    this.player
+                        .setVelocityX(0)
+                        .play('player_idle', true);
+
+                    // player.body.touching.down = false;//碰到門會無限二段跳
+                    // player.doublejumpFlag = false;
+
+                    const localeJSON = this.gameData.localeJSON;
+
+                    //==助手對話
+                    if (!this.sidekick.gateEventFlag) {
+                        let sidekickContent = localeJSON.Lines.sidekick['dig'];
+
+                        await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[4], {
+                            character: 'sidekick',
+                            pageendEvent: true,
+                        }, resolve));
+
+                        this.sidekick.gateEventFlag = true;
+                    };
+
 
                     //==玩家選擇進入
-                    if (1) {
+                    let questionData = {
+                        question: localeJSON.UI['enterGate'],
+                        options: [localeJSON.UI['yes'], localeJSON.UI['no']],
+                    };
+
+                    let enter = await new Promise(resolve => this.dialogUI.newQuiz(questionData, false, resolve));
+
+                    if (enter) {
                         const doorDelay = 1300;
-                        gate.play('bossDoor_open', true)
-                        gate.body.enable = false;
+                        this.bossCastle.play('bossDoor_open', true);
                         this.depthCounter.bossRoom = true;
 
                         this.time.delayedCall(doorDelay, () => this.gameOver.flag = true, [], this);
-                    };
+                    } else {
+                        this.player.stopCursorsFlag = false;
+                    }
 
 
                 },
@@ -3408,18 +3434,21 @@ class DigScene extends Phaser.Scene {
                         frameRate: 3,
                         repeat: 0,
                     });
-                    this.anims.create({
-                        key: 'bossTorch_burn',
-                        frames: this.anims.generateFrameNumbers('bossTorch'),
-                        frameRate: 3,
-                        repeat: -1,
-                    });
+                    // this.anims.create({
+                    //     key: 'bossTorch_burn',
+                    //     frames: this.anims.generateFrameNumbers('bossTorch'),
+                    //     frameRate: 3,
+                    //     repeat: -1,
+                    // });
                 };
                 animsCreate();
             };
         };
         var initDialog = () => {
             this.scene.add(null, new UIScene('dialogUI', this), true);
+
+            if (this.firstTimeEvent.isFirstTime)
+                this.scene.add(null, new UIScene('blackOut', this), true);
         };
 
         //==gameScene
@@ -3439,21 +3468,70 @@ class DigScene extends Phaser.Scene {
         //==第一次的對話
         var firstTimeEvent = () => {
             if (this.firstTimeEvent.isFirstTime) {
-                const speakDelay = 1300;
-
                 this.gameTimer.paused = true;//==說話時暫停
+                const speakDelay = 700;
+
+                let tutorial = (content) => {
+                    return new Promise(async (r) => {
+                        //各個UIScene
+                        let blackOut = this.blackOut;
+                        let dialogUI = this.dialogUI;
+                        let iconBar = this.game.scene.getScene('iconBar');
+                        let detectorUI = this.game.scene.getScene('detectorUI');
+                        let depthCounterUI = this.game.scene.getScene('depthCounterUI');
+                        // let timerUI = this.game.scene.getScene('timerUI');
+
+                        let guideSword = dialogUI.guideSword.setAlpha(1),
+                            swordWidth = guideSword.displayWidth,
+                            swordHeight = guideSword.displayHeight;
+
+                        blackOut.scene.setVisible(true);
+                        // console.debug(detectorUI);
+
+                        //==1.說明小地圖
+                        blackOut.scene.bringToTop();
+                        detectorUI ?
+                            detectorUI.scene.bringToTop() :
+                            detectorUI = this.scene.add(null, new UIScene('detectorUI', this), true);
+                        dialogUI.scene.bringToTop();
+
+                        guideSword
+                            .setPosition(detectorUI.detector.x, detectorUI.detector.y);
+                        await new Promise(resolve => this.dialogUI.newDialog(content[1], { character: 'sidekick' }, resolve));
+
+                        //==2.深度
+                        blackOut.scene.bringToTop();
+                        depthCounterUI.scene.bringToTop();
+                        dialogUI.scene.bringToTop();
+
+                        guideSword
+                            .setFlipX(true)
+                            .setPosition(this.depthCounter.text.x + swordWidth, this.depthCounter.text.y);
+                        await new Promise(resolve => this.dialogUI.newDialog(content[2], { character: 'sidekick' }, resolve));
+
+                        iconBar.scene.bringToTop();//不讓探測器蓋過
+                        blackOut.scene.remove();
+                        guideSword.destroy();
+                        r();
+                    });
+                };
                 this.time.delayedCall(speakDelay, async () => {
+
                     //==對話完才開始
                     let lines = this.gameData.localeJSON.Lines;
                     let sidekickContent = lines.sidekick['dig'];
-                    let enemyContent = lines.enemy;
 
-                    await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[0], { character: 'sidekick' }, resolve));
+                    //==填入名子
+                    let intro = sidekickContent[0].replace('\t', '');
+                    await new Promise(resolve => this.dialogUI.newDialog(intro, { character: 'sidekick' }, resolve));
+                    await tutorial(sidekickContent);
+                    await new Promise(resolve => this.dialogUI.newDialog(sidekickContent[3], { character: 'sidekick', pageendEvent: true }, resolve));
 
                     this.firstTimeEvent.eventComplete = true;
                     this.gameTimer.paused = false;//==時間繼續
-                }, [], this);
+                    // this.gameData.sidekick.lineStage = [5, 0];//下次不再說一次
 
+                }, [], this);
                 this.firstTimeEvent.isFirstTime = false;
             };
         };
@@ -3509,13 +3587,31 @@ class DigScene extends Phaser.Scene {
 
 
         };
+        var updateGate = () => {
+            var touching = !this.bossCastle.body.touching.none;// || this.bossCastle.body.embedded
+            var wasTouching = !this.bossCastle.body.wasTouching.none;
+
+            if (touching && !wasTouching) {
+                // console.debug("overlapstart");
+                if (this.player.stopCursorsFlag) return;
+                this.player.stopCursorsFlag = true;
+                this.player.playerOpenGate();
+            };
+            // else if (!touching && wasTouching) {
+            //     // console.debug("overlapend");
+
+            // };
+
+        };
+
 
         updateChunks();
         firstTimeEvent();
-        if (!this.firstTimeEvent.eventComplete) return;
+        if (!this.firstTimeEvent.eventComplete && !this.gameOver.flag) return;
 
         updatePlayer();
         updateSidekick();
+        if (this.depthCounter.epicenter !== null) updateGate();
 
         if (this.gameOver.flag) {
             const gameDestroyDelay = 2000;
@@ -3613,6 +3709,7 @@ class BossScene extends Phaser.Scene {
         const height = canvas.height;
         const localeJSON = this.gameData.localeJSON;
         const Depth = {
+            gate: 5,
             tips: 6,
             flame: 8,
             player: 10,
@@ -3954,7 +4051,10 @@ class BossScene extends Phaser.Scene {
                 var bossContent = localeJSON.Lines.boss[0];
                 this.time.delayedCall(speakDelay, async () => {
                     //==對話完才開始問題
-                    await new Promise(resolve => this.dialogUI.newDialog(bossContent, { character: 'boss' }, resolve));
+                    await new Promise(resolve => this.dialogUI.newDialog(bossContent, {
+                        character: 'boss',
+                        pageendEvent: true,
+                    }, resolve));
                     this.gameTimer.paused = false;
                     boss.play('boss_Idle');
                     this.time.delayedCall(animeDelay, () => initQuiz(), [], this);
@@ -4096,10 +4196,11 @@ class BossScene extends Phaser.Scene {
                 });
             };
             var showQuiz = async () => {
-                let correct = await new Promise(resolve => this.dialogUI.newQuiz(getQuiz(), resolve));
+                let correct = await new Promise(resolve => this.dialogUI.newQuiz(getQuiz(), true, resolve));
                 await new Promise(resolve => this[correct ? 'player' : 'boss'].attackAnims(resolve));
 
                 if (this.boss.stats.HP > 0) showQuiz();
+
                 // console.debug('hp :' + this.boss.stats.HP);
             };
             showQuiz();

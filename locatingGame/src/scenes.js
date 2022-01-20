@@ -13,6 +13,7 @@ class UIScene extends Phaser.Scene {
             UI: 20,
             tooltip: 30,
         };
+
         const controllCursor = gameScene.gameData.controllCursor;
         const UItextJSON = gameScene.gameData.localeJSON.UI;
 
@@ -1072,77 +1073,12 @@ class UIScene extends Phaser.Scene {
                     var updateCounter = () => {
 
                         let depth = gameScene.player.y + gameScene.player.height * 0.5 - gameScene.groundY;
-                        depth = depth < 0 ? 0 : ((depth * depthScale).toFixed(2));
-                        gameScene.depthCounter.text.setText(depth + ' km');
+                        depth = depth < 0 ? 0 : depth * depthScale;
+                        gameScene.depthCounter.text.setText(depth.toFixed(2) + ' km');
+                        gameScene.depthCounter.depthCount = depth;
                     };
                     updateCounter();
                 };
-                break;
-            case 'dialogUI':
-                const DLconfig = {
-                    dialogX: width * 0.5,
-                    dialogY: height * 0.8,
-                    dialogWidth: width * 0.7,
-                    dialogHeight: height * 0.2,
-                };
-
-                preload = () => { };
-                create = () => {
-                    var addDialog = () => {
-                        this.newDialog = (content, config = null, resolve = null) => {
-                            //==新設定
-                            if (config) Object.assign(DLconfig, config);
-
-                            new RexTextBox(this, DLconfig.dialogX, DLconfig.dialogY, {
-                                wrapWidth: DLconfig.dialogWidth,
-                                fixedWidth: DLconfig.dialogWidth,
-                                fixedHeight: DLconfig.dialogHeight,
-                                character: DLconfig.character,
-                                pageendEvent: DLconfig.pageendEvent ? DLconfig.pageendEvent : false,
-                            }, resolve)
-                                .setDepth(Depth.UI)
-                                .start(content, 50);
-
-                        };
-
-                        //==問答題
-                        this.newQuiz = (data, bossQuiz = true, resolve) => {
-                            new RexDialog(this, DLconfig.dialogX, DLconfig.dialogY * 0.5, {
-                                data: data,
-                                locale: gameScene.gameData.locale,
-                                bossQuiz: bossQuiz,
-                            }, resolve)
-                                .setDepth(Depth.UI)
-                                .popUp(500);
-                        };
-                    };
-                    var guideSword = () => {
-                        if (gameScene.name == 'boss' || !gameScene.firstTimeEvent.isFirstTime) return;
-                        var animsCreate = () => {
-                            this.anims.create({
-                                key: 'guideSword_swing',
-                                frames: this.anims.generateFrameNumbers('guideSword', { start: 0, end: 16 }),
-                                frameRate: 20,
-                                repeat: -1,
-                            });
-                        };
-                        animsCreate();
-
-                        this.guideSword = this.add.sprite(0, 0)
-                            .setScale(0.8)
-                            .setOrigin(1, 0.5)
-                            .setAlpha(0)
-                            .play('guideSword_swing');
-
-                    };
-                    addDialog();
-                    guideSword();
-
-
-                    gameScene.dialogUI = this;
-                    // console.debug(this);
-                };
-                update = () => { };
                 break;
             case 'doctorUI':
                 preload = () => { };
@@ -1585,6 +1521,91 @@ class UIScene extends Phaser.Scene {
                 };
                 update = () => { };
                 break;
+            case 'RexUI'://==問答、對話框、可拉動內容框
+                const DLconfig = {//Origin(0.5, 1)
+                    dialogX: width * 0.5,
+                    dialogY: height * 0.95,
+                    dialogWidth: width * 0.7,
+                    dialogHeight: height * 0.2,
+                };
+
+                preload = () => { };
+                create = () => {
+                    var addRexUI = () => {
+                        //==對話框
+                        this.newDialog = (content, config = null, resolve = null) => {
+                            //==新設定
+                            if (config) Object.assign(DLconfig, config);
+
+                            new RexTextBox(this, {
+                                x: DLconfig.dialogX,
+                                y: DLconfig.dialogY,
+                                wrapWidth: DLconfig.dialogWidth,
+                                fixedWidth: DLconfig.dialogWidth,
+                                fixedHeight: DLconfig.dialogHeight,
+                                character: DLconfig.character,
+                                pageendEvent: DLconfig.pageendEvent ? DLconfig.pageendEvent : false,
+                            }, resolve)
+                                .setDepth(Depth.UI)
+                                .start(content, 50);
+
+                        };
+
+                        //==問答題
+                        this.newQuiz = (data, bossQuiz = true, resolve) => {
+                            new RexDialog(this, {
+                                x: DLconfig.dialogX,
+                                y: DLconfig.dialogY * 0.5,
+                                data: data,
+                                locale: gameScene.gameData.locale,
+                                bossQuiz: bossQuiz,
+                            }, resolve)
+                                .setDepth(Depth.UI)
+                                .popUp(500);
+                        };
+
+                        //==可拉動內容框
+                        this.newPanel = (data = null, bossQuiz = true, resolve = null) => {
+                            new RexScrollablePanel(this, {
+                                x: DLconfig.dialogX,
+                                y: DLconfig.dialogY * 0.5,
+                                width: width * 0.8,
+                                height: height * 0.5,
+                                data: data,
+                            }, resolve)
+                                .setDepth(Depth.UI)
+                            // .popUp(500);
+                        };
+                    };
+                    var guideSword = () => {
+                        if (gameScene.name == 'boss' ||
+                            !(gameScene.firstTimeEvent && gameScene.firstTimeEvent.isFirstTime)) return;
+                        var animsCreate = () => {
+                            this.anims.create({
+                                key: 'guideSword_swing',
+                                frames: this.anims.generateFrameNumbers('guideSword', { start: 0, end: 16 }),
+                                frameRate: 20,
+                                repeat: -1,
+                            });
+                        };
+                        animsCreate();
+
+                        this.guideSword = this.add.sprite(0, 0)
+                            .setScale(0.8)
+                            .setOrigin(1, 0.5)
+                            .setAlpha(0)
+                            .play('guideSword_swing');
+
+                    };
+                    addRexUI();
+                    guideSword();
+
+
+                    gameScene.dialogUI = this;
+                    // console.debug(this);
+                };
+                update = () => { };
+                break;
             case 'b':
                 preload = () => { };
                 create = () => { };
@@ -1617,42 +1638,62 @@ class UIScene extends Phaser.Scene {
     };
 };
 
-class StartScene extends Phaser.Scene {
+class GameStartScene extends Phaser.Scene {
     constructor(GameData, resolve) {
-        super({ key: 'startScene' });
+        super({ key: 'gameScene' });
 
         Object.assign(this, {
-            GameData: GameData,
+            name: 'GameStart',
+            gameData: GameData,
+            backgroundObj: null,
             resolve: resolve,
         });
     };
     preload() {
-        const UIDir = assetsDir + 'ui/';
+        const UIDir = assetsDir + 'ui/game/Transitions/';
         this.load.image('startScene', UIDir + 'startScene.jpg');
         this.load.image('startButton', UIDir + 'startButton.png');
-
+        this.load.image('gameTitle', UIDir + 'title.png');
     };
     create() {
         const canvas = this.sys.game.canvas;
         const width = canvas.width;
         const height = canvas.height;
-        const localeJSON = this.GameData.localeJSON;
+        const localeJSON = this.gameData.localeJSON;
 
-        // console.debug(localeJSON);
-        var background = () => {
-            let img = this.add.image(width * 0.5, height * 0.5, 'startScene');
-            img.setScale(width / img.width, height / img.height);
+
+        var initBackground = () => {
+            var backgroundImg = () => {
+                let img = this.add.image(width * 0.5, height * 0.5, 'startScene');
+                img.setScale(width / img.width, height / img.height);
+            };
+            var gameTitle = () => {
+                let gameTitle = this.add.image(width * 0.3, height * 0.5, 'gameTitle')
+                    .setRotation(Math.random());
+
+                gameTitle.spinningHandler = function () {
+                    this
+                        .setRotation(this.rotation - 0.01)
+                        .setScale(0.6 + Math.abs(Math.sin(this.rotation)));
+                };
+
+                this.backgroundObj = {
+                    // starGraphics: starGraphics,
+                    gameTitle: gameTitle,
+                };
+            };
+            // backgroundImg();
+            gameTitle();
         };
-
-        var button = () => {
-            // =menu buttons
-            const buttons = ['startGame', 'setting', 'rank'];
-
-            const buttonGap = height * 0.5 / (buttons.length + 1);
-            const x = width * 0.5;
+        var initButton = () => {
+            //== menu buttons
+            const buttons = ['startGame', 'setting', 'intro', 'links', 'contact', 'rank'];
+            const header = height * 0.2;//==預留空間
+            const buttonGap = (height - header) / (buttons.length + 1);
+            const x = width * 0.8;
 
             let buttonGroup = buttons.map((button, i) => {
-                let y = height * 0.5 + buttonGap * (i + 1);
+                let y = header + buttonGap * (i + 1);
                 let menuButton = this.add.image(x, y, 'startButton');
                 let buttonText = this.add.text(x, y, localeJSON.UI[button], { font: '40px Arial', fill: '#ffffff' })
                     .setOrigin(0.5);
@@ -1680,7 +1721,7 @@ class StartScene extends Phaser.Scene {
                             case 'startGame':
 
                                 this.game.destroy(true, false);
-                                this.resolve(this.GameData);
+                                this.resolve(this.gameData);
 
                                 break;
 
@@ -1728,21 +1769,38 @@ class StartScene extends Phaser.Scene {
             //     delay: tweensDuration * 0.5,
             //     alpha: { from: 0, to: 1 },
             // });
-        }
-        background();
-        button();
+
+
+        };
+        var initRexUI = () => {
+            this.scene.add(null, new UIScene('RexUI', this), true);
+            // console.debug(RexPlugins.UI);
+            this.dialogUI.newPanel();
+        };
+        initBackground();
+        initButton();
+        initRexUI();
+
     };
     update() {
 
+        var updateBGobj = () => {
+            this.backgroundObj.gameTitle.spinningHandler();
+        };
+
+        updateBGobj();
     };
+
+
 };
 
 class GameOverScene extends Phaser.Scene {
     constructor(GameData, resolve) {
-        super({ key: 'GameOverScene' });
+        super({ key: 'gameScene' });
 
         Object.assign(this, {
-            GameData: GameData,
+            name: 'GameOver',
+            gameData: GameData,
             resolve: resolve,
         });
     };
@@ -1756,7 +1814,7 @@ class GameOverScene extends Phaser.Scene {
         const canvas = this.sys.game.canvas;
         const width = canvas.width;
         const height = canvas.height;
-        const localeJSON = this.GameData.localeJSON;
+        const localeJSON = this.gameData.localeJSON;
 
         // console.debug(localeJSON);
         var background = () => {
@@ -2805,8 +2863,8 @@ class DefendScene extends Phaser.Scene {
             this.cameras.main.setBounds(0, 0, width, height);
             this.cameras.main.flash(500, 0, 0, 0);
         };
-        var initDialog = () => {
-            this.scene.add(null, new UIScene('dialogUI', this), true);
+        var initRexUI = () => {
+            this.scene.add(null, new UIScene('RexUI', this), true);
 
             if (this.firstTimeEvent.isFirstTime)
                 this.scene.add(null, new UIScene('blackOut', this), true);
@@ -2822,7 +2880,7 @@ class DefendScene extends Phaser.Scene {
         initIconBar();
         initTimer();
         initCamera();
-        initDialog();
+        initRexUI();
 
         // var postFxPlugin = this.plugins.get('rexswirlpipelineplugin');
         // this.cameraFilter = postFxPlugin.add(this.cameras.main);
@@ -2877,11 +2935,12 @@ class DefendScene extends Phaser.Scene {
 
                         //==2.說明探測器的zoom
                         blackOut.scene.bringToTop();
-                        detectorUI ?
+                        //檢查是否被關掉
+                        this.scene.isActive('detectorUI') ?
                             detectorUI.scene.bringToTop() :
                             detectorUI = this.scene.add(null, new UIScene('detectorUI', this), true);
                         dialogUI.scene.bringToTop();
-                        // console.debug(detectorUI);
+
 
                         guideSword
                             .setPosition(detectorUI.detector.x, detectorUI.detector.y);
@@ -3111,9 +3170,10 @@ class DigScene extends Phaser.Scene {
             depthCounter: {
                 epicenter: placeData.depth,
                 depthScale: 0.034,//0.003
-                // depthScale: 0.01,//0.003
+                // depthScale: 10,//0.003
                 coordinate: placeData.coordinate,
                 bossRoom: false,
+                depthCount: 0,
             },
             gameOver: {
                 flag: false,
@@ -3282,6 +3342,7 @@ class DigScene extends Phaser.Scene {
                 .setDepth(Depth.player);
 
             Object.assign(this.player, {
+                digOnSomething: true,//==助手說明岩性,不頻繁說明
                 diggingFlag: false,
                 diggingHadler: (player, tile) => {
                     player.diggingFlag = true;
@@ -3291,6 +3352,7 @@ class DigScene extends Phaser.Scene {
                     // console.debug(tile.attribute.hardness);
 
                     // console.debug(tile);
+                    // console.debug();
                     // let touching = tile.body.touching;
                     // console.debug(`left:${touching.left},right:${touching.right},up:${touching.up},down:${touching.down}`);
 
@@ -3299,6 +3361,15 @@ class DigScene extends Phaser.Scene {
                         if (--tile.attribute.hardness <= 0) tile.destroy();
                         player.setVelocityY(400);
                         player.stopCursorsFlag = false;
+
+                        if (player.digOnSomething && tile.name) {//==有名的石頭
+                            player.digOnSomething = false;
+                            this.sidekick.remindingHadler(this.sidekick, tile.name);
+
+                            //===約x秒說一次石頭
+                            this.time.delayedCall(10000, () => player.digOnSomething = true, [], this);
+                        };
+
                     }, [], this);
                 },
                 playerDig: (player, tile) => {
@@ -3376,6 +3447,50 @@ class DigScene extends Phaser.Scene {
                 this.sidekick = this.add.existing(new Sidekick(this, this.gameData.sidekick.type))
                     .setPosition(width * 0.5, 0)
                     .setDepth(Depth.player - 1);
+
+
+                //===沒有震源提示,超過震源也提示
+                const remindDepth = this.depthCounter.epicenter !== null ?
+                    this.depthCounter.epicenter + this.tileSize * this.depthCounter.depthScale :
+                    10 * this.tileSize * this.depthCounter.depthScale;//==挖過幾塊後開始提醒
+                const remindDelay = 6500;//==幾秒提醒一次 
+
+                // console.debug('remindDepth : ' + remindDepth);
+                //==提醒退出
+                Object.assign(this.sidekick, {
+                    firstTimeRemind: true,
+                    remindingCallback: null,
+                    remindingHadler: (sidekick, reminder = null) => {
+                        //==挖超過條件
+                        let overDig = this.depthCounter.depthCount >= remindDepth;
+
+                        //==不定時回撥條件: 1.已經被註冊 2.沒有挖超過也沒有挖到特殊石頭
+                        if (this.remindingCallback || (!overDig && !reminder)) return;
+
+                        let callbackDelay = (reminder != null || sidekick.firstTimeRemind) ? 100 : remindDelay;
+                        let hint = "";
+
+                        //==挖超過幾公里開始提醒退出
+                        if (overDig) {
+                            hint = this.gameData.localeJSON.Hints['dig'][2][this.depthCounter.epicenter === null ? 1 : 2];
+                            sidekick.firstTimeRemind = false;
+                        }
+                        //==挖到某種石頭
+                        else if (reminder) {
+                            hint = this.gameData.localeJSON.Hints['dig'][2][reminder];
+                        };
+
+                        // console.debug('hint : ' + hint);
+
+                        this.remindingCallback = this.time.delayedCall(callbackDelay, () => {
+                            sidekick.talkingHandler(this, hint);
+                            this.remindingCallback = null;
+                        }, [], this);
+
+                    },
+                });
+
+                // console.debug(this.depthCounter.depthCount);
             };
             var doctor = () => {
                 this.scene.add(null, new UIScene('doctorUI', this), true);
@@ -3444,8 +3559,8 @@ class DigScene extends Phaser.Scene {
                 animsCreate();
             };
         };
-        var initDialog = () => {
-            this.scene.add(null, new UIScene('dialogUI', this), true);
+        var initRexUI = () => {
+            this.scene.add(null, new UIScene('RexUI', this), true);
 
             if (this.firstTimeEvent.isFirstTime)
                 this.scene.add(null, new UIScene('blackOut', this), true);
@@ -3462,7 +3577,7 @@ class DigScene extends Phaser.Scene {
         initIconBar();
         initTimer();
         initDepthCounter();
-        initDialog();
+        initRexUI();
     };
     update() {
         //==第一次的對話
@@ -3490,7 +3605,8 @@ class DigScene extends Phaser.Scene {
 
                         //==1.說明小地圖
                         blackOut.scene.bringToTop();
-                        detectorUI ?
+                        //檢查是否被關掉
+                        this.scene.isActive('detectorUI') ?
                             detectorUI.scene.bringToTop() :
                             detectorUI = this.scene.add(null, new UIScene('detectorUI', this), true);
                         dialogUI.scene.bringToTop();
@@ -3529,7 +3645,6 @@ class DigScene extends Phaser.Scene {
 
                     this.firstTimeEvent.eventComplete = true;
                     this.gameTimer.paused = false;//==時間繼續
-                    // this.gameData.sidekick.lineStage = [5, 0];//下次不再說一次
 
                 }, [], this);
                 this.firstTimeEvent.isFirstTime = false;
@@ -3549,6 +3664,7 @@ class DigScene extends Phaser.Scene {
         };
         var updateSidekick = () => {
             this.sidekick.behaviorHandler(this.player, this);
+            this.sidekick.remindingHadler(this.sidekick);
         };
         var updateChunks = () => {
             var snappedChunkX = Math.round(this.player.x / this.chunkWidth);
@@ -4209,8 +4325,8 @@ class BossScene extends Phaser.Scene {
             this.cameras.main.setBounds(0, 0, width, height);
             this.cameras.main.flash(500, 0, 0, 0);
         };
-        var initDialog = () => {
-            this.scene.add(null, new UIScene('dialogUI', this), true);
+        var initRexUI = () => {
+            this.scene.add(null, new UIScene('RexUI', this), true);
         };
 
 
@@ -4225,7 +4341,7 @@ class BossScene extends Phaser.Scene {
         initIconBar();
         initTimer();
         initCamera();
-        initDialog();
+        initRexUI();
         // initQuiz();
 
     };

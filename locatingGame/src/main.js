@@ -303,26 +303,29 @@ function locatingGame() {
                 };
                 var startScene = async () => {
                     GameData.localeJSON = await getLanguageJSON();
-                    // gameDisplay(true);
 
-                    // let newGameData = await new Promise((resolve, reject) => {
-                    //     const config = Object.assign(getPhaserConfig(width, height), {
-                    //         scene: new StartScene(GameData, resolve),
-                    //     });
-                    //     new Phaser.Game(config);
-                    // });
 
-                    // if (GameData.locale != newGameData.locale)
-                    //     GameData.localeJSON = await getLanguageJSON();
-                    // Object.assign(GameData, newGameData);
-                    // gameDisplay(false);
-                    // initMap();
+                    gameDisplay(true);
+
+                    let newGameData = await new Promise((resolve, reject) => {
+                        const config = Object.assign(getPhaserConfig(width, height), {
+                            scene: new GameStartScene(GameData, resolve),
+                        });
+                        new Phaser.Game(config);
+                    });
+
+                    if (GameData.locale != newGameData.locale)
+                        GameData.localeJSON = await getLanguageJSON();
+                    Object.assign(GameData, newGameData);
+                    gameDisplay(false);
+
+
+                    initMap();
+
 
                     //==test
-                    initMap();
                     // gameStart('defend');
                     // gameStart('dig');
-
                     //==test
                 };
 

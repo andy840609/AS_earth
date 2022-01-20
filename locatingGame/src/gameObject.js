@@ -1,4 +1,3 @@
-// const assetsDir = '../data/assets/';
 const assetsDir = 'data/assets/';
 const datafileDir = 'data/datafile/';
 
@@ -1374,7 +1373,7 @@ const Sidekick = new Phaser.Class({
 
             //===init hints
             const tipWrapW = 200;
-            this.dialog = new RexTextBox(scene, 0, 0, {
+            this.dialog = new RexTextBox(scene, {
                 wrapWidth: tipWrapW,
                 character: 'sidekick'
             })
@@ -1467,7 +1466,7 @@ const Sidekick = new Phaser.Class({
                     //==離玩家太遠瞬移
                     if (Phaser.Math.Distance.BetweenPoints(player, this) > 1000) {
                         this.setPosition(player.x + 30 * (player.flipX ? 1 : -1), player.y);
-                        this.talkingHandler(scene, scene.gameData.localeJSON.Hints['dig'][1][0]);
+                        this.talkingHandler(scene, scene.gameData.localeJSON.Hints['dig'][2][0]);
                     };
                 };
 
@@ -1491,14 +1490,14 @@ const Sidekick = new Phaser.Class({
         };
 
         //==助手提示
-        this.dialog.setPosition(this.x, this.y - 70);
+        this.dialog.setPosition(this.x, this.y - 30);
         this.dust.setPosition(this.x, this.y);//揚起灰塵效果跟隨
 
         var getHint = () => {
             const replaceStr = '\t';
             const controllCursor = scene.gameData.controllCursor;
 
-            let hintType = Phaser.Math.Between(0, 1),  //==0:提示 1:閒聊
+            let hintType = Phaser.Math.Between(0, 1),  //==0:提示 1:閒聊 2:特殊對話
                 hintIdx = Phaser.Math.Between(0, this.hintAmount[hintType]),
                 hint = '';
 
@@ -1524,12 +1523,6 @@ const Sidekick = new Phaser.Class({
 
                     break;
                 case 'dig':
-
-                    if (hintType) {
-                        //==隨機選到隱藏對話就從其他隨機挑一次
-                        hintIdx = hintIdx == 0 ? Phaser.Math.Between(1, this.hintAmount[hintType]) : hintIdx;
-                    };
-
                     hint = this.hints[hintType][hintIdx];
                     break;
                 case 'boss':
@@ -1577,7 +1570,8 @@ const Doctor = new Phaser.Class({
             const tipWrapW = 210,
                 tipWrapH = 100;
 
-            this.dialog = new RexTextBox(scene, 0, 0, {
+            this.dialog = new RexTextBox(scene, {
+
                 wrapWidth: tipWrapW,
                 fixedWidth: tipWrapW,
                 fixedHeight: tipWrapH,
@@ -1620,6 +1614,8 @@ const Doctor = new Phaser.Class({
                     yoyo: true,
                     hold: tipDuration * 0.6,//==yoyo delay
                     ease: 'Linear',
+                    // onYoyo: () => console.debug(this.alpha)
+
                 });
 
                 //==開始打字
@@ -1739,7 +1735,6 @@ class Chunk {
                                 .setSize(doorW, doorW)
                                 .setOffset(bossCastle.body.offset.x, doorW * 0.6);
 
-                            // this.gameScene.physics.add.overlap(this.gameScene.player, bossCastle, this.gameScene.player.playerOpenGate, null, this);
                             this.gameScene.physics.add.overlap(this.gameScene.player, bossCastle);
                             this.gameScene.bossCastle = bossCastle;
                         }
@@ -1828,7 +1823,12 @@ class Tile extends Phaser.GameObjects.Sprite {
     constructor(scene, x, y, key) {
         super(scene, x, y, key);
         scene.add.existing(this);
-        this.setOrigin(0);
+
+        let name = key.substring(0, 7) == 'terrain' ? key : undefined;//==特殊石頭才設定來說明
+
+        this
+            .setOrigin(0)
+            .setName(name);
 
         //==custom
         this.attribute = { ...GameObjectStats.tile[key] };//JSON.parse(JSON.stringify(tmp))
@@ -1836,10 +1836,11 @@ class Tile extends Phaser.GameObjects.Sprite {
     };
 };
 
+//============================== RexUI=================================================
+
 //===對話框
 class RexTextBox extends RexPlugins.UI.TextBox {
-    constructor(scene, x, y, config, resolve = null) {
-        // console.debug(scene, x, y, config);
+    constructor(scene, config, resolve = null) {
 
         var tips = resolve ? false : true;//==助手知識
         var character = config.character;
@@ -1916,8 +1917,8 @@ class RexTextBox extends RexPlugins.UI.TextBox {
         // };
 
         const textBoxConfig = {
-            x: x,
-            y: y,
+            x: config.x,
+            y: config.y,
             background: scene.add.existing(rexRect),
             icon: tips ? null : scene.add.image(0, 0, character + 'Avatar'),//==scene.add.existing(icon)
             text: scene.add.existing(rexBBText),
@@ -1936,7 +1937,7 @@ class RexTextBox extends RexPlugins.UI.TextBox {
         // console.debug(this);
 
         this
-            .setOrigin(0.5)
+            .setOrigin(0.5, 1)
             .layout();
 
         if (!tips) {
@@ -1967,7 +1968,7 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                     action.setVisible(true);
                     this.resetChildVisibleState(action);
 
-                    const endY = this.y + this.displayHeight * 0.5 - 50;
+                    const endY = this.y - 50;//originY= 1
 
                     scene.tweens.add({
                         targets: action,
@@ -2002,8 +2003,8 @@ class RexTextBox extends RexPlugins.UI.TextBox {
 
 //==問答UI
 class RexDialog extends RexPlugins.UI.Dialog {
-    constructor(scene, x, y, config, resolve) {
-        // console.debug(scene, x, y, config, resolve);
+    constructor(scene, config, resolve) {
+        // console.debug(scene, config, resolve);
 
         var data = config.data,
             locale = config.locale,
@@ -2022,7 +2023,6 @@ class RexDialog extends RexPlugins.UI.Dialog {
             top: 3,
             bottom: 3,
         };
-
 
         var createLabel = (scene, text, backgroundColor) => {
             return new RexPlugins.UI.Label(scene, {
@@ -2094,11 +2094,11 @@ class RexDialog extends RexPlugins.UI.Dialog {
         let rexRect = new RexPlugins.UI.RoundRectangle(scene, 0, 0, 100, 100, 20, COLOR_PRIMARY);
 
         const dialogConfig = {
-            x: x,
-            y: y,
+            x: config.x,
+            y: config.y,
             width: bossQuiz ? 360 : false,
             background: scene.add.existing(rexRect),
-            title: bossQuiz ? scene.add.existing(createLabel(scene, ' ', COLOR_DARK)) : null,
+            title: bossQuiz ? createLabel(scene, ' ', COLOR_DARK) : null,
             content: scene.add.text(0, 0, '', {
                 fontSize: '36px',
                 padding: padding,
@@ -2209,7 +2209,258 @@ class RexDialog extends RexPlugins.UI.Dialog {
 
 
     };
-
 };
 
+//==可拉動內容
+class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
+    constructor(scene, config, resolve) {
 
+        var data999 = config.data,
+            scrollMode = config.scrollMode ? config.scrollMode : 0;
+
+        const COLOR_PRIMARY = 0x4e342e;
+        const COLOR_LIGHT = 0x7b5e57;
+        const COLOR_DARK = 0x260e04;
+        const padding = {
+            left: 3,
+            right: 3,
+            top: 3,
+            bottom: 3,
+        };
+
+        var createPanel = function (scene, data) {
+            var createHeader = function (scene, data) {
+                return new RexPlugins.UI.Label(scene, {
+                    // orientation: 'x',
+                    text: scene.add.text(0, 0, data.name),
+                    // align: 'right',
+                    // icon: createIcon(scene, data.name, 100, 100, 10),
+                    space: {
+                        left: 100,
+                        right: 100,
+                        top: 100,
+                        bottom: 100,
+                        icon: 100,
+                        text: 100,
+                    },
+                });
+            };
+            var createTable = function (scene, data, key, rows) {
+                var capKey = key.charAt(0).toUpperCase() + key.slice(1);
+                var title = new RexPlugins.UI.Label(scene, {
+                    orientation: 'y',
+                    text: scene.add.text(0, 0, capKey),
+                });
+
+                var items = data.category[key];
+                var columns = Math.ceil(items.length / rows);
+                var table = new RexPlugins.UI.GridSizer(scene, {
+                    column: columns,
+                    row: rows,
+
+                    rowProportions: 1,
+                    space: { column: 10, row: 10 },
+                    name: key  // Search this name to get table back
+                });
+
+                var item, r, c;
+                var iconSize = (rows === 1) ? 80 : 40;
+                for (var i = 0, cnt = items.length; i < cnt; i++) {
+                    item = items[i];
+                    r = i % rows;
+                    c = (i - r) / rows;
+                    table.add(
+                        createIcon(scene, item.name, iconSize, iconSize),
+                        c,
+                        r,
+                        'top',
+                        0,
+                        true
+                    );
+                }
+
+                return new RexPlugins.UI.Sizer(scene, {
+                    orientation: 'x',
+                    space: { left: 10, right: 10, top: 10, bottom: 10, item: 10 }
+                })
+                    .addBackground(scene.add.existing(
+                        new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 0, undefined).setStrokeStyle(2, COLOR_LIGHT, 1)
+                    ))
+                    .add(
+                        title, // child
+                        // 0, // proportion
+                        // 'left', // align
+                        // 0, // paddingConfig
+                        // true,// expand
+                        { expand: true, align: 'left' }
+                    )
+                    .add(table, // child
+                        // 1, // proportion
+                        // 'center', // align
+                        // 0, // paddingConfig
+                        // true // expand
+                        { expand: true, align: 'center' }
+                    );
+
+
+            }
+            var createIcon = function (scene, name, iconWidth, iconHeight, iconSpace = 3) {
+                return new RexPlugins.UI.Label(scene, {
+                    orientation: 'x',
+                    icon: scene.add.existing(
+                        new RexPlugins.UI.RoundRectangle(scene, 0, 0, iconWidth, iconHeight, 5, COLOR_LIGHT)),
+                    text: scene.add.text(0, 0, name),
+                    space: { icon: iconSpace }
+                });
+
+            };
+
+            var sizer = new RexPlugins.UI.Sizer(scene, {
+                orientation: 'y',
+                space: { item: 100 }
+            });
+
+
+            Object.keys(data.category).forEach((item, i) => {
+                sizer.add(
+                    createTable(scene, data, item, i + 1), // child
+                    { expand: true },
+                );
+            });
+
+            return sizer;
+        };
+
+        var createLabel = (scene, text, backgroundColor) => {
+            return new RexPlugins.UI.Label(scene, {
+                background: scene.add.existing(new RexPlugins.UI.RoundRectangle(scene, 0, 0, 100, 40, 20, backgroundColor)),
+                text: scene.add.text(0, 0, text, {
+                    fontSize: '24px',
+                    padding: padding,
+                }),
+                space: {
+                    left: 10,
+                    right: 10,
+                    top: 10,
+                    bottom: 10
+                },
+                align: 'center',
+            });
+        };
+
+
+        var data = {
+            name: 'Rex',
+            category: {
+                1: [
+                    { name: 'A' },
+                    { name: 'B' },
+                    { name: 'C' },
+                    { name: 'D' },
+                    { name: 'E' },
+                ],
+                2: [
+                    { name: 'A' },
+                    { name: 'B' },
+                    { name: 'C' },
+                    { name: 'D' },
+                    { name: 'E' },
+                    { name: 'F' },
+                    { name: 'G' },
+                    { name: 'H' },
+                    { name: 'I' },
+                    { name: 'J' },
+                    { name: 'K' },
+                    { name: 'L' },
+                    { name: 'M' },
+                ],
+                3: [
+                    { name: 'A' },
+                    { name: 'B' },
+                    { name: 'C' },
+                    { name: 'D' },
+                    { name: 'E' },
+                ],
+                4: [
+                    { name: 'A' },
+                    { name: 'B' },
+                    { name: 'C' },
+                    { name: 'D' },
+                    { name: 'E' },
+                ],
+            },
+
+
+        };
+
+        const panelConfig = {
+            x: config.x,
+            y: config.y,
+            width: config.width,
+            height: config.height,
+            scrollMode: scrollMode,
+            background: scene.add.existing(
+                new RexPlugins.UI.RoundRectangle(scene, 0, 0, 2, 2, 10, COLOR_PRIMARY)),
+            header: createLabel(scene, data.name, COLOR_LIGHT),
+            // footer: scene.add.existing(
+            //     new RexPlugins.UI.RoundRectangle(scene, 0, 0, 20, 10, 10, COLOR_DARK)),
+            panel: {
+                child: createPanel(scene, data),
+                mask: {
+                    padding: 1,
+                    // layer: this.add.layer()
+                },
+            },
+            slider: {
+                track: scene.add.existing(
+                    new RexPlugins.UI.RoundRectangle(scene, 0, 0, 20, 10, 10, COLOR_DARK)),
+                thumb: scene.add.existing(
+                    new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 13, COLOR_LIGHT)),
+            },
+            // scroller: true,
+            scroller: {
+                // pointerOutRelease: false
+            },
+            mouseWheelScroller: {
+                focus: false,
+                speed: 0.2
+            },
+            space: {
+                left: 10,
+                right: 10,
+                top: 10,
+                bottom: 10,
+
+                panel: 10,
+            },
+            // draggable: true,
+            // sizerEvents: true,
+        };
+        super(scene, panelConfig);
+
+        this.layout();
+
+        // Set icon interactive
+        // var print = this.add.text(0, 0, '');
+        // this.input.topOnly = false;
+        // var labels = [];
+        // labels.push(...this.getElement('#skills.items', true));
+        // labels.push(...this.getElement('#items.items', true));
+        // var scene = this;
+        // labels.forEach(function (label) {
+        //     if (!label) {
+        //         return;
+        //     }
+
+        //     var click = new RexPlugins.UI.click(label.getElement('icon'), { threshold: 10 })
+        //         .on('click', function () {
+        //             if (!label.getTopmostSizer().isInTouching()) {
+        //                 return;
+        //             }
+        //             var category = label.getParentSizer().name;
+        //             print.text += `${category}:${label.text}\n`;
+        //         });
+        // })
+
+    };
+};

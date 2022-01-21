@@ -283,7 +283,7 @@ function locatingGame() {
                     },
                     sidekick: {
                         type: sidekick,
-                        lineStage: [1, 0],//==第2-0句
+                        lineStage: [3, 0],//==第2-0句
                         doneTalking: false,
                         stopHotkey: false,//==對話完空白鍵不再出現對話（只能滑鼠點）
                     },
@@ -295,7 +295,7 @@ function locatingGame() {
                         url: "data/locale/" + GameData.locale + ".json",
                         dataType: "json",
                         async: false,
-                        success: function (d) { console.debug(d); },
+                        // success: function (d) { console.debug(d); },
                         error: function (jqXHR, textStatus, errorThrown) {
                             console.error(jqXHR, textStatus, errorThrown);
                         },
@@ -303,7 +303,6 @@ function locatingGame() {
                 };
                 var startScene = async () => {
                     GameData.localeJSON = await getLanguageJSON();
-
 
                     gameDisplay(true);
 
@@ -328,7 +327,6 @@ function locatingGame() {
                     // gameStart('dig');
                     //==test
                 };
-
                 startScene();
             };
             function initEndScene(win = false) {

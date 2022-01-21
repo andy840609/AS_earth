@@ -1400,7 +1400,7 @@ const Sidekick = new Phaser.Class({
         var hintDelay = 1000;//==每則知識間隔
 
         if (this.talkingCallback) {//==特殊對話馬上出現
-            this.talkingTween.remove();
+            if (this.talkingTween) this.talkingTween.remove();
             this.talkingCallback.remove();
             this.dialog.alpha = 0;
             hintDelay = 200;
@@ -1693,10 +1693,8 @@ class Chunk {
                     var tileX = (this.x * this.gameScene.chunkWidth) + (x * tileSize);
                     if (tileX < 0 || tileX >= this.gameScene.groundW) continue;
 
-
                     //==地磚
                     let key, animationKey;
-
 
                     //==魔王城
                     let depthCounter = this.gameScene.depthCounter;
@@ -2215,8 +2213,88 @@ class RexDialog extends RexPlugins.UI.Dialog {
 class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
     constructor(scene, config, resolve) {
 
-        var data999 = config.data,
-            scrollMode = config.scrollMode ? config.scrollMode : 0;
+        var gameData = config.gameData,
+            scrollMode = config.scrollMode ? config.scrollMode : 0,
+            panelType = {//===panelType暫定: 0:緣由 1:設定 2:連結 3:道具
+                'intro': 0,
+                'setting': 1,
+                'links': 2,
+                'contact': 3,
+                'rank': 3,
+            }[config.panelType];
+
+        console.debug(gameData);
+
+        var data, footerItem, panelName = gameData.localeJSON.UI[config.panelType];
+        switch (panelType) {
+            case 0:
+                data = {
+                    name: panelName,
+                    intro: gameData.localeJSON.Intro,
+                    category: {}
+                };
+                footerItem = ['ok', 'cancel'];
+                // footerItem = ['close'];
+                break;
+            case 1:
+                data = {
+                    name: panelName,
+                    category: {}
+                };
+                footerItem = ['ok', 'cancel'];
+                break;
+            case 2:
+                data = {
+                    name: panelName,
+                    category: {}
+                };
+                footerItem = ['ok', 'cancel'];
+                break;
+            case 3:
+                data = {
+                    name: panelName,
+                    category: {
+                        1: [
+                            { name: 'A' },
+                            { name: 'B' },
+                            { name: 'C' },
+                            { name: 'D' },
+                            { name: 'E' },
+                        ],
+                        2: [
+                            { name: 'A' },
+                            { name: 'B' },
+                            { name: 'C' },
+                            { name: 'D' },
+                            { name: 'E' },
+                            { name: 'F' },
+                            { name: 'G' },
+                            { name: 'H' },
+                            { name: 'I' },
+                            { name: 'J' },
+                            { name: 'K' },
+                            { name: 'L' },
+                            { name: 'M' },
+                        ],
+                        3: [
+                            { name: 'A' },
+                            { name: 'B' },
+                            { name: 'C' },
+                            { name: 'D' },
+                            { name: 'E' },
+                        ],
+                        4: [
+                            { name: 'A' },
+                            { name: 'B' },
+                            { name: 'C' },
+                            { name: 'D' },
+                            { name: 'E' },
+                        ],
+                    },
+                };
+                footerItem = ['ok', 'cancel'];
+                break;
+        };
 
         const COLOR_PRIMARY = 0x4e342e;
         const COLOR_LIGHT = 0x7b5e57;
@@ -2228,85 +2306,132 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
             bottom: 3,
         };
 
-        var createPanel = function (scene, data) {
-            var createHeader = function (scene, data) {
-                return new RexPlugins.UI.Label(scene, {
-                    // orientation: 'x',
-                    text: scene.add.text(0, 0, data.name),
-                    // align: 'right',
-                    // icon: createIcon(scene, data.name, 100, 100, 10),
-                    space: {
-                        left: 100,
-                        right: 100,
-                        top: 100,
-                        bottom: 100,
-                        icon: 100,
-                        text: 100,
-                    },
-                });
-            };
-            var createTable = function (scene, data, key, rows) {
-                var capKey = key.charAt(0).toUpperCase() + key.slice(1);
-                var title = new RexPlugins.UI.Label(scene, {
-                    orientation: 'y',
-                    text: scene.add.text(0, 0, capKey),
-                });
+        var createPanel = (scene, data) => {
+            var createTable = (scene, key = null) => {
+                var getText = (text) => {
+                    return new RexPlugins.UI.Label(scene, {
+                        orientation: !scrollMode,
+                        text: scene.add.text(0, 0, text, {
+                            fontSize: '36px',
+                            padding: padding,
+                        }),
+                        // align: 'left',
+                    });
+                };
 
-                var items = data.category[key];
-                var columns = Math.ceil(items.length / rows);
-                var table = new RexPlugins.UI.GridSizer(scene, {
-                    column: columns,
-                    row: rows,
-
-                    rowProportions: 1,
-                    space: { column: 10, row: 10 },
-                    name: key  // Search this name to get table back
-                });
-
-                var item, r, c;
-                var iconSize = (rows === 1) ? 80 : 40;
-                for (var i = 0, cnt = items.length; i < cnt; i++) {
-                    item = items[i];
-                    r = i % rows;
-                    c = (i - r) / rows;
-                    table.add(
-                        createIcon(scene, item.name, iconSize, iconSize),
-                        c,
-                        r,
-                        'top',
-                        0,
-                        true
-                    );
-                }
-
-                return new RexPlugins.UI.Sizer(scene, {
-                    orientation: 'x',
+                const Sizer = new RexPlugins.UI.Sizer(scene, {
+                    orientation: scrollMode,
                     space: { left: 10, right: 10, top: 10, bottom: 10, item: 10 }
                 })
                     .addBackground(scene.add.existing(
                         new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 0, undefined).setStrokeStyle(2, COLOR_LIGHT, 1)
-                    ))
-                    .add(
-                        title, // child
-                        // 0, // proportion
-                        // 'left', // align
-                        // 0, // paddingConfig
-                        // true,// expand
-                        { expand: true, align: 'left' }
-                    )
-                    .add(table, // child
-                        // 1, // proportion
-                        // 'center', // align
-                        // 0, // paddingConfig
-                        // true // expand
-                        { expand: true, align: 'center' }
-                    );
+                    ));
 
 
+                if (key) {
+                    let items = data.category[key];
+                    let capKey = key.charAt(0).toUpperCase() + key.slice(1);
+
+                    const
+                        columns = 4,
+                        rows = Math.ceil(items.length / columns);
+                    const iconSize = 40;
+
+                    let table = new RexPlugins.UI.GridSizer(scene, {
+                        column: columns,
+                        row: rows,
+                        // rowProportions: 0,
+                        columnProportions: 1,// [0, 1, 2]
+                        space: {
+                            top: 0,
+                            bottom: 0,
+                            left: 10,
+                            right: 10,
+                            column: 10,
+                            row: 10
+                        },
+                        name: key  // Search this name to get table back
+                    });
+                    items.forEach((item, i) => {
+                        let col = i % columns,
+                            row = (i - col) / columns;
+
+                        table.add(
+                            createIcon(scene, item.name, iconSize, iconSize),
+                            {
+                                column: col,
+                                row: row,
+                                align: 'top',
+                                padding: {
+                                    left: 10,
+                                    right: 10,
+                                    top: 0,
+                                    bottom: 0
+                                },
+                                expand: true,
+                                // key: undefined
+                            }
+                        );
+
+
+                    });
+
+                    Sizer
+                        .add(
+                            getText(capKey), // child
+                            {
+                                proportion: 1,
+                                align: 'left',
+                                padding: { left: 0, right: 0, top: 5, bottom: 0 },
+                                expand: true,
+                            }
+                        )
+                        .add(table, // child
+                            {
+                                proportion: 3,
+                                align: 'center',
+                                padding: { left: 0, right: 0, top: 0, bottom: 0 },
+                                expand: true,
+                            }
+                        );
+
+                }
+                else {
+
+                    //==分行
+                    let content = data.intro;
+                    let charInLine = gameData.locale == "zh-TW" ? 15 : 20,//每行字數(之後還要判斷畫面寬)
+                        lineCount = parseInt((content.length - 1) / charInLine);//總行數
+                    let newContentr = lineCount ? '' : content;
+
+                    for (let i = 0; i < lineCount; i++) {
+                        let lastIdx = (i + 1) * charInLine;
+
+                        let line = content.slice(i * charInLine, lastIdx) + '\n';
+                        if (i == lineCount - 1) line += content.slice(lastIdx);//==不足一行
+                        newContentr += line;
+                    };
+
+                    Sizer
+                        .add(
+                            getText(newContentr), // child
+                            {
+                                proportion: 1,
+                                align: 'center',
+                                padding: padding,
+                                expand: true,
+                            }
+                        )
+                };
+
+
+
+
+                return Sizer;
             }
-            var createIcon = function (scene, name, iconWidth, iconHeight, iconSpace = 3) {
+            var createIcon = (scene, name, iconWidth, iconHeight, iconSpace = 3) => {
                 return new RexPlugins.UI.Label(scene, {
-                    orientation: 'x',
+                    orientation: scrollMode,
                     icon: scene.add.existing(
                         new RexPlugins.UI.RoundRectangle(scene, 0, 0, iconWidth, iconHeight, 5, COLOR_LIGHT)),
                     text: scene.add.text(0, 0, name),
@@ -2316,21 +2441,27 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
             };
 
             var sizer = new RexPlugins.UI.Sizer(scene, {
-                orientation: 'y',
-                space: { item: 100 }
+                orientation: !scrollMode,
+                space: { item: 10 }
             });
 
 
-            Object.keys(data.category).forEach((item, i) => {
+            if (!panelType)
                 sizer.add(
-                    createTable(scene, data, item, i + 1), // child
+                    createTable(scene), // child
                     { expand: true },
                 );
-            });
+
+            Object.keys(data.category).forEach(item => {
+                sizer.add(
+                    createTable(scene, item), // child
+                    { expand: true },
+                );
+            })
+
 
             return sizer;
         };
-
         var createLabel = (scene, text, backgroundColor) => {
             return new RexPlugins.UI.Label(scene, {
                 background: scene.add.existing(new RexPlugins.UI.RoundRectangle(scene, 0, 0, 100, 40, 20, backgroundColor)),
@@ -2347,49 +2478,65 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                 align: 'center',
             });
         };
+        //===關閉面板按鈕
+        var createFooter = (scene, footerItem) => {
+
+            var createButton = (text) => {
+                return new RexPlugins.UI.Label(scene, {
+                    width: 100,
+                    height: 40,
+                    background: scene.add.existing(
+                        new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 15, COLOR_LIGHT)),
+                    text: scene.add.text(0, 0, gameData.localeJSON.UI[text], {
+                        fontSize: 18
+                    }),
+                    align: 'center',
+                    space: {
+                        left: 10,
+                        right: 10,
+                    }
+                });
+            };
 
 
-        var data = {
-            name: 'Rex',
-            category: {
-                1: [
-                    { name: 'A' },
-                    { name: 'B' },
-                    { name: 'C' },
-                    { name: 'D' },
-                    { name: 'E' },
-                ],
-                2: [
-                    { name: 'A' },
-                    { name: 'B' },
-                    { name: 'C' },
-                    { name: 'D' },
-                    { name: 'E' },
-                    { name: 'F' },
-                    { name: 'G' },
-                    { name: 'H' },
-                    { name: 'I' },
-                    { name: 'J' },
-                    { name: 'K' },
-                    { name: 'L' },
-                    { name: 'M' },
-                ],
-                3: [
-                    { name: 'A' },
-                    { name: 'B' },
-                    { name: 'C' },
-                    { name: 'D' },
-                    { name: 'E' },
-                ],
-                4: [
-                    { name: 'A' },
-                    { name: 'B' },
-                    { name: 'C' },
-                    { name: 'D' },
-                    { name: 'E' },
-                ],
-            },
+            var buttons = new RexPlugins.UI.Buttons(scene, {
+                orientation: scrollMode,
+                buttons: footerItem.map(item => createButton(item)),
+                space: { right: 50, item: 50 },
+                align: 'right',
+                // anchor: 'right',
+            })
+                .on('button.click', (button, index, p, e) => {
+                    let duration = 500;
 
+                    // console.debug(footerItem[index]);
+                    // console.debug(button, index, p, e);
+
+
+                    //視窗縮小
+                    scene.tweens.add({
+                        targets: this,
+                        scaleX: { start: t => t.scaleX, to: 0 },
+                        scaleY: { start: t => t.scaleY, to: 0 },
+                        ease: 'Bounce', // 'Cubic', 'Elastic', 'Bounce', 'Back'
+                        duration: duration,
+                        onComplete: () => {
+                            this.destroy();
+                            // resolve(answer);
+                        },
+                    });
+
+
+                })
+                .on('button.out', function () {
+                    // console.debug('out');
+                })
+                .on('button.over', function () {
+                    // console.debug('over');
+                })
+
+
+            return buttons;
 
         };
 
@@ -2402,8 +2549,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
             background: scene.add.existing(
                 new RexPlugins.UI.RoundRectangle(scene, 0, 0, 2, 2, 10, COLOR_PRIMARY)),
             header: createLabel(scene, data.name, COLOR_LIGHT),
-            // footer: scene.add.existing(
-            //     new RexPlugins.UI.RoundRectangle(scene, 0, 0, 20, 10, 10, COLOR_DARK)),
+            footer: createFooter(scene, footerItem),
             panel: {
                 child: createPanel(scene, data),
                 mask: {
@@ -2417,21 +2563,22 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                 thumb: scene.add.existing(
                     new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 13, COLOR_LIGHT)),
             },
-            // scroller: true,
-            scroller: {
-                // pointerOutRelease: false
-            },
+            scroller: false,//===開啟會造成panel destroy出錯
+            // scroller: {
+            //     pointerOutRelease: false
+            // },
             mouseWheelScroller: {
                 focus: false,
-                speed: 0.2
+                speed: 1
             },
             space: {
                 left: 10,
                 right: 10,
                 top: 10,
                 bottom: 10,
-
                 panel: 10,
+                header: 15,
+                footer: 10,
             },
             // draggable: true,
             // sizerEvents: true,

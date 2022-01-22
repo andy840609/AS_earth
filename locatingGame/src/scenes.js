@@ -1581,6 +1581,21 @@ class UIScene extends Phaser.Scene {
                                 .popUp(500);
 
                         };
+
+                        //==使用者填入表單
+                        this.newForm = (panelType = 0, resolve = null) => {
+
+                            return new RexForm(this, {
+                                // x: DLconfig.dialogX,
+                                // y: DLconfig.dialogY * 0.5,
+                                // width: width * 0.6,
+                                // height: height * 0.5,
+                                // gameData: gameScene.gameData,
+                            }, resolve)
+                                .setDepth(Depth.UI)
+                                .popUp(500);
+
+                        };
                     };
                     var guideSword = () => {
                         if (gameScene.name == 'boss' ||
@@ -1733,25 +1748,15 @@ class GameStartScene extends Phaser.Scene {
 
                                 let panel = this.RexUI.newPanel(button);
                                 this.RexUI.scene.bringToTop();
+                                this.scene.pause();
 
                                 panel.on('destroy', () => {
                                     blackOut.setVisible(false);
+                                    this.scene.resume();
                                 });
-
-                                // .on('click', () => {
-                                //     console.debug('blackOut')
-                                // })
-                                // this.blackOut.input.on('pointerdown', (pointer) => {
-
-                                //     console.debug(pointer);
-
-                                // });
-                                this.input.on(Phaser.Input.Events.POINTER_DOWN, function (pointer, localX, localY, event) {
-                                    event.stopPropogation();
-                                    console.debug('Screen clicked');
-                                }, this);
-
                                 break;
+
+
                             // case 'intro':
                             //     this.RexUI.newPanel(0);
                             //     break;
@@ -1765,9 +1770,9 @@ class GameStartScene extends Phaser.Scene {
                             // case 'contact':
                             //     this.RexUI.newPanel(3);
                             //     break;
-                            // case 'rank':
-                            //     this.RexUI.newPanel(3);
-                            //     break;
+                            case 'rank':
+                                this.RexUI.newForm();
+                                break;
                         }
                     });
 
@@ -1814,18 +1819,14 @@ class GameStartScene extends Phaser.Scene {
         initBackground();
         initButton();
         initRexUI();
-
     };
     update() {
-
         var updateBGobj = () => {
             this.backgroundObj.gameTitle.spinningHandler();
         };
 
         updateBGobj();
     };
-
-
 };
 
 class GameOverScene extends Phaser.Scene {
@@ -1996,7 +1997,6 @@ class LoadingScene extends Phaser.Scene {
                     wave();
                 }
                 else if (packNum == 2) {
-                    let mineDir = envDir + 'background/mineBackground/';
                     var groundMatters = () => {
                         let terrainDir = envDir + 'terrain/'
 
@@ -2012,22 +2012,35 @@ class LoadingScene extends Phaser.Scene {
 
                     };
                     var mineBackground = () => {
+                        let mineDir = envDir + 'background/mineBackground/';
                         let resources = BackGroundResources['mine']['mineBackground'];
                         let mineBG = resources.static[gameScene.mineBGindex];
                         this.load.image('mineBG', mineDir + mineBG);
                     };
-                    var bossDoor = () => {
+                    var mineObjs = () => {
+                        let mineObjDir = envDir + 'mineobject/';
+
+                        this.load.spritesheet('tileCrack', mineObjDir + 'tileCrack.png',
+                            { frameWidth: 60, frameHeight: 60 });
+
+
                         if (gameScene.depthCounter.epicenter === null) return;
                         //==魔王門素材              
                         this.load.spritesheet('bossDoor',
-                            mineDir + 'bossDoor.png',
+                            mineObjDir + 'bossDoor.png',
                             { frameWidth: 100, frameHeight: 100 },
                         );
+
+                        this.load.spritesheet('bossTorch',
+                            mineObjDir + 'bossTorch.png',
+                            { frameWidth: 320, frameHeight: 320 },
+                        );
+
                     };
 
                     groundMatters();
                     mineBackground();
-                    bossDoor();
+                    mineObjs();
                 }
                 else if (packNum == 3) {
                     var bossRoom = () => {
@@ -3230,6 +3243,7 @@ class DigScene extends Phaser.Scene {
         const height = Math.ceil(canvas.height * 0.7 / this.tileSize) * this.tileSize;
 
         const Depth = {
+            gate: 4,
             platform: 5,
             tips: 6,
             enemy: 9,
@@ -3237,18 +3251,6 @@ class DigScene extends Phaser.Scene {
             pickUpObj: 11,
             bullet: 15,
             UI: 20,
-            /*
-            Depth:
-              0-4(background)
-              5(laser)
-              6(wave)
-              7(orbs)
-              9(enemy)
-              10(player)
-              11(orb pickUp)
-              15(bullet)
-              20(UI:HP bar...)
-            */
         };
         this.Depth = Depth;//==gameObject.js用到
 
@@ -3347,6 +3349,13 @@ class DigScene extends Phaser.Scene {
                         frameRate: 5,
                         repeat: -1
                     });
+
+                    this.anims.create({
+                        key: "tileCrack",
+                        frames: this.anims.generateFrameNumbers("tileCrack"),
+                        frameRate: 5,
+                        repeat: 0
+                    });
                 };
                 animsCreate();
 
@@ -3381,17 +3390,35 @@ class DigScene extends Phaser.Scene {
                     player.stopCursorsFlag = true;
                     // console.debug(tile.attribute.hardness);
 
-                    // console.debug(tile);
+                    //
                     // console.debug();
                     // let touching = tile.body.touching;
                     // console.debug(`left:${touching.left},right:${touching.right},up:${touching.up},down:${touching.down}`);
 
                     this.time.delayedCall(player.stats.attackSpeed, () => {
                         player.diggingFlag = false;
-                        if (--tile.attribute.hardness <= 0) tile.destroy();
+
+
+                        console.debug(tile);
+                        //==出現裂痕
+                        if (!tile.crack) {
+                            tile.crack = this.add.sprite(tile.x, tile.y).play('tileCrack');
+                            tile.crack
+                                .setOrigin(0)
+                                .setScale(this.tileSize / tile.crack.displayWidth)
+                                .setDepth(tile.depth + 1);
+                        };
+
+                        if (--tile.attribute.hardness <= 0) {
+                            tile.destroy();
+                            tile.crack.destroy();
+                        };
                         player.setVelocityY(400);
                         player.stopCursorsFlag = false;
 
+
+
+                        //===助手解說岩性
                         if (player.digOnSomething && tile.name) {//==有名的石頭
                             player.digOnSomething = false;
                             this.sidekick.remindingHadler(this.sidekick, tile.name);
@@ -3579,12 +3606,12 @@ class DigScene extends Phaser.Scene {
                         frameRate: 3,
                         repeat: 0,
                     });
-                    // this.anims.create({
-                    //     key: 'bossTorch_burn',
-                    //     frames: this.anims.generateFrameNumbers('bossTorch'),
-                    //     frameRate: 3,
-                    //     repeat: -1,
-                    // });
+                    this.anims.create({
+                        key: 'bossTorch_burn',
+                        frames: this.anims.generateFrameNumbers('bossTorch'),
+                        frameRate: 20,
+                        repeat: -1,
+                    });
                 };
                 animsCreate();
             };
@@ -3855,7 +3882,6 @@ class BossScene extends Phaser.Scene {
         const height = canvas.height;
         const localeJSON = this.gameData.localeJSON;
         const Depth = {
-            gate: 5,
             tips: 6,
             flame: 8,
             player: 10,

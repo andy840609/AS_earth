@@ -1742,19 +1742,21 @@ class Chunk {
                             //門下無法破壞石塊
                             key = (tileX >= bossX - 3 * tileSize && tileX < bossX + 3 * tileSize) ?
                                 "gateStone" : "";
-                        };
+                        }
                         //火把
-                        // else if (tileX == bossX - 60 && tileY == bossY) {
-                        //     let bossTorch = this.gameScene.add.sprite(bossX, bossY + tileSize, 0, 0, 'bossTorch');
+                        else if ((tileX == bossX - 4 * tileSize || tileX == bossX + 4 * tileSize) &&
+                            tileY == bossY - tileSize) {
 
-                        //     bossTorch
-                        //         // .setScale(tileSize / bossTorch.width)
-                        //         .setOrigin(0.5, 1)
-                        //         .setDepth(99)
-                        //         .play('bossTorch_burn');
+                            let bossTorch = this.gameScene.add.sprite(tileX, tileY, 'bossTorch');
 
-                        //     console.debug(tileX, tileY)
-                        // };
+                            bossTorch
+                                .setScale(0.5)
+                                .setOrigin(0.5, 1)
+                                .setDepth(this.gameScene.Depth.gate + 1)
+                                .play('bossTorch_burn');
+
+                            console.debug(this.gameScene.Depth);
+                        };
 
                         if (key === undefined) continue;
                         // console.debug(key);
@@ -1898,7 +1900,7 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                 color: character == 'doctor' ?
                     '#272727' : '#fff',
                 wrap: {
-                    mode: 'word',
+                    mode: 0,// 0|'none'|1|'word'|2|'char'|'character'
                     width: wrapWidth
                 },
                 // maxLines: 3,
@@ -2217,9 +2219,8 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
             scrollMode = config.scrollMode ? config.scrollMode : 0,
             panelType = {//===panelType暫定: 0:緣由 1:設定 2:連結 3:道具
                 'intro': 0,
-                'setting': 1,
+                'setting': 3,
                 'links': 2,
-                'contact': 3,
                 'rank': 3,
             }[config.panelType];
 
@@ -2233,8 +2234,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                     intro: gameData.localeJSON.Intro,
                     category: {}
                 };
-                footerItem = ['ok', 'cancel'];
-                // footerItem = ['close'];
+                footerItem = ['close'];
                 break;
             case 1:
                 data = {
@@ -2248,7 +2248,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                     name: panelName,
                     category: {}
                 };
-                footerItem = ['ok', 'cancel'];
+                footerItem = ['close'];
                 break;
             case 3:
                 data = {
@@ -2309,14 +2309,27 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
         var createPanel = (scene, data) => {
             var createTable = (scene, key = null) => {
                 var getText = (text) => {
-                    return new RexPlugins.UI.Label(scene, {
-                        orientation: !scrollMode,
-                        text: scene.add.text(0, 0, text, {
-                            fontSize: '36px',
-                            padding: padding,
-                        }),
-                        // align: 'left',
+                    // return new RexPlugins.UI.Label(scene, {
+                    //     orientation: !scrollMode,
+                    //     text: scene.add.text(0, 0, text, {
+                    //         fontSize: '36px',
+                    //         padding: padding,
+                    //     }),
+                    //     // align: 'left',
+                    // });
+
+                    return new RexPlugins.UI.BBCodeText(scene, 0, 0, text, {
+                        // fixedWidth:200,
+                        fontSize: '36px',
+                        // color: '#272727',
+                        wrap: {
+                            mode: 2,// 0|'none'|1|'word'|2|'char'|'character'
+                            width: config.width
+                        },
+                        align: 'left',
+                        padding: padding,
                     });
+
                 };
 
                 const Sizer = new RexPlugins.UI.Sizer(scene, {
@@ -2414,7 +2427,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
 
                     Sizer
                         .add(
-                            getText(newContentr), // child
+                            scene.add.existing(getText(data.intro)), // child
                             {
                                 proportion: 1,
                                 align: 'center',
@@ -2610,4 +2623,107 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
         // })
 
     };
+};
+
+//==輸入ID UI
+class RexForm {
+    constructor(scene, config, resolve) {
+
+        var loginDialog = CreateLoginDialog(this, {
+            x: 400,
+            y: 300,
+            title: 'Welcome',
+            username: 'abc',
+            password: '123',
+        })
+            .on('login', function (username, password) {
+                print.text += `${username}:${password}\n`;
+            })
+            //.drawBounds(this.add.graphics(), 0xff0000);
+            .popUp(500);
+
+        var CreateLoginDialog = function (scene, config, onSubmit) {
+            var username = GetValue(config, 'username', '');
+            var password = GetValue(config, 'password', '');
+            var title = GetValue(config, 'title', 'Welcome');
+            var x = GetValue(config, 'x', 0);
+            var y = GetValue(config, 'y', 0);
+            var width = GetValue(config, 'width', undefined);
+            var height = GetValue(config, 'height', undefined);
+
+            var background = new RexPlugins.UI.RoundRectangle(scene, 0, 0, 10, 10, 10, COLOR_PRIMARY);
+            var titleField = scene.add.text(0, 0, title);
+            var userNameField = new RexPlugins.UI.Label(scene, {
+                orientation: 'x',
+                background: new RexPlugins.UI.RoundRectangle(scene, 0, 0, 10, 10, 10).setStrokeStyle(2, COLOR_LIGHT),
+                icon: scene.add.image(0, 0, 'user'),
+                text: new RexPlugins.UI.BBCodeText(scene, 0, 0, username, { fixedWidth: 150, fixedHeight: 36, valign: 'center' }),
+                space: { top: 5, bottom: 5, left: 5, right: 5, icon: 10, }
+            })
+                .setInteractive()
+                .on('pointerdown', function () {
+                    var config = {
+                        onTextChanged: function (textObject, text) {
+                            username = text;
+                            textObject.text = text;
+                        }
+                    }
+                    scene.rexUI.edit(userNameField.getElement('text'), config);
+                });
+
+            var passwordField = new RexPlugins.UI.Label(scene, {
+                orientation: 'x',
+                background: new RexPlugins.UI.RoundRectangle(scene, 0, 0, 10, 10, 10).setStrokeStyle(2, COLOR_LIGHT),
+                icon: scene.add.image(0, 0, 'password'),
+                text: new RexPlugins.UI.BBCodeText(scene, 0, 0, markPassword(password), { fixedWidth: 150, fixedHeight: 36, valign: 'center' }),
+                space: { top: 5, bottom: 5, left: 5, right: 5, icon: 10, }
+            })
+                .setInteractive()
+                .on('pointerdown', function () {
+                    var config = {
+                        type: 'password',
+                        text: password,
+                        onTextChanged: function (textObject, text) {
+                            password = text;
+                            textObject.text = markPassword(password);
+                        }
+                    };
+                    scene.rexUI.edit(passwordField.getElement('text'), config);
+                });
+
+            var loginButton = new RexPlugins.UI.Label(scene, {
+                orientation: 'x',
+                background: new RexPlugins.UI.RoundRectangle(scene, 0, 0, 10, 10, 10, COLOR_LIGHT),
+                text: scene.add.text(0, 0, 'Login'),
+                space: { top: 8, bottom: 8, left: 8, right: 8 }
+            })
+                .setInteractive()
+                .on('pointerdown', function () {
+                    loginDialog.emit('login', username, password);
+                });
+
+            var loginDialog = new RexPlugins.UI.Sizer(scene, {
+                orientation: 'y',
+                x: x,
+                y: y,
+                width: width,
+                height: height,
+            })
+                .addBackground(background)
+                .add(titleField, 0, 'center', { top: 10, bottom: 10, left: 10, right: 10 }, false)
+                .add(userNameField, 0, 'left', { bottom: 10, left: 10, right: 10 }, true)
+                .add(passwordField, 0, 'left', { bottom: 10, left: 10, right: 10 }, true)
+                .add(loginButton, 0, 'center', { bottom: 10, left: 10, right: 10 }, false)
+                .layout();
+            return loginDialog;
+        };
+        var markPassword = function (password) {
+            return new Array(password.length + 1).join('•');
+        };
+
+
+
+        // this.layout();
+    };
+
 };

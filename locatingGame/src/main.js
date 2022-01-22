@@ -283,7 +283,7 @@ function locatingGame() {
                     },
                     sidekick: {
                         type: sidekick,
-                        lineStage: [3, 0],//==第2-0句
+                        lineStage: [1, 0],//==第2-0句
                         doneTalking: false,
                         stopHotkey: false,//==對話完空白鍵不再出現對話（只能滑鼠點）
                     },
@@ -303,6 +303,7 @@ function locatingGame() {
                 };
                 var startScene = async () => {
                     GameData.localeJSON = await getLanguageJSON();
+
 
                     gameDisplay(true);
 
@@ -327,6 +328,7 @@ function locatingGame() {
                     // gameStart('dig');
                     //==test
                 };
+
                 startScene();
             };
             function initEndScene(win = false) {
@@ -799,7 +801,7 @@ function locatingGame() {
 
                             let bigMapDOMRect = bigMap.getBoundingClientRect();
                             let targetDOMRect = target.getBoundingClientRect();
-                            // console.debug(bigMapDOMRect);
+                            // console.debug(target);
 
                             let top = targetDOMRect.top - bigMapDOMRect.top,
                                 left = targetDOMRect.left - bigMapDOMRect.left + 80;

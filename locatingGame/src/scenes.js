@@ -1531,7 +1531,9 @@ class UIScene extends Phaser.Scene {
                     dialogHeight: height * 0.2,
                 };
 
-                preload = () => { };
+                preload = () => {
+                    // this.load.plugin('rextexteditplugin', 'src/phaser-3.55.2/plugins/rexplugins/rextexteditplugin.min.js', true);
+                };
                 create = () => {
                     var addRexUI = () => {
                         //==對話框
@@ -1559,7 +1561,6 @@ class UIScene extends Phaser.Scene {
                                 x: DLconfig.dialogX,
                                 y: DLconfig.dialogY * 0.5,
                                 data: data,
-                                locale: gameScene.gameData.locale,
                                 bossQuiz: bossQuiz,
                             }, resolve)
                                 .setDepth(Depth.UI)
@@ -1584,15 +1585,15 @@ class UIScene extends Phaser.Scene {
 
                         //==使用者填入表單
                         this.newForm = (panelType = 0, resolve = null) => {
-
+                            // 
                             return new RexForm(this, {
-                                // x: DLconfig.dialogX,
-                                // y: DLconfig.dialogY * 0.5,
-                                // width: width * 0.6,
-                                // height: height * 0.5,
-                                // gameData: gameScene.gameData,
+                                x: DLconfig.dialogX,
+                                y: DLconfig.dialogY * 0.5,
+                                width: width * 0.6,
+                                height: height * 0.5,
+                                gameData: gameScene.gameData,
                             }, resolve)
-                                .setDepth(Depth.UI)
+                                // .setDepth(Depth.UI)
                                 .popUp(500);
 
                         };
@@ -1659,8 +1660,24 @@ class UIScene extends Phaser.Scene {
 };
 
 class GameStartScene extends Phaser.Scene {
+
     constructor(GameData, resolve) {
-        super({ key: 'gameScene' });
+
+        var sceneConfig = {
+            key: 'gameScene',
+            pack: {
+                files: [
+                    {//==rextexteditplugin
+                        type: 'plugin',
+                        key: 'rextexteditplugin',
+                        url: 'src/phaser-3.55.2/plugins/rexplugins/rextexteditplugin.min.js',
+                        start: true,
+                    },
+                ]
+            },
+        };
+
+        super(sceneConfig);
 
         Object.assign(this, {
             name: 'GameStart',
@@ -1674,6 +1691,7 @@ class GameStartScene extends Phaser.Scene {
         this.load.image('startScene', UIDir + 'startScene.jpg');
         this.load.image('startButton', UIDir + 'startButton.png');
         this.load.image('gameTitle', UIDir + 'title.png');
+
     };
     create() {
         const canvas = this.sys.game.canvas;
@@ -1757,6 +1775,12 @@ class GameStartScene extends Phaser.Scene {
                                 break;
 
 
+                            case 'rank':
+                                let aaa = this.RexUI.newForm();
+                                console.debug(aaa);
+                                // aaa.destroy();
+                                break;
+
                             // case 'intro':
                             //     this.RexUI.newPanel(0);
                             //     break;
@@ -1770,9 +1794,7 @@ class GameStartScene extends Phaser.Scene {
                             // case 'contact':
                             //     this.RexUI.newPanel(3);
                             //     break;
-                            case 'rank':
-                                this.RexUI.newForm();
-                                break;
+
                         }
                     });
 
@@ -2000,11 +2022,11 @@ class LoadingScene extends Phaser.Scene {
                     var groundMatters = () => {
                         let terrainDir = envDir + 'terrain/'
 
-                        this.load.image('sprSand', terrainDir + 'sprSand.png');
-                        this.load.spritesheet('sprWater', terrainDir + 'sprWater.png',
-                            { frameWidth: 60, frameHeight: 60 });
-                        this.load.image('gateStone', terrainDir + 'gateStone.png');
+                        // this.load.image('sprSand', terrainDir + 'sprSand.png');
+                        // this.load.spritesheet('sprWater', terrainDir + 'sprWater.png',
+                        //     { frameWidth: 60, frameHeight: 60 });
 
+                        this.load.image('gateStone', terrainDir + 'gateStone.png');
 
                         this.load.image('terrain1', terrainDir + '1.png');
                         this.load.image('terrain2', terrainDir + '2.png');
@@ -2021,10 +2043,11 @@ class LoadingScene extends Phaser.Scene {
                         let mineObjDir = envDir + 'mineobject/';
 
                         this.load.spritesheet('tileCrack', mineObjDir + 'tileCrack.png',
-                            { frameWidth: 60, frameHeight: 60 });
+                            { frameWidth: 100, frameHeight: 100 });
 
 
                         if (gameScene.depthCounter.epicenter === null) return;
+
                         //==魔王門素材              
                         this.load.spritesheet('bossDoor',
                             mineObjDir + 'bossDoor.png',
@@ -2084,18 +2107,31 @@ class LoadingScene extends Phaser.Scene {
                 var sprite = () => {
                     const playerRole = gameData.playerRole;
                     const dir = gameObjDir + 'player/' + playerRole + '/';
-                    const frameObj = { frameWidth: 48, frameHeight: 48 };
+                    const frameObj = { frameWidth: 96, frameHeight: 128 };
+                    // const frameObj = { frameWidth: 48, frameHeight: 48 };
 
-                    this.load.spritesheet('player_attack', dir + playerRole + '_attack2.png', frameObj);
-                    this.load.spritesheet('player_specialAttack', dir + playerRole + '_attack3.png', frameObj);
-                    this.load.spritesheet('player_punch', dir + playerRole + '_punch.png', frameObj);
-                    this.load.spritesheet('player_death', dir + playerRole + '_death.png', frameObj);
-                    this.load.spritesheet('player_jump', dir + playerRole + '_jump.png', frameObj);
-                    this.load.spritesheet('player_doublejump', dir + playerRole + '_doublejump.png', frameObj);
-                    this.load.spritesheet('player_hurt', dir + playerRole + '_hurt.png', frameObj);
-                    this.load.spritesheet('player_idle', dir + playerRole + '_idle.png', frameObj);
-                    this.load.spritesheet('player_run', dir + playerRole + '_run.png', frameObj);
-                    this.load.spritesheet('player_runAttack', dir + playerRole + '_run_attack.png', frameObj);
+                    // this.load.spritesheet('player_attack', dir + playerRole + '_attack2.png', frameObj);
+                    // this.load.spritesheet('player_specialAttack', dir + playerRole + '_attack3.png', frameObj);
+                    // this.load.spritesheet('player_punch', dir + playerRole + '_punch.png', frameObj);
+                    // this.load.spritesheet('player_death', dir + playerRole + '_death.png', frameObj);
+                    // this.load.spritesheet('player_jump', dir + playerRole + '_jump.png', frameObj);
+                    // this.load.spritesheet('player_doublejump', dir + playerRole + '_doublejump.png', frameObj);
+                    // this.load.spritesheet('player_hurt', dir + playerRole + '_hurt.png', frameObj);
+                    // this.load.spritesheet('player_idle', dir + playerRole + '_idle.png', frameObj);
+                    // this.load.spritesheet('player_run', dir + playerRole + '_run.png', frameObj);
+                    // this.load.spritesheet('player_runAttack', dir + playerRole + '_run_attack.png', frameObj);
+
+
+                    this.load.spritesheet('player_attack', dir + 'attack.png', frameObj);
+                    this.load.spritesheet('player_specialAttack', dir + 'specialAttack.png', frameObj);
+                    this.load.spritesheet('player_death', dir + 'death.png', frameObj);
+                    this.load.spritesheet('player_jump', dir + 'jump.png', frameObj);
+                    this.load.spritesheet('player_doubleJump', dir + 'doubleJump.png', frameObj);
+                    this.load.spritesheet('player_jumpAttack', dir + 'jumpAttack.png', frameObj);
+                    this.load.spritesheet('player_hurt', dir + 'hurt.png', frameObj);
+                    this.load.spritesheet('player_idle', dir + 'idle.png', frameObj);
+                    this.load.spritesheet('player_run', dir + 'run.png', frameObj);
+                    this.load.spritesheet('player_runAttack', dir + 'runAttack.png', frameObj);
 
                     //==effect
                     const effectDir = gameObjDir + 'player/effect/';
@@ -2113,6 +2149,12 @@ class LoadingScene extends Phaser.Scene {
                         Punk: {
                             attack: [126, 60],
                             jump: [65, 60],
+                        },
+                        Male: {
+                            attack: [126, 60],
+                            jump: [120, 80],
+                            run: [110, 60],
+                            ult: [300, 150],
                         },
                     }[playerRole];
 
@@ -2264,7 +2306,7 @@ class LoadingScene extends Phaser.Scene {
                     else if (packNum == 3) {
                         this.load.image('bossAvatar', avatarDir + 'boss.jpg');
                     };
-                    this.load.image('playerAvatar', avatarDir + gameData.playerRole + '.png');
+                    this.load.image('playerAvatar', avatarDir + gameData.playerCustom.avatar + '.png');
                     this.load.image('sidekickAvatar', avatarDir + gameData.sidekick.type + '.png');
                 };
                 textBox();
@@ -3022,12 +3064,14 @@ class DefendScene extends Phaser.Scene {
 
                     //==對話完才開始
                     let lines = this.gameData.localeJSON.Lines;
-                    let sidekickContent = lines.sidekick['defend'];
-                    let enemyContent = lines.enemy;
-                    let sidekickName = this.gameData.sidekick.type;
+                    let sidekickContent = lines.sidekick['defend'],
+                        enemyContent = lines.enemy;
+                    let playerName = this.gameData.playerCustom.name,
+                        sidekickName = this.gameData.sidekick.type;
+                    // console.debug(playerName);
 
                     //==填入名子
-                    let intro = sidekickContent[0].replace('\t', '').replace('\t', sidekickName);
+                    let intro = sidekickContent[0].replace('\t', playerName).replace('\t', sidekickName);
                     await new Promise(resolve => this.RexUI.newDialog(intro, { character: 'sidekick' }, resolve));
                     await tutorial(sidekickContent);
 
@@ -3209,7 +3253,7 @@ class DigScene extends Phaser.Scene {
             gameData: GameData,
             background: placeData.background,
             mineBGindex: placeData.mineBGindex,
-            tileSize: 60,//==地質塊寬高
+            tileSize: 100,//==地質塊寬高
             depthCounter: {
                 epicenter: placeData.depth,
                 depthScale: 0.034,//0.003
@@ -3464,9 +3508,9 @@ class DigScene extends Phaser.Scene {
 
                     //==助手對話
                     if (!this.sidekick.gateEventFlag) {
-                        let sidekickContent = localeJSON.Lines.sidekick['dig'];
+                        let sidekickContent = localeJSON.Lines.sidekick['dig'][4].replace('\t', this.gameData.playerCustom.name);
 
-                        await new Promise(resolve => this.RexUI.newDialog(sidekickContent[4], {
+                        await new Promise(resolve => this.RexUI.newDialog(sidekickContent, {
                             character: 'sidekick',
                             pageendEvent: true,
                         }, resolve));
@@ -3693,9 +3737,10 @@ class DigScene extends Phaser.Scene {
                     //==對話完才開始
                     let lines = this.gameData.localeJSON.Lines;
                     let sidekickContent = lines.sidekick['dig'];
+                    let playerName = this.gameData.playerCustom.name;
 
                     //==填入名子
-                    let intro = sidekickContent[0].replace('\t', '');
+                    let intro = sidekickContent[0].replace('\t', playerName);
                     await new Promise(resolve => this.RexUI.newDialog(intro, { character: 'sidekick' }, resolve));
                     await tutorial(sidekickContent);
                     await new Promise(resolve => this.RexUI.newDialog(sidekickContent[3], { character: 'sidekick', pageendEvent: true }, resolve));

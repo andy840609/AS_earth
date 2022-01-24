@@ -81,6 +81,22 @@ const GameObjectStats = {
             MP: 150,
             maxMP: 150,
         },
+        Male: {
+            class: 0,//==近戰
+            movementSpeed: 300,
+            jumpingPower: 400,
+            attackSpeed: 400,//一發持續300ms
+            attackPower: 120,
+            attackRange: 55,
+            bulletSize: [120, 130],
+            knockBackSpeed: 250,//==擊退時間固定200ms,這個速度越大擊退越遠
+            manaCost: 6,
+            manaRegen: 1,//per 10 ms(game update per 10ms)0.1
+            HP: 150,
+            maxHP: 150,
+            MP: 60,
+            maxMP: 60,
+        },
     },
     sidekick: {
         Dude: {
@@ -133,12 +149,12 @@ const GameObjectStats = {
         terrain3: {//花崗岩
             hardness: 2,
         },
-        sprSand: {
-            hardness: 1,
-        },
-        sprWater: {
-            hardness: 1,
-        },
+        // sprSand: {
+        //     hardness: 1,
+        // },
+        // sprWater: {
+        //     hardness: 1,
+        // },
         gateStone: {
             hardness: 999,
         },
@@ -942,15 +958,15 @@ const Player = new Phaser.Class({
                 });
 
                 scene.anims.create({
-                    key: 'player_doublejump',
-                    frames: scene.anims.generateFrameNumbers('player_doublejump'),
+                    key: 'player_doubleJump',
+                    frames: scene.anims.generateFrameNumbers('player_doubleJump'),
                     frameRate: 8,
                     repeat: 0,
                 });
 
                 scene.anims.create({
                     key: 'player_jumpAttack',
-                    frames: scene.anims.generateFrameNumbers('player_punch'),
+                    frames: scene.anims.generateFrameNumbers('player_jumpAttack'),
                     frameRate: 10,
                     repeat: 0,
                 });
@@ -997,15 +1013,15 @@ const Player = new Phaser.Class({
             animsCreate();
 
             this
-                .setScale(2)
+                // .setScale(2)
                 .setCollideWorldBounds(true)
                 .setPushable(false)
                 .setName('player')
                 .play('player_idle');
 
             this.body
-                .setSize(18, 35, true)
-                .setOffset(4, 13)
+                .setSize(45, 100, true)
+                .setOffset(this.body.offset.x, 30)
                 .setGravityY(500);
             // console.debug(this.body);
 
@@ -1045,7 +1061,7 @@ const Player = new Phaser.Class({
     //=處理轉向
     filpHandler: function (filp) {
         this.setFlipX(filp);
-        this.body.offset.x = (filp ? 26 : 4);
+        // this.body.offset.x = (filp ? 26 : 4);
 
         //==effect
         //==沙子動畫不突然轉向
@@ -1071,7 +1087,7 @@ const Player = new Phaser.Class({
         let currentAnims = this.anims.getName();
         let isBusy =
             ((currentAnims === 'player_runAttack' || currentAnims === 'player_jumpAttack') && this.anims.isPlaying)
-            || (currentAnims === 'player_doublejump' && !this.body.touching.down);
+            || (currentAnims === 'player_doubleJump' && !this.body.touching.down);
 
         if (cursors[controllCursor['left']].isDown) {
             this.setVelocityX(-this.stats.movementSpeed);
@@ -1112,7 +1128,7 @@ const Player = new Phaser.Class({
                     //==二段跳
                     else if (this.anims.getName() === 'player_jump' && this.doublejumpFlag) {
                         this.setVelocityY(-this.stats.jumpingPower);
-                        this.anims.play('player_doublejump', true);
+                        this.anims.play('player_doubleJump', true);
                         this.doublejumpFlag = false;
                     };
 
@@ -1630,7 +1646,7 @@ const Doctor = new Phaser.Class({
                     delay: 200,
                     onStart: () => this.dialog.start(tipText, 70),//==(text,typeSpeed(ms per word))
                     onComplete: () => this.talkingCallback = null,//==一次對話結束
-                    onActive: () => console.debug('onUpdate'),
+                    // onActive: () => console.debug('onUpdate'),
                 });
 
             }, [], scene);
@@ -1770,38 +1786,37 @@ class Chunk {
                     //==terrain1:沉積岩 terrain2:火成岩 terrain3:花崗岩 sprSand sprWater
                     if (key == "" || !key)
                         if (tileY <= this.yRange[0]) {
-                            if (perlinValue < this.pRange[0])
-                                key = "sprSand"
-                            else if (perlinValue < this.pRange[1]) {
-                                key = "sprWater";
-                                animationKey = "sprWater";
-                            }
-                            else
-                                key = "terrain1";
+                            // if (perlinValue < this.pRange[0])
+                            //     key = "sprSand"
+                            // else if (perlinValue < this.pRange[1]) {
+                            //     key = "sprWater";
+                            //     animationKey = "sprWater";
+                            // }
+                            // else
+                            key = "terrain1";
                         }
                         else if (tileY <= this.yRange[1]) {
-                            if (perlinValue < this.pRange[0])
-                                key = "sprSand"
-                            else if (perlinValue < this.pRange[1]) {
-                                key = "sprWater";
-                                animationKey = "sprWater";
-                            }
-                            else
-                                key = "terrain2";
+                            // if (perlinValue < this.pRange[0])
+                            //     key = "sprSand"
+                            // else if (perlinValue < this.pRange[1]) {
+                            //     key = "sprWater";
+                            //     animationKey = "sprWater";
+                            // }
+                            // else
+                            key = "terrain2";
                         }
                         else if (tileY <= this.yRange[2]) {
-                            if (perlinValue < this.pRange[0])
-                                key = "sprSand"
-                            else if (perlinValue < this.pRange[1]) {
-                                key = "sprWater";
-                                animationKey = "sprWater";
-                            }
-                            else
-                                key = "terrain3";
+                            // if (perlinValue < this.pRange[0])
+                            //     key = "sprSand"
+                            // else if (perlinValue < this.pRange[1]) {
+                            //     key = "sprWater";
+                            //     animationKey = "sprWater";
+                            // }
+                            // else
+                            key = "terrain3";
                         }
                         else {
-                            key = "sprWater";
-                            animationKey = "sprWater";
+                            key = "gateStone";
                         };
 
                     var tile = new Tile(this.gameScene, tileX, tileY, key);
@@ -1841,7 +1856,6 @@ class Tile extends Phaser.GameObjects.Sprite {
 //===對話框
 class RexTextBox extends RexPlugins.UI.TextBox {
     constructor(scene, config, resolve = null) {
-
         var tips = resolve ? false : true;//==助手知識
         var character = config.character;
 
@@ -2007,7 +2021,6 @@ class RexDialog extends RexPlugins.UI.Dialog {
         // console.debug(scene, config, resolve);
 
         var data = config.data,
-            locale = config.locale,
             bossQuiz = config.bossQuiz;
 
         const
@@ -2044,21 +2057,23 @@ class RexDialog extends RexPlugins.UI.Dialog {
             // console.debug(scene);
             if (bossQuiz) {
                 //==分行
-                const
-                    charInLine = locale == "zh-TW" ? 8 : 15,//每行字數
-                    lineCount = parseInt((data.content.length - 1) / charInLine);//總行數
-                let newStr = lineCount ? '' : data.content;
-                for (let i = 0; i < lineCount; i++) {
-                    let lastIdx = (i + 1) * charInLine;
+                // const
+                //     charInLine = locale == "zh-TW" ? 8 : 15,//每行字數
+                //     lineCount = parseInt((data.content.length - 1) / charInLine);//總行數
+                // let newStr = lineCount ? '' : data.content;
+                // for (let i = 0; i < lineCount; i++) {
+                //     let lastIdx = (i + 1) * charInLine;
 
-                    let line = data.content.slice(i * charInLine, lastIdx) + '\n';
-                    if (i == lineCount - 1) line += data.content.slice(lastIdx);//==不足一行
-                    newStr += line;
-                };
+                //     let line = data.content.slice(i * charInLine, lastIdx) + '\n';
+                //     if (i == lineCount - 1) line += data.content.slice(lastIdx);//==不足一行
+                //     newStr += line;
+                // };
                 // console.debug(data, data.content);
 
                 // Set content
-                this.getElement('content').text = newStr;
+                // this.getElement('content').text = newStr;
+                this.getElement('content').setText(data.content);
+
                 // Set title
                 this.getElement('title').text = GetValue(data, 'title', ' ');
                 // Set choices
@@ -2096,13 +2111,25 @@ class RexDialog extends RexPlugins.UI.Dialog {
         const dialogConfig = {
             x: config.x,
             y: config.y,
-            width: bossQuiz ? 360 : false,
+            // width: bossQuiz ? 360 : false,
             background: scene.add.existing(rexRect),
             title: bossQuiz ? createLabel(scene, ' ', COLOR_DARK) : null,
-            content: scene.add.text(0, 0, '', {
-                fontSize: '36px',
-                padding: padding,
-            }),
+            // content: scene.add.text(0, 0, '', {
+            //     fontSize: '36px',
+            //     padding: padding,
+            // }),
+            content: scene.add.existing(
+                new RexPlugins.UI.BBCodeText(scene, 0, 0, '', {
+                    // fixedWidth:200,
+                    fontSize: '36px',
+                    // color: '#272727',
+                    wrap: {
+                        mode: 2,// 0|'none'|1|'word'|2|'char'|'character'
+                        width: bossQuiz ? 360 : false,
+                    },
+                    align: 'left',
+                    padding: padding,
+                })),
             choices: bossQuiz ?
                 [
                     createLabel(scene, ' ', COLOR_LIGHT),
@@ -2308,29 +2335,23 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
 
         var createPanel = (scene, data) => {
             var createTable = (scene, key = null) => {
-                var getText = (text) => {
-                    // return new RexPlugins.UI.Label(scene, {
-                    //     orientation: !scrollMode,
-                    //     text: scene.add.text(0, 0, text, {
-                    //         fontSize: '36px',
-                    //         padding: padding,
-                    //     }),
-                    //     // align: 'left',
-                    // });
+                var getText = (text, BBText = false) => {
 
-                    return new RexPlugins.UI.BBCodeText(scene, 0, 0, text, {
-                        // fixedWidth:200,
-                        fontSize: '36px',
-                        // color: '#272727',
-                        wrap: {
-                            mode: 2,// 0|'none'|1|'word'|2|'char'|'character'
-                            width: config.width
-                        },
-                        align: 'left',
-                        padding: padding,
-                    });
+                    return scene.add.existing(
+                        new RexPlugins.UI.BBCodeText(scene, 0, 0, text, {
+                            // fixedWidth:200,
+                            fontSize: '36px',
+                            // color: '#272727',
+                            wrap: {
+                                mode: 2,// 0|'none'|1|'word'|2|'char'|'character'
+                                width: config.width
+                            },
+                            align: 'left',
+                            padding: padding,
+                        }));
 
                 };
+
 
                 const Sizer = new RexPlugins.UI.Sizer(scene, {
                     orientation: scrollMode,
@@ -2427,7 +2448,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
 
                     Sizer
                         .add(
-                            scene.add.existing(getText(data.intro)), // child
+                            getText(data.intro), // child
                             {
                                 proportion: 1,
                                 align: 'center',
@@ -2626,104 +2647,121 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
 };
 
 //==輸入ID UI
-class RexForm {
+class RexForm extends RexPlugins.UI.Sizer {
     constructor(scene, config, resolve) {
 
-        var loginDialog = CreateLoginDialog(this, {
-            x: 400,
-            y: 300,
-            title: 'Welcome',
-            username: 'abc',
-            password: '123',
+        const GetValue = Phaser.Utils.Objects.GetValue;
+        const COLOR_PRIMARY = 0x4e342e;
+        const COLOR_LIGHT = 0x7b5e57;
+        const COLOR_DARK = 0x260e04;
+        const padding = {
+            left: 3,
+            right: 3,
+            top: 3,
+            bottom: 3,
+        };
+
+        // scene.load
+        //     .plugin('rextexteditplugin', 'src/phaser-3.55.2/plugins/rexplugins/rextexteditplugin.min.js')
+        //     .on('filecomplete', () => {
+        //         const rextexteditplugin = scene.plugins.get('rextexteditplugin');
+        //         console.debug(rextexteditplugin)
+        //     })
+        //     .start();
+
+
+
+        const rextexteditplugin = scene.plugins.get('rextexteditplugin');
+        var username = GetValue(config, 'username', '');
+
+
+        var userNameField = new RexPlugins.UI.Label(scene, {
+            orientation: 'x',
+            background: scene.add.existing(
+                new RexPlugins.UI.RoundRectangle(scene, 0, 0, 10, 10, 10).setStrokeStyle(2, COLOR_LIGHT)),
+            // icon: scene.add.image(0, 0, 'user'),
+            text: scene.add.existing(
+                new RexPlugins.UI.BBCodeText(scene, 0, 0, username, { fixedWidth: 150, fixedHeight: 36, valign: 'center' })),
+            space: { top: 5, bottom: 5, left: 5, right: 5, icon: 10, }
         })
-            .on('login', function (username, password) {
-                print.text += `${username}:${password}\n`;
-            })
-            //.drawBounds(this.add.graphics(), 0xff0000);
-            .popUp(500);
-
-        var CreateLoginDialog = function (scene, config, onSubmit) {
-            var username = GetValue(config, 'username', '');
-            var password = GetValue(config, 'password', '');
-            var title = GetValue(config, 'title', 'Welcome');
-            var x = GetValue(config, 'x', 0);
-            var y = GetValue(config, 'y', 0);
-            var width = GetValue(config, 'width', undefined);
-            var height = GetValue(config, 'height', undefined);
-
-            var background = new RexPlugins.UI.RoundRectangle(scene, 0, 0, 10, 10, 10, COLOR_PRIMARY);
-            var titleField = scene.add.text(0, 0, title);
-            var userNameField = new RexPlugins.UI.Label(scene, {
-                orientation: 'x',
-                background: new RexPlugins.UI.RoundRectangle(scene, 0, 0, 10, 10, 10).setStrokeStyle(2, COLOR_LIGHT),
-                icon: scene.add.image(0, 0, 'user'),
-                text: new RexPlugins.UI.BBCodeText(scene, 0, 0, username, { fixedWidth: 150, fixedHeight: 36, valign: 'center' }),
-                space: { top: 5, bottom: 5, left: 5, right: 5, icon: 10, }
-            })
-                .setInteractive()
-                .on('pointerdown', function () {
-                    var config = {
-                        onTextChanged: function (textObject, text) {
-                            username = text;
-                            textObject.text = text;
-                        }
+            .setInteractive()
+            .on('pointerdown', function () {
+                var config = {
+                    onTextChanged: function (textObject, text) {
+                        username = text;
+                        textObject.text = text;
                     }
-                    scene.rexUI.edit(userNameField.getElement('text'), config);
-                });
+                };
+                rextexteditplugin.edit(userNameField.getElement('text'), config);
+            });
 
-            var passwordField = new RexPlugins.UI.Label(scene, {
-                orientation: 'x',
-                background: new RexPlugins.UI.RoundRectangle(scene, 0, 0, 10, 10, 10).setStrokeStyle(2, COLOR_LIGHT),
-                icon: scene.add.image(0, 0, 'password'),
-                text: new RexPlugins.UI.BBCodeText(scene, 0, 0, markPassword(password), { fixedWidth: 150, fixedHeight: 36, valign: 'center' }),
-                space: { top: 5, bottom: 5, left: 5, right: 5, icon: 10, }
-            })
-                .setInteractive()
-                .on('pointerdown', function () {
-                    var config = {
-                        type: 'password',
-                        text: password,
-                        onTextChanged: function (textObject, text) {
-                            password = text;
-                            textObject.text = markPassword(password);
-                        }
-                    };
-                    scene.rexUI.edit(passwordField.getElement('text'), config);
-                });
+        var loginButton = new RexPlugins.UI.Label(scene, {
+            orientation: 'x',
+            background: scene.add.existing(
+                new RexPlugins.UI.RoundRectangle(scene, 0, 0, 10, 10, 10, COLOR_LIGHT)),
+            text: scene.add.text(0, 0, 'Login'),
+            space: { top: 8, bottom: 8, left: 8, right: 8 }
+        })
+            .setInteractive()
+            .on('pointerdown', function () {
+                // loginDialog.emit('login', username, password);
+            });
 
-            var loginButton = new RexPlugins.UI.Label(scene, {
-                orientation: 'x',
-                background: new RexPlugins.UI.RoundRectangle(scene, 0, 0, 10, 10, 10, COLOR_LIGHT),
-                text: scene.add.text(0, 0, 'Login'),
-                space: { top: 8, bottom: 8, left: 8, right: 8 }
-            })
-                .setInteractive()
-                .on('pointerdown', function () {
-                    loginDialog.emit('login', username, password);
-                });
 
-            var loginDialog = new RexPlugins.UI.Sizer(scene, {
-                orientation: 'y',
-                x: x,
-                y: y,
-                width: width,
-                height: height,
-            })
-                .addBackground(background)
-                .add(titleField, 0, 'center', { top: 10, bottom: 10, left: 10, right: 10 }, false)
-                .add(userNameField, 0, 'left', { bottom: 10, left: 10, right: 10 }, true)
-                .add(passwordField, 0, 'left', { bottom: 10, left: 10, right: 10 }, true)
-                .add(loginButton, 0, 'center', { bottom: 10, left: 10, right: 10 }, false)
-                .layout();
-            return loginDialog;
-        };
-        var markPassword = function (password) {
-            return new Array(password.length + 1).join('•');
+        const formConfig = {
+            orientation: 'y',
+            x: config.x,
+            y: config.y,
+            width: config.width,
+            height: config.height,
         };
 
 
+        super(scene, formConfig);
 
-        // this.layout();
+
+
+        this
+            .addBackground(scene.add.existing(
+                new RexPlugins.UI.RoundRectangle(scene, 0, 0, 10, 10, 10, COLOR_PRIMARY)))
+            // .addBackground(background)
+            .add(
+                scene.add.text(0, 0, 'AAAA'),
+                {
+                    proportion: 0,
+                    align: 'center',
+                    padding: { top: 10, bottom: 10, left: 10, right: 10 },
+                    expand: false,
+                    index: 99,
+                })
+            // .add(titleField, 0, 'center', { top: 10, bottom: 10, left: 10, right: 10 }, false)
+            .add(userNameField,
+                {
+                    proportion: 0,
+                    align: 'left',
+                    padding: { top: 10, bottom: 10, left: 10, right: 10 },
+                    expand: true,
+                    index: 99,
+                })
+            .add(loginButton.setDepth(999),
+                {
+                    proportion: 0,
+                    align: 'center',
+                    padding: { top: 10, bottom: 10, left: 10, right: 10 },
+                    expand: false,
+                    index: undefined,
+                })
+            .layout();
+
+
+        // .on('login', function (username, password) {
+        //     print.text += `${username}:${password}\n`;
+        // })
+        // //.drawBounds(this.add.graphics(), 0xff0000);
+        // .popUp(500);
+
+
+
     };
 
 };

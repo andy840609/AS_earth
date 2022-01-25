@@ -81,7 +81,7 @@ const GameObjectStats = {
             MP: 150,
             maxMP: 150,
         },
-        Male: {
+        maleAdventurer: {
             class: 0,//==近戰
             movementSpeed: 300,
             jumpingPower: 400,
@@ -1021,7 +1021,7 @@ const Player = new Phaser.Class({
 
             this.body
                 .setSize(45, 100, true)
-                .setOffset(this.body.offset.x, 30)
+                .setOffset(this.body.offset.x, 28)
                 .setGravityY(500);
             // console.debug(this.body);
 
@@ -2336,7 +2336,6 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
         var createPanel = (scene, data) => {
             var createTable = (scene, key = null) => {
                 var getText = (text, BBText = false) => {
-
                     return scene.add.existing(
                         new RexPlugins.UI.BBCodeText(scene, 0, 0, text, {
                             // fixedWidth:200,
@@ -2351,7 +2350,6 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                         }));
 
                 };
-
 
                 const Sizer = new RexPlugins.UI.Sizer(scene, {
                     orientation: scrollMode,
@@ -2384,17 +2382,12 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                             column: 10,
                             row: 10
                         },
-                        name: key  // Search this name to get table back
-                    });
-                    items.forEach((item, i) => {
-                        let col = i % columns,
-                            row = (i - col) / columns;
+                        name: key, // Search this name to get table back
+                        createCellContainerCallback: function (scene, col, row, config) {
+                            let itemIndex = row * columns + col,
+                                item = items[itemIndex];
 
-                        table.add(
-                            createIcon(scene, item.name, iconSize, iconSize),
-                            {
-                                column: col,
-                                row: row,
+                            Object.assign(config, {
                                 align: 'top',
                                 padding: {
                                     left: 10,
@@ -2403,12 +2396,38 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                                     bottom: 0
                                 },
                                 expand: true,
-                                // key: undefined
-                            }
-                        );
+                            });
 
+                            let gridItem = !item ? false :
+                                createIcon(scene, item.name, iconSize, iconSize);
 
+                            return gridItem;
+                        }
                     });
+                    // items.forEach((item, i) => {
+                    //     let col = i % columns,
+                    //         row = (i - col) / columns;
+
+                    //     // console.debug(col, row);
+
+                    //     table.add(
+                    //         createIcon(scene, item.name, iconSize, iconSize),
+                    //         {
+                    //             column: col,
+                    //             row: row,
+                    //             align: 'top',
+                    //             padding: {
+                    //                 left: 10,
+                    //                 right: 10,
+                    //                 top: 100,
+                    //                 bottom: 100
+                    //             },
+                    //             expand: true,
+                    //             // key: undefined
+                    //         }
+                    //     );
+
+                    // });
 
                     Sizer
                         .add(
@@ -2432,20 +2451,6 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                 }
                 else {
 
-                    //==分行
-                    let content = data.intro;
-                    let charInLine = gameData.locale == "zh-TW" ? 15 : 20,//每行字數(之後還要判斷畫面寬)
-                        lineCount = parseInt((content.length - 1) / charInLine);//總行數
-                    let newContentr = lineCount ? '' : content;
-
-                    for (let i = 0; i < lineCount; i++) {
-                        let lastIdx = (i + 1) * charInLine;
-
-                        let line = content.slice(i * charInLine, lastIdx) + '\n';
-                        if (i == lineCount - 1) line += content.slice(lastIdx);//==不足一行
-                        newContentr += line;
-                    };
-
                     Sizer
                         .add(
                             getText(data.intro), // child
@@ -2458,11 +2463,8 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                         )
                 };
 
-
-
-
                 return Sizer;
-            }
+            };
             var createIcon = (scene, name, iconWidth, iconHeight, iconSpace = 3) => {
                 return new RexPlugins.UI.Label(scene, {
                     orientation: scrollMode,
@@ -2562,13 +2564,8 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
 
 
                 })
-                .on('button.out', function () {
-                    // console.debug('out');
-                })
-                .on('button.over', function () {
-                    // console.debug('over');
-                })
-
+                .on('button.out', button => button.getElement('background').setStrokeStyle())
+                .on('button.over', button => button.getElement('background').setStrokeStyle(1, 0xffffff));
 
             return buttons;
 
@@ -2646,9 +2643,11 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
     };
 };
 
-//==輸入ID UI
+//==創角色UI
 class RexForm extends RexPlugins.UI.Sizer {
     constructor(scene, config, resolve) {
+
+        var gameData = config.gameData;
 
         const GetValue = Phaser.Utils.Objects.GetValue;
         const COLOR_PRIMARY = 0x4e342e;
@@ -2670,86 +2669,313 @@ class RexForm extends RexPlugins.UI.Sizer {
         //     .start();
 
 
-
         const rextexteditplugin = scene.plugins.get('rextexteditplugin');
-        var username = GetValue(config, 'username', '');
+
+        var playerName = '';
 
 
-        var userNameField = new RexPlugins.UI.Label(scene, {
-            orientation: 'x',
-            background: scene.add.existing(
-                new RexPlugins.UI.RoundRectangle(scene, 0, 0, 10, 10, 10).setStrokeStyle(2, COLOR_LIGHT)),
-            // icon: scene.add.image(0, 0, 'user'),
-            text: scene.add.existing(
-                new RexPlugins.UI.BBCodeText(scene, 0, 0, username, { fixedWidth: 150, fixedHeight: 36, valign: 'center' })),
-            space: { top: 5, bottom: 5, left: 5, right: 5, icon: 10, }
-        })
-            .setInteractive()
-            .on('pointerdown', function () {
-                var config = {
-                    onTextChanged: function (textObject, text) {
-                        username = text;
-                        textObject.text = text;
+
+        var createHeader = (scene, text, backgroundColor) => {
+            return new RexPlugins.UI.Label(scene, {
+                background: scene.add.existing(new RexPlugins.UI.RoundRectangle(scene, 0, 0, 100, 40, 20, backgroundColor)),
+                text: scene.add.text(0, 0, text, {
+                    fontSize: '24px',
+                    padding: padding,
+                }),
+                space: {
+                    left: 10,
+                    right: 10,
+                    top: 10,
+                    bottom: 10
+                },
+                align: 'center',
+            });
+        };
+        var createFooter = (scene, footerItem) => {
+
+            var createButton = (text) => {
+                return new RexPlugins.UI.Label(scene, {
+                    width: 100,
+                    height: 40,
+                    background: scene.add.existing(
+                        new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 15, COLOR_LIGHT)),
+                    text: scene.add.text(0, 0, gameData.localeJSON.UI[text], {
+                        fontSize: 18
+                    }),
+                    align: 'center',
+                    space: {
+                        left: 10,
+                        right: 10,
                     }
+                });
+            };
+
+
+            var buttons = new RexPlugins.UI.Buttons(scene, {
+                buttons: footerItem.map(item => createButton(item)),
+                space: { right: 50, item: 50 },
+                align: 'right',
+            })
+                .setDepth(1)
+                .on('button.click', (button, index, p, e) => {
+                    let duration = 500;
+
+                    // console.debug(footerItem[index]);
+                    // console.debug(button, index, p, e);
+
+
+                    //視窗縮小
+                    scene.tweens.add({
+                        targets: this,
+                        scaleX: { start: t => t.scaleX, to: 0 },
+                        scaleY: { start: t => t.scaleY, to: 0 },
+                        ease: 'Bounce', // 'Cubic', 'Elastic', 'Bounce', 'Back'
+                        duration: duration,
+                        onComplete: () => {
+                            this.destroy();
+                            // resolve(answer);
+                        },
+                    });
+
+
+                })
+                .on('button.out', button => button.getElement('background').setStrokeStyle())
+                .on('button.over', button => button.getElement('background').setStrokeStyle(1, 0xffffff));
+
+
+            return buttons;
+
+        };
+        var createID = (scene) => {
+            var label = () => {
+                return new RexPlugins.UI.Label(scene, {
+                    text: scene.add.text(0, 0, gameData.localeJSON.UI['characterName'], {
+                        fontSize: '24px',
+                        padding: padding,
+                    }),
+                    space: {
+                        left: 10,
+                        right: 10,
+                        top: 10,
+                        bottom: 10
+                    },
+                    align: 'center',
+                });
+            };
+            var textBox = () => {
+                return new RexPlugins.UI.Label(scene, {
+                    background: scene.add.existing(
+                        new RexPlugins.UI.RoundRectangle(scene, 0, 0, 10, 10, 10).setStrokeStyle(2, COLOR_LIGHT)),
+                    // icon: scene.add.image(0, 0, 'user'),
+                    text: scene.add.existing(
+                        new RexPlugins.UI.BBCodeText(scene, 0, 0, playerName,
+                            { fixedWidth: config.width * 0.4, fixedHeight: 36, valign: 'center' })),
+                    space: { top: 5, bottom: 5, left: 5, right: 5, icon: 10, }
+                })
+                    .setDepth(1)
+                    .setInteractive()
+                    .on('pointerdown', function () {
+                        var config = {
+                            onTextChanged: function (textObject, text) {
+                                playerName = text;
+                                textObject.text = text;
+                            }
+                        };
+                        rextexteditplugin.edit(this.getElement('text'), config);
+                    });
+            };
+            var avatar = () => {
+                return new RexPlugins.UI.Label(scene, {
+                    background: scene.add.existing(
+                        new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 5, gameData.playerCustom.avatarBgColor).setStrokeStyle(5, COLOR_LIGHT)),
+                    icon: scene.add.image(0, 0, gameData.playerRole + '_avatar0'),
+                    name: 'avatarSelect',
+                    space: {
+                        left: 10,
+                        right: 10,
+                        top: 10,
+                        bottom: 10
+                    },
+                });
+            };
+
+
+
+            return new RexPlugins.UI.Sizer(scene, {
+                orientation: 0,
+                // width: config.width * 0.7,
+            })
+                .add(avatar(),
+                    {
+                        proportion: 2,
+                        valign: 'left',
+                        padding: { top: 10, bottom: 10, left: 10, right: 10 },
+                        expand: true,
+                    })
+                .add(label(),
+                    {
+                        proportion: 1,
+                        align: 'right',
+                        padding: { top: 10, bottom: 10, left: 10, right: 10 },
+                        expand: false,
+                    })
+                .add(textBox(),
+                    {
+                        proportion: 2,
+                        align: 'right',
+                        padding: { top: 10, bottom: 10, left: 10, right: 10 },
+                        expand: false,
+                    });
+
+        };
+        var createGrid = (scene, photo = false) => {
+
+            let columns, rows;
+            let createCell;
+            if (photo) {
+                columns = 4;
+                rows = 1;
+                createCell = (index) => {
+                    let avatar = gameData.playerRole + '_avatar' + index;
+
+                    return new RexPlugins.UI.Label(scene, {
+                        background: scene.add.existing(
+                            new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 5)),
+                        icon: scene.add.image(0, 0, avatar),
+                        name: avatar,
+                        space: {
+                            left: 10,
+                            right: 10,
+                            top: 10,
+                            bottom: 10
+                        },
+                    })
+                        .setInteractive()
+                        .on('pointerdown', function () {
+                            console.debug(this.name);
+                        })
+                        .on('pointerout', function () {
+                            this.getElement('background').setStrokeStyle();
+                        })
+                        .on('pointerover', function () {
+                            this.getElement('background').setStrokeStyle(5, 0xffffff);
+                        });
+
+
+
+                    // return scene.add.image(0, 0, gameData.playerRole + '_avatar' + index)
+                    //     .setInteractive()
+                    //     .on('pointerdown', function () {
+                    //         console.debug('AAAA');
+                    //     })
+                    //     .on('pointerover', function () {
+                    //         let scale = 1.2;
+                    //         this.setScale(buttonScale * scale);
+                    //         buttonText
+                    //             .setScale(scale)
+                    //             .setTint(0xFFFF37);
+                    //     })
+                    //     .on('pointerout', function () {
+                    //         this.setScale(buttonScale);
+                    //         buttonText
+                    //             .setScale(1)
+                    //             .clearTint();
+                    //     });
+
                 };
-                rextexteditplugin.edit(userNameField.getElement('text'), config);
-            });
+            }
+            else {
+                const RandomInt = Phaser.Math.Between;
+                columns = 8;
+                rows = 4;
+                createCell = () => {
+                    return scene.add.existing(
+                        new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 5, RandomInt(0, 0x1000000)));
+                };
+            };
 
-        var loginButton = new RexPlugins.UI.Label(scene, {
-            orientation: 'x',
-            background: scene.add.existing(
-                new RexPlugins.UI.RoundRectangle(scene, 0, 0, 10, 10, 10, COLOR_LIGHT)),
-            text: scene.add.text(0, 0, 'Login'),
-            space: { top: 8, bottom: 8, left: 8, right: 8 }
-        })
-            .setInteractive()
-            .on('pointerdown', function () {
-                // loginDialog.emit('login', username, password);
-            });
 
+            return new RexPlugins.UI.GridSizer(scene, {
+                width: config.width,
+                // height: 200,
+                column: columns,
+                row: rows,
+                columnProportions: 1,
+                // rowProportions: 1,
+                // anchor: 'center',
+                space: {
+                    top: 10,
+                    bottom: 10,
+                    left: 10,
+                    right: 10,
+                    column: 4,
+                    row: 4
+                },
+                createCellContainerCallback: (scene, col, row, config) => {
+                    console.debug(this);
+                    let index = row * columns + col;
+
+                    // Object.assign(config, {
+                    //     expand: true,
+                    // });
+
+                    return createCell(index);
+                },
+            }).addBackground(scene.add.existing(
+                new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 7, undefined).setStrokeStyle(2, COLOR_LIGHT, 1)
+            ));
+
+
+        };
 
         const formConfig = {
-            orientation: 'y',
+            orientation: 1,
             x: config.x,
             y: config.y,
             width: config.width,
             height: config.height,
         };
 
-
         super(scene, formConfig);
-
-
+        var background = scene.add.existing(
+            new RexPlugins.UI.RoundRectangle(scene, 0, 0, 10, 10, 10, COLOR_PRIMARY)).setDepth(0);
 
         this
-            .addBackground(scene.add.existing(
-                new RexPlugins.UI.RoundRectangle(scene, 0, 0, 10, 10, 10, COLOR_PRIMARY)))
-            // .addBackground(background)
-            .add(
-                scene.add.text(0, 0, 'AAAA'),
+            .addBackground(background)
+            .add(createHeader(scene, gameData.localeJSON.UI['characterSet'], COLOR_LIGHT),
                 {
                     proportion: 0,
                     align: 'center',
-                    padding: { top: 10, bottom: 10, left: 10, right: 10 },
-                    expand: false,
-                    index: 99,
-                })
-            // .add(titleField, 0, 'center', { top: 10, bottom: 10, left: 10, right: 10 }, false)
-            .add(userNameField,
-                {
-                    proportion: 0,
-                    align: 'left',
                     padding: { top: 10, bottom: 10, left: 10, right: 10 },
                     expand: true,
-                    index: 99,
                 })
-            .add(loginButton.setDepth(999),
+            .add(createID(scene),
+                {
+                    proportion: 0,
+                    align: 'right',
+                    padding: { top: 10, bottom: 10, left: 10, right: 10 },
+                    expand: false,
+                })
+            .add(createGrid(scene, true),
+                {
+                    proportion: 0,
+                    align: 'right',
+                    padding: { top: 10, bottom: 10, left: 10, right: 10 },
+                    expand: false,
+                })
+            .add(createGrid(scene),
+                {
+                    proportion: 0,
+                    align: 'right',
+                    padding: { top: 10, bottom: 10, left: 10, right: 10 },
+                    expand: false,
+                })
+            .add(createFooter(scene, ['ok', 'cancel']),
                 {
                     proportion: 0,
                     align: 'center',
                     padding: { top: 10, bottom: 10, left: 10, right: 10 },
-                    expand: false,
-                    index: undefined,
+                    expand: true,
                 })
             .layout();
 

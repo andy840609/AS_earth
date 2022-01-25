@@ -251,10 +251,12 @@ function locatingGame() {
             };
 
             function initGameData() {
-                let playerRole = 'Male';//==之後能選其他[Biker,Cyborg,Punk]
+                let playerRole = 'maleAdventurer';//==之後能選其他[Biker,Cyborg,Punk]
                 let sidekick = 'Owlet';//=='Owlet,Dude,Pink'
-                let playerAvatar = 'player0';//==自選頭像
-                let playerName = 'SSS';
+
+                let playerName = 'SSS',
+                    avatarIndex = 0,//==自選頭像
+                    avatarBgColor = 0x5B5B5B;
 
                 GameData = {
                     timeRemain: 30 * 60000,//1min=60000ms           
@@ -283,7 +285,8 @@ function locatingGame() {
                     playerStats: GameObjectStats.player[playerRole],
                     playerTimeUse: 0,//==圖表
                     playerCustom: {
-                        avatar: playerAvatar,
+                        avatarIndex: avatarIndex,
+                        avatarBgColor, avatarBgColor,
                         name: playerName,
                     },
                     stationClear: {
@@ -292,7 +295,7 @@ function locatingGame() {
                     },
                     sidekick: {
                         type: sidekick,
-                        lineStage: [2, 0],//==第2-0句
+                        lineStage: [1, 0],//==第2-0句
                         doneTalking: false,
                         stopHotkey: false,//==對話完空白鍵不再出現對話（只能滑鼠點）
                     },
@@ -314,19 +317,19 @@ function locatingGame() {
                     GameData.localeJSON = await getLanguageJSON();
 
 
-                    // gameDisplay(true);
+                    gameDisplay(true);
 
-                    // let newGameData = await new Promise((resolve, reject) => {
-                    //     const config = Object.assign(getPhaserConfig(width, height), {
-                    //         scene: new GameStartScene(GameData, resolve),
-                    //     });
-                    //     new Phaser.Game(config);
-                    // });
+                    let newGameData = await new Promise((resolve, reject) => {
+                        const config = Object.assign(getPhaserConfig(width, height), {
+                            scene: new GameStartScene(GameData, resolve),
+                        });
+                        new Phaser.Game(config);
+                    });
 
-                    // if (GameData.locale != newGameData.locale)
-                    //     GameData.localeJSON = await getLanguageJSON();
-                    // Object.assign(GameData, newGameData);
-                    // gameDisplay(false);
+                    if (GameData.locale != newGameData.locale)
+                        GameData.localeJSON = await getLanguageJSON();
+                    Object.assign(GameData, newGameData);
+                    gameDisplay(false);
 
 
                     initMap();

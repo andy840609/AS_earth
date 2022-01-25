@@ -1685,13 +1685,42 @@ class GameStartScene extends Phaser.Scene {
             backgroundObj: null,
             resolve: resolve,
         });
+
+        console.debug(this);
     };
     preload() {
-        const UIDir = assetsDir + 'ui/game/Transitions/';
-        this.load.image('startScene', UIDir + 'startScene.jpg');
-        this.load.image('startButton', UIDir + 'startButton.png');
-        this.load.image('gameTitle', UIDir + 'title.png');
+        var UI = () => {
+            const UIDir = assetsDir + 'ui/game/Transitions/';
+            this.load.image('startScene', UIDir + 'startScene.jpg');
+            this.load.image('startButton', UIDir + 'startButton.png');
+            this.load.image('gameTitle', UIDir + 'title.png');
+        };
+        var character = () => {
+            var sprite = () => {
 
+            };
+            var avatar = () => {
+                const characters = ['maleAdventurer'];
+                const AvatarDir = assetsDir + 'avatar/';
+                const AvatarCount = 4;
+
+                characters.forEach(chara => {
+                    let dir = AvatarDir + chara + '/';
+                    [...Array(AvatarCount).keys()].forEach(i =>
+                        this.load.image(chara + '_avatar' + i, dir + i + '.png'));
+
+                });
+
+            };
+
+
+            sprite();
+            avatar();
+
+        };
+
+        UI();
+        character();
     };
     create() {
         const canvas = this.sys.game.canvas;
@@ -1776,8 +1805,21 @@ class GameStartScene extends Phaser.Scene {
 
 
                             case 'rank':
-                                let aaa = this.RexUI.newForm();
-                                console.debug(aaa);
+                                let blackOut1 = this.blackOut.scene
+                                    .setVisible(true)
+                                    .bringToTop();
+
+                                let form = this.RexUI.newForm();
+                                this.RexUI.scene.bringToTop();
+                                this.scene.pause();
+
+                                form.on('destroy', () => {
+                                    blackOut1.setVisible(false);
+                                    this.scene.resume();
+                                });
+
+
+                                console.debug(form);
                                 // aaa.destroy();
                                 break;
 
@@ -2150,7 +2192,7 @@ class LoadingScene extends Phaser.Scene {
                             attack: [126, 60],
                             jump: [65, 60],
                         },
-                        Male: {
+                        maleAdventurer: {
                             attack: [126, 60],
                             jump: [120, 80],
                             run: [110, 60],
@@ -3253,10 +3295,11 @@ class DigScene extends Phaser.Scene {
             gameData: GameData,
             background: placeData.background,
             mineBGindex: placeData.mineBGindex,
-            tileSize: 100,//==地質塊寬高
+            tileSize: 125,//==地質塊寬高
             depthCounter: {
                 epicenter: placeData.depth,
-                depthScale: 0.034,//0.003
+                // depthScale: 0.034,//0.003
+                depthScale: 0.008,//0.003
                 // depthScale: 10,//0.003
                 coordinate: placeData.coordinate,
                 bossRoom: false,

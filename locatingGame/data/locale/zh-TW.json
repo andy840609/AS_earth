@@ -9,8 +9,8 @@
         "characterSet": "角色設定",
         "characterName": "名字",
         "characterPhoto": "頭像",
-        "close": "關閉",
         "ok": "確定",
+        "close": "關閉",
         "cancel": "取消",
         "exit": "存檔離開",
         "pause": "暫停",
@@ -57,9 +57,10 @@
         "assumedEpicenter": "假設震央",
         "rankChartStr1": "我超越了",
         "rankChartStr2": "的勇者!",
-        "sidekickHint1": "點擊或者按",
-        "sidekickHint2": "以繼續對話",
-        "enterGate": "要立刻進入震源城挑戰魔王嗎？"
+        "sidekickHint": "點擊或者按\t以繼續對話",
+        "enterGate": "要立刻進入震源城挑戰魔王嗎？",
+        "avatarConfirm": "確定是\t這個名字嗎?",
+        "avatarErro": "名字不能爲空白"
     },
     "Load": {
         "loading": "讀取中",

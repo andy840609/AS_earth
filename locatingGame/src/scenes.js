@@ -1587,10 +1587,10 @@ class UIScene extends Phaser.Scene {
                         this.newForm = (panelType = 0, resolve = null) => {
                             // 
                             return new RexForm(this, {
-                                x: DLconfig.dialogX,
-                                y: DLconfig.dialogY * 0.5,
-                                width: width * 0.6,
+                                width: width * 0.3,
                                 height: height * 0.5,
+                                sceneWidth: width,
+                                sceneHeight: height,
                                 gameData: gameScene.gameData,
                             }, resolve)
                                 // .setDepth(Depth.UI)
@@ -1625,6 +1625,116 @@ class UIScene extends Phaser.Scene {
                     gameScene.RexUI = this;
                     // console.debug(this);
                 };
+                update = () => { };
+                break;
+            case 'creatorUI'://==創角色畫面
+                preload = () => { };
+                create = () => {
+                    let creatorObj = gameScene.creatorObj;
+
+                    var background = () => {
+                        // const groundH = height * 0.5;
+                        let resources = BackGroundResources.GameStart[creatorObj.background];
+
+                        resources.static.forEach((res, i) => {
+                            let img = this.add.image(width * 0.5, height * 0.5, 'staticBG_' + i);
+                            img
+                                .setScale(width / img.width, height / img.height)
+                                .setDepth(resources.depth.static[i]);
+                        });
+
+                        resources.dynamic.forEach((res, i) => {
+                            let thing = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, 'dynamicBG_' + i);
+
+                            thing
+                                .setScale(width / thing.width, height / thing.height)
+                                .setDepth(resources.depth.dynamic[i]);
+
+                            //==tweens
+                            let movingDuration = Phaser.Math.Between(5, 15) * 1000;//==第一次移動5到20秒
+                            let animType = resources.animType[i];
+                            //==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
+
+                            this.tweens.add(
+                                Object.assign({
+                                    targets: thing,
+                                    repeat: -1,
+                                    duration: movingDuration,
+                                },
+                                    animType == 1 ?
+                                        { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
+                                        animType == 2 ? { alpha: { start: 0.1, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
+                                            animType == 3 ? { scaleX: { start: t => t.scaleX, to: t => t.scaleX * 1.5 }, scaleY: { start: t => t.scaleY, to: t => t.scaleY * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
+                                                { alpha: { start: 0.1, to: 1 }, ease: 'Bounce', yoyo: true }
+
+                                ));
+
+                        });
+
+                    };
+                    var character = () => {
+                        let characters = creatorObj.characters;
+                        let gap = width / (characters.length + 1);
+
+                        characters.forEach((chara, i) => {
+                            this.anims.create({
+                                key: chara + '_idle',
+                                frames: this.anims.generateFrameNumbers(chara + '_idle'),
+                                frameRate: 7,
+                                repeat: -1,
+                            });
+                            this.anims.create({
+                                key: chara + '_run',
+                                frames: this.anims.generateFrameNumbers(chara + '_run'),
+                                frameRate: 8,
+                                repeat: -1,
+                            });
+
+                            this.add.sprite(gap * (i + 1), height * 0.8)
+                                .setDepth(10)
+                                .play(chara + '_idle')
+                                .setInteractive()
+                                .on('pointerover', function () {
+                                    this.scene.tweens.add({
+                                        targets: this,
+                                        repeat: 0,
+                                        ease: 'Bounce.easeInOut',
+                                        duration: 200,
+                                        scale: { from: 1, to: 1.5 },
+                                        onStart: () => this.play(chara + '_run'),
+                                    });
+                                })
+                                .on('pointerout', function () {
+                                    this.scene.tweens.add({
+                                        targets: this,
+                                        repeat: 0,
+                                        ease: 'Bounce.easeInOut',
+                                        duration: 200,
+                                        scale: { from: this.scale, to: 1 },
+                                        onStart: () => this.play(chara + '_idle'),
+                                    });
+                                })
+                                .on('pointerdown', () => {
+                                    if (this.form && this.form.active) return;
+
+                                    let RexUIscene = gameScene.RexUI;
+                                    this.form = RexUIscene.newForm();
+                                    RexUIscene.scene.bringToTop();
+                                    this.form.setPosition(width - this.form.width * 1.1, height * 0.5);
+                                });
+
+
+                        });
+
+                    };
+                    background();
+                    character();
+                };
+                update = () => { };
+                break;
+            case 'b':
+                preload = () => { };
+                create = () => { };
                 update = () => { };
                 break;
             case 'b':
@@ -1662,7 +1772,6 @@ class UIScene extends Phaser.Scene {
 class GameStartScene extends Phaser.Scene {
 
     constructor(GameData, resolve) {
-
         var sceneConfig = {
             key: 'gameScene',
             pack: {
@@ -1673,6 +1782,12 @@ class GameStartScene extends Phaser.Scene {
                         url: 'src/phaser-3.55.2/plugins/rexplugins/rextexteditplugin.min.js',
                         start: true,
                     },
+                    // {//==讓preload()能await才create()[確定資源都讀取完成才執行create()]
+                    //     type: 'plugin',
+                    //     key: 'rexawaitloaderplugin',
+                    //     url: 'src/phaser-3.55.2/plugins/rexplugins/rexawaitloaderplugin.min.js',
+                    //     start: true,
+                    // },
                 ]
             },
         };
@@ -1683,6 +1798,10 @@ class GameStartScene extends Phaser.Scene {
             name: 'GameStart',
             gameData: GameData,
             backgroundObj: null,
+            creatorObj: {
+                background: 'town_1',
+                characters: Object.keys(GameObjectStats.player),
+            },
             resolve: resolve,
         });
 
@@ -1696,11 +1815,31 @@ class GameStartScene extends Phaser.Scene {
             this.load.image('gameTitle', UIDir + 'title.png');
         };
         var character = () => {
+            const characters = this.creatorObj.characters;// ['maleAdventurer']
+
             var sprite = () => {
+                const playerDir = assetsDir + 'gameObj/player/';
+                const frameObj = { frameWidth: 96, frameHeight: 128 };
+
+                characters.forEach(chara => {
+                    let dir = playerDir + chara + '/';
+
+                    this.load.spritesheet(chara + '_idle', dir + 'idle.png', frameObj);
+                    this.load.spritesheet(chara + '_run', dir + 'run.png', frameObj);
+
+                    // this.load.spritesheet('player_attack', dir + 'attack.png', frameObj);
+                    // this.load.spritesheet('player_specialAttack', dir + 'specialAttack.png', frameObj);
+                    // this.load.spritesheet('player_death', dir + 'death.png', frameObj);
+                    // this.load.spritesheet('player_jump', dir + 'jump.png', frameObj);
+                    // this.load.spritesheet('player_doubleJump', dir + 'doubleJump.png', frameObj);
+                    // this.load.spritesheet('player_jumpAttack', dir + 'jumpAttack.png', frameObj);
+                    // this.load.spritesheet('player_hurt', dir + 'hurt.png', frameObj);
+                    // this.load.spritesheet('player_runAttack', dir + 'runAttack.png', frameObj);
+
+                });
 
             };
             var avatar = () => {
-                const characters = ['maleAdventurer'];
                 const AvatarDir = assetsDir + 'avatar/';
                 const AvatarCount = 4;
 
@@ -1712,15 +1851,28 @@ class GameStartScene extends Phaser.Scene {
                 });
 
             };
-
-
             sprite();
             avatar();
+
+        };
+        var background = () => {
+            const creatorBG = this.creatorObj.background;
+            let dir = assetsDir + 'gameObj/environment/background/' + creatorBG + '/';
+            let resources = BackGroundResources.GameStart[creatorBG];
+
+            //==重新取名讓loader裡的key不會重複(檔名可能重複)
+            resources.static.forEach((res, i) => {
+                this.load.image('staticBG_' + i, dir + res);
+            });
+            resources.dynamic.forEach((res, i) => {
+                this.load.image('dynamicBG_' + i, dir + res);
+            });
 
         };
 
         UI();
         character();
+        background();
     };
     create() {
         const canvas = this.sys.game.canvas;
@@ -1785,9 +1937,13 @@ class GameStartScene extends Phaser.Scene {
                         // console.debug(button);
                         switch (button) {
                             case 'startGame':
-                                this.game.destroy(true, false);
-                                this.resolve(this.gameData);
+                                this.scene.pause();
+                                this.scene.add(null, new UIScene('creatorUI', this), true);
+
+                                // this.game.destroy(true, false);
+                                // this.resolve(this.gameData);
                                 break;
+
                             default:
                                 let blackOut = this.blackOut.scene
                                     .setVisible(true)
@@ -1804,24 +1960,7 @@ class GameStartScene extends Phaser.Scene {
                                 break;
 
 
-                            case 'rank':
-                                let blackOut1 = this.blackOut.scene
-                                    .setVisible(true)
-                                    .bringToTop();
 
-                                let form = this.RexUI.newForm();
-                                this.RexUI.scene.bringToTop();
-                                this.scene.pause();
-
-                                form.on('destroy', () => {
-                                    blackOut1.setVisible(false);
-                                    this.scene.resume();
-                                });
-
-
-                                console.debug(form);
-                                // aaa.destroy();
-                                break;
 
                             // case 'intro':
                             //     this.RexUI.newPanel(0);
@@ -1920,7 +2059,6 @@ class GameOverScene extends Phaser.Scene {
             let img = this.add.image(width * 0.5, height * 0.5, 'gameOverScene');
             img.setScale(width / img.width, height / img.height);
         };
-
         var button = () => {
             // =menu buttons
             const buttons = ['resurrect', 'giveup'];
@@ -2006,7 +2144,6 @@ class LoadingScene extends Phaser.Scene {
                 const envDir = gameObjDir + 'environment/';
                 var background = () => {
                     const dir = envDir + 'background/' + gameScene.background + '/';
-
                     let resources = BackGroundResources[gameScene.name][gameScene.background];
 
                     //==重新取名讓loader裡的key不會重複(檔名可能重複)
@@ -2151,18 +2288,6 @@ class LoadingScene extends Phaser.Scene {
                     const dir = gameObjDir + 'player/' + playerRole + '/';
                     const frameObj = { frameWidth: 96, frameHeight: 128 };
                     // const frameObj = { frameWidth: 48, frameHeight: 48 };
-
-                    // this.load.spritesheet('player_attack', dir + playerRole + '_attack2.png', frameObj);
-                    // this.load.spritesheet('player_specialAttack', dir + playerRole + '_attack3.png', frameObj);
-                    // this.load.spritesheet('player_punch', dir + playerRole + '_punch.png', frameObj);
-                    // this.load.spritesheet('player_death', dir + playerRole + '_death.png', frameObj);
-                    // this.load.spritesheet('player_jump', dir + playerRole + '_jump.png', frameObj);
-                    // this.load.spritesheet('player_doublejump', dir + playerRole + '_doublejump.png', frameObj);
-                    // this.load.spritesheet('player_hurt', dir + playerRole + '_hurt.png', frameObj);
-                    // this.load.spritesheet('player_idle', dir + playerRole + '_idle.png', frameObj);
-                    // this.load.spritesheet('player_run', dir + playerRole + '_run.png', frameObj);
-                    // this.load.spritesheet('player_runAttack', dir + playerRole + '_run_attack.png', frameObj);
-
 
                     this.load.spritesheet('player_attack', dir + 'attack.png', frameObj);
                     this.load.spritesheet('player_specialAttack', dir + 'specialAttack.png', frameObj);
@@ -3568,9 +3693,9 @@ class DigScene extends Phaser.Scene {
                         options: [localeJSON.UI['yes'], localeJSON.UI['no']],
                     };
 
-                    let enter = await new Promise(resolve => this.RexUI.newQuiz(questionData, false, resolve));
+                    let enterIdx = await new Promise(resolve => this.RexUI.newQuiz(questionData, false, resolve));
 
-                    if (enter) {
+                    if (questionData.options[enterIdx] == localeJSON.UI['yes']) {
                         const doorDelay = 1300;
                         this.bossCastle.play('bossDoor_open', true);
                         this.depthCounter.bossRoom = true;

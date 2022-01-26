@@ -285,7 +285,7 @@ function locatingGame() {
                     playerStats: GameObjectStats.player[playerRole],
                     playerTimeUse: 0,//==圖表
                     playerCustom: {
-                        avatarIndex: avatarIndex,
+                        avatarKey: playerRole + '_avatar' + avatarIndex,
                         avatarBgColor, avatarBgColor,
                         name: playerName,
                     },
@@ -1083,7 +1083,7 @@ function locatingGame() {
                                         <img src="${sidekickDir}/textBox.png" width="${textBoxW}px">
                                         <div class="sidekickText" style="white-space: pre-wrap"></div>
                                         <div class="hint">
-                                        ( ${localeJSON.sidekickHint1}空白鍵${localeJSON.sidekickHint2} )
+                                        ( ${localeJSON.sidekickHint.replace('\t', ' space ')} )
                                         </div>                                
                                     </div>`
                                 )

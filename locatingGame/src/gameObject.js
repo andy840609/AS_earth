@@ -37,50 +37,50 @@ const GameObjectStats = {
         },
     },
     player: {//==class: 0:'melee近戰',1:'ranged遠程'
-        Biker: {
-            class: 0,//==近戰
-            movementSpeed: 300,
-            jumpingPower: 400,
-            attackSpeed: 400,//一發持續300ms
-            attackPower: 120,
-            attackRange: 55,
-            bulletSize: [120, 130],
-            knockBackSpeed: 250,//==擊退時間固定200ms,這個速度越大擊退越遠
-            manaCost: 6,
-            manaRegen: 1,//per 10 ms(game update per 10ms)0.1
-            HP: 150,
-            maxHP: 150,
-            MP: 60,
-            maxMP: 60,
-        },
-        Cyborg: {
-            class: 1,//==遠程
-            movementSpeed: 300,
-            jumpingPower: 400,
-            attackSpeed: 800,
-            attackPower: 100,
-            knockBackSpeed: 200,//==擊退時間固定200ms,這個速度越大擊退越遠
-            manaCost: 10,
-            manaRegen: 10,//per 10 ms(game update per 10ms)0.1
-            HP: 100,
-            maxHP: 100,
-            MP: 150,
-            maxMP: 150,
-        },
-        Punk: {
-            class: 1,//==遠程
-            movementSpeed: 300,
-            jumpingPower: 400,
-            attackSpeed: 800,
-            attackPower: 100,
-            knockBackSpeed: 200,//==擊退時間固定200ms,這個速度越大擊退越遠
-            manaCost: 10,
-            manaRegen: 10,//per 10 ms(game update per 10ms)0.1
-            HP: 100,
-            maxHP: 100,
-            MP: 150,
-            maxMP: 150,
-        },
+        // Biker: {
+        //     class: 0,//==近戰
+        //     movementSpeed: 300,
+        //     jumpingPower: 400,
+        //     attackSpeed: 400,//一發持續300ms
+        //     attackPower: 120,
+        //     attackRange: 55,
+        //     bulletSize: [120, 130],
+        //     knockBackSpeed: 250,//==擊退時間固定200ms,這個速度越大擊退越遠
+        //     manaCost: 6,
+        //     manaRegen: 1,//per 10 ms(game update per 10ms)0.1
+        //     HP: 150,
+        //     maxHP: 150,
+        //     MP: 60,
+        //     maxMP: 60,
+        // },
+        // Cyborg: {
+        //     class: 1,//==遠程
+        //     movementSpeed: 300,
+        //     jumpingPower: 400,
+        //     attackSpeed: 800,
+        //     attackPower: 100,
+        //     knockBackSpeed: 200,//==擊退時間固定200ms,這個速度越大擊退越遠
+        //     manaCost: 10,
+        //     manaRegen: 10,//per 10 ms(game update per 10ms)0.1
+        //     HP: 100,
+        //     maxHP: 100,
+        //     MP: 150,
+        //     maxMP: 150,
+        // },
+        // Punk: {
+        //     class: 1,//==遠程
+        //     movementSpeed: 300,
+        //     jumpingPower: 400,
+        //     attackSpeed: 800,
+        //     attackPower: 100,
+        //     knockBackSpeed: 200,//==擊退時間固定200ms,這個速度越大擊退越遠
+        //     manaCost: 10,
+        //     manaRegen: 10,//per 10 ms(game update per 10ms)0.1
+        //     HP: 100,
+        //     maxHP: 100,
+        //     MP: 150,
+        //     maxMP: 150,
+        // },
         maleAdventurer: {
             class: 0,//==近戰
             movementSpeed: 300,
@@ -164,6 +164,26 @@ const GameObjectStats = {
 
 //==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
 const BackGroundResources = {
+    GameStart: {
+        town_1: {
+            static: ['0.png', '2.png', '3.png', '4.png', '5.png', '6.png'],
+            dynamic: ['1.png'],
+            depth: {
+                static: [0, 1, 1, 1, 1, 1],
+                dynamic: [0],
+            },
+            animType: [1],
+        },
+        // forest_1: {
+        //     static: ['sky.png', 'rocks_1.png', 'rocks_2.png', 'clouds_1.png'],
+        //     dynamic: ['clouds_2.png', 'clouds_3.png', 'clouds_4.png'],
+        //     depth: {
+        //         static: [0, 1, 2, 0],
+        //         dynamic: [0, 1, 2],
+        //     },
+        //     animType: [1, 1, 1],
+        // },
+    },
     defend: {
         forest_1: {
             static: ['sky.png', 'rocks_1.png', 'rocks_2.png', 'clouds_1.png', 'soilGround.png'],
@@ -2092,15 +2112,13 @@ class RexDialog extends RexPlugins.UI.Dialog {
             }
             else {
                 this.getElement('content').text = data.question;
-                this.getElement('actions').forEach((ele, i) => Object.assign(ele, {
-                    minWidth: 80,  //===每個選項長度一樣
-                    text: data.options[i],
-                }));
-                // this.getElement('actions').forEach((ele, i) =>
-                //     ele.text = data.options[i].length < maxLength ?
-                //         data.options[i] + Array.from(new Array(maxLength - data.options[i].length), () => "  ").join("") :
-                //         data.options[i]
-                // );
+                data.options.forEach((option, i) => {
+                    this.addAction(
+                        Object.assign(createLabel(scene, option, COLOR_LIGHT), {
+                            minWidth: 80,  //===每個選項長度一樣
+                        }));
+                });
+
             };
             return this;
         };
@@ -2137,11 +2155,7 @@ class RexDialog extends RexPlugins.UI.Dialog {
                     createLabel(scene, ' ', COLOR_LIGHT),
                     createLabel(scene, ' ', COLOR_LIGHT),
                 ] : false,
-            actions: !bossQuiz ?
-                [
-                    createLabel(scene, '', COLOR_LIGHT),
-                    createLabel(scene, '', COLOR_LIGHT)
-                ] : false,
+            actions: [],
             align: !bossQuiz ? {
                 actions: 'right', // 'center'|'left'|'right'
             } : false,
@@ -2198,7 +2212,7 @@ class RexDialog extends RexPlugins.UI.Dialog {
                     tweenTarget = [this, sign];
                 } else {
                     duration = 80;
-                    answer = !index;
+                    answer = index;
                     tweenTarget = [this];
 
                 };
@@ -2671,9 +2685,11 @@ class RexForm extends RexPlugins.UI.Sizer {
 
         const rextexteditplugin = scene.plugins.get('rextexteditplugin');
 
-        var playerName = '';
+        let playerCustom = gameData.playerCustom;
 
-
+        var playerName = playerCustom.name,
+            avatarKey = playerCustom.avatarKey,
+            avatarBgColor = playerCustom.avatarBgColor;
 
         var createHeader = (scene, text, backgroundColor) => {
             return new RexPlugins.UI.Label(scene, {
@@ -2692,7 +2708,6 @@ class RexForm extends RexPlugins.UI.Sizer {
             });
         };
         var createFooter = (scene, footerItem) => {
-
             var createButton = (text) => {
                 return new RexPlugins.UI.Label(scene, {
                     width: 100,
@@ -2710,41 +2725,80 @@ class RexForm extends RexPlugins.UI.Sizer {
                 });
             };
 
-
             var buttons = new RexPlugins.UI.Buttons(scene, {
                 buttons: footerItem.map(item => createButton(item)),
                 space: { right: 50, item: 50 },
                 align: 'right',
             })
                 .setDepth(1)
-                .on('button.click', (button, index, p, e) => {
+                .on('button.click', async (button, index) => {
+                    let ok = footerItem[index] == 'ok';
+
+                    //===按下確定
+                    if (ok) {
+                        let localeJSON = gameData.localeJSON,
+                            questionData = playerName != "" ?
+                                {
+                                    question: localeJSON.UI['avatarConfirm'].replace('\t', ` "${playerName}" `),
+                                    options: [localeJSON.UI['yes'], localeJSON.UI['no']],
+
+                                } :
+                                {
+                                    question: localeJSON.UI['avatarErro'],
+                                    options: [localeJSON.UI['close']],
+                                };
+
+                        //===二次確認
+                        let confirmIdx = await new Promise(resolve => {
+                            let confirmScene = scene.scene.add(null, new Phaser.Scene("confirmScene"), true);
+                            //==暫停formUI在的scene，所以確認視窗放在gameScene
+                            new RexDialog(confirmScene, {
+                                x: config.sceneWidth * 0.5,
+                                y: config.sceneHeight * 0.5,
+                                data: questionData,
+                                bossQuiz: false,
+                            }, resolve)
+                                .popUp(500);
+
+                            scene.scene.pause();
+                        });
+
+                        // console.debug(questionData.options[confirmIdx]);
+
+                        scene.scene.resume();
+                        scene.scene.remove("confirmScene");
+
+                        //==確認覆蓋資料
+                        if (questionData.options[confirmIdx] == localeJSON.UI['yes']) {
+                            // console.debug(playerName, avatarKey, avatarBgColor);
+
+                            Object.assign(gameData.playerCustom, {
+                                avatarKey: avatarKey,
+                                avatarBgColor, avatarBgColor,
+                                name: playerName,
+                            });
+
+                        }
+                        else return;
+
+                    };
+
                     let duration = 500;
-
-                    // console.debug(footerItem[index]);
-                    // console.debug(button, index, p, e);
-
-
-                    //視窗縮小
+                    //視窗縮小關閉
                     scene.tweens.add({
                         targets: this,
                         scaleX: { start: t => t.scaleX, to: 0 },
                         scaleY: { start: t => t.scaleY, to: 0 },
                         ease: 'Bounce', // 'Cubic', 'Elastic', 'Bounce', 'Back'
                         duration: duration,
-                        onComplete: () => {
-                            this.destroy();
-                            // resolve(answer);
-                        },
+                        onComplete: () => this.destroy(),
                     });
-
 
                 })
                 .on('button.out', button => button.getElement('background').setStrokeStyle())
                 .on('button.over', button => button.getElement('background').setStrokeStyle(1, 0xffffff));
 
-
             return buttons;
-
         };
         var createID = (scene) => {
             var label = () => {
@@ -2787,9 +2841,10 @@ class RexForm extends RexPlugins.UI.Sizer {
             var avatar = () => {
                 return new RexPlugins.UI.Label(scene, {
                     background: scene.add.existing(
-                        new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 5, gameData.playerCustom.avatarBgColor).setStrokeStyle(5, COLOR_LIGHT)),
-                    icon: scene.add.image(0, 0, gameData.playerRole + '_avatar0'),
+                        new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 5, avatarBgColor).setStrokeStyle(5, COLOR_LIGHT)),
+                    icon: scene.add.image(0, 0, avatarKey),
                     name: 'avatarSelect',
+                    align: 'left',
                     space: {
                         left: 10,
                         right: 10,
@@ -2800,100 +2855,80 @@ class RexForm extends RexPlugins.UI.Sizer {
             };
 
 
-
             return new RexPlugins.UI.Sizer(scene, {
                 orientation: 0,
-                // width: config.width * 0.7,
+                width: config.width,
+                // expandTextWidth: false,
+                // rtl: true,
             })
                 .add(avatar(),
                     {
-                        proportion: 2,
-                        valign: 'left',
-                        padding: { top: 10, bottom: 10, left: 10, right: 10 },
-                        expand: true,
+                        proportion: 0,
+                        align: 'center',
+                        padding: { top: 10, bottom: 10, left: 50, right: 50 },
+                        expand: false,
                     })
                 .add(label(),
                     {
-                        proportion: 1,
+                        proportion: 0,
                         align: 'right',
                         padding: { top: 10, bottom: 10, left: 10, right: 10 },
                         expand: false,
                     })
                 .add(textBox(),
                     {
-                        proportion: 2,
+                        proportion: 0,
                         align: 'right',
                         padding: { top: 10, bottom: 10, left: 10, right: 10 },
                         expand: false,
                     });
 
         };
-        var createGrid = (scene, photo = false) => {
+        var createGrid = (scene, isTexture = false) => {
+            var createCell = (index) => {
+                const form = this;
 
-            let columns, rows;
-            let createCell;
-            if (photo) {
-                columns = 4;
-                rows = 1;
-                createCell = (index) => {
-                    let avatar = gameData.playerRole + '_avatar' + index;
+                let key = isTexture ?
+                    gameData.playerRole + '_avatar' + index :
+                    Phaser.Math.Between(0, 0x1000000);
 
-                    return new RexPlugins.UI.Label(scene, {
-                        background: scene.add.existing(
-                            new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 5)),
-                        icon: scene.add.image(0, 0, avatar),
-                        name: avatar,
-                        space: {
-                            left: 10,
-                            right: 10,
-                            top: 10,
-                            bottom: 10
-                        },
+                return new RexPlugins.UI.Label(scene, {
+                    background: scene.add.existing(
+                        new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 5, isTexture ? undefined : key)),
+                    icon: isTexture ? scene.add.image(0, 0, key) : false,
+                    name: key,
+                    space: {
+                        left: 10,
+                        right: 10,
+                        top: 10,
+                        bottom: 10
+                    },
+                })
+                    .setInteractive()
+                    .on('pointerdown', function () {
+                        let key = this.name;
+
+                        //==找到頭像預覽框
+                        let avatarSelect = form.getElement('#avatarSelect', true);
+                        if (isTexture) {
+                            avatarSelect.getElement('icon').setTexture(key);
+                            avatarKey = key;
+                        }
+                        else {
+                            avatarSelect.getElement('background').setFillStyle(key);
+                            avatarBgColor = key;
+                        }
                     })
-                        .setInteractive()
-                        .on('pointerdown', function () {
-                            console.debug(this.name);
-                        })
-                        .on('pointerout', function () {
-                            this.getElement('background').setStrokeStyle();
-                        })
-                        .on('pointerover', function () {
-                            this.getElement('background').setStrokeStyle(5, 0xffffff);
-                        });
-
-
-
-                    // return scene.add.image(0, 0, gameData.playerRole + '_avatar' + index)
-                    //     .setInteractive()
-                    //     .on('pointerdown', function () {
-                    //         console.debug('AAAA');
-                    //     })
-                    //     .on('pointerover', function () {
-                    //         let scale = 1.2;
-                    //         this.setScale(buttonScale * scale);
-                    //         buttonText
-                    //             .setScale(scale)
-                    //             .setTint(0xFFFF37);
-                    //     })
-                    //     .on('pointerout', function () {
-                    //         this.setScale(buttonScale);
-                    //         buttonText
-                    //             .setScale(1)
-                    //             .clearTint();
-                    //     });
-
-                };
-            }
-            else {
-                const RandomInt = Phaser.Math.Between;
-                columns = 8;
-                rows = 4;
-                createCell = () => {
-                    return scene.add.existing(
-                        new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 5, RandomInt(0, 0x1000000)));
-                };
+                    .on('pointerout', function () {
+                        this.getElement('background').setStrokeStyle();
+                    })
+                    .on('pointerover', function () {
+                        this.getElement('background').setStrokeStyle(5, 0xffffff);
+                    });
             };
 
+            let columns = isTexture ? 4 : 5,
+                rows = isTexture ? 1 : 3;
 
             return new RexPlugins.UI.GridSizer(scene, {
                 width: config.width,
@@ -2901,8 +2936,6 @@ class RexForm extends RexPlugins.UI.Sizer {
                 column: columns,
                 row: rows,
                 columnProportions: 1,
-                // rowProportions: 1,
-                // anchor: 'center',
                 space: {
                     top: 10,
                     bottom: 10,
@@ -2912,12 +2945,19 @@ class RexForm extends RexPlugins.UI.Sizer {
                     row: 4
                 },
                 createCellContainerCallback: (scene, col, row, config) => {
-                    console.debug(this);
+                    // console.debug(this);
                     let index = row * columns + col;
 
-                    // Object.assign(config, {
-                    //     expand: true,
-                    // });
+                    Object.assign(config, {
+                        // align: 'top',
+                        padding: {
+                            left: 10,
+                            right: 10,
+                            top: 3,
+                            bottom: 3
+                        },
+                        expand: !isTexture,
+                    });
 
                     return createCell(index);
                 },
@@ -2930,10 +2970,6 @@ class RexForm extends RexPlugins.UI.Sizer {
 
         const formConfig = {
             orientation: 1,
-            x: config.x,
-            y: config.y,
-            width: config.width,
-            height: config.height,
         };
 
         super(scene, formConfig);
@@ -2961,14 +2997,14 @@ class RexForm extends RexPlugins.UI.Sizer {
                     proportion: 0,
                     align: 'right',
                     padding: { top: 10, bottom: 10, left: 10, right: 10 },
-                    expand: false,
+                    expand: true,
                 })
             .add(createGrid(scene),
                 {
                     proportion: 0,
                     align: 'right',
                     padding: { top: 10, bottom: 10, left: 10, right: 10 },
-                    expand: false,
+                    expand: true,
                 })
             .add(createFooter(scene, ['ok', 'cancel']),
                 {
@@ -2977,17 +3013,10 @@ class RexForm extends RexPlugins.UI.Sizer {
                     padding: { top: 10, bottom: 10, left: 10, right: 10 },
                     expand: true,
                 })
+            .setOrigin(0, 0.5)
             .layout();
 
-
-        // .on('login', function (username, password) {
-        //     print.text += `${username}:${password}\n`;
-        // })
-        // //.drawBounds(this.add.graphics(), 0xff0000);
-        // .popUp(500);
-
-
+        // console.debug(this);
 
     };
-
 };

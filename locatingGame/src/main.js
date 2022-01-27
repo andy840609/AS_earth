@@ -254,7 +254,7 @@ function locatingGame() {
                 let playerRole = 'maleAdventurer';//==之後能選其他[Biker,Cyborg,Punk]
                 let sidekick = 'Owlet';//=='Owlet,Dude,Pink'
 
-                let playerName = 'SSS',
+                let playerName = '',
                     avatarIndex = 0,//==自選頭像
                     avatarBgColor = 0x5B5B5B;
 
@@ -285,7 +285,7 @@ function locatingGame() {
                     playerStats: GameObjectStats.player[playerRole],
                     playerTimeUse: 0,//==圖表
                     playerCustom: {
-                        avatarKey: playerRole + '_avatar' + avatarIndex,
+                        avatarIndex: avatarIndex,
                         avatarBgColor, avatarBgColor,
                         name: playerName,
                     },
@@ -316,28 +316,27 @@ function locatingGame() {
                 var startScene = async () => {
                     GameData.localeJSON = await getLanguageJSON();
 
+                    //==test
+                    // gameDisplay(true);
+                    // let newGameData = await new Promise((resolve, reject) => {
+                    //     const config = Object.assign(getPhaserConfig(width, height), {
+                    //         scene: new GameStartScene(GameData, resolve),
+                    //     });
+                    //     new Phaser.Game(config);
+                    // });
 
-                    gameDisplay(true);
-
-                    let newGameData = await new Promise((resolve, reject) => {
-                        const config = Object.assign(getPhaserConfig(width, height), {
-                            scene: new GameStartScene(GameData, resolve),
-                        });
-                        new Phaser.Game(config);
-                    });
-
-                    if (GameData.locale != newGameData.locale)
-                        GameData.localeJSON = await getLanguageJSON();
-                    Object.assign(GameData, newGameData);
-                    gameDisplay(false);
-
+                    // if (GameData.locale != newGameData.locale)
+                    //     GameData.localeJSON = await getLanguageJSON();
+                    // Object.assign(GameData, newGameData);
+                    // gameDisplay(false);
+                    //==test
 
                     initMap();
 
 
                     //==test
                     // gameStart('defend');
-                    // gameStart('dig');
+                    gameStart('dig');
                     //==test
                 };
 
@@ -392,8 +391,8 @@ function locatingGame() {
                             .find('.rankChart')
                             .append(svg)
                             .find('svg')
-                            .height(height)
-                            .width(svgBox.width * (height / svgBox.height));
+                        // .height(height)
+                        // .width(svgBox.width * (height / svgBox.height));
 
                     };
                     var initShareSocial = () => {
@@ -401,20 +400,34 @@ function locatingGame() {
 
                         shareSocial
                             .append(`
-                            <div class="fbGroup">
+                            <div class="shareButtons">
 
-                            <button type="button" class="btn btn-primary  d-flex align-items-center rounded-pill" id="fbButton">
-                                <i class="fab fa-facebook fa-2x"></i>
-                                <text class="text-nowrap p-1 pt-2">${GameData.localeJSON.UI['shareTo']} FACEBOOK </text>
-                            </button>
+                                <button type="button" class="btn btn-primary rounded-pill" id="fbButton">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fab fa-facebook fa-2x"></i>
+                                        <text class="text-nowrap p-1 pt-2">${GameData.localeJSON.UI['shareTo']} FACEBOOK </text>
+                                    </div>
+                                </button>
+
+                                <button type="button" class="btn btn-primary rounded-pill" id="downloadButton">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fa-solid fa-image fa-2x"></i>
+                                        <text class="text-nowrap p-1 pt-2">${GameData.localeJSON.UI['downloadCert']}</text>
+                                    </div>
+                                </button>
                               
                             </div>
                             `);
 
+                        //==按鈕一個一個出現
+                        shareSocial.find('.shareButtons>button').each(function (i) {
+                            let button = $(this);
+                            button.css('top', height * (0.4 + 0.1 * i));
+                            setTimeout(() => button.show(), i * 1000);
+                        });
 
                         shareSocial.find('#fbButton')
                             .on('click', () => {
-
                                 var getProfile = () => {
                                     const pictureW = 100;
                                     return new Promise(r => {
@@ -495,7 +508,11 @@ function locatingGame() {
 
 
                             });
-
+                        shareSocial.find('#downloadButton')
+                            .on('click', () => {
+                                let imgName = getSharingImg();
+                                console.debug(imgName);
+                            });
                     };
 
                     rankingData = getRKData(await rankingData);
@@ -1043,7 +1060,7 @@ function locatingGame() {
                         chartContainerJQ.find('#gameGroup')
                             .append(`
                                 <div class="Congrats">
-                                    <div class="container d-flex justify-content-center ">
+                                    <div class="d-flex justify-content-center ">
                                         <div class="rankChart col-9"></div>
                                         <div class="shareSocial col-3 d-flex align-items-center"></div>
                                     </div>
@@ -1565,6 +1582,9 @@ function locatingGame() {
 
                         let bigMapOffset, targetOffset;
                         switch (`${stage}_${index}`) {
+                            case '1_0':
+                                line = line.replace('\t', GameData.playerCustom.name);
+                                break;
                             case '1_1':
                                 $('#blackout')
                                     .css('opacity', 0.5)
@@ -1733,76 +1753,77 @@ function locatingGame() {
                 }
                 else if (gameMode == 'dig') {
                     // console.debug(siteData);
-                    {
-                        const backgroundArr = Object.keys(BackGroundResources.dig);
+                    // {
+                    //     const backgroundArr = Object.keys(BackGroundResources.dig);
 
-                        let coordinate = siteData.coordinate;
-                        // let background = 'halloween_4';//==之後經緯度判斷？
-                        let background = backgroundArr[getRandom(backgroundArr.length)];
-                        let mineBGindex = 0;//==之後經緯度判斷？
+                    //     let coordinate = siteData.coordinate;
+                    //     // let background = 'halloween_4';//==之後經緯度判斷？
+                    //     let background = backgroundArr[getRandom(backgroundArr.length)];
+                    //     let mineBGindex = 0;//==之後經緯度判斷？
 
-                        let placeData = {
-                            coordinate: coordinate,
-                            background: background,
-                            mineBGindex: mineBGindex,
-                            depth: siteData.depth ? siteData.depth : null,
-                        };
+                    //     let placeData = {
+                    //         coordinate: coordinate,
+                    //         background: background,
+                    //         mineBGindex: mineBGindex,
+                    //         depth: siteData.depth ? siteData.depth : null,
+                    //     };
 
-                        //==顯示假設點
-                        assumedEpicenter
-                            .setLatLng(coordinate)
-                            .getTooltip()
-                            .setContent(`${GameData.localeJSON.UI['assumedEpicenter']} : ${coordinate.join(' , ')}`)
-                        assumedEpicenter.getElement().style.display = 'inline';
+                    //     //==顯示假設點
+                    //     assumedEpicenter
+                    //         .setLatLng(coordinate)
+                    //         .getTooltip()
+                    //         .setContent(`${GameData.localeJSON.UI['assumedEpicenter']} : ${coordinate.join(' , ')}`)
+                    //     assumedEpicenter.getElement().style.display = 'inline';
 
-                        GameData.playerEpicenter = coordinate;
+                    //     GameData.playerEpicenter = coordinate;
 
-                        gameResult = await new Promise((resolve, reject) => {
-                            const config = Object.assign(getPhaserConfig(width, height), {
-                                scene: new DigScene(placeData, GameData, {
-                                    resolve: resolve,
-                                }),
-                            });
-                            new Phaser.Game(config);
-                        });
+                    //     gameResult = await new Promise((resolve, reject) => {
+                    //         const config = Object.assign(getPhaserConfig(width, height), {
+                    //             scene: new DigScene(placeData, GameData, {
+                    //                 resolve: resolve,
+                    //             }),
+                    //         });
+                    //         new Phaser.Game(config);
+                    //     });
 
-                        console.debug(gameResult);
-                        let playerInfo = gameResult.playerInfo;
+                    //     console.debug(gameResult);
+                    //     let playerInfo = gameResult.playerInfo;
 
-                        //===更新人物資料
-                        updateMapUI(playerInfo, 1000);
-                    }
+                    //     //===更新人物資料
+                    //     updateMapUI(playerInfo, 1000);
+                    // }
 
                     //=== 進王關
-                    if (gameResult.bossRoom) {//gameResult.bossRoom
-                        const backgroundArr = Object.keys(BackGroundResources.boss);
-                        let background = backgroundArr[getRandom(backgroundArr.length)];
+                    // if (gameResult.bossRoom) {//gameResult.bossRoom
+                    //     const backgroundArr = Object.keys(BackGroundResources.boss);
+                    //     let background = backgroundArr[getRandom(backgroundArr.length)];
 
-                        gameResult = await new Promise((resolve, reject) => {
-                            const config = Object.assign(getPhaserConfig(width, height), {
-                                scene: new BossScene(GameData, background, {
-                                    resolve: resolve,
-                                }),
-                            });
-                            new Phaser.Game(config);
-                        });
-                        console.debug(gameResult);
-                        let playerInfo = gameResult.playerInfo;
+                    //     gameResult = await new Promise((resolve, reject) => {
+                    //         const config = Object.assign(getPhaserConfig(width, height), {
+                    //             scene: new BossScene(GameData, background, {
+                    //                 resolve: resolve,
+                    //             }),
+                    //         });
+                    //         new Phaser.Game(config);
+                    //     });
+                    //     console.debug(gameResult);
+                    //     let playerInfo = gameResult.playerInfo;
 
-                        //===更新人物資料
-                        updateMapUI(playerInfo, 1000);
+                    //     //===更新人物資料
+                    //     updateMapUI(playerInfo, 1000);
 
-                        //==通關
-                        if (gameResult.bossDefeated) {//gameResult.bossDefeated
-                            // console.debug('通關');
-                            initEndScene(true);
-                            return;
-                        };
+                    //==通關
+                    if (1) {//gameResult.bossDefeated
+                        // console.debug('通關');
+                        initEndScene(true);
+                        return;
+                    };
 
-                    }
-                    else { //=== 沒找到
-                        updateSidekick(5, 0);
-                    }
+                    // }
+                    // else { //=== 沒找到
+                    //     updateSidekick(5, 0);
+                    // }
+
                 };
                 gameDisplay(false);
 
@@ -2975,8 +2996,8 @@ function locatingGame() {
         return svg.node();
     };
     //==取得分享圖
-    function getSharingImg(profile) {
-        const photoW = profile.picture.data.width;
+    function getSharingImg(profile = null) {
+        const photoW = profile ? profile.picture.data.width : 120;
 
         var rankChart = document.querySelector('.rankChart>svg');
         var composeCertificate = (imgObj, fileName, option) => {
@@ -2991,50 +3012,33 @@ function locatingGame() {
                         r(URL.createObjectURL(blob));
                     }
                     else {
+                        //==fb大頭照下載
                         fetch(imgData)
                             .then(res => res.blob()) // Gets the response and returns it as a blob
                             .then(blob => r(URL.createObjectURL(blob)));
                     };
                 });
             };
-            function getCanvas(resize) {
+            function getCanvas(isAvatar) {
+                let width = isAvatar ? photoW : 800;
                 // =============== canvas init
                 let canvas = document.createElement('canvas');
                 let context = canvas.getContext('2d');
-
-                // var svgWidth = svgArr[0].viewBox.baseVal.width;
-                // var svgHeight = svgArr[0].viewBox.baseVal.height * svgArr.length;
-                // var canvasWidth, canvasHeight;
-                // //檢視時縮放,下載時放大
-                // if (resize) {
-                //     var windowW = window.innerWidth;//获取当前窗口宽度 
-                //     var windowH = window.innerHeight;//获取当前窗口高度 
-
-                //     var width, height;
-                //     var scale = 0.9;//缩放尺寸
-                //     height = windowH * scale;
-                //     width = height / svgHeight * svgWidth;
-                //     while (width > windowW * scale) {//如宽度扔大于窗口宽度 
-                //         height = height * scale;//再对宽度进行缩放
-                //         width = width * scale;
-                //     }
-                //     canvasWidth = width;
-                //     canvasHeight = height;
-                // }
-                // else {
-                //     var scale = 1.5;
-                //     canvasWidth = svgWidth * scale;
-                //     canvasHeight = svgHeight * scale;
-                // }
-
-                // canvas.width = canvasWidth;
-                // canvas.height = canvasHeight;
-
-                canvas.width = 800;
-                canvas.height = 800;
-                //====bgcolor
-                context.fillStyle = "#FFF";
+                canvas.width = width;
+                canvas.height = width;
+                context.fillStyle = isAvatar ?
+                    "#" + GameData.playerCustom.avatarBgColor.toString(16).padStart(6, '0').toUpperCase() :
+                    "#FFF";
                 context.fillRect(0, 0, canvas.width, canvas.height);
+
+                //==頭像框線
+                if (isAvatar) {
+                    context.lineJoin = 'bevel';
+                    context.lineWidth = 10;
+                    context.strokeStyle = '#7b5e57';
+                    context.strokeRect(0, 0, width, width);
+                };
+
                 return [canvas, context];
 
             };
@@ -3064,115 +3068,142 @@ function locatingGame() {
                 });
             };
 
-
             //==============each svg draw to canvas
-            var CanvasObjArr = getCanvas(option == 'bigimg');
-
-            var canvas = CanvasObjArr[0];
-            var context = CanvasObjArr[1];
-
-            var imgKeys = Object.keys(imgObj);
-
-            // console.debug(svg.node().cloneNode(true));
-            return new Promise(async (resolve) => {
-                for (let index = 0; index < imgKeys.length; index++) {
-                    let key = imgKeys[index];
-                    let value = imgObj[key];
-                    // console.debug(key, value);
-
-                    let imageX, imageY,
-                        imageWidth, imageHeight;
-
-                    switch (key) {
-                        case 'rankChart'://==PR圖
-                            //==標題字調整
-                            d3.select(value)
-                                .select('.title>text').remove();
-
-                            imageWidth = canvas.width * 0.75;
-                            imageHeight = imageWidth * 6 / 7;
-                            imageX = canvas.width * 0.05;
-                            imageY = canvas.height - imageHeight - margin.bottom - 20;
-                            break;
-                        case 'words'://==獎狀底   
-                            imageWidth = canvas.width;
-                            imageHeight = canvas.height;
-                            imageX = 0;
-                            imageY = 0;
-                            break;
-                        case 'photo':
-                            imageWidth = photoW;
-                            imageHeight = photoW;
-                            imageX = margin.left + 25;
-                            imageY = canvas.height * 0.2 + 20;
-                            break;
-                        case 'head_line'://==素材
-                            imageWidth = canvas.width;
-                            imageHeight = 30;
-                            imageX = 0;
-                            imageY = margin.top;
-                            break;
-                        case 'head_line2'://==素材
-                            imageWidth = canvas.width;
-                            imageHeight = 10;
-                            imageX = 0;
-                            imageY = margin.top + 50;
-                            break;
-                        case 'foot_line'://==素材
-                            imageWidth = canvas.width;
-                            imageHeight = 10;
-                            imageX = 0;
-                            imageY = canvas.height - margin.bottom * 1.5;
-                            break;
-                        case 'ribbon'://==素材
-                            imageWidth = 100;
-                            imageHeight = 200;
-                            imageX = canvas.width * 0.8;
-                            imageY = margin.top - 20;
-                            break;
-                        case 'seal'://==素材
-                            imageWidth = 300;
-                            imageHeight = 300;
-                            imageX = canvas.width - imageWidth;
-                            imageY = canvas.height - imageHeight - margin.bottom;
-                            break;
-                        case 'background'://==素材
-                            imageWidth = canvas.width;
-                            imageHeight = canvas.height;
-                            imageX = 0;
-                            imageY = 0;
-                            break;
+            var CanvasObjArr = getCanvas(option == 'avatar');
+            var canvas = CanvasObjArr[0],
+                context = CanvasObjArr[1];
 
 
-                    };
+            var certPromise;
 
-                    var imgUrl = ((key == 'rankChart') || (key == 'words') || (key == 'photo')) ?
-                        await getBlobUrl(value, isSvg = !(key == 'photo')) :
-                        value;
+            if (option == 'avatar')//==合成玩家自訂頭像
+                certPromise = new Promise(async (resolve) => {
 
                     var image = new Image();
-                    image.src = imgUrl;
-                    // console.debug(key, imgUrl);
-                    await new Promise(r => {
-                        image.onload = async () => {
-                            // 素材貼到畫布上
-                            context.globalAlpha = key == 'seal' ? 0.7 : 1;
-                            context.drawImage(image, imageX, imageY, imageWidth, imageHeight);
+                    let avatarDir = assetsDir + 'avatar/' + GameData.playerRole + '/' + GameData.playerCustom.avatarIndex + '.png';
+                    image.src = avatarDir;
+                    image.onload = () => {
+                        // 素材貼到畫布上
+                        context.drawImage(image, 0, 0, photoW, photoW);
 
-                            // console.debug(index, key);
-                            //貼完輸出
-                            if (index == imgKeys.length - 1) {
-                                let certificateUrl = canvas.toDataURL('image/' + option);
-                                let imgName = await saveCertificate(certificateUrl);
-                                resolve(imgName);
-                            };
-                            r();
+                        let certificateUrl = canvas.toDataURL('image/png');
+                        // console.debug(certificateUrl);
+                        resolve(certificateUrl);
+                    };
+                });
+            else//==合成獎狀
+                certPromise = new Promise(async (resolve) => {
+                    imgObj = await imgObj;
+                    var imgKeys = Object.keys(imgObj);
+                    // console.debug(imgObj);
+
+                    for (let index = 0; index < imgKeys.length; index++) {
+                        let key = imgKeys[index];
+                        let value = imgObj[key];
+                        // console.debug(key, value);
+
+                        let imageX, imageY,
+                            imageWidth, imageHeight;
+
+                        switch (key) {
+                            case 'rankChart'://==PR圖
+                                //==標題字調整
+                                d3.select(value)
+                                    .select('.title>text').remove();
+
+                                imageWidth = canvas.width * 0.75;
+                                imageHeight = imageWidth * 6 / 7;
+                                imageX = canvas.width * 0.05;
+                                imageY = canvas.height - imageHeight - margin.bottom - 20;
+                                break;
+                            case 'words'://==獎狀底   
+                                imageWidth = canvas.width;
+                                imageHeight = canvas.height;
+                                imageX = 0;
+                                imageY = 0;
+                                break;
+                            case 'photo':
+                                imageWidth = photoW;
+                                imageHeight = photoW;
+                                imageX = margin.left + 25;
+                                imageY = canvas.height * 0.2 + 20;
+                                break;
+                            case 'head_line'://==素材
+                                imageWidth = canvas.width;
+                                imageHeight = 30;
+                                imageX = 0;
+                                imageY = margin.top;
+                                break;
+                            case 'head_line2'://==素材
+                                imageWidth = canvas.width;
+                                imageHeight = 10;
+                                imageX = 0;
+                                imageY = margin.top + 50;
+                                break;
+                            case 'foot_line'://==素材
+                                imageWidth = canvas.width;
+                                imageHeight = 10;
+                                imageX = 0;
+                                imageY = canvas.height - margin.bottom * 1.5;
+                                break;
+                            case 'ribbon'://==素材
+                                imageWidth = 100;
+                                imageHeight = 200;
+                                imageX = canvas.width * 0.8;
+                                imageY = margin.top - 20;
+                                break;
+                            case 'seal'://==素材
+                                imageWidth = 300;
+                                imageHeight = 300;
+                                imageX = canvas.width - imageWidth;
+                                imageY = canvas.height - imageHeight - margin.bottom;
+                                break;
+                            case 'background'://==素材
+                                imageWidth = canvas.width;
+                                imageHeight = canvas.height;
+                                imageX = 0;
+                                imageY = 0;
+                                break;
+
+
                         };
-                    });
-                };
-            });
 
+                        var imgUrl = ((key == 'rankChart') || (key == 'words')) ?
+                            await getBlobUrl(value, true) :
+                            value;
 
+                        var image = new Image();
+                        image.src = imgUrl;
+                        // console.debug(key, imgUrl);
+                        //確保圖層貼上順序
+                        await new Promise(r => {
+                            image.onload = async () => {
+                                // 素材貼到畫布上
+                                context.globalAlpha = key == 'seal' ? 0.7 : 1;
+                                context.drawImage(image, imageX, imageY, imageWidth, imageHeight);
+
+                                // console.debug(index, key);
+                                //貼完輸出
+                                if (index == imgKeys.length - 1) {
+                                    let certificateUrl = canvas.toDataURL('image/' + option);
+
+                                    if (profile) {
+                                        let imgName = await saveCertificate(certificateUrl);
+                                        resolve(imgName);
+                                    }
+                                    else {
+                                        download(certificateUrl, fileName);
+                                        resolve();
+                                    };
+
+                                };
+                                r();
+                            };
+                        });
+                    };
+                });
+
+            return certPromise;
         };
         const width = 560;
         const height = width;
@@ -3214,7 +3245,18 @@ function locatingGame() {
                             .attr("font-size", "15")
                             .attr("x", margin.left + photoW * 1.2)
                             .attr("y", height * 0.3)
-                            .text(`${localeJSON['certLabel1']} ： ${profile.name}`);
+                            .text(`${localeJSON['certLabel1']} ： ${profile ? profile.name : GameData.playerCustom.name}`);
+
+                        GameData.playerTimeUse = 86401000;
+                        let timeUse = {
+                            hour: parseInt(GameData.playerTimeUse / 3600000),
+                            min: parseInt(GameData.playerTimeUse % 3600000 / 60000),
+                            sec: Math.ceil(GameData.playerTimeUse % 60000 / 1000),
+                        };
+                        let timeUseStr = timeUse.hour > 0 ? timeUse.hour + ' ' + localeJSON['HRS'] : '' +
+                            (timeUse.hour > 0 || timeUse.min > 0) ? timeUse.min + ' ' + localeJSON['MINS'] : '' +
+                            timeUse.sec + ' ' + localeJSON['SECS'];
+                        console.debug(timeUseStr);
 
                         g
                             .append('text')
@@ -3223,8 +3265,8 @@ function locatingGame() {
                             .attr("font-weight", "bold")
                             .attr("font-size", "15")
                             .attr("x", margin.left + photoW * 1.2)
-                            .attr("y", height * 0.3 + 20)
-                            .text(`${localeJSON['certLabel2']} ： ${GameData.playerTimeUse / 60000} ${localeJSON['MINS']}`);
+                            .attr("y", height * 0.3 + 20)//
+                            .text(`${localeJSON['certLabel2']} ： ${timeUseStr}`);
 
                         g
                             .append('text')
@@ -3232,19 +3274,19 @@ function locatingGame() {
                             .attr("text-anchor", "start")
                             .attr("font-weight", "bold")
                             .attr("font-size", "10")
-                            .attr("x", width * 0.7)
-                            .attr("y", height - margin.bottom - 10)
+                            .attr("x", width * 0.4)
+                            .attr("y", height - margin.bottom + 20)
                             .text(`${localeJSON['certLabel3']} ： ${new Date().toISOString().substring(0, 10)}`);
 
-                        let webSite = 'http://192.168.201.67/GDMS_projects/locatingGame/main/example/locatingGame.html';
+                        let webSite = 'https://tecdc.earth.sinica.edu.tw/tecdc/Game/locatingGame/';
                         g
                             .append('text')
                             .attr("fill", textColor)
                             .attr("text-anchor", "start")
                             .attr("font-weight", "bold")
                             .attr("font-size", "10")
-                            .attr("x", width * 0.7)
-                            .attr("y", height - margin.bottom + 20)
+                            .attr("x", width * 0.4)
+                            .attr("y", height - margin.bottom + 40)
                             .text(`${localeJSON['certLabel4']} ： ${webSite}`);
 
                         let PR = d3.select(rankChart).select('.bravePath').data()[0];
@@ -3294,23 +3336,28 @@ function locatingGame() {
         updateChart();
 
 
+        async function getCertRes() {
+            const certificateDir = assetsDir + 'certificate/';
+            let imgResource = {
+                background: certificateDir + 'background.jpeg',
+                head_line: certificateDir + 'head_line.png',
+                head_line2: certificateDir + 'head_line2.png',
+                foot_line: certificateDir + 'foot_line.png',
+                ribbon: certificateDir + 'ribbon.png',
 
-        const certificateDir = assetsDir + 'certificate/';
-        let imgResource = {
-            background: certificateDir + 'background.jpeg',
-            head_line: certificateDir + 'head_line.png',
-            head_line2: certificateDir + 'head_line2.png',
-            foot_line: certificateDir + 'foot_line.png',
-            ribbon: certificateDir + 'ribbon.png',
 
+                rankChart: rankChart.cloneNode(true),
+                words: svg.node().cloneNode(true),
+                photo: profile ? profile.picture.data.url : await composeCertificate(null, null, 'avatar'),
+                seal: certificateDir + 'seal.png',
+            };
 
-            rankChart: rankChart.cloneNode(true),
-            words: svg.node().cloneNode(true),
-            photo: profile.picture.data.url,
-            seal: certificateDir + 'seal.png',
+            return imgResource;
         };
 
-        return composeCertificate(imgResource, 'AAA', 'jpeg');
+
+        return composeCertificate(getCertRes(), 'AAA', profile ? 'jpeg' : 'png');
+
     };
 
     return game;

@@ -1924,7 +1924,7 @@ class RexTextBox extends RexPlugins.UI.TextBox {
         let roundCorner = tips ?
             (character == 'doctor' ? 10 : 40) : 20;
         let rexRect = new RexPlugins.UI.RoundRectangle(scene, 0, 0, 2, 2, roundCorner, COLOR_PRIMARY)
-            .setStrokeStyle(2, COLOR_LIGHT);
+            .setStrokeStyle(2, COLOR_LIGHT).setDepth(0);
 
         let rexBBText = new RexPlugins.UI.BBCodeText(scene, 0, 0, '',
             {
@@ -1938,23 +1938,38 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                     width: wrapWidth
                 },
                 // maxLines: 3,
+                lineSpacing: 10,
                 padding: padding,
             });
 
         //==頭像調整爲150*150
-        // let icon = null;
-        // if (!tips) {
-        //     const iconW = 150;
-        //     icon = new Phaser.GameObjects.Image(scene, 0, 0, character + 'Avatar');
-        //     icon.setScale(iconW / icon.width);
-        //     // console.debug(character + 'Avatar');
-        // };
+        let icon = null;
+        if (!tips) {
+            const imgW = 150;
+            let gameData = config.gameData;
+            let isPlayer = character == 'player';
+            let BgColor = isPlayer ? gameData.playerCustom.avatarBgColor : undefined;
+            let img = new Phaser.GameObjects.Image(scene, 0, 0, character + 'Avatar');
+
+            img
+                .setScale(imgW / Math.max(img.width, img.height))
+                .setDepth(isPlayer ? 3 : 1);
+
+            icon = new RexPlugins.UI.Label(scene, {
+                background: scene.add.existing(
+                    new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 5, BgColor).setStrokeStyle(3, COLOR_LIGHT).setDepth(2)),
+                icon: scene.add.existing(img),
+                align: 'center',
+                width: imgW,
+                height: imgW,
+            });
+        };
 
         const textBoxConfig = {
             x: config.x,
             y: config.y,
             background: scene.add.existing(rexRect),
-            icon: tips ? null : scene.add.image(0, 0, character + 'Avatar'),//==scene.add.existing(icon)
+            icon: icon,//==tips ? null : scene.add.image(0, 0, character + 'Avatar')
             text: scene.add.existing(rexBBText),
             action: tips ? null : scene.add.image(0, 0, 'dialogButton').setVisible(false).setScale(0.1),
             space: {
@@ -2688,7 +2703,7 @@ class RexForm extends RexPlugins.UI.Sizer {
         let playerCustom = gameData.playerCustom;
 
         var playerName = playerCustom.name,
-            avatarKey = playerCustom.avatarKey,
+            avatarIndex = playerCustom.avatarIndex,
             avatarBgColor = playerCustom.avatarBgColor;
 
         var createHeader = (scene, text, backgroundColor) => {
@@ -2770,14 +2785,15 @@ class RexForm extends RexPlugins.UI.Sizer {
 
                         //==確認覆蓋資料
                         if (questionData.options[confirmIdx] == localeJSON.UI['yes']) {
-                            // console.debug(playerName, avatarKey, avatarBgColor);
+                            // console.debug(playerName, avatarIndex, avatarBgColor);
 
                             Object.assign(gameData.playerCustom, {
-                                avatarKey: avatarKey,
+                                avatarIndex: avatarIndex,
                                 avatarBgColor, avatarBgColor,
                                 name: playerName,
                             });
 
+                            this.formConfirm = true;
                         }
                         else return;
 
@@ -2842,7 +2858,7 @@ class RexForm extends RexPlugins.UI.Sizer {
                 return new RexPlugins.UI.Label(scene, {
                     background: scene.add.existing(
                         new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 5, avatarBgColor).setStrokeStyle(5, COLOR_LIGHT)),
-                    icon: scene.add.image(0, 0, avatarKey),
+                    icon: scene.add.image(0, 0, gameData.playerRole + '_avatar' + avatarIndex),
                     name: 'avatarSelect',
                     align: 'left',
                     space: {
@@ -2889,13 +2905,12 @@ class RexForm extends RexPlugins.UI.Sizer {
                 const form = this;
 
                 let key = isTexture ?
-                    gameData.playerRole + '_avatar' + index :
-                    Phaser.Math.Between(0, 0x1000000);
+                    index : Phaser.Math.Between(0, 0x1000000);
 
                 return new RexPlugins.UI.Label(scene, {
                     background: scene.add.existing(
                         new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 5, isTexture ? undefined : key)),
-                    icon: isTexture ? scene.add.image(0, 0, key) : false,
+                    icon: isTexture ? scene.add.image(0, 0, gameData.playerRole + '_avatar' + key) : false,
                     name: key,
                     space: {
                         left: 10,
@@ -2906,18 +2921,18 @@ class RexForm extends RexPlugins.UI.Sizer {
                 })
                     .setInteractive()
                     .on('pointerdown', function () {
-                        let key = this.name;
+                        let name = this.name;
 
                         //==找到頭像預覽框
                         let avatarSelect = form.getElement('#avatarSelect', true);
                         if (isTexture) {
-                            avatarSelect.getElement('icon').setTexture(key);
-                            avatarKey = key;
+                            avatarSelect.getElement('icon').setTexture(gameData.playerRole + '_avatar' + name);
+                            avatarIndex = name;
                         }
                         else {
-                            avatarSelect.getElement('background').setFillStyle(key);
-                            avatarBgColor = key;
-                        }
+                            avatarSelect.getElement('background').setFillStyle(name);
+                            avatarBgColor = name;
+                        };
                     })
                     .on('pointerout', function () {
                         this.getElement('background').setStrokeStyle();

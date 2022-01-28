@@ -13,7 +13,7 @@ const GameObjectStats = {
     creature: {
         dog: {
             HP: 1000,
-            attackPower: 5,
+            attackPower: 20,
             movementSpeed: 200,
             jumpingPower: 0,
         },
@@ -924,7 +924,7 @@ const Player = new Phaser.Class({
                 scene.anims.create({
                     key: 'player_idle',
                     frames: scene.anims.generateFrameNumbers('player_idle'),
-                    frameRate: 7,
+                    frameRate: 5,
                     repeat: -1,
                 });
 
@@ -938,14 +938,14 @@ const Player = new Phaser.Class({
                 scene.anims.create({
                     key: 'player_runAttack',
                     frames: scene.anims.generateFrameNumbers('player_runAttack'),
-                    frameRate: 10,
+                    frameRate: 8,
                     repeat: 0,
                 });
 
                 scene.anims.create({
                     key: 'player_attack',
                     frames: scene.anims.generateFrameNumbers('player_attack'),
-                    frameRate: 20,
+                    frameRate: 10,
                     repeat: 0,
                 });
 
@@ -959,14 +959,14 @@ const Player = new Phaser.Class({
                 scene.anims.create({
                     key: 'player_hurt',
                     frames: scene.anims.generateFrameNumbers('player_hurt'),
-                    frameRate: 8,
+                    frameRate: 6,
                     repeat: 0,
                 });
 
                 scene.anims.create({
                     key: 'player_death',
                     frames: scene.anims.generateFrameNumbers('player_death'),
-                    frameRate: 4,
+                    frameRate: 6,
                     repeat: 0,
                 });
 
@@ -987,7 +987,7 @@ const Player = new Phaser.Class({
                 scene.anims.create({
                     key: 'player_jumpAttack',
                     frames: scene.anims.generateFrameNumbers('player_jumpAttack'),
-                    frameRate: 10,
+                    frameRate: 8,
                     repeat: 0,
                 });
 
@@ -1158,7 +1158,7 @@ const Player = new Phaser.Class({
                     if (this.body.touching.down) {
                         this.setVelocityY(-this.stats.jumpingPower);
                         this.anims.play('player_jump', true);
-                    }
+                    };
                 };
                 break;
             // case 'dig':
@@ -1180,15 +1180,14 @@ const Player = new Phaser.Class({
 
         if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['down']])) {
 
-            // console.debug(orbStats);
+            // console.debug('pick');
             if (this.pickUpObj) {  //==put down
-
                 this.pickUpObj.statusHadler(this, false, this.pickUpObj.orbStats.isInRange);
                 this.pickUpObj = null;
 
             }
             else {  //==pick up
-                const piclUpDistance = 50;
+                const piclUpDistance = 70;
                 // console.debug(this.pickUpObj);
 
                 let colsestOrb;
@@ -1252,7 +1251,7 @@ const Player = new Phaser.Class({
                 isRuning ? 'player_runAttack' : 'player_attack';
             let attackEffectAnims = isJumping ? 'player_jumpAttackEffect' :
                 isRuning ? 'player_runAttackEffect' : 'player_attackEffect';
-            this.attackEffect.play(attackEffectAnims);
+            // this.attackEffect.play(attackEffectAnims);
 
             if (currentAnims === 'player_attack' && this.anims.isPlaying) return;
             this.anims.play(attackAnims);
@@ -1416,6 +1415,8 @@ const Sidekick = new Phaser.Class({
                 .setAlpha(0)
                 .setDepth(scene.Depth.tips);
 
+            this.dialog.preHintType = 1;//用來判斷上次對話是否閒聊（閒聊不連續說）
+
             this.hints = scene.gameData.localeJSON.Hints[scene.name];
             this.hintAmount = [//==hints總數量 0:提示 1:閒聊
                 Object.keys(this.hints[0]).length - 1,
@@ -1533,7 +1534,8 @@ const Sidekick = new Phaser.Class({
             const replaceStr = '\t';
             const controllCursor = scene.gameData.controllCursor;
 
-            let hintType = Phaser.Math.Between(0, 1),  //==0:提示 1:閒聊 2:特殊對話
+            let hintType = this.dialog.preHintType ?
+                0 : Phaser.Math.Between(0, 1),  //==0:提示 1:閒聊 2:特殊對話
                 hintIdx = Phaser.Math.Between(0, this.hintAmount[hintType]),
                 hint = '';
 
@@ -1542,16 +1544,19 @@ const Sidekick = new Phaser.Class({
                     let pickUpKey = controllCursor['down'];
 
                     //==有些提示不合時機就不出現
-                    if (!hintType && player.pickUpObj) {
-                        let isPickUpHint = (hintIdx == 2 || hintIdx == 3);
+                    if (scene.gameOver.gameClear) {
+                        hint = this.hints[2][0];
+                    }
+                    else if (!hintType && player.pickUpObj) {
+                        let isPickUpHint = (hintIdx == 1 || hintIdx == 2);
                         hint = isPickUpHint ?
-                            this.hints[hintType][3].replace(replaceStr, pickUpKey) :
+                            this.hints[hintType][2].replace(replaceStr, pickUpKey) :
                             this.hints[hintType][hintIdx];
                     }
                     else if (!hintType && !player.pickUpObj) {
-                        let isPickUpHint = (hintIdx == 2 || hintIdx == 3);
+                        let isPickUpHint = (hintIdx == 1 || hintIdx == 2);
                         hint = isPickUpHint ?
-                            this.hints[hintType][2].replace(replaceStr, pickUpKey) :
+                            this.hints[hintType][1].replace(replaceStr, pickUpKey) :
                             this.hints[hintType][hintIdx];
                     } else {
                         hint = this.hints[hintType][hintIdx];
@@ -1566,6 +1571,7 @@ const Sidekick = new Phaser.Class({
                     break;
             };
 
+            this.dialog.preHintType = hintType;
             return hint;
         };
 
@@ -1740,7 +1746,7 @@ class Chunk {
 
                     let ECtileCount = Math.ceil(depthCounter.epicenter / depthCounter.depthScale / tileSize);
                     let tileYRange = [
-                        this.gameScene.groundY + (ECtileCount - 7) * tileSize,
+                        this.gameScene.groundY + (ECtileCount - 4) * tileSize,
                         this.gameScene.groundY + (ECtileCount + 1) * tileSize];
 
                     //出現門的區域(包含地板)
@@ -1754,20 +1760,20 @@ class Chunk {
                         //門
                         if (tileX == bossX && tileY == bossY) {
                             // console.debug(this);
-                            let bossCastle = this.gameScene.physics.add.sprite(bossX, bossY + tileSize * 1.15, 0, 0, 'bossDoor');
+                            let bossCastle = this.gameScene.physics.add.sprite(bossX, bossY + tileSize * 1.1, 0, 0, 'bossDoor');
                             let doorW = Math.ceil(bossCastle.width / tileSize) * tileSize;
 
                             bossCastle
-                                .setScale(doorW / bossCastle.width * 2)
+                                .setScale(doorW / bossCastle.width)
                                 .setOrigin(0.5, 1)
-                                .setDepth(this.gameScene.Depth.gate)
+                                // .setDepth(this.gameScene.Depth.gate)
                                 .play('bossDoor_shine');
 
                             bossCastle.body
                                 .setAllowGravity(false)
                                 .setImmovable(true)
-                                .setSize(doorW, doorW)
-                                .setOffset(bossCastle.body.offset.x, doorW * 0.6);
+                                .setSize(doorW / 2, doorW / 2)
+                                .setOffset(bossCastle.body.offset.x, doorW * 0.3);
 
                             this.gameScene.physics.add.overlap(this.gameScene.player, bossCastle);
                             this.gameScene.bossCastle = bossCastle;
@@ -1776,22 +1782,22 @@ class Chunk {
                         else if ((tileX >= tileXRange[0] && tileX < tileXRange[1]) &&
                             tileY == tileYRange[1] - tileSize) {
                             //門下無法破壞石塊
-                            key = (tileX >= bossX - 3 * tileSize && tileX < bossX + 3 * tileSize) ?
+                            key = (tileX >= bossX - 2 * tileSize && tileX < bossX + 2 * tileSize) ?
                                 "gateStone" : "";
                         }
                         //火把
-                        else if ((tileX == bossX - 4 * tileSize || tileX == bossX + 4 * tileSize) &&
-                            tileY == bossY - tileSize) {
+                        else if ((tileX == bossX - 2 * tileSize || tileX == bossX + 2 * tileSize) &&
+                            tileY == bossY) {
 
                             let bossTorch = this.gameScene.add.sprite(tileX, tileY, 'bossTorch');
 
                             bossTorch
                                 .setScale(0.5)
                                 .setOrigin(0.5, 1)
-                                .setDepth(this.gameScene.Depth.gate + 1)
+                                .setDepth(1)
                                 .play('bossTorch_burn');
 
-                            console.debug(this.gameScene.Depth);
+                            // console.debug(this.gameScene.Depth);
                         };
 
                         if (key === undefined) continue;
@@ -2280,7 +2286,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                 'rank': 3,
             }[config.panelType];
 
-        console.debug(gameData);
+        // console.debug(gameData);
 
         var data, footerItem, panelName = gameData.localeJSON.UI[config.panelType];
         switch (panelType) {
@@ -2697,7 +2703,6 @@ class RexForm extends RexPlugins.UI.Sizer {
         //     })
         //     .start();
 
-
         const rextexteditplugin = scene.plugins.get('rextexteditplugin');
 
         let playerCustom = gameData.playerCustom;
@@ -3007,12 +3012,24 @@ class RexForm extends RexPlugins.UI.Sizer {
                     padding: { top: 10, bottom: 10, left: 10, right: 10 },
                     expand: false,
                 })
+            .add(scene.add.text(0, 0, gameData.localeJSON.UI['choosePhoto'], { fontSize: '24px', padding: padding, }),
+                {
+                    proportion: 0,
+                    align: 'left',
+                    padding: { top: 10, bottom: 0, left: 10, right: 0 },
+                })
             .add(createGrid(scene, true),
                 {
                     proportion: 0,
                     align: 'right',
                     padding: { top: 10, bottom: 10, left: 10, right: 10 },
                     expand: true,
+                })
+            .add(scene.add.text(0, 0, gameData.localeJSON.UI['chooseBGcolor'], { fontSize: '24px', padding: padding, }),
+                {
+                    proportion: 0,
+                    align: 'left',
+                    padding: { top: 10, bottom: 0, left: 10, right: 0 },
                 })
             .add(createGrid(scene),
                 {

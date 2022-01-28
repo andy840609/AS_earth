@@ -434,10 +434,10 @@ svg {
 
 /* fb Button */
 .shareButtons>button {
-    /* opacity: 0; */
+    opacity: 0;
     position: absolute;
-    /* animation: showButton 1.5s ease-in 0s forwards; */
-    /* display: none; */
+    animation: showButton 1.5s ease-in 0s forwards;
+    display: none;
     width: 210px;
 }
 

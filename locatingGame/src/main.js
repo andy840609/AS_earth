@@ -228,7 +228,7 @@ function locatingGame() {
 
             //===遊戲相關
             const clearStationToUnlock = 3;//==完成幾個解鎖第二關
-            const allowedErro = 15;//==容許與震央相差距離(km)
+            const allowedErro = 25;//==容許與震央相差距離(km)
             let stopClickFlag = false;//==gameOver暫停點擊關卡
             let gameStartFlag = false;//==停止map快捷鍵
 
@@ -256,7 +256,7 @@ function locatingGame() {
 
                 let playerName = '',
                     avatarIndex = 0,//==自選頭像
-                    avatarBgColor = 0x5B5B5B;
+                    avatarBgColor = 0x5B5B5B;//
 
                 GameData = {
                     timeRemain: 30 * 60000,//1min=60000ms           
@@ -317,18 +317,18 @@ function locatingGame() {
                     GameData.localeJSON = await getLanguageJSON();
 
                     //==test
-                    // gameDisplay(true);
-                    // let newGameData = await new Promise((resolve, reject) => {
-                    //     const config = Object.assign(getPhaserConfig(width, height), {
-                    //         scene: new GameStartScene(GameData, resolve),
-                    //     });
-                    //     new Phaser.Game(config);
-                    // });
+                    gameDisplay(true);
+                    let newGameData = await new Promise((resolve, reject) => {
+                        const config = Object.assign(getPhaserConfig(width, height), {
+                            scene: new GameStartScene(GameData, resolve),
+                        });
+                        new Phaser.Game(config);
+                    });
 
-                    // if (GameData.locale != newGameData.locale)
-                    //     GameData.localeJSON = await getLanguageJSON();
-                    // Object.assign(GameData, newGameData);
-                    // gameDisplay(false);
+                    if (GameData.locale != newGameData.locale)
+                        GameData.localeJSON = await getLanguageJSON();
+                    Object.assign(GameData, newGameData);
+                    gameDisplay(false);
                     //==test
 
                     initMap();
@@ -336,7 +336,7 @@ function locatingGame() {
 
                     //==test
                     // gameStart('defend');
-                    gameStart('dig');
+                    // gameStart('dig');
                     //==test
                 };
 
@@ -419,11 +419,11 @@ function locatingGame() {
                             </div>
                             `);
 
-                        //==按鈕一個一個出現
+                        //==按鈕一個一個出現                       
                         shareSocial.find('.shareButtons>button').each(function (i) {
                             let button = $(this);
                             button.css('top', height * (0.4 + 0.1 * i));
-                            setTimeout(() => button.show(), i * 1000);
+                            setTimeout(() => button.show(), 5400 + i * 1000);//==5400是動畫時間
                         });
 
                         shareSocial.find('#fbButton')
@@ -440,32 +440,18 @@ function locatingGame() {
                                     });
                                 };
 
-                                var share = async (profilePromise) => {
+                                var share = async (profilePromise = null) => {
                                     const server = "https://tecdc.earth.sinica.edu.tw/tecdc/Game/locatingGame/";
                                     const certificateDir = server + "certificate/";
 
-                                    let imgName = await getSharingImg(await profilePromise);
+                                    // let imgName = await getSharingImg(await profilePromise);
                                     // console.debug(imgName);
 
                                     FB.ui(
-                                        // {
-                                        //     method: 'share_open_graph',
-                                        //     action_type: 'og.shares',
-                                        //     action_properties: JSON.stringify({
-                                        //         object: {
-                                        //             // 'og:url': certificateDir + imgName,
-                                        //             'og:url': certificateDir + 'AAA.jpeg',
-                                        //             'og:title': "your caption here",
-                                        //             'og:description': "your caption here",
-                                        //             // 'og:image': certificateDir + imgName,
-                                        //             'og:image': certificateDir + 'dude.png',
-                                        //         }
-                                        //     }),
-                                        // },
                                         {
                                             display: 'popup',
                                             method: 'share',
-                                            href: certificateDir + imgName,
+                                            href: certificateDir + 'sample.png',
                                             // picture: certificateDir + 'dude.png',
                                             // caption: 'AAA',
                                             // description: 'BBB',
@@ -496,12 +482,12 @@ function locatingGame() {
 
                                 FB.login(function (response) {
                                     if (response.authResponse) {
-                                        console.log(response);
-                                        console.log('Welcome!  Fetching your information.... ');
-                                        share(getProfile());
+                                        // console.log(response);
+                                        // console.log('Welcome!  Fetching your information.... ');
+                                        share();
 
                                     } else {
-                                        console.log('User cancelled login or did not fully authorize.');
+                                        // console.log('User cancelled login or did not fully authorize.');
                                     };
                                 }, { auth_type: 'reauthenticate' });//, { auth_type: 'reauthenticate' }
 
@@ -510,8 +496,8 @@ function locatingGame() {
                             });
                         shareSocial.find('#downloadButton')
                             .on('click', () => {
-                                let imgName = getSharingImg();
-                                console.debug(imgName);
+                                getSharingImg();
+                                // console.debug(imgName);
                             });
                     };
 
@@ -628,7 +614,7 @@ function locatingGame() {
                     data.forEach((d, i) => {
                         // console.debug(d);
                         let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
-                        // let enemy = ['dog'];//==之後隨機抽敵人組
+                        // let enemy = [];//==之後隨機抽敵人組
                         let enemyStats = {};
 
                         enemy.forEach((key) => {
@@ -1133,8 +1119,6 @@ function locatingGame() {
 
 
                         init();
-                        // updateSidekick(1, 0, false);
-
                         updateSidekick(...GameData.sidekick.lineStage);
                     };
 
@@ -1667,6 +1651,7 @@ function locatingGame() {
                             // case '3_1':
                             //     break;
                         };
+                        // console.debug(line);
 
                         sidekickTXB.fadeIn()
                             .children('.sidekickText')
@@ -1753,76 +1738,76 @@ function locatingGame() {
                 }
                 else if (gameMode == 'dig') {
                     // console.debug(siteData);
-                    // {
-                    //     const backgroundArr = Object.keys(BackGroundResources.dig);
+                    {
+                        const backgroundArr = Object.keys(BackGroundResources.dig);
 
-                    //     let coordinate = siteData.coordinate;
-                    //     // let background = 'halloween_4';//==之後經緯度判斷？
-                    //     let background = backgroundArr[getRandom(backgroundArr.length)];
-                    //     let mineBGindex = 0;//==之後經緯度判斷？
+                        let coordinate = siteData.coordinate;
+                        // let background = 'halloween_4';//==之後經緯度判斷？
+                        let background = backgroundArr[getRandom(backgroundArr.length)];
+                        let mineBGindex = 0;//==之後經緯度判斷？
 
-                    //     let placeData = {
-                    //         coordinate: coordinate,
-                    //         background: background,
-                    //         mineBGindex: mineBGindex,
-                    //         depth: siteData.depth ? siteData.depth : null,
-                    //     };
+                        let placeData = {
+                            coordinate: coordinate,
+                            background: background,
+                            mineBGindex: mineBGindex,
+                            depth: siteData.depth ? siteData.depth : null,
+                        };
 
-                    //     //==顯示假設點
-                    //     assumedEpicenter
-                    //         .setLatLng(coordinate)
-                    //         .getTooltip()
-                    //         .setContent(`${GameData.localeJSON.UI['assumedEpicenter']} : ${coordinate.join(' , ')}`)
-                    //     assumedEpicenter.getElement().style.display = 'inline';
+                        //==顯示假設點
+                        assumedEpicenter
+                            .setLatLng(coordinate)
+                            .getTooltip()
+                            .setContent(`${GameData.localeJSON.UI['assumedEpicenter']} : ${coordinate.join(' , ')}`)
+                        assumedEpicenter.getElement().style.display = 'inline';
 
-                    //     GameData.playerEpicenter = coordinate;
+                        GameData.playerEpicenter = coordinate;
 
-                    //     gameResult = await new Promise((resolve, reject) => {
-                    //         const config = Object.assign(getPhaserConfig(width, height), {
-                    //             scene: new DigScene(placeData, GameData, {
-                    //                 resolve: resolve,
-                    //             }),
-                    //         });
-                    //         new Phaser.Game(config);
-                    //     });
+                        gameResult = await new Promise((resolve, reject) => {
+                            const config = Object.assign(getPhaserConfig(width, height), {
+                                scene: new DigScene(placeData, GameData, {
+                                    resolve: resolve,
+                                }),
+                            });
+                            new Phaser.Game(config);
+                        });
 
-                    //     console.debug(gameResult);
-                    //     let playerInfo = gameResult.playerInfo;
+                        console.debug(gameResult);
+                        let playerInfo = gameResult.playerInfo;
 
-                    //     //===更新人物資料
-                    //     updateMapUI(playerInfo, 1000);
-                    // }
+                        //===更新人物資料
+                        updateMapUI(playerInfo, 1000);
+                    }
 
                     //=== 進王關
-                    // if (gameResult.bossRoom) {//gameResult.bossRoom
-                    //     const backgroundArr = Object.keys(BackGroundResources.boss);
-                    //     let background = backgroundArr[getRandom(backgroundArr.length)];
+                    if (gameResult.bossRoom) {//gameResult.bossRoom
+                        const backgroundArr = Object.keys(BackGroundResources.boss);
+                        let background = backgroundArr[getRandom(backgroundArr.length)];
 
-                    //     gameResult = await new Promise((resolve, reject) => {
-                    //         const config = Object.assign(getPhaserConfig(width, height), {
-                    //             scene: new BossScene(GameData, background, {
-                    //                 resolve: resolve,
-                    //             }),
-                    //         });
-                    //         new Phaser.Game(config);
-                    //     });
-                    //     console.debug(gameResult);
-                    //     let playerInfo = gameResult.playerInfo;
+                        gameResult = await new Promise((resolve, reject) => {
+                            const config = Object.assign(getPhaserConfig(width, height), {
+                                scene: new BossScene(GameData, background, {
+                                    resolve: resolve,
+                                }),
+                            });
+                            new Phaser.Game(config);
+                        });
+                        console.debug(gameResult);
+                        let playerInfo = gameResult.playerInfo;
 
-                    //     //===更新人物資料
-                    //     updateMapUI(playerInfo, 1000);
+                        //===更新人物資料
+                        updateMapUI(playerInfo, 1000);
 
-                    //==通關
-                    if (1) {//gameResult.bossDefeated
-                        // console.debug('通關');
-                        initEndScene(true);
-                        return;
+                        //==通關
+                        if (gameResult.bossDefeated) {//gameResult.bossDefeated
+                            // console.debug('通關');
+                            initEndScene(true);
+                            return;
+                        };
+
+                    }
+                    else { //=== 沒找到
+                        updateSidekick(5, 0);
                     };
-
-                    // }
-                    // else { //=== 沒找到
-                    //     updateSidekick(5, 0);
-                    // }
 
                 };
                 gameDisplay(false);
@@ -2690,7 +2675,6 @@ function locatingGame() {
                     yAxis.call(makeYAxis);
                 };
                 var updateFocus = () => {
-
                     const width = (x(0) - x(gap)) - 1;
 
                     let bar = focusGroup
@@ -3073,7 +3057,6 @@ function locatingGame() {
             var canvas = CanvasObjArr[0],
                 context = CanvasObjArr[1];
 
-
             var certPromise;
 
             if (option == 'avatar')//==合成玩家自訂頭像
@@ -3084,7 +3067,10 @@ function locatingGame() {
                     image.src = avatarDir;
                     image.onload = () => {
                         // 素材貼到畫布上
-                        context.drawImage(image, 0, 0, photoW, photoW);
+                        const headScale = 0.9,//不貼齊框線
+                            headW = photoW * headScale,
+                            headX = (photoW - headW) / 2;
+                        context.drawImage(image, headX, headX, headW, headW);
 
                         let certificateUrl = canvas.toDataURL('image/png');
                         // console.debug(certificateUrl);
@@ -3247,16 +3233,15 @@ function locatingGame() {
                             .attr("y", height * 0.3)
                             .text(`${localeJSON['certLabel1']} ： ${profile ? profile.name : GameData.playerCustom.name}`);
 
-                        GameData.playerTimeUse = 86401000;
+
                         let timeUse = {
                             hour: parseInt(GameData.playerTimeUse / 3600000),
                             min: parseInt(GameData.playerTimeUse % 3600000 / 60000),
                             sec: Math.ceil(GameData.playerTimeUse % 60000 / 1000),
-                        };
-                        let timeUseStr = timeUse.hour > 0 ? timeUse.hour + ' ' + localeJSON['HRS'] : '' +
-                            (timeUse.hour > 0 || timeUse.min > 0) ? timeUse.min + ' ' + localeJSON['MINS'] : '' +
-                            timeUse.sec + ' ' + localeJSON['SECS'];
-                        console.debug(timeUseStr);
+                        },
+                            timeUseStr = (timeUse.hour > 0 ? timeUse.hour + ' ' + localeJSON['HRS'] + ' ' : '') +
+                                ((timeUse.hour > 0 || timeUse.min > 0) ? timeUse.min + ' ' + localeJSON['MINS'] + ' ' : '') +
+                                timeUse.sec + ' ' + localeJSON['SECS'];
 
                         g
                             .append('text')
@@ -3345,7 +3330,6 @@ function locatingGame() {
                 foot_line: certificateDir + 'foot_line.png',
                 ribbon: certificateDir + 'ribbon.png',
 
-
                 rankChart: rankChart.cloneNode(true),
                 words: svg.node().cloneNode(true),
                 photo: profile ? profile.picture.data.url : await composeCertificate(null, null, 'avatar'),
@@ -3355,8 +3339,8 @@ function locatingGame() {
             return imgResource;
         };
 
-
-        return composeCertificate(getCertRes(), 'AAA', profile ? 'jpeg' : 'png');
+        let fileName = GameData.playerCustom.name + GameData.localeJSON.UI['whosCert'] + '_' + new Date().toISOString().substring(0, 10);
+        return composeCertificate(getCertRes(), fileName, profile ? 'jpeg' : 'png');
 
     };
 

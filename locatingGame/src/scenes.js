@@ -157,15 +157,16 @@ class UIScene extends Phaser.Scene {
                         let orb2 = orbs[1];
                         let isAllActive = orb1.laserObj.active && !orb1.beholdingFlag &&
                             orb2.laserObj.active && !orb2.beholdingFlag;
-                        let isDiffPos = orb1.x != orb2.x;
+                        let isDiffTime = orb1.orbStats.time.toFixed(2) != orb1.originTime &&
+                            orb2.orbStats.time.toFixed(2) != orb2.originTime;
 
-                        if (isAllActive && isDiffPos) {
+                        // console.debug(orb1.originTime, orb1.orbStats.time.toFixed(2), orb1.originTime == orb1.orbStats.time.toFixed(2))
 
+                        if (isAllActive && isDiffTime) {
                             let exitButton = this.children.getByName('exit');
                             let iconBar = this.children.getByName('iconBar');
 
                             const tweensDuration = 1000;
-
 
                             //===iconBar 伸長
                             this.tweens.add({
@@ -205,6 +206,7 @@ class UIScene extends Phaser.Scene {
                             });
 
                             this.gameClear = true;
+                            gameScene.gameOver.gameClear = true;
                         };
 
 
@@ -594,7 +596,7 @@ class UIScene extends Phaser.Scene {
                                 let orbStats = orb.orbStats;
                                 let orbX = scaleFun(orbStats.time) + handleW * 0.5;
 
-                                let orbIcon = this.add.sprite(orbX, y + 25, 'instrument')
+                                let orbIcon = this.add.sprite(orbX, y + 25, 'orb')
                                     .setOrigin(0.5)
                                     .setScale(0.1)
                                     .setDepth(Depth.detector + 2);
@@ -1540,7 +1542,7 @@ class UIScene extends Phaser.Scene {
                         //==對話框
                         this.newDialog = (content, config = null, resolve = null) => {
                             //==新設定
-                            if (config) Object.assign(DLconfig, config);
+                            // if (config) Object.assign(DLconfig, config);
 
                             new RexTextBox(this, {
                                 x: DLconfig.dialogX,
@@ -1548,9 +1550,9 @@ class UIScene extends Phaser.Scene {
                                 wrapWidth: DLconfig.dialogWidth,
                                 fixedWidth: DLconfig.dialogWidth,
                                 fixedHeight: DLconfig.dialogHeight,
-                                character: DLconfig.character,
+                                character: config.character,
                                 gameData: gameScene.gameData,
-                                pageendEvent: DLconfig.pageendEvent ? DLconfig.pageendEvent : false,
+                                pageendEvent: config.pageendEvent ? config.pageendEvent : false,
                             }, resolve)
                                 // .setDepth(Depth.UI)
                                 .start(content, 50);
@@ -1689,19 +1691,19 @@ class UIScene extends Phaser.Scene {
                                 this.anims.create({
                                     key: chara + '_run',
                                     frames: this.anims.generateFrameNumbers(chara + '_run'),
-                                    frameRate: 8,
+                                    frameRate: 10,
                                     repeat: -1,
                                 });
                                 this.anims.create({
                                     key: chara + '_attack',
                                     frames: this.anims.generateFrameNumbers(chara + '_attack'),
-                                    frameRate: 10,
+                                    frameRate: 6,
                                     repeat: -1,
                                 });
                                 this.anims.create({
                                     key: chara + '_doubleJump',
                                     frames: this.anims.generateFrameNumbers(chara + '_doubleJump'),
-                                    frameRate: 4,
+                                    frameRate: 6,
                                     repeat: -1,
                                 });
 
@@ -1791,7 +1793,30 @@ class UIScene extends Phaser.Scene {
 
 
                         });
+                    };
+                    var title = () => {
+                        this.title = this.add.text(width * 0.5, height * 0.3, UItextJSON['chooseCharacter'],
+                            { fontSize: '48px', fill: '#000000' })
+                            .setOrigin(0.5)
+                            .setDepth(Depth.UI + 1);
 
+
+
+                        this.title.showHandler = () => {
+                            const showDuration = 1500;
+
+                            this.tweens.add({
+                                targets: this.title,
+                                alpha: { start: 0, to: 1 },
+                                duration: showDuration,
+                                repeat: 0,
+                                ease: 'Linear',
+                                // onStart: () => this.dialog.start(hint, 50),//==(text,typeSpeed(ms per word))
+                                // onComplete: () => this.talkingCallback = null,
+                            });
+                        };
+
+                        this.title.showHandler();
                     };
                     var initCamera = () => {
                         this.cameras.main.setBounds(0, 0, width, height);
@@ -1800,6 +1825,7 @@ class UIScene extends Phaser.Scene {
                     initCamera();
                     background();
                     character();
+                    title();
 
                 };
                 update = () => { };
@@ -1842,7 +1868,6 @@ class UIScene extends Phaser.Scene {
 };
 
 class GameStartScene extends Phaser.Scene {
-
     constructor(GameData, resolve) {
         var sceneConfig = {
             key: 'gameScene',
@@ -2235,10 +2260,10 @@ class LoadingScene extends Phaser.Scene {
                         this.load.image('station', dir + 'station.png');
                         this.load.image('title', dir + 'title.png');
                     };
-                    var instrument = () => {
-                        const dir = envDir + 'instrument/';
-                        this.load.spritesheet('instrument',
-                            dir + 'instrument.png',
+                    var orb = () => {
+                        const dir = envDir + 'orb/';
+                        this.load.spritesheet('orb',
+                            dir + 'orb.png',
                             { frameWidth: 256, frameHeight: 256 }
                         );
                         this.load.spritesheet('laser',
@@ -2267,7 +2292,7 @@ class LoadingScene extends Phaser.Scene {
                     };
 
                     station();
-                    instrument();
+                    orb();
                     wave();
                 }
                 else if (packNum == 2) {
@@ -2728,6 +2753,7 @@ class DefendScene extends Phaser.Scene {
                     stationData.stationStats.orbStats.xAxisDomain : null,
             },
             gameOver: {
+                gameClear: false,//寶石調整過位置
                 flag: false,
                 status: 0,//==0:玩家退出,1:時間到,2:死亡
                 delayedCall: null,
@@ -2903,10 +2929,10 @@ class DefendScene extends Phaser.Scene {
                 });
 
             };
-            var instrument = () => {
+            var orbs = () => {
                 const orbScale = 0.25;
                 this.orbGroup = this.physics.add.group({
-                    key: 'instrument',
+                    key: 'orb',
                     repeat: 1,
                     randomFrame: true,
                     setScale: { x: orbScale, y: orbScale },
@@ -2918,21 +2944,21 @@ class DefendScene extends Phaser.Scene {
                 var animsCreate = () => {
                     this.anims.create({
                         key: 'orb_inactive',
-                        frames: this.anims.generateFrameNumbers('instrument', { start: 1, end: 4 }),
+                        frames: this.anims.generateFrameNumbers('orb', { start: 1, end: 4 }),
                         frameRate: 5,
                         repeat: -1,
                         // repeatDelay: 500,
                     });
                     this.anims.create({
                         key: 'orb_holded',
-                        frames: this.anims.generateFrameNumbers('instrument', { frames: [8, 9, 12] }),
+                        frames: this.anims.generateFrameNumbers('orb', { frames: [8, 9, 12] }),
                         frameRate: 5,
                         repeat: -1,
                         // repeatDelay: 500,
                     });
                     this.anims.create({
                         key: 'orb_activate',
-                        frames: this.anims.generateFrameNumbers('instrument', { frames: [10, 11, 5, 6, 7] }),
+                        frames: this.anims.generateFrameNumbers('orb', { frames: [10, 11, 5, 6, 7] }),
                         frameRate: 5,
                         repeat: -1,
                         // repeatDelay: 500,
@@ -2962,6 +2988,7 @@ class DefendScene extends Phaser.Scene {
                         activate = false;
                         orbPosition = width * 0.85;
                         child.orbStats = this.getTimePoint(orbPosition);
+                        // console.debug(child.orbStats);
                     };
 
                     child.setPosition(orbPosition, height * 0.8);
@@ -2976,7 +3003,7 @@ class DefendScene extends Phaser.Scene {
                         .setVisible(false);
 
                     child.laserObj.setScale(0.3, height * 0.9 / child.laserObj.displayHeight);
-                    // console.debug(orbStats);
+
 
                     child.laserObj.body
                         .setMaxVelocityY(0)
@@ -2989,7 +3016,7 @@ class DefendScene extends Phaser.Scene {
                         .setDepth(Depth.UI);
 
                     Object.assign(child, {
-
+                        originTime: child.orbStats.time.toFixed(2),//==用來判斷是否通關(位置要移動過)
                         beholdingFlag: false,
                         activateFlag: activate,
                         statusHadler: function (pickUper = null, beholding = false, activate = true) {
@@ -3081,7 +3108,7 @@ class DefendScene extends Phaser.Scene {
             background();
             station();
             wave();
-            instrument();
+            orbs();
             overview();
 
         };
@@ -3247,8 +3274,20 @@ class DefendScene extends Phaser.Scene {
                             swordWidth = guideSword.displayWidth,
                             swordHeight = guideSword.displayHeight;
 
-                        blackOut.scene.setVisible(true);
+                        //==0.人物操作說明
+                        const controllCursor = this.gameData.controllCursor;
+                        let upKey = controllCursor['up'],
+                            downKey = controllCursor['down'],
+                            leftKey = controllCursor['left'],
+                            rightKey = controllCursor['right'],
+                            attackKey = controllCursor['attack'];
 
+                        let controllIntro = content[1]
+                            .replace('\t', leftKey).replace('\t', rightKey)
+                            .replace('\t', upKey).replace('\t', attackKey).replace('\t', downKey);
+                        await new Promise(resolve => this.RexUI.newDialog(controllIntro, { character: 'sidekick' }, resolve));
+
+                        blackOut.scene.setVisible(true);
 
                         //==1.UI bar
                         let iconButton = iconBar.iconButtons[0];
@@ -3256,7 +3295,7 @@ class DefendScene extends Phaser.Scene {
                         RexUI.scene.bringToTop();
                         guideSword
                             .setPosition(iconButton.x - swordWidth * 0.3, iconButton.y);
-                        await new Promise(resolve => this.RexUI.newDialog(content[1], { character: 'sidekick' }, resolve));
+                        await new Promise(resolve => this.RexUI.newDialog(content[2], { character: 'sidekick' }, resolve));
 
                         //==2.說明探測器的zoom
                         blackOut.scene.bringToTop();
@@ -3269,7 +3308,7 @@ class DefendScene extends Phaser.Scene {
 
                         guideSword
                             .setPosition(detectorUI.detector.x, detectorUI.detector.y);
-                        await new Promise(resolve => this.RexUI.newDialog(content[2], { character: 'sidekick' }, resolve));
+                        await new Promise(resolve => this.RexUI.newDialog(content[3], { character: 'sidekick' }, resolve));
 
                         //==3.HP/MP
                         blackOut.scene.bringToTop();
@@ -3279,7 +3318,7 @@ class DefendScene extends Phaser.Scene {
                         guideSword
                             .setFlipX(true)
                             .setPosition(playerUI.HPbar.x + swordWidth * 1.5, playerUI.HPbar.y + swordHeight * 0.2);
-                        await new Promise(resolve => this.RexUI.newDialog(content[3], { character: 'sidekick' }, resolve));
+                        await new Promise(resolve => this.RexUI.newDialog(content[4], { character: 'sidekick' }, resolve));
 
                         //==4.time remain
                         blackOut.scene.bringToTop();
@@ -3288,7 +3327,7 @@ class DefendScene extends Phaser.Scene {
 
                         guideSword
                             .setPosition(timerUI.hourglass.x + swordWidth * 1.3, timerUI.hourglass.y);
-                        await new Promise(resolve => this.RexUI.newDialog(content[4], { character: 'sidekick', pageendEvent: true }, resolve));
+                        await new Promise(resolve => this.RexUI.newDialog(content[5], { character: 'sidekick', pageendEvent: true }, resolve));
 
                         // console.debug(timerUI);
 
@@ -3299,12 +3338,12 @@ class DefendScene extends Phaser.Scene {
                     });
                 };
 
-
                 this.time.delayedCall(speakDelay, async () => {
 
                     //==對話完才開始
                     let lines = this.gameData.localeJSON.Lines;
-                    let sidekickContent = lines.sidekick['defend'],
+                    let playerContent = lines.player,
+                        sidekickContent = lines.sidekick['defend'],
                         enemyContent = lines.enemy;
                     let playerName = this.gameData.playerCustom.name,
                         sidekickName = this.gameData.sidekick.type;
@@ -3312,14 +3351,15 @@ class DefendScene extends Phaser.Scene {
 
                     //==填入名子
                     let intro = sidekickContent[0].replace('\t', playerName).replace('\t', sidekickName);
-                    await new Promise(resolve => this.RexUI.newDialog(intro, { character: 'player' }, resolve));
+                    await new Promise(resolve => this.RexUI.newDialog(playerContent[0], { character: 'player', pageendEvent: true }, resolve));
+                    await new Promise(resolve => this.RexUI.newDialog(intro, { character: 'sidekick' }, resolve));
                     await tutorial(sidekickContent);
 
                     //==停頓在說
                     await new Promise(resolve => this.time.delayedCall(speakDelay * 0.5, () => resolve()));
-                    await new Promise(resolve => this.RexUI.newDialog(sidekickContent[5], { character: 'sidekick', pageendEvent: true }, resolve));
-                    await new Promise(resolve => this.RexUI.newDialog(enemyContent[0], { character: 'enemy', pageendEvent: true }, resolve));
                     await new Promise(resolve => this.RexUI.newDialog(sidekickContent[6], { character: 'sidekick', pageendEvent: true }, resolve));
+                    await new Promise(resolve => this.RexUI.newDialog(enemyContent[0], { character: 'enemy', pageendEvent: true }, resolve));
+                    await new Promise(resolve => this.RexUI.newDialog(sidekickContent[7], { character: 'sidekick', pageendEvent: true }, resolve));
 
                     this.firstTimeEvent.eventComplete = true;
                     this.gameTimer.paused = false;//==時間繼續
@@ -3348,7 +3388,7 @@ class DefendScene extends Phaser.Scene {
             let pickUpObj = this.player.pickUpObj;
 
             if (pickUpObj)
-                pickUpObj.setPosition(this.player.x, this.player.y + 10);
+                pickUpObj.setPosition(this.player.x + 20 * (this.player.flipX ? 1 : - 1), this.player.y + 30);
         };
         var updateEnemy = () => {
             if (this.gameData.stationData.stationStats.liberate) return;
@@ -3362,7 +3402,6 @@ class DefendScene extends Phaser.Scene {
 
         };
 
-
         firstTimeEvent();
         if (!this.firstTimeEvent.eventComplete && !this.gameOver.flag) return;
 
@@ -3374,7 +3413,7 @@ class DefendScene extends Phaser.Scene {
         // console.debug(enemy.children.entries);
 
         if (this.gameOver.flag) {
-            const gameDestroyDelay = 2000;
+            const gameDestroyDelay = 1000;
             //===camera effect
             const camera = this.cameras.main;
 
@@ -3442,8 +3481,6 @@ class DefendScene extends Phaser.Scene {
 
         };
 
-
-
         // var activePointer = this.input.activePointer;
         // if (activePointer.isDown) {
         //     this.cameraFilter.angle += 1;
@@ -3496,8 +3533,8 @@ class DigScene extends Phaser.Scene {
             tileSize: 125,//==地質塊寬高
             depthCounter: {
                 epicenter: placeData.depth,
-                // depthScale: 0.034,//0.003
-                depthScale: 0.008,//0.003
+                depthScale: 0.03,//0.003
+                // depthScale: 0.008,//0.003
                 // depthScale: 10,//0.003
                 coordinate: placeData.coordinate,
                 bossRoom: false,
@@ -3638,7 +3675,7 @@ class DigScene extends Phaser.Scene {
                     this.anims.create({
                         key: "tileCrack",
                         frames: this.anims.generateFrameNumbers("tileCrack"),
-                        frameRate: 5,
+                        frameRate: 15,
                         repeat: 0
                     });
                 };
@@ -3669,6 +3706,7 @@ class DigScene extends Phaser.Scene {
                 digOnSomething: true,//==助手說明岩性,不頻繁說明
                 diggingFlag: false,
                 diggingHadler: (player, tile) => {
+                    if (player.stopCursorsFlag) return;
                     player.diggingFlag = true;
                     player.body.reset(player.x, player.y);
                     player.play('player_specialAttack');
@@ -3683,10 +3721,8 @@ class DigScene extends Phaser.Scene {
                     this.time.delayedCall(player.stats.attackSpeed, () => {
                         player.diggingFlag = false;
 
-
-                        console.debug(tile);
                         //==出現裂痕
-                        if (!tile.crack) {
+                        if (!tile.crack && tile.attribute.hardness <= 5) {
                             tile.crack = this.add.sprite(tile.x, tile.y).play('tileCrack');
                             tile.crack
                                 .setOrigin(0)
@@ -3701,7 +3737,7 @@ class DigScene extends Phaser.Scene {
                         player.setVelocityY(400);
                         player.stopCursorsFlag = false;
 
-
+                        // console.debug(tile.attribute.hardness);
 
                         //===助手解說岩性
                         if (player.digOnSomething && tile.name) {//==有名的石頭
@@ -3795,7 +3831,7 @@ class DigScene extends Phaser.Scene {
                 const remindDepth = this.depthCounter.epicenter !== null ?
                     this.depthCounter.epicenter + this.tileSize * this.depthCounter.depthScale :
                     10 * this.tileSize * this.depthCounter.depthScale;//==挖過幾塊後開始提醒
-                const remindDelay = 6500;//==幾秒提醒一次 
+                const remindDelay = 5000;//==幾秒提醒一次 
 
                 // console.debug('remindDepth : ' + remindDepth);
                 //==提醒退出
@@ -4073,7 +4109,7 @@ class DigScene extends Phaser.Scene {
         if (this.depthCounter.epicenter !== null) updateGate();
 
         if (this.gameOver.flag) {
-            const gameDestroyDelay = 2000;
+            const gameDestroyDelay = 1000;
             const camera = this.cameras.main;
             camera.pan(this.player.x, this.player.y, gameDestroyDelay * 0.5, 'Back', true);
             camera.zoomTo(5, gameDestroyDelay * 0.5);
@@ -4364,22 +4400,18 @@ class BossScene extends Phaser.Scene {
                         },
                     });
 
-
                     this.time.delayedCall(duration, () => resolve(), [], this);
                 },
                 winAnims: () => {
                     let talkDelay = 1000;
-                    let playerContent = localeJSON.Lines.player[0];
+                    let playerContent = localeJSON.Lines.player[3];
                     this.bossDefeated = true;
-
 
                     //==說話
                     this.time.delayedCall(talkDelay, async () => {
                         await new Promise(resolve => this.RexUI.newDialog(playerContent, { character: 'player' }, resolve));
                         this.gameOver.flag = true;
                     }, [], this);
-
-
                 },
             });
         };

@@ -13,7 +13,7 @@ const GameObjectStats = {
     creature: {
         dog: {
             HP: 1000,
-            attackPower: 20,
+            attackPower: 80,
             movementSpeed: 200,
             jumpingPower: 0,
         },
@@ -37,50 +37,6 @@ const GameObjectStats = {
         },
     },
     player: {//==class: 0:'melee近戰',1:'ranged遠程'
-        // Biker: {
-        //     class: 0,//==近戰
-        //     movementSpeed: 300,
-        //     jumpingPower: 400,
-        //     attackSpeed: 400,//一發持續300ms
-        //     attackPower: 120,
-        //     attackRange: 55,
-        //     bulletSize: [120, 130],
-        //     knockBackSpeed: 250,//==擊退時間固定200ms,這個速度越大擊退越遠
-        //     manaCost: 6,
-        //     manaRegen: 1,//per 10 ms(game update per 10ms)0.1
-        //     HP: 150,
-        //     maxHP: 150,
-        //     MP: 60,
-        //     maxMP: 60,
-        // },
-        // Cyborg: {
-        //     class: 1,//==遠程
-        //     movementSpeed: 300,
-        //     jumpingPower: 400,
-        //     attackSpeed: 800,
-        //     attackPower: 100,
-        //     knockBackSpeed: 200,//==擊退時間固定200ms,這個速度越大擊退越遠
-        //     manaCost: 10,
-        //     manaRegen: 10,//per 10 ms(game update per 10ms)0.1
-        //     HP: 100,
-        //     maxHP: 100,
-        //     MP: 150,
-        //     maxMP: 150,
-        // },
-        // Punk: {
-        //     class: 1,//==遠程
-        //     movementSpeed: 300,
-        //     jumpingPower: 400,
-        //     attackSpeed: 800,
-        //     attackPower: 100,
-        //     knockBackSpeed: 200,//==擊退時間固定200ms,這個速度越大擊退越遠
-        //     manaCost: 10,
-        //     manaRegen: 10,//per 10 ms(game update per 10ms)0.1
-        //     HP: 100,
-        //     maxHP: 100,
-        //     MP: 150,
-        //     maxMP: 150,
-        // },
         maleAdventurer: {
             class: 0,//==近戰
             movementSpeed: 300,
@@ -90,8 +46,8 @@ const GameObjectStats = {
             attackRange: 55,
             bulletSize: [120, 130],
             knockBackSpeed: 250,//==擊退時間固定200ms,這個速度越大擊退越遠
-            manaCost: 6,
-            manaRegen: 1,//per 10 ms(game update per 10ms)0.1
+            manaCost: 60,
+            manaRegen: 0.1,//per 10 ms(game update per 10ms)0.1
             HP: 150,
             maxHP: 150,
             MP: 60,
@@ -391,7 +347,7 @@ const Bullet = new Phaser.Class({
 
             if (outOfWindow || outOfRange)
                 this.disableBody(true, true);
-        }
+        };
 
     },
 
@@ -883,7 +839,7 @@ const Enemy = new Phaser.Class({
                     if (this.flipX != filpDir) {
                         this.filpHandler(filpDir);
                         this.body.reset(this.x, this.y);
-                    }
+                    };
 
                 };
                 // console.debug();
@@ -959,7 +915,7 @@ const Player = new Phaser.Class({
                 scene.anims.create({
                     key: 'player_hurt',
                     frames: scene.anims.generateFrameNumbers('player_hurt'),
-                    frameRate: 6,
+                    frameRate: 8,
                     repeat: 0,
                 });
 
@@ -1067,16 +1023,28 @@ const Player = new Phaser.Class({
                 .setDepth(scene.Depth.player - 1);
 
 
+            //===扣血數字
+            this.statusText = scene.add.text(0, 0, '', {
+                font: 'bold 30px sans-serif',
+                fill: 'red',
+            })
+                .setOrigin(1)
+                .setAlpha(0)
+                .setDepth(scene.Depth.player);
+
+            //===oom,death
+            this.dialog = new RexTextBox(scene, {
+                character: 'player'
+            })
+                .setOrigin(0.5)
+                .setAlpha(0)
+                .setDepth(scene.Depth.player - 1);
+
             //======custom
             this.stats = Object.assign({}, stats);
 
             //==get HP/MP statsBar
             scene.scene.add(null, new UIScene('statsBar', scene, this), true);
-
-            // console.debug();
-
-
-
         },
     //=處理轉向
     filpHandler: function (filp) {
@@ -1169,8 +1137,6 @@ const Player = new Phaser.Class({
             //     };
             //     break;
         };
-
-
     },
     //==撿起
     pickingHadler: function (scene) {
@@ -1229,7 +1195,11 @@ const Player = new Phaser.Class({
                     currentAnims === 'player_runAttack' || currentAnims === 'player_jumpAttack')
                 && this.anims.isPlaying;
 
-            if ((this.stats.MP < this.stats.manaCost) || attacking) return;
+            if (attacking) return;
+            if (this.stats.MP < this.stats.manaCost) {
+                this.talkingHandler(scene, scene.gameData.localeJSON.UI['oom']);
+                return;
+            };
 
             //==bullet
             var bullet = this.bullets.get();
@@ -1238,7 +1208,7 @@ const Player = new Phaser.Class({
                 bullet.body.setSize(...this.stats.bulletSize);
                 bullet.fire(this, this.stats.attackSpeed, this.stats.attackRange);
 
-                this.statsChangeHandler({ MP: this.stats.MP -= this.stats.manaCost }, this);
+                this.statsChangeHandler({ MP: - this.stats.manaCost }, this);
             };
 
 
@@ -1251,11 +1221,10 @@ const Player = new Phaser.Class({
                 isRuning ? 'player_runAttack' : 'player_attack';
             let attackEffectAnims = isJumping ? 'player_jumpAttackEffect' :
                 isRuning ? 'player_runAttackEffect' : 'player_attackEffect';
-            // this.attackEffect.play(attackEffectAnims);
+            this.attackEffect.play(attackEffectAnims);
 
             if (currentAnims === 'player_attack' && this.anims.isPlaying) return;
             this.anims.play(attackAnims);
-
 
         };
 
@@ -1264,11 +1233,13 @@ const Player = new Phaser.Class({
     //==受擊
     stopCursorsFlag: false,
     invincibleFlag: false,//無敵時間
-    gotHurtHandler: function (scene) {
+    gotHurtHandler: function (scene, hpReduced) {
         if (scene.gameOver.flag) return;
         const invincibleDuration = 800;
 
         this.anims.play('player_hurt', true);
+
+        //無敵動畫
         scene.tweens.add({
             targets: this,
             alpha: 0.5,
@@ -1281,26 +1252,51 @@ const Player = new Phaser.Class({
                 this.play('player_idle', true);
             },
         });
+
+        //扣血數字動畫
+        scene.tweens.add({
+            targets: this.statusText,
+            y: this.y - this.height * 0.4,
+            duration: invincibleDuration, //== 20=repeat(10)*yoyo(=2)
+            repeat: 0,
+            ease: 'Expo.easeOut',
+            onStart: () => {
+                this.statusText
+                    .setPosition(this.x, this.y)
+                    .setAlpha(1)
+                    .setColor('red')
+                    .setText(hpReduced);
+            },
+            onComplete: () => this.statusText.setAlpha(0),
+        });
+
+
     },
     // dieHandler: () => {
 
     // },
     //==HP/MP
     statsChangeHandler: function (statsObj) {
-        Object.keys(statsObj).forEach(stats => this[stats + 'bar'].updateFlag = true);
+        Object.keys(statsObj).forEach(stat => {
+            this.stats[stat] += statsObj[stat];
+            this[stat + 'bar'].updateFlag = true;
+            if (stat == 'HP' && this.stats[stat] > 0)
+                this.gotHurtHandler(this.scene, statsObj[stat]);
+        });
 
         //==死
         if (this.stats.HP <= 0) {
-            this.stats.HP = 0;
-            const dieDuration = 200;
-
-            this.anims.play('player_hurt', true);
-            this.body.reset(this.x, this.y);
             this.invincibleFlag = true;
+            this.body.reset(this.x, this.y);
+
+            this.stats.HP = 0;
+            this.scene.gameOver.flag = true;
+            this.scene.gameOver.status = 2;
+
+            const dieDuration = 800;
+            this.anims.play('player_hurt');
             this.scene.time.delayedCall(dieDuration, () => {
                 this.anims.play('player_death', true);
-                this.scene.gameOver.flag = true;
-                this.scene.gameOver.status = 2;
             }, [], this);
 
         };
@@ -1310,8 +1306,33 @@ const Player = new Phaser.Class({
         // this.stats = Object.assign(this.stats, statsObj);
         // console.debug(statsObj);
 
-        // this.scene.talkingHandler
     },
+    //==oom,death
+    talkingTween: null,
+    talkingHandler: function (scene, hint, mustDone = false) {
+        if (this.talkingTween) {
+            if (mustDone) {
+                this.talkingTween.remove();
+                this.talkingTween = null;
+            }
+            else return;
+        };
+
+        const hintDuration = hint.length * 300;
+
+        this.talkingTween = scene.tweens.add({
+            targets: this.dialog,
+            alpha: { start: 0, to: 1 },
+            duration: hintDuration * 0.1,
+            repeat: 0,
+            yoyo: true,
+            hold: hintDuration * 0.6,//==yoyo delay
+            ease: 'Linear',
+            onStart: () => this.dialog.start(hint, 50),//==(text,typeSpeed(ms per word))
+            onComplete: () => this.talkingTween = null,
+        });
+    },
+
 
 });
 
@@ -1741,8 +1762,8 @@ class Chunk {
                     //==魔王城
                     let depthCounter = this.gameScene.depthCounter;
                     let tileXRange = [
-                        Math.floor(this.gameScene.groundW / 4 / tileSize) * tileSize,
-                        Math.floor(this.gameScene.groundW / 4 * 3 / tileSize) * tileSize];
+                        Math.floor(this.gameScene.groundW / tileSize / 4) * tileSize,
+                        Math.ceil(this.gameScene.groundW / tileSize / 4 * 3) * tileSize];
 
                     let ECtileCount = Math.ceil(depthCounter.epicenter / depthCounter.depthScale / tileSize);
                     let tileYRange = [
@@ -1904,6 +1925,9 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                 case 'doctor':  //==doctor
                     color = isBox ? 0xD9B300 : 0xffffff;
                     break;
+                case 'player':
+                    color = isBox ? 0xD9B300 : 0xffffff;
+                    break;
             };
             return color;
         };
@@ -1937,11 +1961,16 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                 fixedWidth: fixedWidth,
                 fixedHeight: fixedHeight,
                 fontSize: '20px',
-                color: character == 'doctor' ?
+                color: (character == 'doctor' || character == 'player') ?
                     '#272727' : '#fff',
                 wrap: {
                     mode: 0,// 0|'none'|1|'word'|2|'char'|'character'
                     width: wrapWidth
+                },
+                underline: {
+                    color: '#9D9D9D',  // css string, or number
+                    thickness: 2,
+                    offset: 6
                 },
                 // maxLines: 3,
                 lineSpacing: 10,
@@ -1974,7 +2003,9 @@ class RexTextBox extends RexPlugins.UI.TextBox {
         const textBoxConfig = {
             x: config.x,
             y: config.y,
-            background: scene.add.existing(rexRect),
+            background: character == 'player' ?
+                scene.add.image(0, 0, 'player_dialog') :
+                scene.add.existing(rexRect),
             icon: icon,//==tips ? null : scene.add.image(0, 0, character + 'Avatar')
             text: scene.add.existing(rexBBText),
             action: tips ? null : scene.add.image(0, 0, 'dialogButton').setVisible(false).setScale(0.1),

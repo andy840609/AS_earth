@@ -40,7 +40,7 @@ function locatingGame() {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 300 },
-                    debug: true,
+                    // debug: true,
                 },
             },
             dom: {//==for rexUI:rexTextEdit
@@ -252,7 +252,7 @@ function locatingGame() {
 
             function initGameData() {
                 let playerRole = 'maleAdventurer';//==之後能選其他[Biker,Cyborg,Punk]
-                let sidekick = 'Owlet';//=='Owlet,Dude,Pink'
+                let sidekick = 'Dude';//=='Owlet,Dude,Pink'
 
                 let playerName = '',
                     avatarIndex = 0,//==自選頭像
@@ -317,25 +317,25 @@ function locatingGame() {
                     GameData.localeJSON = await getLanguageJSON();
 
                     //==test
-                    gameDisplay(true);
-                    let newGameData = await new Promise((resolve, reject) => {
-                        const config = Object.assign(getPhaserConfig(width, height), {
-                            scene: new GameStartScene(GameData, resolve),
-                        });
-                        new Phaser.Game(config);
-                    });
+                    // gameDisplay(true);
+                    // let newGameData = await new Promise((resolve, reject) => {
+                    //     const config = Object.assign(getPhaserConfig(width, height), {
+                    //         scene: new GameStartScene(GameData, resolve),
+                    //     });
+                    //     new Phaser.Game(config);
+                    // });
 
-                    if (GameData.locale != newGameData.locale)
-                        GameData.localeJSON = await getLanguageJSON();
-                    Object.assign(GameData, newGameData);
-                    gameDisplay(false);
+                    // if (GameData.locale != newGameData.locale)
+                    //     GameData.localeJSON = await getLanguageJSON();
+                    // Object.assign(GameData, newGameData);
+                    // gameDisplay(false);
                     //==test
 
                     initMap();
 
 
                     //==test
-                    // gameStart('defend');
+                    gameStart('defend');
                     // gameStart('dig');
                     //==test
                 };
@@ -441,7 +441,7 @@ function locatingGame() {
                                 };
 
                                 var share = async (profilePromise = null) => {
-                                    const server = "https://tecdc.earth.sinica.edu.tw/tecdc/Game/locatingGame/";
+                                    const server = "https://tecdc.earth.sinica.edu.tw/tecdc/Game/locating/";
                                     const certificateDir = server + "certificate/";
 
                                     // let imgName = await getSharingImg(await profilePromise);
@@ -723,7 +723,7 @@ function locatingGame() {
                             updateStation(e.target, { mouseEvent: 0 });
                         })
                         .on('click', function (e) {
-                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             //==觸發畫面位置點擊(要在假設點上座標才對)
                             const event = new MouseEvent('click', {
                                 'view': window,
@@ -974,7 +974,7 @@ function locatingGame() {
                                 })
                                 .on('click', function (e) {
                                     //==速度參數要完成兩站才能調整
-                                    // if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
+                                    if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
 
                                     let button = $(this);
                                     let ckick = button.hasClass('clicked');
@@ -1133,7 +1133,7 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
-                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             let lat = e.latlng.lat,
                                 lng = e.latlng.lng
 
@@ -3263,7 +3263,7 @@ function locatingGame() {
                             .attr("y", height - margin.bottom + 20)
                             .text(`${localeJSON['certLabel3']} ： ${new Date().toISOString().substring(0, 10)}`);
 
-                        let webSite = 'https://tecdc.earth.sinica.edu.tw/tecdc/Game/locatingGame/';
+                        let webSite = 'https://tecdc.earth.sinica.edu.tw/tecdc/Game/locating';
                         g
                             .append('text')
                             .attr("fill", textColor)

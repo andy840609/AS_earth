@@ -3,7 +3,6 @@
     src: url(../data/font/Pigmo-00.otf);
 }*/
 
-
 text,
 label,
 font,
@@ -12,7 +11,6 @@ h2,
 h3,
 #gameUI {
     user-select: none;
-    /* font-family: Pigmo; */
 }
 
 #gameUI img {
@@ -20,8 +18,7 @@ h3,
 }
 
 #bigMap {
-    height: 700px;
-    width: 700px;
+    height: 95vh;
     padding: 0px;
 }
 

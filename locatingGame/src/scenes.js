@@ -468,6 +468,13 @@ class UIScene extends Phaser.Scene {
 
                                             // console.debug(gameScene.waveForm.svgObj[3].x.domain());
                                             orb.statusHadler(null, false, orb.orbStats.isInRange);
+
+                                            let outOfWindow = !this.cameras.main.worldView.contains(orb.x, orb.y);
+                                            if (orb.outWindowFlag != outOfWindow) {
+                                                orb.outWindowFlag = outOfWindow;
+                                                orb.outWindowHandler(outOfWindow);
+                                            };
+
                                         });
 
                                     });
@@ -591,6 +598,7 @@ class UIScene extends Phaser.Scene {
                         };
                         var initMapIcon = () => {
                             // console.debug(scaleFun.range(), scaleFun.domain());
+
                             this.orbIcons = this.orbs.map(orb => {
 
                                 let orbStats = orb.orbStats;
@@ -601,33 +609,36 @@ class UIScene extends Phaser.Scene {
                                     .setScale(0.1)
                                     .setDepth(Depth.detector + 2);
 
+                                Object.assign(orbIcon, {
+                                    updatePos: function () {
 
-                                orbIcon.updatePos = function () {
+                                        let x = scaleFun(orb.orbStats.time) + handleW * 0.5;
+                                        // console.debug(x);
+                                        this.x = x;
+                                        let isInScreen = x > handleXMin && x < (handleXMax + handleW);
+                                        this.setVisible(isInScreen);
 
-                                    let x = scaleFun(orb.orbStats.time) + handleW * 0.5;
-                                    // console.debug(x);
-                                    this.x = x;
-                                    let isInScreen = x > handleXMin && x < (handleXMax + handleW);
-                                    this.setVisible(isInScreen);
+                                    },
+                                    statsHandler: function () {
 
-                                };
-                                orbIcon.statsHandler = function () {
+                                        let frameRate, animsKey;
+                                        if (orb.laserObj.active) {
+                                            frameRate = 300;
+                                            animsKey = 'orb_activate';
+                                        }
+                                        else {
+                                            frameRate = 600;
+                                            animsKey = 'orb_inactive';
+                                        };
 
-                                    let frameRate, animsKey;
-                                    if (orb.laserObj.active) {
-                                        frameRate = 300;
-                                        animsKey = 'orb_activate';
-                                    }
-                                    else {
-                                        frameRate = 600;
-                                        animsKey = 'orb_inactive';
-                                    }
+                                        orbIcon.anims.msPerFrame = frameRate;
+                                        this.anims.play(animsKey, true);
+                                    },
+                                });
 
-                                    orbIcon.anims.msPerFrame = frameRate;
-                                    this.anims.play(animsKey, true);
-                                };
                                 return orbIcon;
                             });
+
                         };
                         initOverview();
                         initBrushes();
@@ -1063,7 +1074,7 @@ class UIScene extends Phaser.Scene {
                     var initCounter = () => {
                         gameScene.depthCounter.text =
                             this.add.text(x + this.depthRuler.displayWidth * 0.7, y, '', { fontSize: '32px', fill: '#000' })
-                                .setOrigin(0.5, 0.5)
+                                .setOrigin(0.5)
                                 .setRotation(1.6)
                                 .setDepth(Depth.UI)
 
@@ -1796,7 +1807,18 @@ class UIScene extends Phaser.Scene {
                     };
                     var title = () => {
                         this.title = this.add.text(width * 0.5, height * 0.3, UItextJSON['chooseCharacter'],
-                            { fontSize: '48px', fill: '#000000' })
+                            {
+                                fontSize: '48px',
+                                fill: '#000000',
+                                shadow: {
+                                    offsetX: 5,
+                                    offsetY: 5,
+                                    color: '#9D9D9D',
+                                    blur: 3,
+                                    stroke: true,
+                                    fill: true
+                                },
+                            })
                             .setOrigin(0.5)
                             .setDepth(Depth.UI + 1);
 
@@ -2270,6 +2292,7 @@ class LoadingScene extends Phaser.Scene {
                             dir + 'laser.png',
                             { frameWidth: 512, frameHeight: 682.6 }
                         );
+                        this.load.image('orbBox', dir + 'orbBox.png');
 
                     };
                     var wave = () => {
@@ -2443,6 +2466,8 @@ class LoadingScene extends Phaser.Scene {
                     this.load.image('UIbar_MPlabel', playerBarDir + 'UIbar_MPlabel.png');
                     this.load.image('UIbar_head', playerBarDir + 'UIbar_head.png');
                     this.load.image('UIbar_bar', playerBarDir + 'UIbar_bar.png');
+                    this.load.image('player_dialog', playerBarDir + 'dialog.png');
+
                 };
                 sprite();
                 UIbar();
@@ -3015,10 +3040,34 @@ class DefendScene extends Phaser.Scene {
                         .setOrigin(0.5)
                         .setDepth(Depth.UI);
 
+
+                    //==光球超出畫面提示
+                    child.hintBox = this.add.group();
+
+                    let orbBox = this.add.sprite(0, 0, 'orbBox')
+                        .setOrigin(0.5)
+                        .setScale(0.8)
+                        .setDepth(Depth.orbs);
+
+                    let hintOrb = this.add.sprite()
+                        .setOrigin(0.5)
+                        .setScale(0.25)
+                        .setDepth(Depth.orbs)
+                        .play('orb_inactive');
+
+                    child.hintBox.orbBox = orbBox;
+                    child.hintBox.hintOrb = hintOrb;
+
+                    child.hintBox
+                        .add(orbBox)
+                        .add(hintOrb)
+                        .setAlpha(0);
+
                     Object.assign(child, {
                         originTime: child.orbStats.time.toFixed(2),//==用來判斷是否通關(位置要移動過)
                         beholdingFlag: false,
                         activateFlag: activate,
+                        outWindowFlag: false,
                         statusHadler: function (pickUper = null, beholding = false, activate = true) {
                             // console.debug('statusHadler');
 
@@ -3078,11 +3127,29 @@ class DefendScene extends Phaser.Scene {
 
                             // console.debug(playerStats);
                         },
+                        outWindowHandler: function (outWindow) {
+                            this.hintBox.setAlpha(outWindow);
+
+                            let filp = this.x < 0;
+                            let hintBoxX = filp ?
+                                orbBox.displayWidth * 0.5 :
+                                width - orbBox.displayWidth * 0.5,
+                                hintBoxY = height * 0.85;
+
+                            this.hintBox.orbBox
+                                .setFlipX(filp)
+                                .setPosition(hintBoxX, hintBoxY);
+
+                            this.hintBox.hintOrb
+                                .setPosition(hintBoxX + orbBox.displayWidth * 0.1 * (filp ? 1 : -1), hintBoxY);
+
+                        },
                     });
 
                     //==laserUpdateFlag
                     child.laserUpdateFlag = true;//==寶珠落下到地面後更新雷射一次
                     child.statusHadler(null, false, activate);
+
 
                     //=====custom
 
@@ -3172,16 +3239,14 @@ class DefendScene extends Phaser.Scene {
             });
 
             this.enemy.enemyAttack = (player, foe) => {
-                const knockBackDuration = 200;
-                const knockBackSpeed = 300;
+                const knockBackDuration = 400;
+                const knockBackSpeed = 200;
 
                 if (!player.invincibleFlag) {
                     //==暫停人物操作(一直往前走不會有擊退效果)
                     player.stopCursorsFlag = true;
-                    player.statsChangeHandler({ HP: player.stats.HP -= foe.stats.attackPower }, this);
+                    player.statsChangeHandler({ HP: -foe.stats.attackPower }, this);
                     if (player.stats.HP <= 0) return;
-
-                    player.gotHurtHandler(this);
 
                     player.invincibleFlag = true;
                     // player.setTint(0xff0000);
@@ -3376,9 +3441,10 @@ class DefendScene extends Phaser.Scene {
 
             let playerStats = this.player.stats;
             if (playerStats.MP < playerStats.maxMP)
-                this.player.statsChangeHandler({ MP: playerStats.MP += playerStats.manaRegen }, this);//自然回魔
+                this.player.statsChangeHandler({ MP: playerStats.manaRegen }, this);//自然回魔
 
-
+            //==狀態對話框
+            this.player.dialog.setPosition(this.player.x, this.player.y - this.player.displayHeight * 0.5);
         };
         var updateSidekick = () => {
             this.sidekick.behaviorHandler(this.player, this);
@@ -3402,8 +3468,8 @@ class DefendScene extends Phaser.Scene {
 
         };
 
-        firstTimeEvent();
-        if (!this.firstTimeEvent.eventComplete && !this.gameOver.flag) return;
+        // firstTimeEvent();
+        // if (!this.firstTimeEvent.eventComplete && !this.gameOver.flag) return;
 
         updatePlayer();
         updateSidekick();
@@ -3413,12 +3479,13 @@ class DefendScene extends Phaser.Scene {
         // console.debug(enemy.children.entries);
 
         if (this.gameOver.flag) {
-            const gameDestroyDelay = 1000;
+            const status = this.gameOver.status;
+            const gameDestroyDelay = status == 0 ? 1000 : 4000;
             //===camera effect
             const camera = this.cameras.main;
 
             camera.pan(this.player.x, this.player.y, gameDestroyDelay * 0.5, 'Back', true);
-            camera.zoomTo(5, gameDestroyDelay * 0.5);
+            camera.zoomTo(status == 0 ? 5 : 3, gameDestroyDelay * 0.5);
 
             //==
             // camera.on("PAN_COMPLETE", (e) => {
@@ -3428,8 +3495,13 @@ class DefendScene extends Phaser.Scene {
             if (this.gameOver.delayedCall) return;
             this.gameTimer.paused = true;
 
+            //==時間到或死亡要對話框提示
+            if (status != 0) {
+                this.player.talkingHandler(this, this.gameData.localeJSON.UI['gameOver' + status], true);
+            };
+
             //==玩家停止行爲並無敵(死亡時不用)
-            if (this.gameOver.status != 2) {
+            if (status != 2) {
                 this.player.invincibleFlag = true;
                 this.player.stopCursorsFlag = true;
                 this.player.body.reset(this.player.x, this.player.y);
@@ -3471,7 +3543,7 @@ class DefendScene extends Phaser.Scene {
                 },
             };
 
-            this.time.delayedCall(gameDestroyDelay * 0.5, () => camera.fadeOut(500, 0, 0, 0), [], this);
+            this.time.delayedCall(gameDestroyDelay * 0.8, () => camera.fadeOut(500, 0, 0, 0), [], this);
             this.gameOver.delayedCall = this.time.delayedCall(gameDestroyDelay, () => {
                 //===time remove
                 // this.gameTimer.remove();
@@ -3533,8 +3605,8 @@ class DigScene extends Phaser.Scene {
             tileSize: 125,//==地質塊寬高
             depthCounter: {
                 epicenter: placeData.depth,
-                depthScale: 0.03,//0.003
-                // depthScale: 0.008,//0.003
+                // depthScale: 0.03,//0.003
+                depthScale: 0.008,//0.003
                 // depthScale: 10,//0.003
                 coordinate: placeData.coordinate,
                 bossRoom: false,
@@ -3631,9 +3703,9 @@ class DigScene extends Phaser.Scene {
 
                 };
                 var underGround = () => {
-                    this.underBG = this.add.tileSprite(width * 0.5, this.groundY + height * 0.5, 0, 0, 'mineBG')
+                    this.underBG = this.add.tileSprite(width * 0.5, this.groundY, 0, 0, 'mineBG')
                         .setDepth(0);
-                    this.underBG.setScale(width / this.underBG.width, 1);
+                    this.underBG.setScale(width / this.underBG.width);
 
                     this.BGgroup.add(this.underBG);
                 };
@@ -3891,7 +3963,7 @@ class DigScene extends Phaser.Scene {
                     // console.debug(camera.scrollY)
                     let shift = camera.scrollY - camera.preScrollY;
                     this.underBG.y += shift;
-                    this.underBG.tilePositionY += 1 * Math.sign(shift);
+                    this.underBG.tilePositionY += 4 * Math.sign(shift);
 
                     camera.preScrollY = camera.scrollY;
                 });
@@ -4038,7 +4110,7 @@ class DigScene extends Phaser.Scene {
 
             let playerStats = this.player.stats;
             if (playerStats.MP < playerStats.maxMP)
-                this.player.statsChangeHandler({ MP: playerStats.MP += playerStats.manaRegen }, this);//自然回魔
+                this.player.statsChangeHandler({ MP: playerStats.manaRegen }, this);//自然回魔
 
         };
         var updateSidekick = () => {
@@ -4576,8 +4648,7 @@ class BossScene extends Phaser.Scene {
                                 loop: Math.ceil(quakeT2 / 1000),
                                 duration: 1000,
                                 onLoop: () => {
-                                    this.player.gotHurtHandler(this);
-                                    this.player.statsChangeHandler({ HP: this.player.stats.HP -= boss.stats.attackPower }, this);
+                                    this.player.statsChangeHandler({ HP: -boss.stats.attackPower }, this);
                                     emitter.stop();
                                 },
                             });
@@ -4607,8 +4678,7 @@ class BossScene extends Phaser.Scene {
                         });
 
                         this.time.delayedCall((flyT1 + flyT2) * 0.8, () => {
-                            this.player.gotHurtHandler(this);
-                            this.player.statsChangeHandler({ HP: this.player.stats.HP -= boss.stats.attackPower * 1.5 }, this);
+                            this.player.statsChangeHandler({ HP: -boss.stats.attackPower * 1.5 }, this);
                         }, [], this);
 
                         this.time.delayedCall(flyT1 + flyT2 * 2, () => boss.play('boss_Idle'), [], this);

@@ -40,7 +40,7 @@ function locatingGame() {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 300 },
-                    // debug: true,
+                    debug: true,
                 },
             },
             dom: {//==for rexUI:rexTextEdit
@@ -254,7 +254,7 @@ function locatingGame() {
                 let playerRole = 'maleAdventurer';//==之後能選其他[Biker,Cyborg,Punk]
                 let sidekick = 'Dude';//=='Owlet,Dude,Pink'
 
-                let playerName = '',
+                let playerName = 'ddd',
                     avatarIndex = 0,//==自選頭像
                     avatarBgColor = 0x5B5B5B;//
 
@@ -317,25 +317,24 @@ function locatingGame() {
                     GameData.localeJSON = await getLanguageJSON();
 
                     //==test
-                    // gameDisplay(true);
-                    // let newGameData = await new Promise((resolve, reject) => {
-                    //     const config = Object.assign(getPhaserConfig(width, height), {
-                    //         scene: new GameStartScene(GameData, resolve),
-                    //     });
-                    //     new Phaser.Game(config);
-                    // });
+                    gameDisplay(true);
+                    let newGameData = await new Promise((resolve, reject) => {
+                        const config = Object.assign(getPhaserConfig(width, height), {
+                            scene: new GameStartScene(GameData, resolve),
+                        });
+                        new Phaser.Game(config);
+                    });
 
-                    // if (GameData.locale != newGameData.locale)
-                    //     GameData.localeJSON = await getLanguageJSON();
-                    // Object.assign(GameData, newGameData);
-                    // gameDisplay(false);
+                    if (GameData.locale != newGameData.locale)
+                        GameData.localeJSON = await getLanguageJSON();
+                    Object.assign(GameData, newGameData);
+                    gameDisplay(false);
                     //==test
 
                     initMap();
 
-
                     //==test
-                    gameStart('defend');
+                    // gameStart('defend');
                     // gameStart('dig');
                     //==test
                 };
@@ -613,8 +612,8 @@ function locatingGame() {
 
                     data.forEach((d, i) => {
                         // console.debug(d);
-                        let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
-                        // let enemy = [];//==之後隨機抽敵人組
+                        // let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
+                        let enemy = ['dog'];//==之後隨機抽敵人組
                         let enemyStats = {};
 
                         enemy.forEach((key) => {
@@ -723,7 +722,7 @@ function locatingGame() {
                             updateStation(e.target, { mouseEvent: 0 });
                         })
                         .on('click', function (e) {
-                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             //==觸發畫面位置點擊(要在假設點上座標才對)
                             const event = new MouseEvent('click', {
                                 'view': window,
@@ -974,7 +973,7 @@ function locatingGame() {
                                 })
                                 .on('click', function (e) {
                                     //==速度參數要完成兩站才能調整
-                                    if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
+                                    // if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
 
                                     let button = $(this);
                                     let ckick = button.hasClass('clicked');
@@ -1133,7 +1132,7 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
-                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             let lat = e.latlng.lat,
                                 lng = e.latlng.lng
 
@@ -1779,7 +1778,7 @@ function locatingGame() {
                     }
 
                     //=== 進王關
-                    if (gameResult.bossRoom) {//gameResult.bossRoom
+                    if (1) {//gameResult.bossRoom
                         const backgroundArr = Object.keys(BackGroundResources.boss);
                         let background = backgroundArr[getRandom(backgroundArr.length)];
 

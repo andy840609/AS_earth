@@ -1555,7 +1555,7 @@ class UIScene extends Phaser.Scene {
                             //==新設定
                             // if (config) Object.assign(DLconfig, config);
 
-                            new RexTextBox(this, {
+                            return new RexTextBox(this, {
                                 x: DLconfig.dialogX,
                                 y: DLconfig.dialogY,
                                 wrapWidth: DLconfig.dialogWidth,
@@ -1572,7 +1572,7 @@ class UIScene extends Phaser.Scene {
 
                         //==問答題
                         this.newQuiz = (data, bossQuiz = true, resolve) => {
-                            new RexDialog(this, {
+                            return new RexDialog(this, {
                                 x: DLconfig.dialogX,
                                 y: DLconfig.dialogY * 0.5,
                                 data: data,
@@ -1642,7 +1642,7 @@ class UIScene extends Phaser.Scene {
                 };
                 update = () => { };
                 break;
-            case 'creatorUI'://==創角色畫面
+            case 'creator'://==創角色畫面
                 preload = () => { };
                 create = () => {
                     let creatorObj = gameScene.creatorObj;
@@ -1706,23 +1706,29 @@ class UIScene extends Phaser.Scene {
                                     repeat: -1,
                                 });
                                 this.anims.create({
-                                    key: chara + '_attack',
-                                    frames: this.anims.generateFrameNumbers(chara + '_attack'),
-                                    frameRate: 6,
-                                    repeat: -1,
-                                });
-                                this.anims.create({
                                     key: chara + '_doubleJump',
                                     frames: this.anims.generateFrameNumbers(chara + '_doubleJump'),
                                     frameRate: 6,
                                     repeat: -1,
                                 });
-
+                                this.anims.create({
+                                    key: chara + '_attack',
+                                    frames: this.anims.generateFrameNumbers(chara + '_attack'),
+                                    frameRate: 9,
+                                    repeat: -1,
+                                });
+                                this.anims.create({
+                                    key: chara + '_swordSwing',
+                                    frames: this.anims.generateFrameNumbers(chara + '_swordSwing', { start: 0, end: 4 }),
+                                    frameRate: 9,
+                                    repeat: -1,
+                                });
 
                             };
                             animsCreate();
 
-                            this.add.sprite(gap * (i + 1), height * 0.8)
+
+                            let character = this.add.sprite(gap * (i + 1), height * 0.8)
                                 .setDepth(10)
                                 .play(chara + '_idle')
                                 .setInteractive()
@@ -1747,7 +1753,16 @@ class UIScene extends Phaser.Scene {
                                         duration: 200,
                                         scale: { from: this.scale, to: 1 },
                                         //==被點擊時播放不同動畫
-                                        onStart: () => this.play(chara + (p ? '_idle' : '_attack')),
+                                        onStart: () => {
+                                            if (p) this.play(chara + '_idle');
+                                            else {
+                                                this.play(chara + '_attack');
+                                                weapon
+                                                    .setAlpha(1)
+                                                    .play(chara + '_swordSwing');
+                                            };
+
+                                        },
                                     });
                                 })
                                 .on('pointerdown', function () {
@@ -1786,8 +1801,16 @@ class UIScene extends Phaser.Scene {
 
                                                 scene.time.delayedCall(destroyDelay * 0.5, () => cameras.fadeOut(500, 0, 0, 0), [], this);
                                                 scene.time.delayedCall(destroyDelay, () => {
-                                                    gameScene.game.destroy(true, false);
-                                                    gameScene.resolve(gameScene.gameData);
+                                                    if (1) {
+                                                        gameScene.scene.add(null, new UIScene('tutorial', scene), true);
+                                                        // scene.scene.remove();
+                                                    }
+                                                    else {
+                                                        gameScene.game.destroy(true, false);
+                                                        gameScene.resolve(gameScene.gameData);
+                                                    };
+
+
                                                 }, [], this);
 
 
@@ -1799,9 +1822,18 @@ class UIScene extends Phaser.Scene {
                                                 cameras.zoomTo(1, duration * 0.5);
                                             };
 
+                                            weapon
+                                                .setAlpha(0)
+                                                .anims.stop();
+
                                         });
                                 });
 
+                            //==weapon
+                            let weapon = this.add.sprite(character.x, character.y)
+                                .setScale(1.6)
+                                .setOrigin(0.45, 0.35)
+                                .setDepth(9);
 
                         });
                     };
@@ -1852,9 +1884,304 @@ class UIScene extends Phaser.Scene {
                 };
                 update = () => { };
                 break;
-            case 'b':
-                preload = () => { };
-                create = () => { };
+            case 'tutorial'://==教學關
+                const tutorialBG = 'tutorial';
+                preload = () => {
+                    var tutorialWindow = () => {
+
+                        let dir = assetsDir + 'gameObj/environment/background/' + tutorialBG + '/';
+                        let resources = BackGroundResources.GameStart[tutorialBG];
+
+                        //==重新取名讓loader裡的key不會重複(檔名可能重複)
+                        resources.static.forEach((res, i) => {
+                            this.load.image('staticTutorialBG_' + i, dir + res);
+                        });
+                        resources.dynamic.forEach((res, i) => {
+                            this.load.image('dynamicTutorialBG_' + i, dir + res);
+                        });
+
+                    };
+                    var player = () => {
+                        const gameObjDir = assetsDir + 'gameObj/';
+                        var sprite = () => {
+                            const playerRole = gameScene.gameData.playerRole;
+                            const dir = gameObjDir + 'player/' + playerRole + '/';
+                            const frameObj = { frameWidth: 96, frameHeight: 128 };
+                            // const frameObj = { frameWidth: 48, frameHeight: 48 };
+
+                            this.load.spritesheet('player_attack', dir + 'attack.png', frameObj);
+                            this.load.spritesheet('player_specialAttack', dir + 'specialAttack.png', frameObj);
+                            this.load.spritesheet('player_death', dir + 'death.png', frameObj);
+                            this.load.spritesheet('player_jump', dir + 'jump.png', frameObj);
+                            this.load.spritesheet('player_doubleJump', dir + 'doubleJump.png', frameObj);
+                            this.load.spritesheet('player_jumpAttack', dir + 'jumpAttack.png', frameObj);
+                            this.load.spritesheet('player_hurt', dir + 'hurt.png', frameObj);
+                            this.load.spritesheet('player_idle', dir + 'idle.png', frameObj);
+                            this.load.spritesheet('player_run', dir + 'run.png', frameObj);
+                            this.load.spritesheet('player_runAttack', dir + 'runAttack.png', frameObj);
+                            this.load.spritesheet('player_timesUp', dir + 'timesUp.png', frameObj);
+                            this.load.spritesheet('player_cheer', dir + 'cheer.png', frameObj);
+
+                            //==effect
+                            const effectDir = gameObjDir + 'player/effect/';
+                            const effectFrameObj = {
+                                maleAdventurer: {
+                                    attack: [120, 130],
+                                    jump: [150, 100],
+                                    run: [150, 100],
+                                    ult: [300, 150],
+                                    pick: [120, 130],
+                                },
+                            }[playerRole];
+
+                            this.load.spritesheet('player_jumpDust', effectDir + 'jump_dust.png', { frameWidth: 38, frameHeight: 60 });
+
+                            this.load.spritesheet('player_attackEffect', dir + 'swordSwing.png',
+                                { frameWidth: effectFrameObj.attack[0], frameHeight: effectFrameObj.attack[1] });
+                            this.load.spritesheet('player_jumpAttackEffect', dir + 'jumpAttackEffect.png',
+                                { frameWidth: effectFrameObj.jump[0], frameHeight: effectFrameObj.jump[1] });
+                            this.load.spritesheet('player_runAttackEffect', dir + 'runAttackEffect.png',
+                                { frameWidth: effectFrameObj.run[0], frameHeight: effectFrameObj.run[1] });
+
+                        };
+                        sprite();
+
+                    };
+                    tutorialWindow();
+                    player();
+                };
+                create = () => {
+
+                    var background = () => {
+
+                    };
+                    var tutorialWindow = () => {
+                        let resources = BackGroundResources.GameStart[tutorialBG];
+                        let tutorialW = width * 0.8,
+                            tutorialH = height * 0.6;
+
+                        resources.static.forEach((res, i) => {
+                            if (i == resources.static.length - 1) {
+
+                                this.platforms = this.physics.add.staticGroup();
+                                let ground = this.platforms.create(width * 0.5, height * 0.5, 'staticTutorialBG_' + i);
+
+                                ground
+                                    .setScale(tutorialW / ground.width, tutorialH / ground.height)
+                                    .setDepth(resources.depth.static[i])
+                                    .setOrigin(0.5)
+                                    .refreshBody()
+                                    .setSize(tutorialW, height * 0.075, false)
+                                    .setOffset(0, height * 0.53)
+                                    .setName('platform');
+
+                            }
+                            else {
+                                let img = this.add.image(width * 0.5, height * 0.5, 'staticTutorialBG_' + i);
+                                img
+                                    .setScale(tutorialW / img.width, tutorialH / img.height)
+                                    .setDepth(resources.depth.static[i]);
+                            };
+
+
+                        });
+
+                        resources.dynamic.forEach((res, i) => {
+                            let thing = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, 'dynamicTutorialBG_' + i);
+
+                            thing
+                                .setScale(tutorialW / thing.width, tutorialH / thing.height)
+                                .setDepth(resources.depth.dynamic[i]);
+
+                            //==tweens
+                            let movingDuration = Phaser.Math.Between(3, 5) * 1000;//==第一次移動5到20秒
+                            let animType = resources.animType[i];
+                            //==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
+
+                            this.tweens.add(
+                                Object.assign({
+                                    targets: thing,
+                                    repeat: -1,
+                                    duration: movingDuration,
+                                },
+                                    animType == 1 ?
+                                        { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
+                                        animType == 2 ? { alpha: { start: 0.1, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
+                                            animType == 3 ? { scale: { start: t => t.scale, to: t => t.scale * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
+                                                { alpha: { start: 0.1, to: 1 }, ease: 'Bounce', yoyo: true }
+
+                                ));
+
+                        });
+
+                    };
+                    var initPlayer = () => {
+                        //==anims
+                        var animsCreate = () => {
+                            this.anims.create({
+                                key: 'player_idle',
+                                frames: this.anims.generateFrameNumbers('player_idle'),
+                                frameRate: 5,
+                                repeat: -1,
+                            });
+
+                            this.anims.create({
+                                key: 'player_run',
+                                frames: this.anims.generateFrameNumbers('player_run'),
+                                frameRate: 8,
+                                repeat: -1,
+                            });
+
+                            this.anims.create({
+                                key: 'player_runAttack',
+                                frames: this.anims.generateFrameNumbers('player_runAttack'),
+                                frameRate: 8,
+                                repeat: 0,
+                            });
+
+                            this.anims.create({
+                                key: 'player_attack',
+                                frames: this.anims.generateFrameNumbers('player_attack'),
+                                frameRate: 10,
+                                repeat: 0,
+                            });
+
+                            this.anims.create({
+                                key: 'player_specialAttack',
+                                frames: this.anims.generateFrameNumbers('player_specialAttack'),
+                                frameRate: 15,
+                                repeat: 0,
+                            });
+
+                            this.anims.create({
+                                key: 'player_hurt',
+                                frames: this.anims.generateFrameNumbers('player_hurt'),
+                                frameRate: 8,
+                                repeat: 0,
+                            });
+
+                            this.anims.create({
+                                key: 'player_death',
+                                frames: this.anims.generateFrameNumbers('player_death'),
+                                frameRate: 6,
+                                repeat: 0,
+                            });
+
+                            this.anims.create({
+                                key: 'player_jump',
+                                frames: this.anims.generateFrameNumbers('player_jump'),
+                                frameRate: 4,
+                                repeat: 0,
+                            });
+
+                            this.anims.create({
+                                key: 'player_doubleJump',
+                                frames: this.anims.generateFrameNumbers('player_doubleJump'),
+                                frameRate: 8,
+                                repeat: 0,
+                            });
+
+                            this.anims.create({
+                                key: 'player_jumpAttack',
+                                frames: this.anims.generateFrameNumbers('player_jumpAttack'),
+                                frameRate: 8,
+                                repeat: 0,
+                            });
+
+                            this.anims.create({
+                                key: 'player_timesUp',
+                                frames: this.anims.generateFrameNumbers('player_timesUp'),
+                                frameRate: 4,
+                                repeat: 0,
+                            });
+
+                            this.anims.create({
+                                key: 'player_cheer',
+                                frames: this.anims.generateFrameNumbers('player_cheer'),
+                                frameRate: 4,
+                                repeat: -1,
+                            });
+
+                            //==effect
+                            this.anims.create({
+                                key: 'player_jumpDust',
+                                frames: this.anims.generateFrameNumbers('player_jumpDust'),
+                                frameRate: 15,
+                                repeat: 0,
+                            });
+
+                            this.anims.create({
+                                key: 'player_attackEffect',
+                                frames: this.anims.generateFrameNumbers('player_attackEffect'),
+                                frameRate: 10,
+                                repeat: 0,
+                            });
+
+                            this.anims.create({
+                                key: 'player_jumpAttackEffect',
+                                frames: this.anims.generateFrameNumbers('player_jumpAttackEffect'),
+                                frameRate: 15,
+                                repeat: 0,
+                            });
+
+                            this.anims.create({
+                                key: 'player_runAttackEffect',
+                                frames: this.anims.generateFrameNumbers('player_runAttackEffect'),
+                                frameRate: 8,
+                                repeat: 0,
+                            });
+
+                            if (this.name == "boss")
+                                this.anims.create({
+                                    key: 'player_ultAttackEffect',
+                                    frames: this.anims.generateFrameNumbers('player_ultAttackEffect'),
+                                    frameRate: 7,
+                                    repeat: 0,
+                                });
+                            else if (this.name == "dig")
+                                this.anims.create({
+                                    key: 'player_pickSwing',
+                                    frames: this.anims.generateFrameNumbers('player_pickSwing'),
+                                    frameRate: 15,
+                                    repeat: 0,
+                                });
+
+                        };
+                        animsCreate();
+
+
+                        this.player = this.physics.add.sprite(width * 0.5, height * 0.5)
+                            .setDepth(10)
+                            .play('player_idle');
+
+                        this.player.playerAttack = (bullet, enemy) => {
+                            // console.debug(bullet, enemy);
+                            let playerStats = this.player.stats;
+
+                            // if (playerStats.class != 'melee')//近戰能打多體（會重複判斷秒殺）
+                            bullet.disableBody(true, true);
+                            enemy.body.setVelocityX(playerStats.knockBackSpeed * bullet.fireDir);
+
+                            enemy.behavior = 'hurt';
+                            enemy.statsChangeHandler({ HP: enemy.stats.HP -= playerStats.attackPower }, this);
+                        };
+
+                        this.physics.add.collider(this.player, this.platforms);
+                        //==敵人玩家相關碰撞
+                        this.physics.add.overlap(this.player.bullets, this.enemy, this.player.playerAttack, null, this);
+
+
+
+                    };
+                    var initCamera = () => {
+                        this.cameras.main.setBounds(0, 0, width, height);
+                        this.cameras.main.flash(500, 0, 0, 0);
+                    };
+                    background();
+                    tutorialWindow();
+                    initCamera();
+                    initPlayer();
+                };
                 update = () => { };
                 break;
             case 'b':
@@ -1947,6 +2274,7 @@ class GameStartScene extends Phaser.Scene {
                     this.load.spritesheet(chara + '_run', dir + 'run.png', frameObj);
                     this.load.spritesheet(chara + '_doubleJump', dir + 'doubleJump.png', frameObj);
                     this.load.spritesheet(chara + '_attack', dir + 'attack.png', frameObj);
+                    this.load.spritesheet(chara + '_swordSwing', dir + 'swordSwing.png', { frameWidth: 120, frameHeight: 130 });
 
                     // this.load.spritesheet('player_specialAttack', dir + 'specialAttack.png', frameObj);
                     // this.load.spritesheet('player_death', dir + 'death.png', frameObj);
@@ -2058,7 +2386,8 @@ class GameStartScene extends Phaser.Scene {
                         switch (button) {
                             case 'startGame':
                                 this.scene.pause();
-                                this.scene.add(null, new UIScene('creatorUI', this), true);
+                                // this.scene.add(null, new UIScene('creator', this), true);
+                                this.scene.add(null, new UIScene('tutorial', this), true);
 
                                 // this.game.destroy(true, false);
                                 // this.resolve(this.gameData);
@@ -2102,7 +2431,7 @@ class GameStartScene extends Phaser.Scene {
                 return {
                     button: menuButton,
                     text: buttonText,
-                }
+                };
 
             });
 
@@ -2420,44 +2749,36 @@ class LoadingScene extends Phaser.Scene {
                     this.load.spritesheet('player_idle', dir + 'idle.png', frameObj);
                     this.load.spritesheet('player_run', dir + 'run.png', frameObj);
                     this.load.spritesheet('player_runAttack', dir + 'runAttack.png', frameObj);
+                    this.load.spritesheet('player_timesUp', dir + 'timesUp.png', frameObj);
+                    this.load.spritesheet('player_cheer', dir + 'cheer.png', frameObj);
 
                     //==effect
                     const effectDir = gameObjDir + 'player/effect/';
                     const effectFrameObj = {
-                        Biker: {
-                            attack: [126, 60],
-                            jump: [120, 80],
-                            run: [110, 60],
-                            ult: [300, 150],
-                        },
-                        Cyborg: {
-                            attack: [126, 60],
-                            jump: [65, 60],
-                        },
-                        Punk: {
-                            attack: [126, 60],
-                            jump: [65, 60],
-                        },
                         maleAdventurer: {
-                            attack: [126, 60],
-                            jump: [120, 80],
-                            run: [110, 60],
+                            attack: [120, 130],
+                            jump: [150, 100],
+                            run: [150, 100],
                             ult: [300, 150],
+                            pick: [120, 130],
                         },
                     }[playerRole];
 
                     this.load.spritesheet('player_jumpDust', effectDir + 'jump_dust.png', { frameWidth: 38, frameHeight: 60 });
 
-                    this.load.spritesheet('player_attackEffect', effectDir + 'attack_effect.png',
+                    this.load.spritesheet('player_attackEffect', dir + 'swordSwing.png',
                         { frameWidth: effectFrameObj.attack[0], frameHeight: effectFrameObj.attack[1] });
-                    this.load.spritesheet('player_jumpAttackEffect', effectDir + 'jumpAttack_effect.png',
+                    this.load.spritesheet('player_jumpAttackEffect', dir + 'jumpAttackEffect.png',
                         { frameWidth: effectFrameObj.jump[0], frameHeight: effectFrameObj.jump[1] });
-                    this.load.spritesheet('player_runAttackEffect', effectDir + 'runAttack_effect.png',
+                    this.load.spritesheet('player_runAttackEffect', dir + 'runAttackEffect.png',
                         { frameWidth: effectFrameObj.run[0], frameHeight: effectFrameObj.run[1] });
 
                     if (packNum == 3)
                         this.load.spritesheet('player_ultAttackEffect', effectDir + 'ult_effect.png',
                             { frameWidth: effectFrameObj.ult[0], frameHeight: effectFrameObj.ult[1] });
+                    else if (packNum == 2)
+                        this.load.spritesheet('player_pickSwing', dir + 'pickSwing.png',
+                            { frameWidth: effectFrameObj.pick[0], frameHeight: effectFrameObj.pick[1] });
                 };
                 var UIbar = () => {
                     const playerBarDir = assetsDir + 'ui/game/playerBar/';
@@ -3444,7 +3765,7 @@ class DefendScene extends Phaser.Scene {
                 this.player.statsChangeHandler({ MP: playerStats.manaRegen }, this);//自然回魔
 
             //==狀態對話框
-            this.player.dialog.setPosition(this.player.x, this.player.y - this.player.displayHeight * 0.5);
+            this.player.dialog.setPosition(this.player.x, this.player.y - this.player.displayHeight * 0.3);
         };
         var updateSidekick = () => {
             this.sidekick.behaviorHandler(this.player, this);
@@ -3468,8 +3789,8 @@ class DefendScene extends Phaser.Scene {
 
         };
 
-        // firstTimeEvent();
-        // if (!this.firstTimeEvent.eventComplete && !this.gameOver.flag) return;
+        firstTimeEvent();
+        if (!this.firstTimeEvent.eventComplete && !this.gameOver.flag) return;
 
         updatePlayer();
         updateSidekick();
@@ -3480,10 +3801,10 @@ class DefendScene extends Phaser.Scene {
 
         if (this.gameOver.flag) {
             const status = this.gameOver.status;
-            const gameDestroyDelay = status == 0 ? 1000 : 4000;
+            const gameDestroyDelay = status == 0 ? 1500 : 4000;
+
             //===camera effect
             const camera = this.cameras.main;
-
             camera.pan(this.player.x, this.player.y, gameDestroyDelay * 0.5, 'Back', true);
             camera.zoomTo(status == 0 ? 5 : 3, gameDestroyDelay * 0.5);
 
@@ -3505,7 +3826,7 @@ class DefendScene extends Phaser.Scene {
                 this.player.invincibleFlag = true;
                 this.player.stopCursorsFlag = true;
                 this.player.body.reset(this.player.x, this.player.y);
-                this.player.play('player_idle');
+                this.player.play(status ? 'player_timesUp' : 'player_cheer');
             };
 
             //==助手對話框不顯示
@@ -3782,6 +4103,7 @@ class DigScene extends Phaser.Scene {
                     player.diggingFlag = true;
                     player.body.reset(player.x, player.y);
                     player.play('player_specialAttack');
+                    player.attackEffect.play('player_pickSwing');
                     player.stopCursorsFlag = true;
                     // console.debug(tile.attribute.hardness);
 
@@ -4112,6 +4434,8 @@ class DigScene extends Phaser.Scene {
             if (playerStats.MP < playerStats.maxMP)
                 this.player.statsChangeHandler({ MP: playerStats.manaRegen }, this);//自然回魔
 
+            //==狀態對話框
+            this.player.dialog.setPosition(this.player.x, this.player.y - this.player.displayHeight * 0.3);
         };
         var updateSidekick = () => {
             this.sidekick.behaviorHandler(this.player, this);
@@ -4171,7 +4495,6 @@ class DigScene extends Phaser.Scene {
 
         };
 
-
         updateChunks();
         firstTimeEvent();
         if (!this.firstTimeEvent.eventComplete && !this.gameOver.flag) return;
@@ -4181,21 +4504,29 @@ class DigScene extends Phaser.Scene {
         if (this.depthCounter.epicenter !== null) updateGate();
 
         if (this.gameOver.flag) {
-            const gameDestroyDelay = 1000;
+            const status = this.gameOver.status;
+            const gameDestroyDelay = status == 0 ? 1500 : 4000;
+
+            //===camera effect
             const camera = this.cameras.main;
             camera.pan(this.player.x, this.player.y, gameDestroyDelay * 0.5, 'Back', true);
-            camera.zoomTo(5, gameDestroyDelay * 0.5);
+            camera.zoomTo(status == 0 ? 5 : 3, gameDestroyDelay * 0.5);
 
             if (this.gameOver.delayedCall) return;
-
             this.gameTimer.paused = true;
 
-            //==玩家停止行爲並無敵
-            if (this.gameOver.status == 0) {
+            //==時間到或死亡要對話框提示
+
+            if (status != 0) {
+                this.player.talkingHandler(this, this.gameData.localeJSON.UI['gameOver' + status], true);
+            };
+
+            //==玩家停止行爲並無敵(死亡時不用)
+            if (status != 2) {
                 this.player.invincibleFlag = true;
                 this.player.stopCursorsFlag = true;
                 this.player.body.reset(this.player.x, this.player.y);
-                this.player.play('player_idle');
+                this.player.play(status ? 'player_timesUp' : 'player_cheer');
             };
 
             //==助手對話框不顯示
@@ -4219,11 +4550,10 @@ class DigScene extends Phaser.Scene {
                 bossRoom: this.depthCounter.bossRoom,
             };
 
-            this.time.delayedCall(gameDestroyDelay * 0.5, () => camera.fadeOut(500, 0, 0, 0), [], this);
+            this.time.delayedCall(gameDestroyDelay * 0.8, () => camera.fadeOut(500, 0, 0, 0), [], this);
             this.gameOver.delayedCall = this.time.delayedCall(gameDestroyDelay, () => {
                 //===time remove
                 // this.gameTimer.remove();
-
                 this.game.destroy(true, false);
                 this.gameOver.resolve(gameResult);
             }, [], this);
@@ -4257,9 +4587,12 @@ class BossScene extends Phaser.Scene {
             cursors: null,
             gameData: GameData,
             background: background,
-            bossDefeated: false,
+            quizObj: null,
             gameOver: {
+                bossDefeated: false,
                 flag: false,
+                status: 0,//==0:玩家退出,1:時間到,2:死亡
+                delayedCall: null,
                 resolve: other.resolve,
             },
         });
@@ -4404,6 +4737,9 @@ class BossScene extends Phaser.Scene {
             this.player.attackEffect
                 .setDepth(Depth.boss + 1);
 
+            this.player.dialog
+                .setPosition(this.player.x, this.player.y - this.player.displayHeight * 0.3);
+
             Object.assign(this.player, {
                 attackingFlag: false,
                 attackAnims: (resolve) => {
@@ -4477,7 +4813,7 @@ class BossScene extends Phaser.Scene {
                 winAnims: () => {
                     let talkDelay = 1000;
                     let playerContent = localeJSON.Lines.player[3];
-                    this.bossDefeated = true;
+                    this.gameOver.bossDefeated = true;
 
                     //==說話
                     this.time.delayedCall(talkDelay, async () => {
@@ -4756,10 +5092,10 @@ class BossScene extends Phaser.Scene {
                 });
             };
             var showQuiz = async () => {
-                let correct = await new Promise(resolve => this.RexUI.newQuiz(getQuiz(), true, resolve));
+                let correct = await new Promise(resolve => this.quizObj = this.RexUI.newQuiz(getQuiz(), true, resolve));
                 await new Promise(resolve => this[correct ? 'player' : 'boss'].attackAnims(resolve));
 
-                if (this.boss.stats.HP > 0) showQuiz();
+                if (this.boss.stats.HP > 0 && !this.gameOver.flag) showQuiz();
 
                 // console.debug('hp :' + this.boss.stats.HP);
             };
@@ -4772,7 +5108,6 @@ class BossScene extends Phaser.Scene {
         var initRexUI = () => {
             this.scene.add(null, new UIScene('RexUI', this), true);
         };
-
 
         //==gameScene
         initEnvironment();
@@ -4801,12 +5136,39 @@ class BossScene extends Phaser.Scene {
         updateBoss();
         updateSidekick();
 
+        // console.debug(this.quizObj);
         if (this.gameOver.flag) {
-            //===time remove
-            this.gameTimer.remove();
+            const status = this.gameOver.status;
+            const gameDestroyDelay = status == 0 ? 1500 : 4000;
+
+            //===camera effect
+            const camera = this.cameras.main;
+            // camera.pan(this.player.x, this.player.y, gameDestroyDelay * 0.5, 'Back', true);
+            // camera.zoomTo(status == 0 ? 5 : 1, gameDestroyDelay * 0.5);
+
+            if (this.gameOver.delayedCall) return;
+            this.gameTimer.paused = true;
+            this.boss.HPbar.setAlpha(0);//==魔王血條隱藏
+            if (this.quizObj) this.quizObj.destroy();//==刪除考卷
+
+            //==時間到或死亡要對話框提示
+            if (status != 0) {
+                this.player.talkingHandler(this, this.gameData.localeJSON.UI['gameOver' + status], true);
+            };
+
+            //==玩家停止行爲並無敵(死亡時不用)
+            if (status != 2) {
+                this.player.invincibleFlag = true;
+                this.player.stopCursorsFlag = true;
+                this.player.body.reset(this.player.x, this.player.y);
+                this.player.play(status ? 'player_timesUp' : 'player_cheer');
+            };
+
+            //==助手對話框不顯示
+            if (this.sidekick.talkingCallback) this.sidekick.talkingCallback.remove();
+            this.sidekick.dialog.setAlpha(0);
 
             //===get gameResult 
-
             let gameResult = {
                 //==更新角色資料(剩餘時間、能力值...)
                 playerInfo: {
@@ -4817,11 +5179,19 @@ class BossScene extends Phaser.Scene {
                     }),
                     controllCursor: this.gameData.controllCursor,
                 },
-                bossDefeated: this.bossDefeated,
+                bossDefeated: this.gameOver.bossDefeated,
             };
-            this.game.destroy(true, false);
-            this.gameOver.resolve(gameResult);
+
+            this.time.delayedCall(gameDestroyDelay * 0.8, () => camera.fadeOut(500, 0, 0, 0), [], this);
+            this.gameOver.delayedCall = this.time.delayedCall(gameDestroyDelay, () => {
+                //===time remove
+                // this.gameTimer.remove();
+                this.game.destroy(true, false);
+                this.gameOver.resolve(gameResult);
+            }, [], this);
+
         };
+
     };
 };
 

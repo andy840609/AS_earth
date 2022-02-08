@@ -12,8 +12,8 @@ const datafileDir = 'data/datafile/';
 const GameObjectStats = {
     creature: {
         dog: {
-            HP: 1000,
-            attackPower: 80,
+            HP: 10000,
+            attackPower: 8,
             movementSpeed: 200,
             jumpingPower: 0,
         },
@@ -31,7 +31,7 @@ const GameObjectStats = {
         },
         boss: {
             HP: 1000,
-            attackPower: 10,
+            attackPower: 30,
             movementSpeed: 500,
             jumpingPower: 0,
         },
@@ -46,8 +46,8 @@ const GameObjectStats = {
             attackRange: 55,
             bulletSize: [120, 130],
             knockBackSpeed: 250,//==擊退時間固定200ms,這個速度越大擊退越遠
-            manaCost: 60,
-            manaRegen: 0.1,//per 10 ms(game update per 10ms)0.1
+            manaCost: 20,
+            manaRegen: 10,//per 10 ms(game update per 10ms)0.1
             HP: 150,
             maxHP: 150,
             MP: 60,
@@ -130,6 +130,25 @@ const BackGroundResources = {
             },
             animType: [1],
         },
+        tutorial: {
+            static: ['background.png', 'trees.png', 'ground.png'],
+            dynamic: ['birds.png'],
+            depth: {
+                static: [0, 2, 3],
+                dynamic: [1],
+            },
+            animType: [3],
+        },
+        desert_1: {
+            static: ['9 Background.png', '6 Sun.png', '5 Mountains.png', '4 Layer4.png', '3 Layer3.png', '2 Layer2.png', '1 Layer1.png'],
+            dynamic: ['8 Stars2.png', '7 Clouds2.png'],
+            depth: {
+                static: [1, 1, 2, 2, 2, 2, 3],
+                dynamic: [1, 1],
+            },
+            animType: [2, 1],
+        },
+
         // forest_1: {
         //     static: ['sky.png', 'rocks_1.png', 'rocks_2.png', 'clouds_1.png'],
         //     dynamic: ['clouds_2.png', 'clouds_3.png', 'clouds_4.png'],
@@ -908,7 +927,7 @@ const Player = new Phaser.Class({
                 scene.anims.create({
                     key: 'player_specialAttack',
                     frames: scene.anims.generateFrameNumbers('player_specialAttack'),
-                    frameRate: 20,
+                    frameRate: 15,
                     repeat: 0,
                 });
 
@@ -947,8 +966,21 @@ const Player = new Phaser.Class({
                     repeat: 0,
                 });
 
-                //==effect
+                scene.anims.create({
+                    key: 'player_timesUp',
+                    frames: scene.anims.generateFrameNumbers('player_timesUp'),
+                    frameRate: 4,
+                    repeat: 0,
+                });
 
+                scene.anims.create({
+                    key: 'player_cheer',
+                    frames: scene.anims.generateFrameNumbers('player_cheer'),
+                    frameRate: 4,
+                    repeat: -1,
+                });
+
+                //==effect
                 scene.anims.create({
                     key: 'player_jumpDust',
                     frames: scene.anims.generateFrameNumbers('player_jumpDust'),
@@ -966,7 +998,7 @@ const Player = new Phaser.Class({
                 scene.anims.create({
                     key: 'player_jumpAttackEffect',
                     frames: scene.anims.generateFrameNumbers('player_jumpAttackEffect'),
-                    frameRate: 10,
+                    frameRate: 15,
                     repeat: 0,
                 });
 
@@ -982,6 +1014,13 @@ const Player = new Phaser.Class({
                         key: 'player_ultAttackEffect',
                         frames: scene.anims.generateFrameNumbers('player_ultAttackEffect'),
                         frameRate: 7,
+                        repeat: 0,
+                    });
+                else if (scene.name == "dig")
+                    scene.anims.create({
+                        key: 'player_pickSwing',
+                        frames: scene.anims.generateFrameNumbers('player_pickSwing'),
+                        frameRate: 15,
                         repeat: 0,
                     });
 
@@ -1028,13 +1067,15 @@ const Player = new Phaser.Class({
                 font: 'bold 30px sans-serif',
                 fill: 'red',
             })
-                .setOrigin(1)
+                .setOrigin(0.5)
                 .setAlpha(0)
                 .setDepth(scene.Depth.player);
 
             //===oom,death
             this.dialog = new RexTextBox(scene, {
-                character: 'player'
+                fixedHeight: 60,
+                fixedWidth: 200,
+                character: 'playerHint'
             })
                 .setOrigin(0.5)
                 .setAlpha(0)
@@ -1191,8 +1232,8 @@ const Player = new Phaser.Class({
         if (cursors[controllCursor['attack']].isDown) {//==按著連續攻擊
             let currentAnims = this.anims.getName();
             let attacking =
-                (currentAnims === 'player_attack' ||
-                    currentAnims === 'player_runAttack' || currentAnims === 'player_jumpAttack')
+                (currentAnims === 'player_attack' || currentAnims === 'player_runAttack' ||
+                    currentAnims === 'player_jumpAttack' || currentAnims === 'player_specialAttack')
                 && this.anims.isPlaying;
 
             if (attacking) return;
@@ -1272,34 +1313,30 @@ const Player = new Phaser.Class({
 
 
     },
-    // dieHandler: () => {
-
-    // },
     //==HP/MP
     statsChangeHandler: function (statsObj) {
         Object.keys(statsObj).forEach(stat => {
             this.stats[stat] += statsObj[stat];
             this[stat + 'bar'].updateFlag = true;
-            if (stat == 'HP' && this.stats[stat] > 0)
-                this.gotHurtHandler(this.scene, statsObj[stat]);
+            if (stat == 'HP') {
+                if (this.stats.HP > 0)
+                    this.gotHurtHandler(this.scene, statsObj[stat]);
+                //==死
+                else {
+                    this.invincibleFlag = true;
+                    this.body.reset(this.x, this.y);
+
+                    this.stats.HP = 0;
+                    this.scene.gameOver.flag = true;
+                    this.scene.gameOver.status = 2;
+
+                    const dieDuration = 600;
+                    this.anims.play('player_hurt');
+                    this.scene.time.delayedCall(dieDuration, () => this.anims.play('player_death', true), [], this);
+                };
+            };
         });
 
-        //==死
-        if (this.stats.HP <= 0) {
-            this.invincibleFlag = true;
-            this.body.reset(this.x, this.y);
-
-            this.stats.HP = 0;
-            this.scene.gameOver.flag = true;
-            this.scene.gameOver.status = 2;
-
-            const dieDuration = 800;
-            this.anims.play('player_hurt');
-            this.scene.time.delayedCall(dieDuration, () => {
-                this.anims.play('player_death', true);
-            }, [], this);
-
-        };
         //==不溢回
         if (this.stats.MP > this.stats.maxMP)
             this.stats.MP = this.stats.maxMP;
@@ -1318,15 +1355,15 @@ const Player = new Phaser.Class({
             else return;
         };
 
-        const hintDuration = hint.length * 300;
+        const hintDuration = 2000;
 
         this.talkingTween = scene.tweens.add({
             targets: this.dialog,
             alpha: { start: 0, to: 1 },
-            duration: hintDuration * 0.1,
+            duration: hintDuration * 0.2,
             repeat: 0,
             yoyo: true,
-            hold: hintDuration * 0.6,//==yoyo delay
+            hold: hintDuration * 0.5,//==yoyo delay
             ease: 'Linear',
             onStart: () => this.dialog.start(hint, 50),//==(text,typeSpeed(ms per word))
             onComplete: () => this.talkingTween = null,
@@ -1925,9 +1962,6 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                 case 'doctor':  //==doctor
                     color = isBox ? 0xD9B300 : 0xffffff;
                     break;
-                case 'player':
-                    color = isBox ? 0xD9B300 : 0xffffff;
-                    break;
             };
             return color;
         };
@@ -1961,7 +1995,7 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                 fixedWidth: fixedWidth,
                 fixedHeight: fixedHeight,
                 fontSize: '20px',
-                color: (character == 'doctor' || character == 'player') ?
+                color: (character == 'doctor' || character == 'playerHint') ?
                     '#272727' : '#fff',
                 wrap: {
                     mode: 0,// 0|'none'|1|'word'|2|'char'|'character'
@@ -1975,6 +2009,7 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                 // maxLines: 3,
                 lineSpacing: 10,
                 padding: padding,
+                valign: character == 'playerHint' ? 'center' : 'top',  // 'top'|'center'|'bottom'
             });
 
         //==頭像調整爲150*150
@@ -2003,7 +2038,7 @@ class RexTextBox extends RexPlugins.UI.TextBox {
         const textBoxConfig = {
             x: config.x,
             y: config.y,
-            background: character == 'player' ?
+            background: character == 'playerHint' ?
                 scene.add.image(0, 0, 'player_dialog') :
                 scene.add.existing(rexRect),
             icon: icon,//==tips ? null : scene.add.image(0, 0, character + 'Avatar')

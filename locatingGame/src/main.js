@@ -612,8 +612,8 @@ function locatingGame() {
 
                     data.forEach((d, i) => {
                         // console.debug(d);
-                        // let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
-                        let enemy = ['dog'];//==之後隨機抽敵人組
+                        let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
+                        // let enemy = [];//==之後隨機抽敵人組
                         let enemyStats = {};
 
                         enemy.forEach((key) => {
@@ -1778,7 +1778,7 @@ function locatingGame() {
                     }
 
                     //=== 進王關
-                    if (1) {//gameResult.bossRoom
+                    if (gameResult.bossRoom) {//gameResult.bossRoom
                         const backgroundArr = Object.keys(BackGroundResources.boss);
                         let background = backgroundArr[getRandom(backgroundArr.length)];
 

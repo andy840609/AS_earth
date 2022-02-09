@@ -12,7 +12,7 @@ const datafileDir = 'data/datafile/';
 const GameObjectStats = {
     creature: {
         dog: {
-            HP: 10000,
+            HP: 1000,
             attackPower: 8,
             movementSpeed: 200,
             jumpingPower: 0,
@@ -46,8 +46,8 @@ const GameObjectStats = {
             attackRange: 55,
             bulletSize: [120, 130],
             knockBackSpeed: 250,//==擊退時間固定200ms,這個速度越大擊退越遠
-            manaCost: 20,
-            manaRegen: 10,//per 10 ms(game update per 10ms)0.1
+            manaCost: 10,
+            manaRegen: 0.1,//per 10 ms(game update per 10ms)0.1
             HP: 150,
             maxHP: 150,
             MP: 60,
@@ -131,10 +131,10 @@ const BackGroundResources = {
             animType: [1],
         },
         tutorial: {
-            static: ['background.png', 'trees.png', 'ground.png'],
+            static: ['background1.png', 'background2.png', 'trees.png', 'ground.png'],
             dynamic: ['birds.png'],
             depth: {
-                static: [0, 2, 3],
+                static: [0, 0, 2, 3],
                 dynamic: [1],
             },
             animType: [3],
@@ -1115,7 +1115,7 @@ const Player = new Phaser.Class({
 
         let currentAnims = this.anims.getName();
         let isBusy =
-            ((currentAnims === 'player_runAttack' || currentAnims === 'player_jumpAttack') && this.anims.isPlaying)
+            ((currentAnims === 'player_runAttack' || (currentAnims === 'player_jumpAttack') && !this.body.touching.down) && this.anims.isPlaying)
             || (currentAnims === 'player_doubleJump' && !this.body.touching.down);
 
         if (cursors[controllCursor['left']].isDown) {
@@ -1132,8 +1132,8 @@ const Player = new Phaser.Class({
         }
         else {
             this.setVelocityX(0);
-            // console.debug(this.anims.getName())
             let currentAnims = this.anims.getName();
+            if (isBusy) return;
             if ((!this.anims.isPlaying ||
                 (currentAnims === 'player_run' || currentAnims === 'player_runAttack')) && this.body.touching.down)
                 this.anims.play('player_idle', true);
@@ -2446,6 +2446,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                                 mode: 2,// 0|'none'|1|'word'|2|'char'|'character'
                                 width: config.width
                             },
+                            lineSpacing: 10,
                             align: 'left',
                             padding: padding,
                         }));
@@ -2460,7 +2461,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                         new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 0, undefined).setStrokeStyle(2, COLOR_LIGHT, 1)
                     ));
 
-
+                // console.debug(key);
                 if (key) {
                     let items = data.category[key];
                     let capKey = key.charAt(0).toUpperCase() + key.slice(1);
@@ -2551,8 +2552,10 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
 
                 }
                 else {
-
-                    Sizer
+                    //==intro
+                    let intro = new RexPlugins.UI.Sizer(scene, {
+                        orientation: scrollMode,
+                    })
                         .add(
                             getText(data.intro), // child
                             {
@@ -2562,6 +2565,20 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                                 expand: true,
                             }
                         )
+                        ;
+
+
+                    Sizer
+                        // .add(
+                        //     getText(data.intro), // child
+                        //     {
+                        //         proportion: 1,
+                        //         align: 'center',
+                        //         padding: padding,
+                        //         expand: true,
+                        //     }
+                        // )
+                        .add(intro)
                 };
 
                 return Sizer;
@@ -2603,7 +2620,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
             return new RexPlugins.UI.Label(scene, {
                 background: scene.add.existing(new RexPlugins.UI.RoundRectangle(scene, 0, 0, 100, 40, 20, backgroundColor)),
                 text: scene.add.text(0, 0, text, {
-                    fontSize: '24px',
+                    fontSize: '48px',
                     padding: padding,
                 }),
                 space: {
@@ -2617,7 +2634,6 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
         };
         //===關閉面板按鈕
         var createFooter = (scene, footerItem) => {
-
             var createButton = (text) => {
                 return new RexPlugins.UI.Label(scene, {
                     width: 100,
@@ -2625,16 +2641,16 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                     background: scene.add.existing(
                         new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 15, COLOR_LIGHT)),
                     text: scene.add.text(0, 0, gameData.localeJSON.UI[text], {
-                        fontSize: 18
+                        fontSize: 18,
+                        padding: padding
                     }),
                     align: 'center',
                     space: {
                         left: 10,
                         right: 10,
-                    }
+                    },
                 });
             };
-
 
             var buttons = new RexPlugins.UI.Buttons(scene, {
                 orientation: scrollMode,
@@ -2807,7 +2823,8 @@ class RexForm extends RexPlugins.UI.Sizer {
                     space: {
                         left: 10,
                         right: 10,
-                    }
+                    },
+
                 });
             };
 

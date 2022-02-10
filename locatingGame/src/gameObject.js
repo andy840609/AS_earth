@@ -23,12 +23,18 @@ const GameObjectStats = {
             movementSpeed: 200,
             jumpingPower: 200,
         },
-        dove: {
-            HP: 300,
-            attackPower: 5,
-            movementSpeed: 500,
-            jumpingPower: 0,
+        zombie: {
+            HP: 800,
+            attackPower: 10,
+            movementSpeed: 200,
+            jumpingPower: 200,
         },
+        // dove: {
+        //     HP: 300,
+        //     attackPower: 5,
+        //     movementSpeed: 500,
+        //     jumpingPower: 0,
+        // },
         boss: {
             HP: 1000,
             attackPower: 30,
@@ -321,7 +327,7 @@ const Bullet = new Phaser.Class({
     initialize:
         function Bullet(scene) {
             Phaser.Physics.Arcade.Sprite.call(this, scene, 0, 0);
-            this.setDepth(scene.Depth.bullet);
+            scene.Depth ? this.setDepth(scene.Depth.bullet) : false;
         },
 
     fire: function (attacker, attackSpeed, attackRange = false, onXaxis = true) {
@@ -465,7 +471,6 @@ const Enemy = new Phaser.Class({
             this.stats = stats;
 
             //==HP bar
-            // this.HPbar = scene.scene.add(null, new UIScene('statsBar', scene, this), true).HPbar;
             scene.scene.add(null, new UIScene('statsBar', scene, this), true);
 
             // this.setCollideWorldBounds(true);
@@ -1132,7 +1137,6 @@ const Player = new Phaser.Class({
         }
         else {
             this.setVelocityX(0);
-            let currentAnims = this.anims.getName();
             if (isBusy) return;
             if ((!this.anims.isPlaying ||
                 (currentAnims === 'player_run' || currentAnims === 'player_runAttack')) && this.body.touching.down)
@@ -1227,7 +1231,6 @@ const Player = new Phaser.Class({
         let cursors = scene.cursors;
         let controllCursor = scene.gameData.controllCursor;
 
-
         this.attackEffect.setPosition(this.x, this.y);
         if (cursors[controllCursor['attack']].isDown) {//==按著連續攻擊
             let currentAnims = this.anims.getName();
@@ -1268,7 +1271,6 @@ const Player = new Phaser.Class({
             this.anims.play(attackAnims);
 
         };
-
 
     },
     //==受擊
@@ -2111,7 +2113,7 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                 controllCursor = gameScene.gameData.controllCursor,
                 keyObj = cursors[controllCursor['attack']];  // Get key object
 
-            keyObj.on('down', () => this.emit('pointerdown'));
+            keyObj.on('down', () => !scene.scene.isPaused() ? this.emit('pointerdown') : false);
 
         };
 
@@ -2344,6 +2346,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
     constructor(scene, config, resolve) {
 
         var gameData = config.gameData,
+            localeJSON = gameData.localeJSON,
             scrollMode = config.scrollMode ? config.scrollMode : 0,
             panelType = {//===panelType暫定: 0:緣由 1:設定 2:連結 3:道具
                 'intro': 0,
@@ -2359,7 +2362,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
             case 0:
                 data = {
                     name: panelName,
-                    intro: gameData.localeJSON.Intro,
+                    intro: localeJSON.Intro['intro'],
                     category: {}
                 };
                 footerItem = ['close'];
@@ -2436,21 +2439,39 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
 
         var createPanel = (scene, data) => {
             var createTable = (scene, key = null) => {
-                var getText = (text, BBText = false) => {
-                    return scene.add.existing(
+                var IsURLKey = function (key) {
+                    return (key.substring(0, 4) === 'url:');
+                };
+                var GetURL = function (key) {
+                    return key.substring(4, key.length);
+                };
+                var getText = (text, major = true) => {
+                    let BBCodeText = scene.add.existing(
                         new RexPlugins.UI.BBCodeText(scene, 0, 0, text, {
-                            // fixedWidth:200,
-                            fontSize: '36px',
+                            fontSize: major ? '36px' : '18px',
                             // color: '#272727',
                             wrap: {
                                 mode: 2,// 0|'none'|1|'word'|2|'char'|'character'
-                                width: config.width
+                                width: (major ? 1 : 0.6) * config.width
                             },
-                            lineSpacing: 10,
+                            underline: {
+                                color: '#9D9D9D',  // css string, or number
+                                thickness: 2,
+                                offset: 4
+                            },
+                            lineSpacing: major ? 10 : 5,
                             align: 'left',
                             padding: padding,
-                        }));
+                        }))
 
+                    if (!major)
+                        BBCodeText
+                            .setInteractive()
+                            .on('areadown', function (key) {
+                                if (IsURLKey(key)) window.open(GetURL(key), '_blank');
+                            });
+
+                    return BBCodeText;
                 };
 
                 const Sizer = new RexPlugins.UI.Sizer(scene, {
@@ -2506,30 +2527,6 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                             return gridItem;
                         }
                     });
-                    // items.forEach((item, i) => {
-                    //     let col = i % columns,
-                    //         row = (i - col) / columns;
-
-                    //     // console.debug(col, row);
-
-                    //     table.add(
-                    //         createIcon(scene, item.name, iconSize, iconSize),
-                    //         {
-                    //             column: col,
-                    //             row: row,
-                    //             align: 'top',
-                    //             padding: {
-                    //                 left: 10,
-                    //                 right: 10,
-                    //                 top: 100,
-                    //                 bottom: 100
-                    //             },
-                    //             expand: true,
-                    //             // key: undefined
-                    //         }
-                    //     );
-
-                    // });
 
                     Sizer
                         .add(
@@ -2552,33 +2549,127 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
 
                 }
                 else {
-                    //==intro
-                    let intro = new RexPlugins.UI.Sizer(scene, {
-                        orientation: scrollMode,
-                    })
-                        .add(
-                            getText(data.intro), // child
-                            {
-                                proportion: 1,
-                                align: 'center',
-                                padding: padding,
-                                expand: true,
-                            }
-                        )
-                        ;
+                    //==sizer中內容    
+                    let content = null;
+
+                    switch (panelType) {
+                        case 0://==緣由
+                            const
+                                introImgs = ['epicenter', 'PSwave'],//震央圖,PS波圖
+                                introLinks = [
+                                    'https://tec.earth.sinica.edu.tw/glossaryquery.php',
+                                    'http://qcntw.earth.sinica.edu.tw/index.php/eqk-game/location-game'
+                                ],
+                                introImgW = config.width * 0.5;
+
+                            content = new RexPlugins.UI.Sizer(scene, {
+                                orientation: 1,
+                            })
+                                .add(
+                                    getText(data.intro), // child
+                                    {
+                                        proportion: 0,
+                                        align: 'center',
+                                        padding: padding,
+                                        expand: true,
+                                    }
+                                );
+
+                            introImgs.forEach((name, i) => {
+                                let img = scene.add.image(0, 0, name);
+                                img
+                                    .setScale(introImgW / img.width)
+                                    .setInteractive()
+                                    .on('pointerdown', () => {
+                                        window.open(introLinks[i], '_blank');
+                                    });
+
+                                content
+                                    .add(
+                                        img,
+                                        {
+                                            proportion: 0,
+                                            align: 'center',
+                                            padding: { top: 50 },
+                                            expand: false,
+                                        }
+                                    ).add(
+                                        getText(localeJSON.Intro[name], false),
+                                        {
+                                            proportion: 0,
+                                            align: 'center',
+                                            padding: { top: 10 },
+                                            expand: false,
+                                        }
+                                    );
+
+                            });
 
 
-                    Sizer
-                        // .add(
-                        //     getText(data.intro), // child
-                        //     {
-                        //         proportion: 1,
-                        //         align: 'center',
-                        //         padding: padding,
-                        //         expand: true,
-                        //     }
-                        // )
-                        .add(intro)
+                            break;
+                        case 2://==連結
+                            const
+                                sites = ['GDMS', 'TAPS'],
+                                siteLinks = [
+                                    'https://gdmsn.cwb.gov.tw/index.php',
+                                    'https://taps.earth.sinica.edu.tw/zh-TW/'
+                                ],
+                                siteImgW = config.width * 0.6,
+                                siteImgH = config.height * 0.5;
+
+                            const
+                                columns = 2,
+                                rows = sites.length;
+                            const iconSize = 40;
+
+                            content = new RexPlugins.UI.GridSizer(scene, {
+                                column: columns,
+                                row: rows,
+                                // rowProportions: 2,
+                                // columnProportions: 0,// [0, 1, 2]
+                                space: {
+                                    top: 50,
+                                    bottom: 50,
+                                    left: 10,
+                                    right: 10,
+                                    column: 10,
+                                    row: 50
+                                },
+                                createCellContainerCallback: function (scene, col, row, config) {
+
+                                    Object.assign(config, {
+                                        align: 'top',
+                                        padding: {
+                                            left: 10,
+                                            right: 10,
+                                            top: 0,
+                                            bottom: 0
+                                        },
+                                        expand: true,
+                                    });
+
+                                    let cell = false;
+                                    if (col == 0) {
+                                        cell = scene.add.image(0, 0, sites[row]);
+                                        cell
+                                            .setScale(siteImgW / cell.width, siteImgH / cell.height)
+                                            .setInteractive()
+                                            .on('pointerdown', () => {
+                                                window.open(siteLinks[row], '_blank');
+                                            });
+                                    }
+                                    else {
+                                        cell = getText(sites[row]);
+                                    };
+
+                                    return cell;
+                                }
+                            });
+                            break;
+                    };
+
+                    Sizer.add(content);
+
                 };
 
                 return Sizer;
@@ -2599,13 +2690,14 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                 space: { item: 10 }
             });
 
-
-            if (!panelType)
+            //==緣由等文字內容
+            if (panelType == 0 || panelType == 2)
                 sizer.add(
                     createTable(scene), // child
                     { expand: true },
                 );
 
+            //==設定中物品
             Object.keys(data.category).forEach(item => {
                 sizer.add(
                     createTable(scene, item), // child

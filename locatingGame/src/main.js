@@ -295,7 +295,7 @@ function locatingGame() {
                     },
                     sidekick: {
                         type: sidekick,
-                        lineStage: [1, 0],//==第2-0句
+                        lineStage: [0, 0],//==第2-0句
                         doneTalking: false,
                         stopHotkey: false,//==對話完空白鍵不再出現對話（只能滑鼠點）
                     },
@@ -317,24 +317,24 @@ function locatingGame() {
                     GameData.localeJSON = await getLanguageJSON();
 
                     //==test
-                    gameDisplay(true);
-                    let newGameData = await new Promise((resolve, reject) => {
-                        const config = Object.assign(getPhaserConfig(width, height), {
-                            scene: new GameStartScene(GameData, resolve),
-                        });
-                        new Phaser.Game(config);
-                    });
+                    // gameDisplay(true);
+                    // let newGameData = await new Promise((resolve, reject) => {
+                    //     const config = Object.assign(getPhaserConfig(width, height), {
+                    //         scene: new GameStartScene(GameData, resolve),
+                    //     });
+                    //     new Phaser.Game(config);
+                    // });
 
-                    if (GameData.locale != newGameData.locale)
-                        GameData.localeJSON = await getLanguageJSON();
-                    Object.assign(GameData, newGameData);
-                    gameDisplay(false);
+                    // if (GameData.locale != newGameData.locale)
+                    //     GameData.localeJSON = await getLanguageJSON();
+                    // Object.assign(GameData, newGameData);
+                    // gameDisplay(false);
                     //==test
 
                     initMap();
 
                     //==test
-                    // gameStart('defend');
+                    gameStart('defend');
                     // gameStart('dig');
                     //==test
                 };
@@ -607,13 +607,13 @@ function locatingGame() {
                 async function addStation() {
                     // console.debug(data);
                     const backgroundArr = Object.keys(BackGroundResources.defend);
-                    // let markerArr = [],
-                    //     circleArr = [];
-
+                    const enemyArr = Object.keys(GameObjectStats.creature).filter(c => c != 'boss' && c != 'zombie');
+                    // console.debug(enemyArr);
                     data.forEach((d, i) => {
                         // console.debug(d);
-                        let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
+                        // let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
                         // let enemy = [];//==之後隨機抽敵人組
+                        let enemy = [enemyArr[getRandom(enemyArr.length)]];
                         let enemyStats = {};
 
                         enemy.forEach((key) => {

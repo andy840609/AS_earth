@@ -14,6 +14,12 @@
         "chooseBGcolor": "選擇背景顏色",
         "avatarConfirm": "確定是\t這個名字嗎?",
         "avatarErro": "名字不能爲空白",
+        "tutorial1": "按下\t控制角色移動",
+        "tutorial2": "按下\t攻擊",
+        "tutorial3": "按下\t撿起/放下",
+        "tutorial4": "zoom",
+        "tutorial5": "PS",
+        "stepText": "步驟 \t / \t",
         "skip": "跳過",
         "previous": "上一個",
         "next": "下一個",
@@ -330,5 +336,10 @@
             "answer": "300"
         }
     },
-    "Intro": "地震通常是因為地底下的斷層面兩側突然錯動所引起，這個錯動起始點的位置稱為震源，而震源垂直投影到地面的位置就叫做震央。在這個遊戲裡，震源位置就是大魔王作亂的地方，你的任務就是找出大魔王的所在地，並回答正確的地震知識就能擊敗牠完成任務，並取得任務證書，我們的地震防災就靠你了！加油！"
+    "Intro": {
+        "intro": "地震通常是因為地底下的斷層面兩側突然錯動所引起，這個錯動起始點的位置稱為震源，而震源垂直投影到地面的位置就叫做震央。在這個遊戲裡，震源位置就是大魔王作亂的地方，你的任務就是找出大魔王的所在地，為此我們需要先到地震測站獲得情報，藉由P波(Primary wave, 首達波)和S波(Secondary, 次達波)的到時差來估計震央距，當蒐集到三個測站的震央距時就能找出震央的可能位置，有了震央位置就能尋找位於地底下的震源，找到大魔王居住的震源城並回答正確的地震知識就能擊敗牠完成任務取得任務證書，我們的地震防災就靠你了！加油！",
+        "epicenter": "[size=26]▲[/size]地震發生時，地震震源向上垂直投影到地面的位置，也就是地面距震源最近的地方。\n（ 資料來源：臺灣地震科學中心 [size=16][color=blue][u=blue][area=url:https://tec.earth.sinica.edu.tw/glossaryquery.php]https://tec.earth.sinica.edu.tw/glossaryquery.php[/area][/u][/color][/size] ）",
+        "PSwave": "[size=26]▲[/size]P波到達的時間通常是在垂直向波形中，最先出現明顯大幅震盪的位置；而S波到達的時間則是在東西向或南北向波形上，振幅開始變得較大且略為變疏的地方。圖爲桃園縣爺亨測站所記錄的一筆波形資料，作為挑選P波與S波的範例，地震位於125公里外的花蓮外海。\n（ 資料來源：臺灣地震科學雲端學習平台 [size=16][color=blue][u=blue][area=url:http://qcntw.earth.sinica.edu.tw/index.php/eqk-game/location-game]http://qcntw.earth.sinica.edu.tw/index.php/eqk-game/location-game[/area][/u][/color][/size] ）",
+        "epicenterLink": ""
+    }
 }

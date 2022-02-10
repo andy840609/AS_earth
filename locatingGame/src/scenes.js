@@ -133,7 +133,8 @@ class UIScene extends Phaser.Scene {
                             })
                             .on('pointerdown', () => {
                                 let key = button + 'UI';
-                                if (this.scene.isActive(key))//==remove UI
+                                // console.debug();
+                                if (this.game.scene.getScene(key))//==remove UI
                                     this.scene.remove(key);
                                 else//==create UI
                                     this.scene.add(null, new UIScene(key, this), true);
@@ -229,17 +230,18 @@ class UIScene extends Phaser.Scene {
                 break;
             case 'pauseUI':
                 // =When the pause button is pressed, we pause the game and time scene
-
                 const timerUI = gameScene.game.scene.getScene('timerUI');
-
+                const RexUI = gameScene.game.scene.getScene('RexUI');
+                const doctorUI = gameScene.name != 'boss' ? gameScene.game.scene.getScene('doctorUI') : null;
+                const detectorUI = gameScene.name != 'boss' ? gameScene.game.scene.getScene('detectorUI') : null;
 
                 timerUI.gameTimer.paused = true;
                 timerUI.scene.pause();
-                gameScene.scene.pause();
+                RexUI.scene.pause();
 
-                const hasDoctorUI = (gameScene.name != 'boss');
-                const doctorUI = gameScene.game.scene.getScene('doctorUI');
-                if (hasDoctorUI) doctorUI.scene.pause();
+                gameScene.scene.pause();
+                if (doctorUI) doctorUI.scene.pause();
+                if (detectorUI) detectorUI.scene.pause();
 
                 preload = () => { };
                 create = () => {
@@ -294,12 +296,14 @@ class UIScene extends Phaser.Scene {
                                         gameScene.scene.resume();
                                         timerUI.scene.resume();
                                         timerUI.gameTimer.paused = false;
-                                        if (hasDoctorUI) doctorUI.scene.resume();
+                                        RexUI.scene.resume();
+                                        if (doctorUI) doctorUI.scene.resume();
+                                        if (detectorUI) detectorUI.scene.resume();
                                         this.scene.remove();
                                         break;
 
                                     case 'tutorial':
-
+                                        this.scene.add(null, new UIScene('tutorial', this), true);
                                         break;
 
                                     case 'exit':
@@ -345,7 +349,9 @@ class UIScene extends Phaser.Scene {
                         gameScene.scene.resume();
                         timerUI.scene.resume();
                         timerUI.gameTimer.paused = false;
-                        if (hasDoctorUI) doctorUI.scene.resume();
+                        RexUI.scene.resume();
+                        if (doctorUI) doctorUI.scene.resume();
+                        if (detectorUI) detectorUI.scene.resume();
                     });
                 };
                 update = () => { };
@@ -1463,7 +1469,7 @@ class UIScene extends Phaser.Scene {
 
                                     //  Health               
                                     let p = gameObj.stats.HP / gameObj.stats.maxHP;
-                                    // console.debug(p);
+                                    // console.debug(gameObj.stats, p);
 
                                     if (p < 0) p = 0;
                                     else if (p <= 0.3) bar.fillStyle(0xff0000);
@@ -1472,7 +1478,7 @@ class UIScene extends Phaser.Scene {
 
                                     let healthW = (barW - barMargin * 2) * p;
                                     bar.fillRect(-barW * 0.5 + barMargin, barMargin, healthW, barH - barMargin * 2);
-
+                                    // console.debug(healthW)
                                 },
                             });
 
@@ -1589,7 +1595,7 @@ class UIScene extends Phaser.Scene {
                                 x: DLconfig.dialogX,
                                 y: DLconfig.dialogY * 0.5,
                                 width: width * 0.6,
-                                height: height * 0.5,
+                                height: height * 0.8,
                                 panelType: panelType,
                                 gameData: gameScene.gameData,
                             }, resolve)
@@ -1890,9 +1896,13 @@ class UIScene extends Phaser.Scene {
                 break;
             case 'tutorial'://==教學關
                 const tutorialBG = 'tutorial';
+                const pauseUI = gameScene.name != 'GameStart' ? gameScene.game.scene.getScene('pauseUI') : null;
+                const iconBar = gameScene.name != 'GameStart' ? gameScene.game.scene.getScene('iconBar') : null;
+                if (pauseUI) pauseUI.scene.pause();
+                if (iconBar) iconBar.scene.pause();
+
                 preload = () => {
                     var tutorialWindow = () => {
-
                         let dir = assetsDir + 'gameObj/environment/background/' + tutorialBG + '/';
                         let resources = BackGroundResources.GameStart[tutorialBG];
 
@@ -1905,7 +1915,15 @@ class UIScene extends Phaser.Scene {
                         });
 
                     };
+                    var controller = () => {
+                        const UIDir = assetsDir + 'ui/game/tutorial/';
+                        this.load.image('startButton', UIDir + 'startButton.png');
+                        this.load.image('arrow', UIDir + 'arrow.png');
+                        this.load.spritesheet('sprinkle', UIDir + 'sprinkle.png', { frameWidth: 300, frameHeight: 300 });
+
+                    };
                     var player = () => {
+                        if (gameScene.name != 'GameStart') return;
                         const gameObjDir = assetsDir + 'gameObj/';
                         var sprite = () => {
                             const playerRole = gameScene.gameData.playerRole;
@@ -1951,11 +1969,24 @@ class UIScene extends Phaser.Scene {
                         sprite();
 
                     };
+                    var dummy = () => {
+                        const dummyDir = assetsDir + 'gameObj/enemy/zombie/';
+                        var sprite = () => {
+                            const frameObj = { frameWidth: 96, frameHeight: 128 };
+                            this.load.spritesheet('dummy_death', dummyDir + 'death.png', frameObj);
+                            this.load.spritesheet('dummy_hurt', dummyDir + 'hurt.png', frameObj);
+                            this.load.spritesheet('dummy_idle', dummyDir + 'idle.png', frameObj);
+                        };
+                        sprite();
+                    };
                     tutorialWindow();
+                    controller();
                     player();
+                    dummy();
                 };
                 create = () => {
                     var backgroundImg = () => {
+                        if (gameScene.name != 'GameStart') return;
                         let img = this.add.image(width * 0.5, height * 0.5, 'startScene');
                         img.setScale(width / img.width, height / img.height);
                     };
@@ -2030,61 +2061,261 @@ class UIScene extends Phaser.Scene {
                             });
                         };
                         var button = () => {
-                            const buttons = ['skip', 'previous', 'next'];
-                            let buttonScale = 0.1;
+                            const buttons = [gameScene.name == 'GameStart' ? 'skip' : 'close', 'previous', 'next'];
 
+                            this.buttonGroups = {
+                                buttonWobbleTween: null,
+                                buttonWobble: (button, start = true) => {
+                                    const wobbleDuration = 400;
+                                    // console.debug(button)
+                                    if (start)
+                                        this.buttonGroups.buttonWobbleTween = this.tweens.add({
+                                            targets: button.getChildren(),
+                                            x: { start: t => t.x, to: t => t.x + 20 * button.animsDir },
+                                            duration: wobbleDuration,
+                                            yoyo: true,
+                                            repeat: -1,
+                                            ease: 'Linear',
+                                        });
+                                    else {
+                                        if (this.buttonGroups.buttonWobbleTween)
+                                            this.buttonGroups.buttonWobbleTween.remove();
+                                        this.buttonGroups.buttonWobbleTween = null;
+                                        button.setX(button.originXPos);
+                                    };
+
+                                },
+                            };
                             buttons.forEach((name, i) => {
-                                if (i != 0) return;
-                                let x = (width + tutorialW) * 0.5 - 80,
-                                    y = (height + tutorialH) * 0.5 + 50;
+                                let x, y, img, imgScale;
+                                switch (i) {
+                                    case 0:
+                                        x = (width + tutorialW) * 0.5 - 80;
+                                        y = (height + tutorialH) * 0.5 + 50;
+                                        img = 'startButton';
+                                        imgScale = 0.1;
+                                        break;
+                                    case 1:
+                                        x = (width - tutorialW) * 0.5;
+                                        y = height * 0.5;
+                                        img = 'arrow';
+                                        imgScale = 0.3;
+                                        break;
+                                    case 2:
+                                        x = (width + tutorialW) * 0.5;
+                                        y = height * 0.5;
+                                        img = 'arrow';
+                                        imgScale = 0.3;
+                                        break;
+                                };
 
-                                let button = this.add.image(x, y, 'startButton');
-                                let buttonText = this.add.text(x, y, UItextJSON[name], { font: '20px Arial', fill: '#ffffff' })
-                                    .setOrigin(0.5);
+                                let button = this.add.image(x, y, img).setDepth(Depth.UI);
+                                let buttonText = this.add.text(x, y, UItextJSON[name], { font: '24px Arial', fill: '#000000' })
+                                    .setOrigin(0.5)
+                                    .setDepth(Depth.UI);
 
                                 button
-                                    .setScale(buttonScale)//menu.width / 4 / menuButton.width
+                                    .setScale(imgScale)//menu.width / 4 / menuButton.width
+                                    .setFlipX(i == 1)
+                                    // .setTint(0xFFFF37)
                                     .setOrigin(0.5)
                                     .setInteractive({ cursor: 'pointer' })
                                     .on('pointerover', function () {
                                         let scale = 1.2;
-                                        this.setScale(buttonScale * scale);
+                                        this.setScale(imgScale * scale);
                                         buttonText
                                             .setScale(scale)
-                                            .setTint(0xFFFF37);
+                                            .setColor('#750000');
                                     })
                                     .on('pointerout', function () {
-                                        this.setScale(buttonScale);
+                                        this.setScale(imgScale);
                                         buttonText
                                             .setScale(1)
-                                            .clearTint();
+                                            .setColor('#000000');
                                     })
                                     .on('pointerdown', () => {
-                                        console.debug(name);
+                                        // console.debug(name);
                                         switch (name) {
                                             case 'skip':
                                                 gameScene.game.destroy(true, false);
                                                 gameScene.resolve(gameScene.gameData);
                                                 break;
-
+                                            case 'close':
+                                                this.scene.remove();
+                                                this.dummy.statsBarUI.scene.remove();
+                                                if (pauseUI) pauseUI.scene.resume();
+                                                if (iconBar) iconBar.scene.resume();
+                                                break;
+                                            case 'next':
+                                                if (this.stepObj.nowStep == this.stepObj.maxStep) return;
+                                                this.stepObj.nowStep++;
+                                                this.stepHandler();
+                                                break;
+                                            case 'previous':
+                                                if (this.stepObj.nowStep == 1) return;
+                                                this.stepObj.nowStep--;
+                                                this.stepHandler();
+                                                break;
                                         };
                                     });
 
-
+                                this.buttonGroups[name] = this.add.group().add(button).add(buttonText);
+                                this.buttonGroups[name].originXPos = x;
+                                this.buttonGroups[name].animsDir = (i % 2 == 0 ? -1 : 1);
                             });
 
+                        };
+                        var text = () => {
+                            //==步驟
+                            this.stepText = this.add.text(width * 0.5, (height + tutorialH) * 0.5 + 50, '',
+                                {
+                                    fontSize: '24px',
+                                    fill: '#000000',
+                                    padding: {
+                                        top: 3,
+                                        bottom: 3,
+                                    },
+                                })
+                                .setOrigin(0.5)
+                                .setDepth(Depth.UI + 1);
 
+                            //==目標
+                            this.title = this.add.text(width * 0.5, height * 0.3, '',
+                                {
+                                    fontSize: '48px',
+                                    fill: '#000000',
+                                    shadow: {
+                                        offsetX: 5,
+                                        offsetY: 5,
+                                        color: '#9D9D9D',
+                                        blur: 3,
+                                        stroke: true,
+                                        fill: true
+                                    },
+                                    padding: {
+                                        top: 3,
+                                        bottom: 3,
+                                    },
+                                })
+                                .setOrigin(0.5)
+                                .setDepth(Depth.UI + 1);
+
+                            Object.assign(this.title, {
+                                showingTween: null,
+                                showHandler: () => {
+                                    const showDuration = 1000;
+                                    if (this.title.showingTween) this.title.showingTween.remove();
+                                    this.title.showingTween = this.tweens.add({
+                                        targets: this.title,
+                                        alpha: { start: 0, to: 1 },
+                                        duration: showDuration,
+                                        repeat: 0,
+                                        ease: 'Linear.easeOut',
+                                    });
+                                },
+                            });
+
+                        };
+                        var stepHandler = () => {
+                            this.stepObj = { nowStep: 1, maxStep: 5, };
+                            this.stepClear = null;
+                            this.stepHandler = (flash = true) => {
+                                let step = this.stepObj.nowStep,
+                                    titleText = UItextJSON['tutorial' + step],
+                                    stepText = UItextJSON['stepText'].replace('\t', this.stepObj.nowStep).replace('\t', this.stepObj.maxStep);
+                                // console.debug(this.buttonGroups)
+                                switch (step) {
+                                    case 1:
+                                        let upKey = controllCursor['up'],
+                                            leftKey = controllCursor['left'],
+                                            rightKey = controllCursor['right'];
+                                        titleText = titleText.replace('\t', `${leftKey},${rightKey},${upKey}`);
+
+                                        this.buttonGroups['previous'].setAlpha(0);
+
+                                        this.stepClear = [false, false, false];//==三個按鍵是否被按過
+                                        break;
+                                    case 2:
+                                        let attackKey = controllCursor['attack'];
+                                        titleText = titleText.replace('\t', attackKey);
+
+                                        this.buttonGroups['previous'].setAlpha(1);
+
+                                        this.dummy
+                                            .enableBody(true, width * 0.7, height * 0.6, true, true)
+                                            .play('dummy_idle');
+
+
+                                        this.dummy.stats.HP = this.dummy.stats.maxHP;
+
+                                        this.stepClear = false;//==dummy是否受擊
+                                        break;
+                                    case 3:
+                                        let downKey = controllCursor['down'];
+                                        titleText = titleText.replace('\t', downKey);
+                                        break;
+                                    case 4:
+                                        // titleText = titleText.replace('\t', `${leftKey},${rightKey},${upKey}`);
+                                        this.buttonGroups['next'].setAlpha(1);
+                                        break;
+                                    case 5:
+                                        // titleText = titleText.replace('\t', `${leftKey},${rightKey},${upKey}`);
+                                        this.buttonGroups['next'].setAlpha(0);
+                                        break;
+                                };
+
+                                this.title.showHandler();
+                                this.title.setText(titleText);
+                                this.stepText.setText(stepText);
+
+                                if (flash) {
+                                    this.cameras.main.flashHandler();
+                                    this.player.attackEffect.anims.remove();
+                                    this.player.setPosition(this.physics.world.bounds.left, height * 0.5);
+
+                                    this.buttonGroups.buttonWobble(this.buttonGroups['next'], false);
+                                    if (step != 2) {
+                                        this.dummy.disableBody(true, true);
+                                        this.dummy.HPbar.setAlpha(0);
+                                    };
+
+                                };
+
+                            };
+
+                            //==過關撒花
+                            var animsCreate = () => {
+                                this.anims.create({
+                                    key: 'sprinkle',
+                                    frames: this.anims.generateFrameNumbers('sprinkle'),
+                                    frameRate: 4,
+                                    repeat: -1,
+                                });
+                            };
+                            animsCreate();
+                            this.sprinkle = this.add.sprite(width * 0.5, height * 0.5, 'sprinkle')
+                                .setDepth(Depth.UI)
+                                .setVisible(false);
+                            this.on('stepClear', () => {
+                                console.debug('stepClear')
+                            });
+                            this.emit('stepClear')
+                            this.stepHandler(false);
                         };
                         scene();
                         button();
+                        text();
+                        stepHandler();
                     };
                     var initCursors = () => {
+                        if (gameScene.name != 'GameStart') return;
                         //===init cursors
                         this.scene.add(null, new UIScene('cursors', this), true);
                     };
                     var initPlayer = () => {
                         //==anims
                         var animsCreate = () => {
+                            if (gameScene.name != 'GameStart') return;
                             this.anims.create({
                                 key: 'player_idle',
                                 frames: this.anims.generateFrameNumbers('player_idle'),
@@ -2222,20 +2453,20 @@ class UIScene extends Phaser.Scene {
                             .play('player_idle');
 
                         this.player.body.setGravityY(500);
+
                         // console.debug(this.physics.world.setBoundsCollision(false, true, true, true));
                         Object.assign(this.player, {
                             stats: GameObjectStats.player[gameScene.gameData.playerRole],
                             //=處理轉向
                             filpHandler: function (filp) {
                                 this.setFlipX(filp);
-                                // this.body.offset.x = (filp ? 26 : 4);
-                                // if (this.scene.name != "boss") this.attackEffect.setFlipX(filp);
-
-                                // this.bullets.originX = filp;
+                                this.attackEffect.setFlipX(filp);
+                                this.bullets.originX = filp;
                             },
                             doublejumpFlag: false,
                             //==移動
                             movingHadler: function (scene) {
+                                let nowStep = scene.stepObj.nowStep;
                                 let cursors = gameScene.cursors;
                                 let currentAnims = this.anims.getName();
                                 let isBusy =
@@ -2243,6 +2474,7 @@ class UIScene extends Phaser.Scene {
                                     || (currentAnims === 'player_doubleJump' && !this.body.touching.down);
 
                                 if (cursors[controllCursor['left']].isDown) {
+                                    if (nowStep == 1) scene.stepClear[0] = true;
                                     this.setVelocityX(-this.stats.movementSpeed);
                                     if (!this.flipX) this.filpHandler(true);
 
@@ -2254,6 +2486,7 @@ class UIScene extends Phaser.Scene {
 
                                 }
                                 else if (cursors[controllCursor['right']].isDown) {
+                                    if (nowStep == 1) scene.stepClear[1] = true;
                                     this.setVelocityX(this.stats.movementSpeed);
                                     if (this.flipX) this.filpHandler(false);
 
@@ -2265,8 +2498,7 @@ class UIScene extends Phaser.Scene {
                                 }
                                 else {
                                     this.setVelocityX(0);
-                                    // console.debug(this.anims.getName())
-                                    let currentAnims = this.anims.getName();
+                                    if (isBusy) return;
                                     if ((!this.anims.isPlaying ||
                                         (currentAnims === 'player_run' || currentAnims === 'player_runAttack')) && this.body.touching.down)
                                         this.anims.play('player_idle', true);
@@ -2276,6 +2508,7 @@ class UIScene extends Phaser.Scene {
                                 if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['up']])) {
                                     //==跳
                                     if (this.body.touching.down) {
+                                        if (nowStep == 1) scene.stepClear[2] = true;
                                         this.setVelocityY(-this.stats.jumpingPower);
                                         this.anims.play('player_jump', true);
                                         this.doublejumpFlag = true;
@@ -2294,12 +2527,17 @@ class UIScene extends Phaser.Scene {
                                         this.anims.play('player_jump', true);
                                     };
                                 };
+                                // console.debug(scene.stepClear)
+                                //==教學過關判斷
+                                if (nowStep == 1 && !scene.buttonGroups.buttonWobbleTween)
+                                    if (scene.stepClear.every(v => v)) {
+                                        scene.buttonGroups.buttonWobble(scene.buttonGroups['next']);
+                                    };
 
                             },
                             //==撿起
                             pickingHadler: function (scene) {
-                                let cursors = scene.cursors;
-                                let controllCursor = scene.gameData.controllCursor;
+                                let cursors = gameScene.cursors;
 
                                 if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['down']])) {
 
@@ -2307,7 +2545,6 @@ class UIScene extends Phaser.Scene {
                                     if (this.pickUpObj) {  //==put down
                                         this.pickUpObj.statusHadler(this, false, this.pickUpObj.orbStats.isInRange);
                                         this.pickUpObj = null;
-
                                     }
                                     else {  //==pick up
                                         const piclUpDistance = 70;
@@ -2339,10 +2576,8 @@ class UIScene extends Phaser.Scene {
                             },
                             //==攻擊
                             attackHandler: function (scene) {
-                                if (this.stopCursorsFlag) return;
-                                let cursors = scene.cursors;
-                                let controllCursor = scene.gameData.controllCursor;
-
+                                if (scene.stepObj.nowStep == 1) return;
+                                let cursors = gameScene.cursors;
 
                                 this.attackEffect.setPosition(this.x, this.y);
                                 if (cursors[controllCursor['attack']].isDown) {//==按著連續攻擊
@@ -2360,14 +2595,10 @@ class UIScene extends Phaser.Scene {
 
                                     //==bullet
                                     var bullet = this.bullets.get();
-                                    // console.debug(bullet);
                                     if (bullet) {
                                         bullet.body.setSize(...this.stats.bulletSize);
                                         bullet.fire(this, this.stats.attackSpeed, this.stats.attackRange);
-
-                                        this.statsChangeHandler({ MP: - this.stats.manaCost }, this);
                                     };
-
 
                                     //==anims
                                     // console.debug(this.anims);
@@ -2387,33 +2618,348 @@ class UIScene extends Phaser.Scene {
 
 
                             },
-                            playerAttack: (bullet, enemy) => {
-                                // console.debug(bullet, enemy);
+                            playerAttack: (enemy, bullet) => {
+
                                 let playerStats = this.player.stats;
 
-                                // if (playerStats.class != 'melee')//近戰能打多體（會重複判斷秒殺）
                                 bullet.disableBody(true, true);
-                                enemy.body.setVelocityX(playerStats.knockBackSpeed * bullet.fireDir);
-
-                                enemy.behavior = 'hurt';
+                                // enemy.body.setVelocityX(playerStats.knockBackSpeed * bullet.fireDir);
                                 enemy.statsChangeHandler({ HP: enemy.stats.HP -= playerStats.attackPower }, this);
+                                console.debug(enemy.stats.HP);
                             },
                         });
 
+                        //===init attack
+                        this.player.bullets = this.physics.add.group({
+                            classType: Bullet,
+                            maxSize: this.player.stats.class == 0 ? 1 : 5,
+                            runChildUpdate: true,
+                            // maxVelocityY: 0,
+                        }).setOrigin(1, 0).setDepth(9);
+
+                        //===init effect sprite
+                        // this.dust = this.add.sprite(0, 0)
+                        //     .setScale(2.5)
+                        //     .setOrigin(1, 0.4)
+                        //     .setDepth(9);
+
+                        this.player.attackEffect = this.add.sprite(0, 0)
+                            .setScale(2)
+                            .setOrigin(0.5, 0.4)
+                            .setDepth(9);
+
                         this.physics.add.collider(this.player, this.platforms);
                         //==敵人玩家相關碰撞
-                        // this.physics.add.overlap(this.player.bullets, this.enemy, this.player.playerAttack, null, this);
+                        this.physics.add.overlap(this.player.bullets, this.dummy, this.player.playerAttack, null, this);
+
+                    };
+                    var initDummy = () => {
+                        var animsCreate = () => {
+                            this.anims.create({
+                                key: 'dummy_idle',
+                                frames: this.anims.generateFrameNumbers('dummy_idle'),
+                                frameRate: 4,
+                                repeat: -1,
+                            });
+                            this.anims.create({
+                                key: 'dummy_hurt',
+                                frames: this.anims.generateFrameNumbers('dummy_hurt'),
+                                frameRate: 8,
+                                repeat: 0,
+                            });
+                            this.anims.create({
+                                key: 'dummy_death',
+                                frames: this.anims.generateFrameNumbers('dummy_death'),
+                                frameRate: 6,
+                                repeat: 0,
+                            });
+                        };
+                        animsCreate();
+
+                        this.dummy = this.physics.add.sprite(0, 0, 'dummy_idle')
+                            .setDepth(9)
+                            .setFlipX(1)
+                            .setName('dummy')
+                            .disableBody(true, true);
+
+                        //==受擊後回復閒置動畫
+                        this.dummy.on('animationcomplete', (anim) =>
+                            anim.key == "dummy_hurt" ? this.dummy.play('dummy_idle') : false
+                        );
+
+                        let dummyStats = { ...GameObjectStats.creature['zombie'] };
+                        Object.assign(this.dummy, { //==血條顯示
+                            stats: Object.assign(dummyStats, { maxHP: dummyStats.HP }),
+                            statsBarUI: this.scene.add(null, new UIScene('statsBar', this, this.dummy), true),
+                            statsChangeCallback: null, //為了計時器不重複註冊多個
+                            statsChangeHandler: function (statsObj, scene) {
+                                const tweensDuration = 150;
+
+                                let animKey = '';
+                                if (statsObj.HP <= 0) {
+                                    this.body.reset(this.x, this.y);
+                                    this.body.enable = false;
+                                    animKey = 'dummy_death';
+                                    scene.tweens.add({
+                                        targets: this,
+                                        repeat: 0,
+                                        ease: 'Expo.easeIn',
+                                        duration: 2000,
+                                        alpha: 0,
+                                    });
+                                } else animKey = 'dummy_hurt';
+                                this.play(animKey);
+
+                                this.HPbar.updateFlag = true;
+                                this.HPbar.setPosition(this.x, this.y - 50);
+                                //==已經出現就重新消失計時,否則播放出現動畫
+                                if (this.statsChangeCallback) this.statsChangeCallback.remove();
+                                else {
+                                    scene.tweens.add({
+                                        targets: this.HPbar,
+                                        repeat: 0,
+                                        ease: 'Bounce.easeInOut',
+                                        duration: tweensDuration,
+                                        alpha: { from: 0, to: .7 },
+                                    });
+                                };
+
+                                this.statsChangeCallback = scene.time.delayedCall(1500, () => {
+                                    scene.tweens.add({
+                                        targets: this.HPbar,
+                                        repeat: 0,
+                                        ease: 'Bounce.easeInOut',
+                                        duration: tweensDuration,
+                                        alpha: { from: this.HPbar.alpha, to: 0 },
+                                    });
+                                    this.statsChangeCallback = null;
+                                }, [], scene);
+
+                                //==教學過關判斷
+                                if (scene.stepObj.nowStep == 2 && !scene.buttonGroups.buttonWobbleTween)
+                                    scene.buttonGroups.buttonWobble(scene.buttonGroups['next']);
+
+                            },
+                        });
+
+                        this.physics.add.collider(this.dummy, this.platforms);
+                    };
+                    var initOrb = () => {
+                        var animsCreate = () => {
+                            if (gameScene.name == 'defend') return;
+                            this.anims.create({
+                                key: 'orb_inactive',
+                                frames: this.anims.generateFrameNumbers('orb', { start: 1, end: 4 }),
+                                frameRate: 5,
+                                repeat: -1,
+                                // repeatDelay: 500,
+                            });
+                            this.anims.create({
+                                key: 'orb_holded',
+                                frames: this.anims.generateFrameNumbers('orb', { frames: [8, 9, 12] }),
+                                frameRate: 5,
+                                repeat: -1,
+                                // repeatDelay: 500,
+                            });
+                            this.anims.create({
+                                key: 'orb_activate',
+                                frames: this.anims.generateFrameNumbers('orb', { frames: [10, 11, 5, 6, 7] }),
+                                frameRate: 5,
+                                repeat: -1,
+                                // repeatDelay: 500,
+                            });
+                            this.anims.create({
+                                key: 'orb_laser',
+                                frames: this.anims.generateFrameNumbers('laser'),
+                                frameRate: 5,
+                                repeat: -1,
+                                // repeatDelay: 500,
+                            });
+
+                        };
+                        animsCreate();
+
+                        const orbScale = 0.25;
+                        this.orbGroup = this.physics.add.group({
+                            key: 'orb',
+                            repeat: 1,
+                            randomFrame: true,
+                            setScale: { x: orbScale, y: orbScale },
+                            setDepth: { value: 9 },
+                            // maxVelocityY: 0,
+                            gravityY: 500,
+                            visible: false,
+                            enable: false,
+                        });
+
+                        this.orbGroup.children.iterate((child, i) => {
+                            return;
+                            let activate, orbPosition;
+
+                            activate = false;
+                            orbPosition = width * 0.85;
+                            child.orbStats = this.getTimePoint(orbPosition);
+                            // console.debug(child.orbStats);
+
+
+                            child.setPosition(orbPosition, height * 0.8);
+                            child.body.setSize(100, 100, true);
+
+                            //=====custom
+
+                            //=laser
+                            child.laserObj = this.physics.add.sprite(child.x, child.y + 20, 'laser')
+                                .setOrigin(0.5, 1)
+                                .setDepth(Depth.laser)
+                                .setVisible(false);
+
+                            child.laserObj.setScale(0.3, height * 0.9 / child.laserObj.displayHeight);
+
+
+                            child.laserObj.body
+                                .setMaxVelocityY(0)
+                                .setSize(50);
+
+                            //=time
+                            // let timeString = activate ? (orbStats[i].timePoint.time).toFixed(2) : '';
+                            child.timeText = this.add.text(0, 0, '', { fontSize: '20px', fill: '#A8FF24', })
+                                .setOrigin(0.5)
+                                .setDepth(Depth.UI);
+
+
+                            //==光球超出畫面提示
+                            child.hintBox = this.add.group();
+
+                            let orbBox = this.add.sprite(0, 0, 'orbBox')
+                                .setOrigin(0.5)
+                                .setScale(0.8)
+                                .setDepth(Depth.orbs);
+
+                            let hintOrb = this.add.sprite()
+                                .setOrigin(0.5)
+                                .setScale(0.25)
+                                .setDepth(Depth.orbs)
+                                .play('orb_inactive');
+
+                            child.hintBox.orbBox = orbBox;
+                            child.hintBox.hintOrb = hintOrb;
+
+                            child.hintBox
+                                .add(orbBox)
+                                .add(hintOrb)
+                                .setAlpha(0);
+
+                            Object.assign(child, {
+                                originTime: (orbStats ? this.getTimePoint(width * 0.85) : child.orbStats).time.toFixed(2),//==用來判斷是否通關(位置要移動過)
+                                beholdingFlag: false,
+                                activateFlag: activate,
+                                outWindowFlag: false,
+                                statusHadler: function (pickUper = null, beholding = false, activate = true) {
+                                    // console.debug('statusHadler');
+
+                                    //===改變被撿放寶珠屬性
+                                    if (beholding) {//pick up                         
+                                        this.body.setMaxVelocityY(0);
+                                        this.setDepth(Depth.pickUpObj);
+                                        this.anims.play('orb_holded', true);
+                                    }
+                                    else {//put down
+                                        this.body.setMaxVelocityY(1000);
+                                        this.setDepth(Depth.orbs);
+                                        this.anims.play(activate ? 'orb_activate' : 'orb_inactive', true);
+                                        this.laserUpdateFlag = true;
+                                    };
+
+
+                                    //===改變撿起者屬性
+                                    if (pickUper) {
+                                        let newCharacterStats;
+                                        if (beholding) {
+                                            //==撿起後角色屬性改變                      
+                                            newCharacterStats = {
+                                                movementSpeed: 150,
+                                                jumpingPower: 300,
+                                            };
+                                        }
+                                        else {
+                                            //==放下後角色屬性恢復
+                                            let originStas = GameObjectStats.player[this.scene.gameData.playerRole];//==之後改
+                                            newCharacterStats = {
+                                                movementSpeed: originStas.movementSpeed,
+                                                jumpingPower: originStas.jumpingPower,
+                                            };
+                                        }
+
+                                        pickUper.stats = Object.assign(pickUper.stats, newCharacterStats);
+                                    };
+
+
+                                    //===改變雷射和時間標籤
+                                    if (activate) {
+                                        this.laserObj
+                                            .enableBody(false, 0, 0, true, true)
+                                            // .setPosition(child.x, child.y + 20)
+                                            .anims.play('orb_laser', true);
+
+                                        this.timeText.setVisible(true);
+                                    }
+                                    else {
+                                        this.laserObj.disableBody(true, true);
+                                        this.timeText.setVisible(false);
+                                    };
+
+                                    this.activateFlag = activate;
+                                    this.beholdingFlag = beholding;
+
+                                    // console.debug(playerStats);
+                                },
+                                outWindowHandler: function (outWindow) {
+                                    this.hintBox.setAlpha(outWindow);
+
+                                    let filp = this.x < 0;
+                                    let hintBoxX = filp ?
+                                        orbBox.displayWidth * 0.5 :
+                                        width - orbBox.displayWidth * 0.5,
+                                        hintBoxY = height * 0.85;
+
+                                    this.hintBox.orbBox
+                                        .setFlipX(filp)
+                                        .setPosition(hintBoxX, hintBoxY);
+
+                                    this.hintBox.hintOrb
+                                        .setPosition(hintBoxX + orbBox.displayWidth * 0.1 * (filp ? 1 : -1), hintBoxY);
+
+                                },
+                            });
+                            // console.debug(child.originTime);
+                            //==laserUpdateFlag
+                            child.laserUpdateFlag = true;//==寶珠落下到地面後更新雷射一次
+                            child.statusHadler(null, false, activate);
+
+
+                            //=====custom
+
+                            // console.debug(child.laserObj)
+                        });
+
+                        this.physics.add.collider(this.orbGroup, this.platforms);
+
 
                     };
                     var initCamera = () => {
                         this.cameras.main.setBounds(0, 0, width, height);
-                        this.cameras.main.flash(500, 0, 0, 0);
+                        this.cameras.main.flashHandler = () => {
+                            this.cameras.main.flash(400, 255, 255, 255, true);
+                        };
+
                     };
 
                     backgroundImg();
-                    tutorialWindow();
                     initCamera();
                     initCursors();
+                    tutorialWindow();
+                    initDummy();
+                    initOrb();
                     initPlayer();
 
                 };
@@ -2421,7 +2967,7 @@ class UIScene extends Phaser.Scene {
                     var updatePlayer = () => {
                         this.player.movingHadler(this);
                         // this.player.pickingHadler(this);
-                        // this.player.attackHandler(this);
+                        this.player.attackHandler(this);
                     };
                     updatePlayer();
                 };
@@ -2498,9 +3044,20 @@ class GameStartScene extends Phaser.Scene {
     preload() {
         var UI = () => {
             const UIDir = assetsDir + 'ui/game/Transitions/';
-            this.load.image('startScene', UIDir + 'startScene.jpg');
-            this.load.image('startButton', UIDir + 'startButton.png');
-            this.load.image('gameTitle', UIDir + 'title.png');
+            var controller = () => {
+                this.load.image('startScene', UIDir + 'startScene.jpg');
+                this.load.image('startButton', UIDir + 'startButton.png');
+                this.load.image('gameTitle', UIDir + 'title.png');
+            };
+            var intro = () => {
+                this.load.image('epicenter', UIDir + 'epicenter.png');
+                this.load.image('PSwave', UIDir + 'PSwave.png');
+                this.load.image('GDMS', UIDir + 'GDMS.png');
+                this.load.image('TAPS', UIDir + 'TAPS.png');
+
+            };
+            controller();
+            intro();
         };
         var character = () => {
             const characters = this.creatorObj.characters;// ['maleAdventurer']
@@ -3627,7 +4184,7 @@ class DefendScene extends Phaser.Scene {
                         .setAlpha(0);
 
                     Object.assign(child, {
-                        originTime: child.orbStats.time.toFixed(2),//==用來判斷是否通關(位置要移動過)
+                        originTime: (orbStats ? this.getTimePoint(width * 0.85) : child.orbStats).time.toFixed(2),//==用來判斷是否通關(位置要移動過)
                         beholdingFlag: false,
                         activateFlag: activate,
                         outWindowFlag: false,
@@ -3708,7 +4265,7 @@ class DefendScene extends Phaser.Scene {
 
                         },
                     });
-
+                    // console.debug(child.originTime);
                     //==laserUpdateFlag
                     child.laserUpdateFlag = true;//==寶珠落下到地面後更新雷射一次
                     child.statusHadler(null, false, activate);
@@ -3862,6 +4419,10 @@ class DefendScene extends Phaser.Scene {
         initCamera();
         initRexUI();
 
+        //==test
+        this.scene.add(null, new UIScene('tutorial', this), true);
+
+
         // var postFxPlugin = this.plugins.get('rexswirlpipelineplugin');
         // this.cameraFilter = postFxPlugin.add(this.cameras.main);
         // this.input.on('pointerup', (pointer) => {
@@ -3894,7 +4455,7 @@ class DefendScene extends Phaser.Scene {
                         let blackOut = this.blackOut;
                         let RexUI = this.RexUI;
                         let iconBar = this.game.scene.getScene('iconBar');
-                        let detectorUI = this.game.scene.getScene('detectorUI');
+                        let detectorUI = null;//會被關掉
                         let playerUI = this.game.scene.getScene('playerUI');
                         let timerUI = this.game.scene.getScene('timerUI');
 
@@ -3927,10 +4488,11 @@ class DefendScene extends Phaser.Scene {
 
                         //==2.說明探測器的zoom
                         blackOut.scene.bringToTop();
-                        //檢查是否被關掉
-                        this.scene.isActive('detectorUI') ?
-                            detectorUI.scene.bringToTop() :
-                            detectorUI = this.scene.add(null, new UIScene('detectorUI', this), true);
+                        //檢查是否被關掉 
+                        if (this.scene.isActive('detectorUI')) {
+                            detectorUI = this.game.scene.getScene('detectorUI');
+                            detectorUI.scene.bringToTop();
+                        } else detectorUI = this.scene.add(null, new UIScene('detectorUI', this), true);
                         RexUI.scene.bringToTop();
 
 
@@ -4409,6 +4971,7 @@ class DigScene extends Phaser.Scene {
 
                 },
                 playerOpenGate: async () => {
+                    this.gameTimer.paused = true;//==暫停
 
                     this.player
                         .setVelocityX(0)
@@ -4421,6 +4984,7 @@ class DigScene extends Phaser.Scene {
 
                     //==助手對話
                     if (!this.sidekick.gateEventFlag) {
+
                         let sidekickContent = localeJSON.Lines.sidekick['dig'][4].replace('\t', this.gameData.playerCustom.name);
 
                         await new Promise(resolve => this.RexUI.newDialog(sidekickContent, {
@@ -4448,7 +5012,8 @@ class DigScene extends Phaser.Scene {
                         this.time.delayedCall(doorDelay, () => this.gameOver.flag = true, [], this);
                     } else {
                         this.player.stopCursorsFlag = false;
-                    }
+                        this.gameTimer.paused = false;
+                    };
 
 
                 },
@@ -4606,7 +5171,7 @@ class DigScene extends Phaser.Scene {
                         let blackOut = this.blackOut;
                         let RexUI = this.RexUI;
                         let iconBar = this.game.scene.getScene('iconBar');
-                        let detectorUI = this.game.scene.getScene('detectorUI');
+                        let detectorUI = null;
                         let depthCounterUI = this.game.scene.getScene('depthCounterUI');
                         // let timerUI = this.game.scene.getScene('timerUI');
 
@@ -4619,10 +5184,11 @@ class DigScene extends Phaser.Scene {
 
                         //==1.說明小地圖
                         blackOut.scene.bringToTop();
-                        //檢查是否被關掉
-                        this.scene.isActive('detectorUI') ?
-                            detectorUI.scene.bringToTop() :
-                            detectorUI = this.scene.add(null, new UIScene('detectorUI', this), true);
+                        //檢查是否被關掉 
+                        if (this.scene.isActive('detectorUI')) {
+                            detectorUI = this.game.scene.getScene('detectorUI');
+                            detectorUI.scene.bringToTop();
+                        } else detectorUI = this.scene.add(null, new UIScene('detectorUI', this), true);
                         RexUI.scene.bringToTop();
 
                         guideSword

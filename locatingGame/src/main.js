@@ -320,7 +320,10 @@ function locatingGame() {
                     // gameDisplay(true);
                     // let newGameData = await new Promise((resolve, reject) => {
                     //     const config = Object.assign(getPhaserConfig(width, height), {
-                    //         scene: new GameStartScene(GameData, resolve),
+                    //         scene: new GameStartScene(GameData, {
+                    //             getWaveImg: getWaveImg,
+                    //             resolve: resolve,
+                    //         }),
                     //     });
                     //     new Phaser.Game(config);
                     // });
@@ -612,8 +615,8 @@ function locatingGame() {
                     data.forEach((d, i) => {
                         // console.debug(d);
                         // let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
-                        // let enemy = [];//==之後隨機抽敵人組
-                        let enemy = [enemyArr[getRandom(enemyArr.length)]];
+                        let enemy = [];//==之後隨機抽敵人組
+                        // let enemy = [enemyArr[getRandom(enemyArr.length)]];
                         let enemyStats = {};
 
                         enemy.forEach((key) => {
@@ -1981,7 +1984,7 @@ function locatingGame() {
                         .data(newData)
                         .join("g")
                         .attr("transform", (d, i) => `translate(0,${eachHeight * i + margin.top})`)
-                        .call(gCollection => {
+                        .call(gCollection =>
                             gCollection.each(function (d, i) {
                                 let g = d3.select(this),
                                     color = getColor(i),
@@ -2006,15 +2009,10 @@ function locatingGame() {
                                     // .attr("alignment-baseline", "before-edge")
                                     .attr("font-weight", "bold")
                                     .attr("font-size", "20")
-                                    .text(d.channel);
+                                    .text(d.channel.slice(-1));
 
                             })
-
-
-
-
-
-                        });
+                        );
 
                     pathGroup.call(makePaths);
 

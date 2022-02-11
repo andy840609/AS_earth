@@ -275,8 +275,10 @@ class UIScene extends Phaser.Scene {
 
                         menuButton
                             .setScale(0, buttonScale)//menu.width / 4 / menuButton.width
+                            .setAlpha(button == 'tutorial' && gameScene.name != 'defend' ? 0.5 : 1)
                             .setInteractive({ cursor: 'pointer' })
                             .on('pointerover', function () {
+                                if (button == 'tutorial' && gameScene.name != 'defend') return;
                                 let scale = 1.2;
                                 this.setScale(buttonScale * scale);
                                 buttonText
@@ -284,6 +286,7 @@ class UIScene extends Phaser.Scene {
                                     .setTint(0xFFFF37);
                             })
                             .on('pointerout', function () {
+                                if (button == 'tutorial' && gameScene.name != 'defend') return;
                                 this.setScale(buttonScale);
                                 buttonText
                                     .setScale(1)
@@ -303,6 +306,7 @@ class UIScene extends Phaser.Scene {
                                         break;
 
                                     case 'tutorial':
+                                        if (gameScene.name != 'defend') return;
                                         this.scene.add(null, new UIScene('tutorial', this), true);
                                         break;
 
@@ -377,10 +381,240 @@ class UIScene extends Phaser.Scene {
                             .setOrigin(0.5)
                             .setScale(detectorScale)
                             .setDepth(Depth.detector);
-
                 };
 
-                if (gameScene.name == 'defend') {
+                if (gameObj && gameObj.name == 'tutorialDetector') {
+                    console.debug('tutorialDetector');
+                    // return;
+                    let detectorButtons;
+                    this.orbs = preScene.orbGroup.getChildren();
+
+                    preload = () => { };
+                    create = () => {
+                        const dx = -(width - gameObj.tutorialW) * 0.8,
+                            dy = gameObj.tutorialH * 0.5,
+                            scale = 0.18;
+
+                        //==brush
+                        let rectX2 = rectX + dx + 10, rectY2 = rectY + dy + 8,
+                            rectW2 = rectW * (scale / detectorScale), rectH2 = rectH * (scale / detectorScale);
+
+                        let handleW = 10,
+                            handleXMin = rectX2 - handleW * 0.5,
+                            handleXMax = rectX2 + rectW2 - handleW * 0.5;
+
+                        let scaleFun = gameScene.waveForm.overviewSvgObj.x
+                            .range([handleXMin, handleXMax]);
+
+                        var initOverview = () => {
+                            initDetector();
+                            let screen = this.detectorScreen;
+
+                            this.detector
+                                .setScale(scale)
+                                .setPosition(this.detector.x + dx, this.detector.y + dy);
+                            screen
+                                .setScale(scale)
+                                .setPosition(screen.x + dx, screen.y + dy + 2);
+
+                            let wave = this.add.image(x + dx + 1, y + dy - 25, 'tutorial_overview_waveForm')
+                                .setDepth(Depth.detector + 1);
+
+                            wave.setScale(screen.displayWidth / wave.displayWidth, screen.displayHeight / wave.displayHeight * 0.9);
+                        };
+                        var initBrushes = () => {
+                            let brushRect = this.add.rectangle(rectX2, rectY2, rectW2, rectH2, 0xEA7500)
+                                .setDepth(Depth.detector + 2)
+                                .setOrigin(0)
+                                .setAlpha(.3);
+
+                            let brushHandle1 = this.add.rectangle(handleXMin, rectY2, handleW, rectH2, 0x000000)
+                                .setDepth(Depth.detector + 3)
+                                .setOrigin(0)
+                                .setAlpha(.5);
+
+                            let brushHandle2 = this.add.rectangle(handleXMax, rectY2, handleW, rectH2, 0x000000)
+                                .setDepth(Depth.detector + 3)
+                                .setOrigin(0)
+                                .setAlpha(.5);
+
+                            var dragBehavior = (brush) => {
+                                brush.setInteractive({ draggable: true, cursor: 'col-resize' })
+                                    .on('drag', function (pointer, dragX, dragY) {
+                                        let newX;
+                                        if (dragX < handleXMin)
+                                            newX = handleXMin;
+                                        else if (dragX > handleXMax)
+                                            newX = handleXMax;
+                                        else
+                                            newX = dragX;
+                                        this.x = newX;
+                                        updateBrushRect();
+
+                                        let domain = [scaleFun.invert(brushHandle1.x), scaleFun.invert(brushHandle2.x)]
+                                            .sort((a, b) => a - b);
+
+                                        updateWave(domain);
+                                    });
+                            };
+                            var updateBrushRect = () => {
+                                let newRectW = Phaser.Math.Distance.BetweenPoints(brushHandle1, brushHandle2);
+                                brushRect.x = Math.min(brushHandle1.x, brushHandle2.x) + handleW * 0.5;
+                                brushRect.width = newRectW;
+                            };
+                            var updateWave = (domain = null) => {
+                                var action = () => {
+                                    const key = 'tutorial_waveForm';
+                                    // console.debug(domain)
+                                    gameScene.waveForm.getWaveImg(preScene.waveForm.tutorialData, domain).then(success => {
+                                        // console.debug(success)
+                                        //==避免波形沒更新到
+                                        new Promise((resolve, reject) => {
+                                            this.textures.removeKey(key);
+                                            this.load.svg(key, success.svg, { scale: 1 });
+                                            resolve();
+                                        }).then(() => this.load.start());
+
+                                        preScene.waveForm.svgObj = success;
+                                    });
+                                };
+                                updateHandler(action, waveUpdateObj);
+                            };
+
+                            //==避免頻繁刷新
+                            var waveUpdateObj = { updateFlag: true, updateTimeOut: null, updateDelay: 20 };
+                            var updateHandler = (action, updateObj = waveUpdateObj, parameter = null, mustDone = false) => {
+
+                                if (!updateObj.updateFlag)
+                                    clearTimeout(updateObj.updateTimeOut);
+
+                                updateObj.updateTimeOut = setTimeout(() => {
+                                    parameter ? action(...parameter) : action();
+                                    updateObj.updateFlag = true;
+                                }, updateObj.updateDelay);
+
+                                updateObj.updateFlag = mustDone;
+
+                            };
+
+                            dragBehavior(brushHandle1);
+                            dragBehavior(brushHandle2);
+
+                            //===按鈕
+                            var buttonBehavior = (button) => {
+                                let dy = 0, burshMove = null;
+                                switch (button.name) {
+                                    case 'reset':
+                                        dy = 0;
+                                        burshMove = () => {
+                                            brushHandle1.x = handleXMin;
+                                            brushHandle2.x = handleXMax;
+                                        };
+                                        break;
+                                    default:
+                                        dy = 13;
+                                        burshMove = () => {
+                                            if (button.name == 'functionKey') {
+                                                button.leftSide = !button.leftSide;
+                                            }
+                                            else {
+                                                let brushHandle =
+                                                    detectorButtons.find(btn => btn.name == 'functionKey').leftSide ?
+                                                        brushHandle1 : brushHandle2;
+                                                let dir = button.name == 'shiftLeft' ? -1 : 1;
+
+                                                let newX = brushHandle.x + 2 * dir;
+
+                                                if (newX < handleXMin)
+                                                    newX = handleXMin;
+                                                else if (newX > handleXMax)
+                                                    newX = handleXMax;
+
+                                                brushHandle.x = newX;
+                                            };
+                                        };
+                                        break;
+                                };
+
+                                button.setInteractive({ cursor: 'pointer' })
+                                    .on('pointerover', function () {
+                                        tooltipHandler(true, {
+                                            obj: this,
+                                            dy: dy,
+                                            img: 'tooltipButton',
+                                        });
+                                    })
+                                    .on('pointerout', function () {
+                                        tooltipHandler(false);
+                                    })
+                                    .on('pointerdown', function () {
+                                        burshMove();
+                                        updateBrushRect();
+                                        let domain = [scaleFun.invert(brushHandle1.x), scaleFun.invert(brushHandle2.x)]
+                                            .sort((a, b) => a - b);
+                                        updateWave(domain);
+                                    });
+                            };
+
+                            let resetButton = this.add.circle(x + 60, y + 74, 18, 0xffffff)
+                                .setDepth(Depth.detector + 3)
+                                .setOrigin(0)
+                                .setAlpha(.01)
+                                .setName('reset');
+
+                            detectorButtons = [resetButton];
+
+                            const handleButtonName = ['shiftLeft', 'functionKey', 'shiftRight'];
+                            const handle1BtnX = x - 91, handle1BtnY = y + 86;
+                            handleButtonName.forEach((d, i) => {
+                                let handleButton = this.add.rectangle(handle1BtnX + i * 51, handle1BtnY, 32, 11, 0xffffff)
+                                    .setDepth(Depth.detector + 3)
+                                    .setOrigin(0)
+                                    .setAlpha(.01)
+                                    .setName(d);
+
+                                if (d == 'functionKey') handleButton.leftSide = true;
+
+                                detectorButtons.push(handleButton);
+                            });
+
+                            detectorButtons.forEach(button => buttonBehavior(button));
+
+                        };
+                        var initUpdateListener = () => {
+                            this.load.on('filecomplete', (key) => {
+                                preScene.waveForm.gameObjs.setTexture(key);
+                            });
+                        };
+                        initOverview();
+                        initBrushes();
+                        initUpdateListener();
+
+                    };
+                    update = () => {
+                        return
+                        var updateButton = () => {
+                            let cursors = gameScene.cursors;
+                            detectorButtons.forEach(button => {
+                                if (cursors[controllCursor[button.name]].isDown) {
+                                    button.emit('pointerdown');
+                                };
+                            });
+                        };
+                        var updateIcon = () => {
+                            this.orbs.forEach((orb, i) => {
+                                this.orbIcons[i].statsHandler();
+                                if (orb.beholdingFlag)
+                                    this.orbIcons[i].updatePos();
+                            });
+                        };
+                        updateButton();
+                        updateIcon();
+
+                        // this.scene.remove();
+                    };
+                }
+                else if (gameScene.name == 'defend') {
                     let detectorButtons;
                     this.orbs = gameScene.orbGroup.getChildren();
                     preload = () => { };
@@ -599,6 +833,7 @@ class UIScene extends Phaser.Scene {
                         };
                         var initUpdateListener = () => {
                             this.load.on('filecomplete', (key) => {
+                                // console.debug('filecomplete');
                                 gameScene.waveForm.gameObjs.setTexture(key);
                             });
                         };
@@ -1979,87 +2214,65 @@ class UIScene extends Phaser.Scene {
                         };
                         sprite();
                     };
+                    var orb = () => {
+                        if (gameScene.name == 'defend') return;
+                        const dir = assetsDir + 'gameObj/environment/orb/';
+                        this.load.spritesheet('orb',
+                            dir + 'orb.png',
+                            { frameWidth: 256, frameHeight: 256 }
+                        );
+                        this.load.spritesheet('laser',
+                            dir + 'laser.png',
+                            { frameWidth: 512, frameHeight: 682.6 }
+                        );
+                        this.load.image('orbBox', dir + 'orbBox.png');
+                    };
+                    var detector = () => {
+                        if (gameScene.name == 'defend' || gameScene.name == 'dig') return;
+                        const dir = assetsDir + 'gameObj/environment/overview/';
+                        this.load.image('detector', dir + 'detector.png');
+                        this.load.image('detectorScreen', dir + 'detectorScreen.png');
+                    };
+                    var wave = () => {
+                        let tutorialData = {};
+
+                        this.waveForm = {
+                            tutorialData: tutorialData,
+                        };
+                        //==getWaveSVG
+                        gameScene.waveForm.getWaveImg(tutorialData, null).then(success => {
+                            this.load.svg('tutorial_waveForm', success.svg, { scale: 1 });
+                            this.waveForm.svgObj = success;
+                        });
+
+                        //==getOverviewSVG
+                        gameScene.waveForm.getWaveImg(tutorialData, null, true).then(success => {
+                            this.load.svg('tutorial_overview_waveForm', success.svg, { scale: 1 });
+                            this.waveForm.overviewSvgObj = success;
+                        });
+
+                        console.debug(this.waveForm);
+                    };
+
                     tutorialWindow();
                     controller();
                     player();
                     dummy();
+                    orb();
+                    wave();
+                    detector();
                 };
                 create = () => {
+                    const
+                        tutorialW = width * 0.8 > 750 ? 750 : width * 0.8,
+                        tutorialH = height * 0.6;
+
                     var backgroundImg = () => {
                         if (gameScene.name != 'GameStart') return;
                         let img = this.add.image(width * 0.5, height * 0.5, 'startScene');
                         img.setScale(width / img.width, height / img.height);
                     };
                     var tutorialWindow = () => {
-                        let tutorialW = width * 0.8,
-                            tutorialH = height * 0.6;
-
-                        var scene = () => {
-                            let resources = BackGroundResources.GameStart[tutorialBG];
-
-                            this.physics.world.setBounds((width - tutorialW) * 0.5, (height - tutorialH) * 0.5, tutorialW, tutorialH);
-
-                            this.background = [];
-                            resources.static.forEach((res, i) => {
-
-                                let img;
-                                switch (i) {
-                                    case 0:
-                                    case 1:
-                                        img = this.add.tileSprite(width * 0.5, height * 0.5, tutorialW, tutorialH, 'staticTutorialBG_' + i);
-                                        this.background[i] = img;
-                                        break;
-                                    case resources.static.length - 1:
-                                        this.platforms = this.physics.add.staticGroup();
-                                        img = this.platforms.create(width * 0.5, height * 0.5, 'staticTutorialBG_' + i);
-                                        img
-                                            .setScale(tutorialW / img.width, tutorialH / img.height)
-                                            .setDepth(resources.depth.static[i])
-                                            .setOrigin(0.5)
-                                            .refreshBody()
-                                            .setSize(tutorialW, height * 0.075, false)
-                                            .setOffset(0, height * 0.53)
-                                            .setName('platform');
-
-                                        break;
-                                    default:
-                                        img = this.add.image(width * 0.5, height * 0.5, 'staticTutorialBG_' + i);
-                                        img.setScale(tutorialW / img.width, tutorialH / img.height);
-                                        break;
-                                };
-
-                                img.setDepth(resources.depth.static[i]);
-
-                            });
-
-                            resources.dynamic.forEach((res, i) => {
-                                let thing = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, 'dynamicTutorialBG_' + i);
-
-                                thing
-                                    .setScale(tutorialW / thing.width, tutorialH / thing.height)
-                                    .setDepth(resources.depth.dynamic[i]);
-
-                                //==tweens
-                                let movingDuration = Phaser.Math.Between(3, 5) * 1000;//==第一次移動5到20秒
-                                let animType = resources.animType[i];
-                                //==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
-
-                                this.tweens.add(
-                                    Object.assign({
-                                        targets: thing,
-                                        repeat: -1,
-                                        duration: movingDuration,
-                                    },
-                                        animType == 1 ?
-                                            { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
-                                            animType == 2 ? { alpha: { start: 0.1, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
-                                                animType == 3 ? { scale: { start: t => t.scale, to: t => t.scale * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
-                                                    { alpha: { start: 0.1, to: 1 }, ease: 'Bounce', yoyo: true }
-
-                                    ));
-
-                            });
-                        };
                         var button = () => {
                             const buttons = [gameScene.name == 'GameStart' ? 'skip' : 'close', 'previous', 'next'];
 
@@ -2143,6 +2356,7 @@ class UIScene extends Phaser.Scene {
                                             case 'close':
                                                 this.scene.remove();
                                                 this.dummy.statsBarUI.scene.remove();
+                                                this.detectorUI.scene.remove();
                                                 if (pauseUI) pauseUI.scene.resume();
                                                 if (iconBar) iconBar.scene.resume();
                                                 break;
@@ -2224,6 +2438,27 @@ class UIScene extends Phaser.Scene {
                                     titleText = UItextJSON['tutorial' + step],
                                     stepText = UItextJSON['stepText'].replace('\t', this.stepObj.nowStep).replace('\t', this.stepObj.maxStep);
                                 // console.debug(this.buttonGroups)
+                                if (flash) {
+                                    this.cameras.main.flashHandler();
+                                    this.player.attackEffect.anims.remove();
+                                    this.player.enableBody(true, this.physics.world.bounds.left, height * 0.5, true, true);
+                                    if (this.player.pickUpObj) {  //==有減光球就放下
+                                        this.player.pickUpObj.statusHadler(this.player, false, false);
+                                        this.player.pickUpObj = null;
+                                    };
+
+                                    this.buttonGroups.buttonWobble(this.buttonGroups['next'], false);
+                                    if (this.dummy.deadTweens) this.dummy.deadTweens.remove();//==會造成隱形
+                                    this.dummy.disableBody(true, true);
+                                    this.dummy.HPbar.setAlpha(0);
+                                    this.orbGroup.children.iterate(child => {
+                                        child.disableBody(true, true);
+                                        child.laserObj.disableBody(true, true);
+                                    });
+                                    this.detectorUI.scene.sleep();
+                                    this.waveForm.gameObjs.setVisible(false);
+                                };
+
                                 switch (step) {
                                     case 1:
                                         let upKey = controllCursor['up'],
@@ -2234,6 +2469,12 @@ class UIScene extends Phaser.Scene {
                                         this.buttonGroups['previous'].setAlpha(0);
 
                                         this.stepClear = [false, false, false];//==三個按鍵是否被按過
+
+                                        //test
+                                        this.orbGroup.children.iterate(child => {
+                                            child.enableBody(true, width * 0.7, height * 0.6, true, true)
+                                                .statusHadler(null, false, false);
+                                        });
                                         break;
                                     case 2:
                                         let attackKey = controllCursor['attack'];
@@ -2243,8 +2484,8 @@ class UIScene extends Phaser.Scene {
 
                                         this.dummy
                                             .enableBody(true, width * 0.7, height * 0.6, true, true)
+                                            .setAlpha(1)//死過會alpha0
                                             .play('dummy_idle');
-
 
                                         this.dummy.stats.HP = this.dummy.stats.maxHP;
 
@@ -2253,56 +2494,58 @@ class UIScene extends Phaser.Scene {
                                     case 3:
                                         let downKey = controllCursor['down'];
                                         titleText = titleText.replace('\t', downKey);
+
+                                        this.orbGroup.getChildren()[0]
+                                            .enableBody(true, width * 0.7, height * 0.6, true, true)
+                                            .statusHadler(null, false, false);
+
+                                        this.stepClear = false;
                                         break;
                                     case 4:
                                         // titleText = titleText.replace('\t', `${leftKey},${rightKey},${upKey}`);
                                         this.buttonGroups['next'].setAlpha(1);
+                                        this.player.disableBody(true, true);
+                                        this.detectorUI.scene.wake();
+                                        this.waveForm.gameObjs.setVisible(true);
                                         break;
                                     case 5:
                                         // titleText = titleText.replace('\t', `${leftKey},${rightKey},${upKey}`);
                                         this.buttonGroups['next'].setAlpha(0);
+
+                                        this.waveForm.gameObjs.setVisible(true);
                                         break;
                                 };
 
                                 this.title.showHandler();
                                 this.title.setText(titleText);
                                 this.stepText.setText(stepText);
-
-                                if (flash) {
-                                    this.cameras.main.flashHandler();
-                                    this.player.attackEffect.anims.remove();
-                                    this.player.setPosition(this.physics.world.bounds.left, height * 0.5);
-
-                                    this.buttonGroups.buttonWobble(this.buttonGroups['next'], false);
-                                    if (step != 2) {
-                                        this.dummy.disableBody(true, true);
-                                        this.dummy.HPbar.setAlpha(0);
-                                    };
-
-                                };
-
                             };
 
                             //==過關撒花
                             var animsCreate = () => {
                                 this.anims.create({
-                                    key: 'sprinkle',
+                                    key: 'sprinkle_fly',
                                     frames: this.anims.generateFrameNumbers('sprinkle'),
-                                    frameRate: 4,
-                                    repeat: -1,
+                                    frameRate: 12,
+                                    repeat: 0,
                                 });
                             };
                             animsCreate();
                             this.sprinkle = this.add.sprite(width * 0.5, height * 0.5, 'sprinkle')
-                                .setDepth(Depth.UI)
-                                .setVisible(false);
-                            this.on('stepClear', () => {
-                                console.debug('stepClear')
-                            });
-                            this.emit('stepClear')
+                                .setVisible(false)
+                                .setDepth(Depth.UI);
+
+                            this.sprinkle
+                                .setScale(tutorialW * 1.2 / this.sprinkle.width, tutorialH * 1.2 / this.sprinkle.height)
+                                .on('stepClear', function () {
+                                    this.scene.buttonGroups.buttonWobble(this.scene.buttonGroups['next']);
+                                    this
+                                        .setVisible(true)
+                                        .play('sprinkle_fly');
+                                });
+                            // this.sprinkle.emit('stepClear');
                             this.stepHandler(false);
                         };
-                        scene();
                         button();
                         text();
                         stepHandler();
@@ -2456,7 +2699,7 @@ class UIScene extends Phaser.Scene {
 
                         // console.debug(this.physics.world.setBoundsCollision(false, true, true, true));
                         Object.assign(this.player, {
-                            stats: GameObjectStats.player[gameScene.gameData.playerRole],
+                            stats: { ...GameObjectStats.player[gameScene.gameData.playerRole] },
                             //=處理轉向
                             filpHandler: function (filp) {
                                 this.setFlipX(filp);
@@ -2530,21 +2773,22 @@ class UIScene extends Phaser.Scene {
                                 // console.debug(scene.stepClear)
                                 //==教學過關判斷
                                 if (nowStep == 1 && !scene.buttonGroups.buttonWobbleTween)
-                                    if (scene.stepClear.every(v => v)) {
-                                        scene.buttonGroups.buttonWobble(scene.buttonGroups['next']);
-                                    };
+                                    if (scene.stepClear.every(v => v))
+                                        scene.sprinkle.emit('stepClear');
 
                             },
                             //==撿起
                             pickingHadler: function (scene) {
+                                // if (scene.stepObj.nowStep != 3 && scene.stepObj.nowStep != 5) return;
                                 let cursors = gameScene.cursors;
-
                                 if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['down']])) {
 
                                     // console.debug('pick');
                                     if (this.pickUpObj) {  //==put down
-                                        this.pickUpObj.statusHadler(this, false, this.pickUpObj.orbStats.isInRange);
+                                        this.pickUpObj.statusHadler(this, false, true);
                                         this.pickUpObj = null;
+                                        if (scene.stepObj.nowStep == 3 && !scene.buttonGroups.buttonWobbleTween)
+                                            scene.sprinkle.emit('stepClear');
                                     }
                                     else {  //==pick up
                                         const piclUpDistance = 70;
@@ -2552,7 +2796,7 @@ class UIScene extends Phaser.Scene {
 
                                         let colsestOrb;
                                         scene.orbGroup.children.iterate(child => {
-                                            // console.debug(Phaser.Math.Distance.BetweenPoints(this, child));
+                                            if (!child.active) return;
                                             if (Phaser.Math.Distance.BetweenPoints(this, child) <= piclUpDistance)
                                                 if (colsestOrb)
                                                     colsestOrb =
@@ -2576,7 +2820,7 @@ class UIScene extends Phaser.Scene {
                             },
                             //==攻擊
                             attackHandler: function (scene) {
-                                if (scene.stepObj.nowStep == 1) return;
+                                if (scene.stepObj.nowStep == 1 || scene.stepObj.nowStep == 4) return;
                                 let cursors = gameScene.cursors;
 
                                 this.attackEffect.setPosition(this.x, this.y);
@@ -2616,7 +2860,6 @@ class UIScene extends Phaser.Scene {
 
                                 };
 
-
                             },
                             playerAttack: (enemy, bullet) => {
 
@@ -2625,7 +2868,7 @@ class UIScene extends Phaser.Scene {
                                 bullet.disableBody(true, true);
                                 // enemy.body.setVelocityX(playerStats.knockBackSpeed * bullet.fireDir);
                                 enemy.statsChangeHandler({ HP: enemy.stats.HP -= playerStats.attackPower }, this);
-                                console.debug(enemy.stats.HP);
+                                // console.debug(enemy.stats.HP);
                             },
                         });
 
@@ -2691,6 +2934,7 @@ class UIScene extends Phaser.Scene {
                         Object.assign(this.dummy, { //==血條顯示
                             stats: Object.assign(dummyStats, { maxHP: dummyStats.HP }),
                             statsBarUI: this.scene.add(null, new UIScene('statsBar', this, this.dummy), true),
+                            deadTweens: null,
                             statsChangeCallback: null, //為了計時器不重複註冊多個
                             statsChangeHandler: function (statsObj, scene) {
                                 const tweensDuration = 150;
@@ -2700,11 +2944,11 @@ class UIScene extends Phaser.Scene {
                                     this.body.reset(this.x, this.y);
                                     this.body.enable = false;
                                     animKey = 'dummy_death';
-                                    scene.tweens.add({
+                                    this.deadTweens = scene.tweens.add({
                                         targets: this,
                                         repeat: 0,
                                         ease: 'Expo.easeIn',
-                                        duration: 2000,
+                                        duration: 1500,
                                         alpha: 0,
                                     });
                                 } else animKey = 'dummy_hurt';
@@ -2737,214 +2981,271 @@ class UIScene extends Phaser.Scene {
 
                                 //==教學過關判斷
                                 if (scene.stepObj.nowStep == 2 && !scene.buttonGroups.buttonWobbleTween)
-                                    scene.buttonGroups.buttonWobble(scene.buttonGroups['next']);
+                                    scene.sprinkle.emit('stepClear');
 
                             },
                         });
 
                         this.physics.add.collider(this.dummy, this.platforms);
                     };
-                    var initOrb = () => {
-                        var animsCreate = () => {
-                            if (gameScene.name == 'defend') return;
-                            this.anims.create({
-                                key: 'orb_inactive',
-                                frames: this.anims.generateFrameNumbers('orb', { start: 1, end: 4 }),
-                                frameRate: 5,
-                                repeat: -1,
-                                // repeatDelay: 500,
-                            });
-                            this.anims.create({
-                                key: 'orb_holded',
-                                frames: this.anims.generateFrameNumbers('orb', { frames: [8, 9, 12] }),
-                                frameRate: 5,
-                                repeat: -1,
-                                // repeatDelay: 500,
-                            });
-                            this.anims.create({
-                                key: 'orb_activate',
-                                frames: this.anims.generateFrameNumbers('orb', { frames: [10, 11, 5, 6, 7] }),
-                                frameRate: 5,
-                                repeat: -1,
-                                // repeatDelay: 500,
-                            });
-                            this.anims.create({
-                                key: 'orb_laser',
-                                frames: this.anims.generateFrameNumbers('laser'),
-                                frameRate: 5,
-                                repeat: -1,
-                                // repeatDelay: 500,
+                    var environment = () => {
+                        var initBackground = () => {
+                            let resources = BackGroundResources.GameStart[tutorialBG];
+
+                            this.physics.world.setBounds((width - tutorialW) * 0.5, (height - tutorialH) * 0.5, tutorialW, tutorialH);
+
+                            this.background = [];
+                            resources.static.forEach((res, i) => {
+
+                                let img;
+                                switch (i) {
+                                    case 0:
+                                    case 1:
+                                        img = this.add.tileSprite(width * 0.5, height * 0.5, tutorialW, tutorialH, 'staticTutorialBG_' + i);
+                                        this.background[i] = img;
+                                        break;
+                                    case resources.static.length - 1:
+                                        this.platforms = this.physics.add.staticGroup();
+                                        img = this.platforms.create(width * 0.5, height * 0.5, 'staticTutorialBG_' + i);
+                                        img
+                                            .setScale(tutorialW / img.width, tutorialH / img.height)
+                                            .setDepth(resources.depth.static[i])
+                                            .setOrigin(0.5)
+                                            .refreshBody()
+                                            .setSize(tutorialW, height * 0.075, false)
+                                            .setOffset(0, height * 0.53)
+                                            .setName('platform');
+
+                                        break;
+                                    default:
+                                        img = this.add.image(width * 0.5, height * 0.5, 'staticTutorialBG_' + i);
+                                        img.setScale(tutorialW / img.width, tutorialH / img.height);
+                                        break;
+                                };
+
+                                img.setDepth(resources.depth.static[i]);
+
                             });
 
+                            resources.dynamic.forEach((res, i) => {
+                                let thing = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, 'dynamicTutorialBG_' + i);
+
+                                thing
+                                    .setScale(tutorialW / thing.width, tutorialH / thing.height)
+                                    .setDepth(resources.depth.dynamic[i]);
+
+                                //==tweens
+                                let movingDuration = Phaser.Math.Between(3, 5) * 1000;//==第一次移動5到20秒
+                                let animType = resources.animType[i];
+                                //==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
+
+                                this.tweens.add(
+                                    Object.assign({
+                                        targets: thing,
+                                        repeat: -1,
+                                        duration: movingDuration,
+                                    },
+                                        animType == 1 ?
+                                            { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
+                                            animType == 2 ? { alpha: { start: 0.1, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
+                                                animType == 3 ? { scale: { start: t => t.scale, to: t => t.scale * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
+                                                    { alpha: { start: 0.1, to: 1 }, ease: 'Bounce', yoyo: true }
+
+                                    ));
+
+                            });
                         };
-                        animsCreate();
+                        var initOrb = () => {
+                            var animsCreate = () => {
+                                if (gameScene.name == 'defend') return;
+                                this.anims.create({
+                                    key: 'orb_inactive',
+                                    frames: this.anims.generateFrameNumbers('orb', { start: 1, end: 4 }),
+                                    frameRate: 5,
+                                    repeat: -1,
+                                    // repeatDelay: 500,
+                                });
+                                this.anims.create({
+                                    key: 'orb_holded',
+                                    frames: this.anims.generateFrameNumbers('orb', { frames: [8, 9, 12] }),
+                                    frameRate: 5,
+                                    repeat: -1,
+                                    // repeatDelay: 500,
+                                });
+                                this.anims.create({
+                                    key: 'orb_activate',
+                                    frames: this.anims.generateFrameNumbers('orb', { frames: [10, 11, 5, 6, 7] }),
+                                    frameRate: 5,
+                                    repeat: -1,
+                                    // repeatDelay: 500,
+                                });
+                                this.anims.create({
+                                    key: 'orb_laser',
+                                    frames: this.anims.generateFrameNumbers('laser'),
+                                    frameRate: 5,
+                                    repeat: -1,
+                                    // repeatDelay: 500,
+                                });
 
-                        const orbScale = 0.25;
-                        this.orbGroup = this.physics.add.group({
-                            key: 'orb',
-                            repeat: 1,
-                            randomFrame: true,
-                            setScale: { x: orbScale, y: orbScale },
-                            setDepth: { value: 9 },
-                            // maxVelocityY: 0,
-                            gravityY: 500,
-                            visible: false,
-                            enable: false,
-                        });
+                            };
+                            animsCreate();
 
-                        this.orbGroup.children.iterate((child, i) => {
-                            return;
-                            let activate, orbPosition;
+                            const orbScale = 0.25;
+                            this.orbGroup = this.physics.add.group({
+                                key: 'orb',
+                                repeat: 1,
+                                randomFrame: true,
+                                setScale: { x: orbScale, y: orbScale },
+                                setDepth: { value: 9 },
+                                // maxVelocityY: 0,
+                                gravityY: 500,
+                                visible: false,
+                                enable: false,
+                            });
+                            this.orbGroup.children.iterate((child, i) => {
 
-                            activate = false;
-                            orbPosition = width * 0.85;
-                            child.orbStats = this.getTimePoint(orbPosition);
-                            // console.debug(child.orbStats);
+                                child.body.setSize(100, 100, true);
+                                //=====custom
 
+                                //=laser
+                                child.laserObj = this.physics.add.sprite(child.x, child.y + 20, 'laser')
+                                    .setOrigin(0.5, 1)
+                                    .setDepth(5)
+                                    .setVisible(false);
 
-                            child.setPosition(orbPosition, height * 0.8);
-                            child.body.setSize(100, 100, true);
+                                child.laserObj
+                                    .setScale(0.3, height * 0.5 / child.laserObj.displayHeight)
+                                    .body
+                                    .setMaxVelocityY(0)
+                                    .setSize(50);
 
-                            //=====custom
+                                // //==光球超出畫面提示
+                                // child.hintBox = this.add.group();
 
-                            //=laser
-                            child.laserObj = this.physics.add.sprite(child.x, child.y + 20, 'laser')
-                                .setOrigin(0.5, 1)
-                                .setDepth(Depth.laser)
-                                .setVisible(false);
+                                // let orbBox = this.add.sprite(0, 0, 'orbBox')
+                                //     .setOrigin(0.5)
+                                //     .setScale(0.8)
+                                //     .setDepth(Depth.orbs);
 
-                            child.laserObj.setScale(0.3, height * 0.9 / child.laserObj.displayHeight);
+                                // let hintOrb = this.add.sprite()
+                                //     .setOrigin(0.5)
+                                //     .setScale(0.25)
+                                //     .setDepth(Depth.orbs)
+                                //     .play('orb_inactive');
 
+                                // child.hintBox.orbBox = orbBox;
+                                // child.hintBox.hintOrb = hintOrb;
 
-                            child.laserObj.body
-                                .setMaxVelocityY(0)
-                                .setSize(50);
+                                // child.hintBox
+                                //     .add(orbBox)
+                                //     .add(hintOrb)
+                                //     .setAlpha(0);
 
-                            //=time
-                            // let timeString = activate ? (orbStats[i].timePoint.time).toFixed(2) : '';
-                            child.timeText = this.add.text(0, 0, '', { fontSize: '20px', fill: '#A8FF24', })
-                                .setOrigin(0.5)
-                                .setDepth(Depth.UI);
+                                Object.assign(child, {
+                                    beholdingFlag: false,
+                                    activateFlag: false,
+                                    outWindowFlag: false,
+                                    statusHadler: function (pickUper = null, beholding = false, activate = true) {
+                                        // console.debug('statusHadler');
 
-
-                            //==光球超出畫面提示
-                            child.hintBox = this.add.group();
-
-                            let orbBox = this.add.sprite(0, 0, 'orbBox')
-                                .setOrigin(0.5)
-                                .setScale(0.8)
-                                .setDepth(Depth.orbs);
-
-                            let hintOrb = this.add.sprite()
-                                .setOrigin(0.5)
-                                .setScale(0.25)
-                                .setDepth(Depth.orbs)
-                                .play('orb_inactive');
-
-                            child.hintBox.orbBox = orbBox;
-                            child.hintBox.hintOrb = hintOrb;
-
-                            child.hintBox
-                                .add(orbBox)
-                                .add(hintOrb)
-                                .setAlpha(0);
-
-                            Object.assign(child, {
-                                originTime: (orbStats ? this.getTimePoint(width * 0.85) : child.orbStats).time.toFixed(2),//==用來判斷是否通關(位置要移動過)
-                                beholdingFlag: false,
-                                activateFlag: activate,
-                                outWindowFlag: false,
-                                statusHadler: function (pickUper = null, beholding = false, activate = true) {
-                                    // console.debug('statusHadler');
-
-                                    //===改變被撿放寶珠屬性
-                                    if (beholding) {//pick up                         
-                                        this.body.setMaxVelocityY(0);
-                                        this.setDepth(Depth.pickUpObj);
-                                        this.anims.play('orb_holded', true);
-                                    }
-                                    else {//put down
-                                        this.body.setMaxVelocityY(1000);
-                                        this.setDepth(Depth.orbs);
-                                        this.anims.play(activate ? 'orb_activate' : 'orb_inactive', true);
-                                        this.laserUpdateFlag = true;
-                                    };
+                                        //===改變被撿放寶珠屬性
+                                        if (beholding) {//pick up                         
+                                            this.body.setMaxVelocityY(0);
+                                            this.setDepth(11)
+                                                .anims.play('orb_holded', true);
+                                        }
+                                        else {//put down
+                                            this.body.setMaxVelocityY(1000);
+                                            this.setDepth(9)
+                                                .anims.play(activate ? 'orb_activate' : 'orb_inactive', true);
+                                            this.laserUpdateFlag = true;
+                                        };
 
 
-                                    //===改變撿起者屬性
-                                    if (pickUper) {
-                                        let newCharacterStats;
-                                        if (beholding) {
-                                            //==撿起後角色屬性改變                      
-                                            newCharacterStats = {
-                                                movementSpeed: 150,
-                                                jumpingPower: 300,
-                                            };
+                                        //===改變撿起者屬性
+                                        if (pickUper) {
+                                            let newCharacterStats;
+                                            if (beholding) {
+                                                //==撿起後角色屬性改變                      
+                                                newCharacterStats = {
+                                                    movementSpeed: 150,
+                                                    jumpingPower: 300,
+                                                };
+                                            }
+                                            else {
+                                                //==放下後角色屬性恢復
+                                                let originStas = GameObjectStats.player[gameScene.gameData.playerRole];
+                                                newCharacterStats = {
+                                                    movementSpeed: originStas.movementSpeed,
+                                                    jumpingPower: originStas.jumpingPower,
+                                                };
+                                            }
+
+                                            pickUper.stats = Object.assign(pickUper.stats, newCharacterStats);
+                                        };
+
+
+                                        //===改變雷射和時間標籤
+                                        if (activate) {
+                                            this.laserObj
+                                                .enableBody(false, 0, 0, true, true)
+                                                // .setPosition(child.x, child.y + 20)
+                                                .anims.play('orb_laser', true);
                                         }
                                         else {
-                                            //==放下後角色屬性恢復
-                                            let originStas = GameObjectStats.player[this.scene.gameData.playerRole];//==之後改
-                                            newCharacterStats = {
-                                                movementSpeed: originStas.movementSpeed,
-                                                jumpingPower: originStas.jumpingPower,
-                                            };
-                                        }
+                                            this.laserObj.disableBody(true, true);
+                                        };
 
-                                        pickUper.stats = Object.assign(pickUper.stats, newCharacterStats);
-                                    };
+                                        this.activateFlag = activate;
+                                        this.beholdingFlag = beholding;
 
+                                        // console.debug(playerStats);
+                                    },
+                                    outWindowHandler: function (outWindow) {
+                                        this.hintBox.setAlpha(outWindow);
 
-                                    //===改變雷射和時間標籤
-                                    if (activate) {
-                                        this.laserObj
-                                            .enableBody(false, 0, 0, true, true)
-                                            // .setPosition(child.x, child.y + 20)
-                                            .anims.play('orb_laser', true);
+                                        let filp = this.x < 0;
+                                        let hintBoxX = filp ?
+                                            orbBox.displayWidth * 0.5 :
+                                            width - orbBox.displayWidth * 0.5,
+                                            hintBoxY = height * 0.85;
 
-                                        this.timeText.setVisible(true);
-                                    }
-                                    else {
-                                        this.laserObj.disableBody(true, true);
-                                        this.timeText.setVisible(false);
-                                    };
+                                        this.hintBox.orbBox
+                                            .setFlipX(filp)
+                                            .setPosition(hintBoxX, hintBoxY);
 
-                                    this.activateFlag = activate;
-                                    this.beholdingFlag = beholding;
+                                        this.hintBox.hintOrb
+                                            .setPosition(hintBoxX + orbBox.displayWidth * 0.1 * (filp ? 1 : -1), hintBoxY);
 
-                                    // console.debug(playerStats);
-                                },
-                                outWindowHandler: function (outWindow) {
-                                    this.hintBox.setAlpha(outWindow);
+                                    },
+                                });
 
-                                    let filp = this.x < 0;
-                                    let hintBoxX = filp ?
-                                        orbBox.displayWidth * 0.5 :
-                                        width - orbBox.displayWidth * 0.5,
-                                        hintBoxY = height * 0.85;
-
-                                    this.hintBox.orbBox
-                                        .setFlipX(filp)
-                                        .setPosition(hintBoxX, hintBoxY);
-
-                                    this.hintBox.hintOrb
-                                        .setPosition(hintBoxX + orbBox.displayWidth * 0.1 * (filp ? 1 : -1), hintBoxY);
-
-                                },
                             });
-                            // console.debug(child.originTime);
-                            //==laserUpdateFlag
-                            child.laserUpdateFlag = true;//==寶珠落下到地面後更新雷射一次
-                            child.statusHadler(null, false, activate);
 
+                            this.physics.add.collider(this.orbGroup, this.platforms);
+                        };
+                        var initWave = () => {
+                            let wave = this.add.image(width * 0.5, height * 0.5, 'tutorial_waveForm')
+                                .setDepth(8)
+                                .setAlpha(.7)
+                            // .setVisible(false);
 
-                            //=====custom
+                            wave.setScale(tutorialW / wave.width, tutorialH / wave.height);
 
-                            // console.debug(child.laserObj)
-                        });
-
-                        this.physics.add.collider(this.orbGroup, this.platforms);
-
-
+                            this.waveForm.gameObjs = wave;
+                        };
+                        var initDetector = () => {
+                            this.detectorUI = this.scene.add(null, new UIScene('detectorUI', this, {
+                                name: 'tutorialDetector',
+                                tutorialW: tutorialW,
+                                tutorialH: tutorialH,
+                            }), true);
+                            // this.detectorUI.scene.sleep();
+                        };
+                        initBackground();
+                        initOrb();
+                        initWave();
+                        initDetector();
                     };
                     var initCamera = () => {
                         this.cameras.main.setBounds(0, 0, width, height);
@@ -2957,19 +3258,35 @@ class UIScene extends Phaser.Scene {
                     backgroundImg();
                     initCamera();
                     initCursors();
+
+                    environment();
                     tutorialWindow();
                     initDummy();
-                    initOrb();
                     initPlayer();
 
+
+                    console.debug(this);
                 };
                 update = () => {
                     var updatePlayer = () => {
                         this.player.movingHadler(this);
-                        // this.player.pickingHadler(this);
+                        this.player.pickingHadler(this);
                         this.player.attackHandler(this);
                     };
+                    var updateOrb = () => {
+                        let pickUpObj = this.player.pickUpObj;
+                        if (pickUpObj) {
+                            pickUpObj.setPosition(this.player.x + 20 * (this.player.flipX ? 1 : - 1), this.player.y + 30);
+                        };
+                        this.orbGroup.children.iterate(child => {
+                            if (child.beholdingFlag || (child.laserUpdateFlag || !child.body.touching.down)) {
+                                child.laserObj.setPosition(child.x, child.y + 20);
+                                child.laserUpdateFlag = false;
+                            };
+                        });
+                    };
                     updatePlayer();
+                    updateOrb();
                 };
                 break;
             case 'b':
@@ -3005,7 +3322,7 @@ class UIScene extends Phaser.Scene {
 };
 
 class GameStartScene extends Phaser.Scene {
-    constructor(GameData, resolve) {
+    constructor(GameData, other) {
         var sceneConfig = {
             key: 'gameScene',
             pack: {
@@ -3036,7 +3353,8 @@ class GameStartScene extends Phaser.Scene {
                 background: 'town_1',
                 characters: Object.keys(GameObjectStats.player),
             },
-            resolve: resolve,
+            waveForm: { getWaveImg: other.getWaveImg },//==tutorial
+            resolve: other.resolve,
         });
 
         console.debug(this);

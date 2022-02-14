@@ -87,8 +87,6 @@ function QCchart() {
         const dayEndInMs = 23 * 60 * 60 * 1000 + 59 * 60 * 1000 + 59 * 1000;
         const fileDataKey = ["timestamp", "mean", "rms", "min", "max", "minDemean", "maxDemean"];
 
-
-
         //========同步讀檔（慢）
 
         // var getFileData = (path) => {

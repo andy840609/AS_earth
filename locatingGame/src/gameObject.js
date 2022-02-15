@@ -102,6 +102,9 @@ const GameObjectStats = {
         },
     },
     tile: {//==破壞需要的攻擊次數
+        terrain0: {//第一層地板
+            hardness: 1,
+        },
         terrain1: {//沉積岩
             hardness: 1,
         },
@@ -127,11 +130,11 @@ const GameObjectStats = {
 //==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
 const BackGroundResources = {
     GameStart: {
-        town_1: {
-            static: ['0.png', '2.png', '3.png', '4.png', '5.png', '6.png'],
-            dynamic: ['1.png'],
+        castle_2: {
+            static: ['p1.png', 'p2.png', '0.png', '1.png'],
+            dynamic: ['2.png'],
             depth: {
-                static: [0, 1, 1, 1, 1, 1],
+                static: [1, 1, 0, 0],
                 dynamic: [0],
             },
             animType: [1],
@@ -145,156 +148,178 @@ const BackGroundResources = {
             },
             animType: [3],
         },
+
+    },
+    defend: {
         desert_1: {
-            static: ['9 Background.png', '6 Sun.png', '5 Mountains.png', '4 Layer4.png', '3 Layer3.png', '2 Layer2.png', '1 Layer1.png'],
-            dynamic: ['8 Stars2.png', '7 Clouds2.png'],
+            static: ['2Layer2.png', '1Layer1.png', '9Background.png', '6Sun.png', '5Mountains.png', '4Layer4.png', '3Layer3.png', 'ground.png'],
+            dynamic: ['8Stars2.png', '7Clouds2.png'],
             depth: {
-                static: [1, 1, 2, 2, 2, 2, 3],
-                dynamic: [1, 1],
+                static: [2, 2, 0, 0, 1, 1, 1, 3],
+                dynamic: [0, 0],
             },
             animType: [2, 1],
         },
-
-        // forest_1: {
-        //     static: ['sky.png', 'rocks_1.png', 'rocks_2.png', 'clouds_1.png'],
-        //     dynamic: ['clouds_2.png', 'clouds_3.png', 'clouds_4.png'],
-        //     depth: {
-        //         static: [0, 1, 2, 0],
-        //         dynamic: [0, 1, 2],
-        //     },
-        //     animType: [1, 1, 1],
-        // },
-    },
-    defend: {
+        desert_2: {
+            static: ['p1.png', 'p2.png', '0.png', '2.png', 'ground.png'],
+            dynamic: ['1.png'],
+            depth: {
+                static: [1, 2, 0, 1, 3],
+                dynamic: [0],
+            },
+            animType: [1],
+        },
+        plain_1: {
+            static: ['p1.png', 'p2.png', '0.png', 'ground.png'],
+            dynamic: ['1.png'],
+            depth: {
+                static: [1, 1, 0, 3],
+                dynamic: [0],
+            },
+            animType: [1],
+        },
+        town_1: {
+            static: ['p1.png', 'p2.png', '0.png', '2.png', 'ground.png'],
+            dynamic: ['1.png'],
+            depth: {
+                static: [2, 2, 0, 1, 3],
+                dynamic: [0],
+            },
+            animType: [1],
+        },
+        castle_2: {
+            static: ['p1.png', 'p2.png', '0.png', '1.png', 'ground.png'],
+            dynamic: ['2.png'],
+            depth: {
+                static: [1, 1, 0, 0, 3],
+                dynamic: [0],
+            },
+            animType: [1],
+        },
         forest_1: {
-            static: ['sky.png', 'rocks_1.png', 'rocks_2.png', 'clouds_1.png', 'soilGround.png'],
+            static: ['rocks_1.png', 'rocks_2.png', 'sky.png', 'clouds_1.png', 'ground.png'],
             dynamic: ['clouds_2.png', 'clouds_3.png', 'clouds_4.png'],
             depth: {
-                static: [0, 1, 2, 0, 3],
+                static: [1, 2, 0, 0, 3],
                 dynamic: [0, 1, 2],
             },
             animType: [1, 1, 1],
         },
         forest_2: {
-            static: ['sky.png', 'rocks_3.png', 'rocks_2.png', 'rocks_1.png', 'pines.png', 'clouds_2.png', 'soilGround.png'],
+            static: ['rocks_2.png', 'rocks_1.png', 'sky.png', 'rocks_3.png', 'pines.png', 'clouds_2.png', 'ground.png'],
             dynamic: ['clouds_1.png', 'clouds_3.png', 'birds.png'],
             depth: {
-                static: [0, 0, 0, 0, 0, 0, 0],
+                static: [1, 1, 0, 0, 0, 0, 3],
                 dynamic: [1, 1, 1],
             },
             animType: [1, 1, 3],
         },
         forest_3: {
-            static: ['sky.png', 'rocks.png', 'ground_1.png', 'ground_2.png', 'ground_3.png', 'plant.png', 'soilGround.png'],
+            static: ['ground_2.png', 'ground_3.png', 'sky.png', 'rocks.png', 'ground_1.png', 'plant.png', 'ground.png'],
             dynamic: ['clouds_1.png', 'clouds_2.png'],
             depth: {
-                static: [0, 1, 2, 2, 2, 2, 0],
+                static: [1, 1, 0, 0, 0, 2, 3],
                 dynamic: [0, 1],
             },
             animType: [1, 1],
         },
         forest_4: {
-            static: ['sky.png', 'rocks.png', 'ground.png', 'soilGround.png'],
+            static: ['rocks.png', 'ground_1.png', 'sky.png', 'ground.png'],
             dynamic: ['clouds_1.png', 'clouds_2.png'],
             depth: {
-                static: [0, 1, 2, 0],
+                static: [1, 2, 0, 3],
                 dynamic: [0, 1],
             },
             animType: [1, 1],
         },
-        candy_1: {
-            static: ['layer06_sky.png', 'layer05_rocks.png', 'layer03_trees.png', 'layer02_cake.png', 'layer01_ground.png',],
-            dynamic: ['layer04_clouds.png',],
-            depth: {
-                static: [0, 0, 0, 0, 0,],
-                dynamic: [1],
-            },
-            animType: [1],
-        },
-        candy_2: {
-            static: ['layer09_Sky.png', 'layer05_Castle.png', 'layer02_Clouds_2.png', 'layer01_Clouds_1.png'],
-            dynamic: ['layer06_Stars_3.png', 'layer07_Stars_2.png', 'layer08_Stars_1.png', 'layer04_Path.png', 'layer03_Clouds_3.png',],
-            depth: {
-                static: [0, 0, 0, 0, 0, 0, 0],
-                dynamic: [1, 1, 1, 1, 1],
-            },
-            animType: [2, 2, 2, 1, 1]
-        },
-        candy_3: {
-            static: ['layer07_Sky.png', 'layer06_Rocks.png', 'layer04_Hills_2.png', 'layer03_Hills_1.png', 'layer02_Trees.png', 'layer01_Ground.png'],
-            dynamic: ['layer05_Clouds.png',],
-            depth: {
-                static: [0, 0, 0, 0, 0, 0, 0],
-                dynamic: [1],
-            },
-            animType: [1],
-        },
-        candy_4: {
-            static: ['layer07_Sky.png', 'layer06_Rocks.png', 'layer05_Hills.png', 'layer03_Hills_Castle.png', 'layer02_Trees_rocks.png', 'layer01_Ground.png'],
-            dynamic: ['layer04_Clouds.png'],
-            depth: {
-                static: [0, 0, 0, 0, 0, 0],
-                dynamic: [1],
-            },
-            animType: [1],
-        },
+
+        //==不用
+        // candy_1: {
+        //     static: ['layer06_sky.png', 'layer05_rocks.png', 'layer03_trees.png', 'layer02_cake.png', 'layer01_ground.png',],
+        //     dynamic: ['layer04_clouds.png',],
+        //     depth: {
+        //         static: [0, 0, 0, 0, 0,],
+        //         dynamic: [1],
+        //     },
+        //     animType: [1],
+        // },
+        // candy_2: {
+        //     static: ['layer09_Sky.png', 'layer05_Castle.png', 'layer02_Clouds_2.png', 'layer01_Clouds_1.png'],
+        //     dynamic: ['layer06_Stars_3.png', 'layer07_Stars_2.png', 'layer08_Stars_1.png', 'layer04_Path.png', 'layer03_Clouds_3.png',],
+        //     depth: {
+        //         static: [0, 0, 0, 0, 0, 0, 0],
+        //         dynamic: [1, 1, 1, 1, 1],
+        //     },
+        //     animType: [2, 2, 2, 1, 1]
+        // },
+        // candy_3: {
+        //     static: ['layer07_Sky.png', 'layer06_Rocks.png', 'layer04_Hills_2.png', 'layer03_Hills_1.png', 'layer02_Trees.png', 'layer01_Ground.png'],
+        //     dynamic: ['layer05_Clouds.png',],
+        //     depth: {
+        //         static: [0, 0, 0, 0, 0, 0, 0],
+        //         dynamic: [1],
+        //     },
+        //     animType: [1],
+        // },
+        // candy_4: {
+        //     static: ['layer07_Sky.png', 'layer06_Rocks.png', 'layer05_Hills.png', 'layer03_Hills_Castle.png', 'layer02_Trees_rocks.png', 'layer01_Ground.png'],
+        //     dynamic: ['layer04_Clouds.png'],
+        //     depth: {
+        //         static: [0, 0, 0, 0, 0, 0],
+        //         dynamic: [1],
+        //     },
+        //     animType: [1],
+        // },
 
     },
     dig: {
         halloween_1: {
-            static: ['1.png', '3.png', '4.png', '5.png', '6.png', '7.png'],
+            static: ['1.png', '3.png', '4.png', '5.png', '6.png'],
             dynamic: ['2.png'],
             depth: {
-                static: [1, 1, 1, 3, 3, 3],
+                static: [1, 1, 1, 3, 3],
                 dynamic: [2],
             },
             animType: [1],
         },
-        halloween_2: {
-            static: ['1.png', '2.png', '3.png', '6.png'],
-            dynamic: ['4.png'],
-            depth: {
-                static: [1, 1, 1, 1, 3],
-                dynamic: [1],
-            },
-            animType: [2],
-        },
-        halloween_3: {
-            static: ['1.png', '3.png', '4.png', '5.png', '6.png', '7.png', '9.png'],
-            dynamic: ['2_1.png', '2_2.png', '8.png'],
-            depth: {
-                static: [1, 1, 2, 2, 2, 2, 3],
-                dynamic: [2, 1, 2],
-            },
-            animType: [3, 1, 2],
-        },
-        halloween_4: {
-            static: ['1.png', '2.png', '3.png', '4.png', '6.png', '7.png'],
-            dynamic: ['5.png', '6_2.png'],
-            depth: {
-                static: [1, 1, 1, 1, 1, 3],
-                dynamic: [1, 1],
-            },
-            animType: [2, 3],
-        },
-        apocalypce_1: {
-            static: ['houses&trees_bg.png', 'houses.png', 'car_trees_etc.png', 'fence.png', 'road.png'],
-            dynamic: ['sky.png', 'bird2.png', 'bird3.png'],
-            depth: {
-                static: [2, 2, 2, 2, 2, 2, 3],
-                dynamic: [1, 3, 3],
-            },
-            animType: [1, 3, 3],
-        },
-        desert_1: {
-            static: ['9 Background.png', '6 Sun.png', '5 Mountains.png', '4 Layer4.png', '3 Layer3.png', '2 Layer2.png', '1 Layer1.png'],
-            dynamic: ['8 Stars2.png', '7 Clouds2.png'],
-            depth: {
-                static: [1, 1, 2, 2, 2, 2, 3],
-                dynamic: [1, 1],
-            },
-            animType: [2, 1],
-        },
+        // halloween_2: {
+        //     static: ['1.png', '2.png', '3.png', '6.png'],
+        //     dynamic: ['4.png'],
+        //     depth: {
+        //         static: [1, 1, 1, 1, 3],
+        //         dynamic: [1],
+        //     },
+        //     animType: [2],
+        // },
+        // halloween_3: {
+        //     static: ['1.png', '3.png', '4.png', '5.png', '6.png', '7.png', '9.png'],
+        //     dynamic: ['2_1.png', '2_2.png', '8.png'],
+        //     depth: {
+        //         static: [1, 1, 2, 2, 2, 2, 3],
+        //         dynamic: [2, 1, 2],
+        //     },
+        //     animType: [3, 1, 2],
+        // },
+        // halloween_4: {
+        //     static: ['1.png', '2.png', '3.png', '4.png', '6.png', '7.png'],
+        //     dynamic: ['5.png'],
+        //     depth: {
+        //         static: [1, 1, 1, 1, 1, 3],
+        //         dynamic: [1],
+        //     },
+        //     animType: [2, 3],
+        // },
+
+        // apocalypce_1: {
+        //     static: ['houses&trees_bg.png', 'houses.png', 'car_trees_etc.png', 'fence.png', 'road.png'],
+        //     dynamic: ['sky.png', 'bird2.png', 'bird3.png'],
+        //     depth: {
+        //         static: [2, 2, 2, 2, 2, 2, 3],
+        //         dynamic: [1, 3, 3],
+        //     },
+        //     animType: [1, 3, 3],
+        // },
+
     },
     mine: {
         mineBackground: {
@@ -1124,12 +1149,14 @@ const Player = new Phaser.Class({
             || (currentAnims === 'player_doubleJump' && !this.body.touching.down);
 
         if (cursors[controllCursor['left']].isDown) {
+            if (scene.name === 'defend' && !this.body.onWall()) scene.parallax.forEach((bg, i) => bg.tilePositionX -= 0.3 * (i + 1));
             this.setVelocityX(-this.stats.movementSpeed);
             if (!this.flipX) this.filpHandler(true);
             if (isBusy) return;
             this.anims.play(!this.body.touching.down ? 'player_jump' : 'player_run', true);
         }
         else if (cursors[controllCursor['right']].isDown) {
+            if (scene.name === 'defend' && !this.body.onWall()) scene.parallax.forEach((bg, i) => bg.tilePositionX += 0.3 * (i + 1));
             this.setVelocityX(this.stats.movementSpeed);
             if (this.flipX) this.filpHandler(false);
             if (isBusy) return;
@@ -1773,7 +1800,7 @@ class Chunk {
         let getYRange = (km) => scene.groundY + parseInt(km / scene.depthCounter.depthScale);
         this.yRange = [getYRange(8), getYRange(10), getYRange(20)];
         this.pRange = [-0.2, -0.1];
-        // console.debug(this.yRange);
+        // console.debug(scene.groundY);
     };
 
     unload() {

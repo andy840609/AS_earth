@@ -21,7 +21,10 @@
         "tutorial5": "將光球放到正確的P波和S波位置",
         "stepText": "步驟 \t / \t",
         "info1": "關於P波和S波的說明",
+        "info1_detail": "測站所接收到的波形資料，通常是以東西向、南北向\n以及垂直向三個分量分別記錄，其中東西向與南北向\n為水平向量。由於P波主要顯示在垂直向波形中，\n而且是最快到達的震波，所以通常在垂直向波形中，\n最先出現明顯大幅震盪的位置就判讀為P波到達的時間；\n而S波則是在水平向波形中較為明顯且振幅較大、\n頻率略低於P波，因此通常在東西向或南北向波形上，\n判讀振幅開始變得較大且略為變疏的地方作為S波到時。\n下圖是以桃園縣爺亨測站所記錄的一筆波形資料，\n作為挑選P波與S波的範例，地震位於125公里外的花蓮外海。\n",
         "info2": "選取範圍的方式說明",
+        "info2_detail1": "拖曳探測器螢幕上\n左右兩邊的黑色邊界\n來調整波形時間範圍",
+        "info2_detail2": "按下按鈕或按鈕快捷鍵也能調整時間範圍。\n左邊界移動：調整左邊界範圍\n自動選取範圍：選取一定時間內的固定範圍\n右邊界移動：調整右邊界範圍\n重置：將左右範圍重置爲最大範圍",
         "skip": "跳過",
         "previous": "上一個",
         "next": "下一個",
@@ -40,7 +43,7 @@
         "timeRemain": "剩餘時間",
         "shiftLeft": "左邊界移動",
         "functionKey": "自動選取範圍",
-        "shiftRight": "左邊界移動",
+        "shiftRight": "右邊界移動",
         "shiftLeft_dig": "視角左移",
         "functionKey_dig": "視角下移",
         "shiftRight_dig": "視角右移",
@@ -345,7 +348,6 @@
     "Intro": {
         "intro": "地震通常是因為地底下的斷層面兩側突然錯動所引起，這個錯動起始點的位置稱為震源，而震源垂直投影到地面的位置就叫做震央。在這個遊戲裡，震源位置就是大魔王作亂的地方，你的任務就是找出大魔王的所在地，為此我們需要先到地震測站獲得情報，藉由P波(Primary wave, 首達波)和S波(Secondary, 次達波)的到時差來估計震央距，當蒐集到三個測站的震央距時就能找出震央的可能位置，有了震央位置就能尋找位於地底下的震源，找到大魔王居住的震源城並回答正確的地震知識就能擊敗牠完成任務取得任務證書，我們的地震防災就靠你了！加油！",
         "epicenter": "[size=26]▲[/size]地震發生時，地震震源向上垂直投影到地面的位置，也就是地面距震源最近的地方。\n（ 資料來源：臺灣地震科學中心 [size=16][color=blue][u=blue][area=url:https://tec.earth.sinica.edu.tw/glossaryquery.php]https://tec.earth.sinica.edu.tw/glossaryquery.php[/area][/u][/color][/size] ）",
-        "PSwave": "[size=26]▲[/size]P波到達的時間通常是在垂直向波形中，最先出現明顯大幅震盪的位置；而S波到達的時間則是在東西向或南北向波形上，振幅開始變得較大且略為變疏的地方。圖爲桃園縣爺亨測站所記錄的一筆波形資料，作為挑選P波與S波的範例，地震位於125公里外的花蓮外海。\n（ 資料來源：臺灣地震科學雲端學習平台 [size=16][color=blue][u=blue][area=url:http://qcntw.earth.sinica.edu.tw/index.php/eqk-game/location-game]http://qcntw.earth.sinica.edu.tw/index.php/eqk-game/location-game[/area][/u][/color][/size] ）",
-        "epicenterLink": ""
+        "PSwave": "[size=26]▲[/size]P波到達的時間通常是在垂直向波形中，最先出現明顯大幅震盪的位置；而S波到達的時間則是在東西向或南北向波形上，振幅開始變得較大且略為變疏的地方。圖爲桃園縣爺亨測站所記錄的一筆波形資料，作為挑選P波與S波的範例，地震位於125公里外的花蓮外海。\n（ 資料來源：臺灣地震科學雲端學習平台 [size=16][color=blue][u=blue][area=url:http://qcntw.earth.sinica.edu.tw/index.php/eqk-game/location-game]http://qcntw.earth.sinica.edu.tw/index.php/eqk-game/location-game[/area][/u][/color][/size] ）"
     }
 }

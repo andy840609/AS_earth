@@ -18,33 +18,40 @@ class UIScene extends Phaser.Scene {
         const UItextJSON = gameScene.gameData.localeJSON.UI;
 
         const tooltip = {
-            tooltipHandler: (create = true, data = null) => {
-
+            tooltipHandler: (create = true, data = {}) => {
                 if (create) {
                     let obj = data.obj;
-                    let x = obj.x + obj.displayWidth * (0.5 - obj.originX) + (data.dx != null ? data.dx : 0);
-                    let y = obj.y + obj.displayHeight * (1 - obj.originY) + 18 + (data.dy != null ? data.dy : 0);
-                    let hotKeyString = controllCursor[obj.name];
-                    let text = UItextJSON[data.name ? data.name : obj.name] + (hotKeyString ? `(${hotKeyString})` : '');
+                    let x = obj.x + obj.displayWidth * (0.5 - obj.originX) + (data.dx ? data.dx : 0);
+                    let y = obj.y + obj.displayHeight * (1 - obj.originY) + 18 + (data.dy ? data.dy : 0);
+                    let hotKeyString = data.text ? false : controllCursor[obj.name];
+                    let text = UItextJSON[data.text ? data.text : obj.name] + (hotKeyString ? `(${hotKeyString})` : '');
                     let tweensDuration = 200;
 
-                    //===tooltip
+                    //===background img
+                    let img = this.add.image(x, y + 1, data.img)
+                        .setFlipY(data.filpY ? data.filpY : false)
+                        .setOrigin(data.originX ? data.originX : 0.5, data.originY ? data.originY : 0.5)
+                        .setDepth(Depth.tooltip);
+
+                    //===tooltip text
                     let tooltip = this.add.text(0, 0, text, {
-                        font: '30px sans-serif',
+                        font: (data.fontSize ? data.fontSize : 30) + 'px sans-serif',
                         fill: '#000000',
                     })
                         .setOrigin(0.5)
                         .setDepth(Depth.tooltip);
 
-                    tooltip.setPosition(x + tooltip.width * 0.75 * (0.5 - (data.originX != null ? data.originX : 0.5)) * 2, y)
+                    tooltip.setPosition(x + tooltip.width * 0.75 * (0.5 - (data.originX ? data.originX : 0.5)) * 2, y);
 
-                    //===background img
-                    let img = this.add.image(x, y + 1, data.img)
-                        .setOrigin(data.originX != null ? data.originX : 0.5, 0.5)
-                        .setDepth(Depth.tooltip - 1);
+                    //==picture for instruction
+                    let pic = null;
+                    if (data.pic)
+                        pic = this.add.image(tooltip.x, tooltip.y + tooltip.height + 10, data.pic)
+                            .setScale(0.5)
+                            .setAlpha(0)
+                            .setDepth(Depth.tooltip);
 
-                    img.setScale(0, tooltip.height / img.height);
-
+                    img.setScale(0, (tooltip.height + (pic ? pic.displayHeight : 0)) * (data.scaleY ? data.scaleY : 1.2) / img.height);
 
                     this.tweens.add({
                         targets: tooltip,
@@ -63,7 +70,20 @@ class UIScene extends Phaser.Scene {
 
                     });
 
+                    if (pic)
+                        this.tweens.add({
+                            targets: pic,
+                            repeat: 0,
+                            ease: 'Circ.easeInOut',
+                            duration: tweensDuration,
+                            scale: { from: 0, to: 0.5 },
+                            alpha: { from: 0, to: 1 },
+                        });
+
                     this.tooltip.tooltipGroup = [tooltip, img];
+                    if (pic) this.tooltip.tooltipGroup.push(pic);
+
+                    return this.tooltip.tooltipGroup;
 
                 }
                 else {
@@ -390,7 +410,7 @@ class UIScene extends Phaser.Scene {
 
                     preload = () => { };
                     create = () => {
-                        const dx = -(width - gameObj.tutorialW) * 0.8,
+                        const dx = -(width - gameObj.tutorialW) * 0.5 - 50,
                             dy = gameObj.tutorialH * 0.5,
                             scale = 0.18;
 
@@ -599,7 +619,6 @@ class UIScene extends Phaser.Scene {
                                     .setAlpha(.01)
                                     .setName(d);
 
-
                                 if (d == 'shiftLeft') brushHandle1.dir = 1;
                                 else if (d == 'shiftRight') brushHandle2.dir = -1;
                                 else if (d == 'functionKey') {
@@ -615,6 +634,13 @@ class UIScene extends Phaser.Scene {
                             });
 
                             detectorButtons.forEach(button => buttonBehavior(button));
+
+
+                            //==info要解釋的目標
+                            Object.assign(this, {
+                                brushHandles: [brushHandle1, brushHandle2],
+                                detectorButtons: detectorButtons,
+                            });
 
                         };
                         var initUpdateListener = () => {
@@ -1046,7 +1072,7 @@ class UIScene extends Phaser.Scene {
                                             tooltipHandler(true, {
                                                 obj: this,
                                                 img: 'tooltipButton',
-                                                name: this.name + '_dig'
+                                                text: this.name + '_dig'
                                             });
                                         })
                                         .on('pointerout', function () {
@@ -1194,8 +1220,6 @@ class UIScene extends Phaser.Scene {
                         if (gameScene.name != 'boss' && gameScene.firstTimeEvent.isFirstTime)//==說話時暫停
                             this.gameTimer.paused = true;
 
-                        //test
-                        // this.gameTimer.timerText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#fff' });
                     };
                     var initBox = () => {
 
@@ -1332,9 +1356,7 @@ class UIScene extends Phaser.Scene {
                         timeString.forEach((d, i) => {
                             this.gameTimer.timeText[d].setText(textArr[i]);
                         });
-                        //==test
-                        // let text = 'TimeLeft : ' + timeVal + ' ms';
-                        // gameTimer.timerText.setText(text);
+
                     };
                     //==時間越少動畫越快
                     var updateHourglassAnime = () => {
@@ -1808,7 +1830,7 @@ class UIScene extends Phaser.Scene {
 
                                 if (child.activateFlag)
                                     child.timeText
-                                        .setPosition(child.x, height * 0.925 + 50)
+                                        .setPosition(child.x, height * 0.925 + 30)
                                         .setText(child.orbStats.time.toFixed(2));
                                 // console.debug(child.x);
                                 child.laserUpdateFlag = false;
@@ -2210,10 +2232,15 @@ class UIScene extends Phaser.Scene {
                     var controller = () => {
                         const UIDir = assetsDir + 'ui/game/tutorial/';
                         this.load.image('startButton', UIDir + 'startButton.png');
+                        this.load.image('frames', UIDir + 'frames.png');
                         this.load.image('arrow', UIDir + 'arrow.png');
                         this.load.image('info', UIDir + 'info.png');
+                        this.load.image('infoTextBox', UIDir + 'infoTextBox.png');
+                        this.load.image('sheet', UIDir + 'sheet.png');
                         this.load.spritesheet('sprinkle', UIDir + 'sprinkle.png', { frameWidth: 300, frameHeight: 300 });
-
+                        if (gameScene.name != 'GameStart')
+                            this.load.image('PSwave', assetsDir + 'ui/game/Transitions/PSwave.png');
+                        else this.load.image('tooltipButton', assetsDir + 'ui/game/tooltipButton.png');
                     };
                     var player = () => {
                         if (gameScene.name != 'GameStart') return;
@@ -2336,9 +2363,14 @@ class UIScene extends Phaser.Scene {
                         img.setScale(width / img.width, height / img.height);
                     };
                     var tutorialWindow = () => {
+                        var frames = () => {
+                            let img = this.add.image(width * 0.5, height * 0.5, 'frames').setDepth(Depth.UI);
+                            img
+                                .setOrigin(0.508, 0.41)
+                                .setScale(tutorialW * 1.12 / img.width, tutorialH * 1.35 / img.height);
+                        };
                         var button = () => {
                             const buttons = [gameScene.name == 'GameStart' ? 'skip' : 'close', 'previous', 'next', 'info1', 'info2'];
-                            const tooltipHandler = tooltip.tooltipHandler;
 
                             this.buttonGroups = {
                                 buttonWobbleTween: null,
@@ -2362,10 +2394,11 @@ class UIScene extends Phaser.Scene {
                                     };
 
                                 },
+                                infoObjs: [],//==說明的tooltip objects
                             };
                             buttons.forEach((name, i) => {
                                 let x, y, img, imgScale,
-                                    originX = 0.5, alpha = 1;
+                                    originX = 0.5, alpha = 1, visible = true;
                                 switch (i) {
                                     case 0:
                                         x = (width + tutorialW) * 0.5 - 80;
@@ -2387,20 +2420,22 @@ class UIScene extends Phaser.Scene {
                                         break;
                                     //==說明（P波S波等）
                                     case 3:
-                                        x = (width - tutorialW) * 0.7;
+                                        x = (width - tutorialW) * 0.5 + 30;
                                         y = height * 0.3 + 40;
                                         img = 'info';
                                         imgScale = 0.5;
                                         originX = -0.1;
                                         alpha = 0.7;
+                                        visible = false;
                                         break;
                                     case 4:
-                                        x = (width - tutorialW) * 0.7;
+                                        x = (width - tutorialW) * 0.5 + 30;
                                         y = height * 0.3 + 75;
                                         img = 'info';
                                         imgScale = 0.5;
                                         originX = -0.1;
                                         alpha = 0.7;
+                                        visible = false;
                                         break;
                                 };
 
@@ -2445,7 +2480,7 @@ class UIScene extends Phaser.Scene {
                                                 break;
                                             case 'next':
                                                 if (this.stepObj.nowStep == this.stepObj.maxStep)
-                                                    this.buttonGroups['close'].getChildren().find(c => c.type === "Image").emit('pointerdown');
+                                                    this.buttonGroups[buttons[0]].getChildren().find(c => c.type === "Image").emit('pointerdown');
                                                 else {
                                                     this.stepObj.nowStep++;
                                                     this.stepHandler();
@@ -2457,32 +2492,67 @@ class UIScene extends Phaser.Scene {
                                                 this.stepHandler();
                                                 break;
                                             case 'info1':
-                                                tooltipHandler(false);
-                                                if (!button.click) {
-                                                    //==關閉另一個info
-                                                    this.buttonGroups['info2'].getChildren().find(c => c.type === "Image").click = false;
-
-                                                    tooltipHandler(true, {
-                                                        obj: button,
-                                                        img: 'tooltipButton',
-                                                        name: 'tooltipButton',
-                                                        originX: originX,
-                                                        originY: 0.5
-                                                    });
-                                                };
-                                                button.click = !button.click;
-                                                break;
                                             case 'info2':
-                                                tooltipHandler(false);
-                                                if (!button.click) {
-                                                    //==關閉另一個info
-                                                    this.buttonGroups['info1'].getChildren().find(c => c.type === "Image").click = false;
+                                                let tooltipHandler = this.detectorUI.tooltip.tooltipHandler;
+                                                this.buttonGroups.infoObjs.forEach(obj => obj.destroy());
+                                                this.detectorUI.brushHandles.forEach(b => b.setInteractive());
+                                                this.detectorUI.detectorButtons.forEach(b => b.setInteractive());
 
-                                                    tooltipHandler(true, {
-                                                        obj: button,
-                                                        img: 'tooltipButton',
-                                                        name: 'tooltipButton',
-                                                    });
+                                                if (!button.click) {
+                                                    let anotherButton, infoTooltip;
+                                                    if (name == 'info1') {
+                                                        infoTooltip = tooltipHandler(true, {
+                                                            obj: button,
+                                                            img: 'sheet',
+                                                            text: 'info1_detail',
+                                                            originX: -0.1,
+                                                            originY: 0.3,
+                                                            dx: -80,
+                                                            dy: -50,
+                                                            fontSize: 20,
+                                                            pic: 'PSwave',
+                                                        });
+                                                        anotherButton = 'info2';
+                                                        this.buttonGroups.infoObjs = infoTooltip;
+
+                                                        this.detectorUI.brushHandles.forEach(b => b.disableInteractive());
+                                                        this.detectorUI.detectorButtons.forEach(b => b.disableInteractive());
+                                                    }
+                                                    else {
+                                                        infoTooltip = [];
+                                                        infoTooltip[0] = tooltipHandler(true, {
+                                                            obj: this.detectorUI.brushHandles[0],
+                                                            img: 'infoTextBox',
+                                                            text: 'info2_detail1',
+                                                            originX: 1,
+                                                            originY: 0.36,
+                                                            dx: 45,
+                                                            dy: -180,
+                                                            fontSize: 20,
+                                                            scaleY: 2,
+                                                        });
+                                                        infoTooltip[1] = tooltipHandler(true, {
+                                                            obj: this.detectorUI.detectorButtons[1],
+                                                            img: 'infoTextBox',
+                                                            text: 'info2_detail2',
+                                                            originX: 1,
+                                                            originY: 0.65,
+                                                            filpY: true,
+                                                            dx: 90,
+                                                            dy: 100,
+                                                            fontSize: 18,
+                                                            scaleY: 1.8,
+                                                        });
+
+                                                        anotherButton = 'info1';
+
+                                                        let tmp = [];
+                                                        infoTooltip.forEach(tooltip => tmp.push(...tooltip));
+                                                        this.buttonGroups.infoObjs = tmp;
+                                                    };
+
+                                                    //==關閉另一個info後click=false
+                                                    this.buttonGroups[anotherButton].getChildren().find(c => c.type === "Image").click = false;
                                                 };
                                                 button.click = !button.click;
                                                 break;
@@ -2492,6 +2562,8 @@ class UIScene extends Phaser.Scene {
                                 this.buttonGroups[name] = this.add.group().add(button).add(buttonText);
                                 this.buttonGroups[name].originXPos = x;
                                 this.buttonGroups[name].animsDir = (i % 2 == 0 ? -1 : 1);
+
+                                this.buttonGroups[name].setVisible(visible);
                             });
 
                         };
@@ -2575,6 +2647,8 @@ class UIScene extends Phaser.Scene {
                                     });
                                     this.detectorUI.scene.sleep();
                                     this.waveForm.gameObjs.setVisible(false);
+                                    this.buttonGroups['info1'].setVisible(false);
+                                    this.buttonGroups['info2'].setVisible(false);
                                 };
 
                                 switch (step) {
@@ -2587,7 +2661,6 @@ class UIScene extends Phaser.Scene {
                                         this.buttonGroups['previous'].setVisible(false);
 
                                         this.stepClear = [false, false, false];//==三個按鍵是否被按過
-
                                         break;
                                     case 2:
                                         let attackKey = controllCursor['attack'];
@@ -2619,6 +2692,9 @@ class UIScene extends Phaser.Scene {
                                         this.buttonGroups['next'].setVisible(true)
                                             .getChildren().find(c => c.type === "Text")
                                             .setText(UItextJSON['next']);
+
+                                        this.buttonGroups['info1'].setVisible(true);
+                                        this.buttonGroups['info2'].setVisible(true);
 
                                         this.player.disableBody(true, true);
                                         this.detectorUI.scene.wake();
@@ -2668,6 +2744,7 @@ class UIScene extends Phaser.Scene {
                                 });
                             this.stepHandler(false);
                         };
+                        frames();
                         button();
                         text();
                         stepHandler();
@@ -3310,7 +3387,7 @@ class UIScene extends Phaser.Scene {
                             let wave = this.add.image(width * 0.5, height * 0.5, 'tutorial_waveForm')
                                 .setDepth(8)
                                 .setAlpha(.7)
-                            // .setVisible(false);
+                                .setVisible(false);
 
                             wave.setScale(tutorialW / wave.width, tutorialH / wave.height);
 
@@ -3326,7 +3403,7 @@ class UIScene extends Phaser.Scene {
                                 tutorialW: tutorialW,
                                 tutorialH: tutorialH,
                             }), true);
-                            // this.detectorUI.scene.sleep();
+                            this.detectorUI.scene.sleep();
                             // console.debug(this.waveForm);
                         };
                         initBackground();
@@ -3488,7 +3565,7 @@ class GameStartScene extends Phaser.Scene {
             gameData: GameData,
             backgroundObj: null,
             creatorObj: {
-                background: 'town_1',
+                background: 'castle_2',
                 characters: Object.keys(GameObjectStats.player),
             },
             waveForm: { getWaveImg: other.getWaveImg },//==tutorial
@@ -3911,7 +3988,7 @@ class LoadingScene extends Phaser.Scene {
                         //     { frameWidth: 60, frameHeight: 60 });
 
                         this.load.image('gateStone', terrainDir + 'gateStone.png');
-
+                        this.load.image('terrain0', terrainDir + '0.png');
                         this.load.image('terrain1', terrainDir + '1.png');
                         this.load.image('terrain2', terrainDir + '2.png');
                         this.load.image('terrain3', terrainDir + '3.png');
@@ -4472,31 +4549,63 @@ class DefendScene extends Phaser.Scene {
                     .setRotation(-0.1).setOrigin(0.5, 0.5).setDepth(Depth.station);
             };
             var background = () => {
-                // const groundH = height * 0.5;
-
                 let resources = BackGroundResources.defend[this.background];
+                this.parallax = [];
+
                 resources.static.forEach((res, i) => {
-                    if (i == resources.static.length - 1) {
+                    let img;
+                    switch (i) {
+                        case 0://parallax
+                        case 1:
+                            img = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, 'staticBG_' + i)
+                            img.setScale(width / img.width, height / img.height);
+                            this.parallax.push(img);
+                            break;
+                        case resources.static.length - 1://ground
+                            this.platforms = this.physics.add.staticGroup();
+                            img = this.platforms.create(width * 0.5, height, 'staticBG_' + i);
+                            img
+                                .setScale(width / img.width, height * 0.085 / img.height)
+                                .setOrigin(0.5, 1)
+                                .refreshBody()
+                                .setName('platform');
 
-                        this.platforms = this.physics.add.staticGroup();
-                        let ground = this.platforms.create(width * 0.5, height * 0.5, 'staticBG_' + i);
+                            // this.platforms = this.physics.add.staticImage(width * 0.5, height);
+                            // this.platforms
+                            //     .setScale(width / this.platforms.width, height * 0.085 / this.platforms.height)
+                            //     .setOrigin(0.5, 1)
+                            //     .refreshBody()
+                            //     .setName('platform');
 
-                        ground
-                            .setScale(width / ground.width, height / ground.height * 0.5)
-                            .setDepth(Depth.platform)
-                            .setOrigin(0.5, 0)
-                            .refreshBody()
-                            .setSize(width, height * 0.075, false)
-                            .setOffset(0, height * 0.425)
-                            .setName('platform');
-
-                    }
-                    else {
-                        let img = this.add.image(width * 0.5, height * 0.5, 'staticBG_' + i);
-                        img
-                            .setScale(width / img.width, height / img.height)
-                            .setDepth(resources.depth.static[i]);
+                            // img = this.add.tileSprite(width * 0.5, height, 0, 0, 'staticBG_' + i)
+                            // img.setScale(this.platforms.displayWidth / img.width, this.platforms.displayHeight / img.height);
+                            // this.parallax.push(img);
+                            break;
+                        default:
+                            img = this.add.image(width * 0.5, height * 0.5, 'staticBG_' + i);
+                            img.setScale(width / img.width, height / img.height);
+                            break;
                     };
+                    img.setDepth(resources.depth.static[i]);
+                    // if (i == resources.static.length - 1) {
+
+                    //     this.platforms = this.physics.add.staticGroup();
+                    //     let ground = this.platforms.create(width * 0.5, height, 'staticBG_' + i);
+
+                    //     ground
+                    //         .setScale(width / ground.width, height * 0.085 / ground.height)
+                    //         .setDepth(Depth.platform)
+                    //         .setOrigin(0.5, 1)
+                    //         .refreshBody()
+                    //         .setName('platform');
+
+                    // }
+                    // else {
+                    //     let img = this.add.image(width * 0.5, height * 0.5, 'staticBG_' + i);
+                    //     img
+                    //         .setScale(width / img.width, height / img.height)
+                    //         .setDepth(resources.depth.static[i]);
+                    // };
 
                 });
 
@@ -4874,10 +4983,6 @@ class DefendScene extends Phaser.Scene {
         initTimer();
         initCamera();
         initRexUI();
-
-        //==test
-        this.scene.add(null, new UIScene('tutorial', this), true);
-
 
         // var postFxPlugin = this.plugins.get('rexswirlpipelineplugin');
         // this.cameraFilter = postFxPlugin.add(this.cameras.main);

@@ -2207,6 +2207,8 @@ class UIScene extends Phaser.Scene {
                 break;
             case 'tutorial'://==教學關
                 const
+                    tutorialX = width * 0.5,
+                    tutorialY = height * 0.15,
                     tutorialW = width * 0.8 > 750 ? 750 : width * 0.8,
                     tutorialH = height * 0.6;
                 const tutorialBG = 'tutorial';
@@ -2364,9 +2366,9 @@ class UIScene extends Phaser.Scene {
                     };
                     var tutorialWindow = () => {
                         var frames = () => {
-                            let img = this.add.image(width * 0.5, height * 0.5, 'frames').setDepth(Depth.UI);
+                            let img = this.add.image(tutorialX, tutorialY, 'frames').setDepth(Depth.UI);
                             img
-                                .setOrigin(0.508, 0.41)
+                                .setOrigin(0.508, 0.05)
                                 .setScale(tutorialW * 1.12 / img.width, tutorialH * 1.35 / img.height);
                         };
                         var button = () => {
@@ -2401,27 +2403,27 @@ class UIScene extends Phaser.Scene {
                                     originX = 0.5, alpha = 1, visible = true;
                                 switch (i) {
                                     case 0:
-                                        x = (width + tutorialW) * 0.5 - 80;
-                                        y = (height + tutorialH) * 0.5 + 50;
+                                        x = tutorialX + tutorialW * 0.5 - 80;
+                                        y = tutorialY + tutorialH + 80;
                                         img = 'startButton';
                                         imgScale = 0.1;
                                         break;
                                     case 1:
-                                        x = (width - tutorialW) * 0.5;
-                                        y = height * 0.5;
+                                        x = tutorialX - tutorialW * 0.5;
+                                        y = tutorialY + tutorialH * 0.5;
                                         img = 'arrow';
                                         imgScale = 0.3;
                                         break;
                                     case 2:
-                                        x = (width + tutorialW) * 0.5;
-                                        y = height * 0.5;
+                                        x = tutorialX + tutorialW * 0.5;
+                                        y = tutorialY + tutorialH * 0.5;
                                         img = 'arrow';
                                         imgScale = 0.3;
                                         break;
                                     //==說明（P波S波等）
                                     case 3:
-                                        x = (width - tutorialW) * 0.5 + 30;
-                                        y = height * 0.3 + 40;
+                                        x = tutorialX - tutorialW * 0.5 + 30;
+                                        y = tutorialY + 90;
                                         img = 'info';
                                         imgScale = 0.5;
                                         originX = -0.1;
@@ -2430,7 +2432,7 @@ class UIScene extends Phaser.Scene {
                                         break;
                                     case 4:
                                         x = (width - tutorialW) * 0.5 + 30;
-                                        y = height * 0.3 + 75;
+                                        y = tutorialY + 125;
                                         img = 'info';
                                         imgScale = 0.5;
                                         originX = -0.1;
@@ -2569,7 +2571,7 @@ class UIScene extends Phaser.Scene {
                         };
                         var text = () => {
                             //==步驟
-                            this.stepText = this.add.text(width * 0.5, (height + tutorialH) * 0.5 + 50, '',
+                            this.stepText = this.add.text(tutorialX, (tutorialY + tutorialH) + 50, '',
                                 {
                                     fontSize: '24px',
                                     fill: '#000000',
@@ -2582,7 +2584,7 @@ class UIScene extends Phaser.Scene {
                                 .setDepth(Depth.UI + 1);
 
                             //==目標
-                            this.title = this.add.text(width * 0.5, height * 0.3, '',
+                            this.title = this.add.text(tutorialX, tutorialY + 50, '',
                                 {
                                     fontSize: '48px',
                                     fill: '#000000',
@@ -2669,7 +2671,7 @@ class UIScene extends Phaser.Scene {
                                         this.buttonGroups['previous'].setVisible(true);
 
                                         this.dummy
-                                            .enableBody(true, width * 0.7, height * 0.6, true, true)
+                                            .enableBody(true, width * 0.7, tutorialY + tutorialH * 0.5, true, true)
                                             .setAlpha(1)//死過會alpha0
                                             .play('dummy_idle');
 
@@ -2889,7 +2891,7 @@ class UIScene extends Phaser.Scene {
                         };
                         animsCreate();
 
-                        this.player = this.physics.add.sprite(this.physics.world.bounds.left, height * 0.5, 'player_idle')
+                        this.player = this.physics.add.sprite(this.physics.world.bounds.left, tutorialY + tutorialH * 0.5, 'player_idle')
                             .setDepth(10)
                             .setCollideWorldBounds(true)
                             .play('player_idle');
@@ -3195,34 +3197,35 @@ class UIScene extends Phaser.Scene {
 
                             this.background = [];
                             resources.static.forEach((res, i) => {
-
                                 let img;
                                 switch (i) {
                                     case 0:
                                     case 1:
-                                        img = this.add.tileSprite(width * 0.5, height * 0.5, tutorialW, tutorialH, 'staticTutorialBG_' + i);
+                                        img = this.add.tileSprite(tutorialX, tutorialY, tutorialW, tutorialH, 'staticTutorialBG_' + i);
                                         this.background[i] = img;
                                         break;
                                     case resources.static.length - 1:
+                                        let groundH = height * 0.075;
+
                                         this.platforms = this.physics.add.staticGroup();
-                                        img = this.platforms.create(width * 0.5, height * 0.5, 'staticTutorialBG_' + i);
+                                        img = this.platforms.create(tutorialX, tutorialY + tutorialH - groundH, 'staticTutorialBG_' + i);
                                         img
-                                            .setScale(tutorialW / img.width, tutorialH / img.height)
+                                            .setScale(tutorialW / img.width, groundH / img.height)
                                             .setDepth(resources.depth.static[i])
-                                            .setOrigin(0.5)
                                             .refreshBody()
-                                            .setSize(tutorialW, height * 0.075, false)
-                                            .setOffset(0, height * 0.53)
+                                            .setOffset(0, img.displayHeight * 0.5)
                                             .setName('platform');
 
                                         break;
                                     default:
-                                        img = this.add.image(width * 0.5, height * 0.5, 'staticTutorialBG_' + i);
+                                        img = this.add.image(tutorialX, tutorialY, 'staticTutorialBG_' + i);
                                         img.setScale(tutorialW / img.width, tutorialH / img.height);
                                         break;
                                 };
 
-                                img.setDepth(resources.depth.static[i]);
+                                img
+                                    .setOrigin(0.5, 0)
+                                    .setDepth(resources.depth.static[i]);
 
                             });
 
@@ -3384,7 +3387,7 @@ class UIScene extends Phaser.Scene {
                             this.physics.add.collider(this.orbGroup, this.platforms);
                         };
                         var initWave = async () => {
-                            let wave = this.add.image(width * 0.5, height * 0.5, 'tutorial_waveForm')
+                            let wave = this.add.image(tutorialX, tutorialY + tutorialH * 0.46, 'tutorial_waveForm')
                                 .setDepth(8)
                                 .setAlpha(.7)
                                 .setVisible(false);
@@ -3699,7 +3702,7 @@ class GameStartScene extends Phaser.Scene {
 
                 menuButton
                     .setScale(buttonScale)//menu.width / 4 / menuButton.width
-                    .setInteractive({ cursor: 'pointer' })
+                    .setInteractive()//{ cursor: 'pointer' }
                     .on('pointerover', function () {
                         let scale = 1.2;
                         this.setScale(buttonScale * scale);
@@ -3740,24 +3743,7 @@ class GameStartScene extends Phaser.Scene {
                                 });
                                 break;
 
-
-
-
-                            // case 'intro':
-                            //     this.RexUI.newPanel(0);
-                            //     break;
-                            // case 'setting':
-                            //     // this.setting
-                            //     this.RexUI.newPanel(1);
-                            //     break;
-                            // case 'links':
-                            //     this.RexUI.newPanel(2);
-                            //     break;
-                            // case 'contact':
-                            //     this.RexUI.newPanel(3);
-                            //     break;
-
-                        }
+                        };
                     });
 
                 return {
@@ -3988,7 +3974,7 @@ class LoadingScene extends Phaser.Scene {
                         //     { frameWidth: 60, frameHeight: 60 });
 
                         this.load.image('gateStone', terrainDir + 'gateStone.png');
-                        this.load.image('terrain0', terrainDir + '0.png');
+                        this.load.image('groundTile', terrainDir + '0.png');
                         this.load.image('terrain1', terrainDir + '1.png');
                         this.load.image('terrain2', terrainDir + '2.png');
                         this.load.image('terrain3', terrainDir + '3.png');
@@ -5001,6 +4987,8 @@ class DefendScene extends Phaser.Scene {
         // this.time.slowMotion = 5.0;
         // this.time.paused = true;
 
+        //==test
+        // this.scene.add(null, new UIScene('tutorial', this), true);
     };
     update() {
         // this.gameTimer.paused = false;//==時間繼續
@@ -5601,6 +5589,7 @@ class DigScene extends Phaser.Scene {
                     firstTimeRemind: true,
                     remindingCallback: null,
                     remindingHadler: (sidekick, reminder = null) => {
+                        // console.debug(sidekick, reminder);
                         //==挖超過條件
                         let overDig = this.depthCounter.depthCount >= remindDepth;
 

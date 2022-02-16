@@ -102,7 +102,7 @@ const GameObjectStats = {
         },
     },
     tile: {//==破壞需要的攻擊次數
-        terrain0: {//第一層地板
+        groundTile: {//第一層地板
             hardness: 1,
         },
         terrain1: {//沉積岩
@@ -282,33 +282,33 @@ const BackGroundResources = {
             },
             animType: [1],
         },
-        // halloween_2: {
-        //     static: ['1.png', '2.png', '3.png', '6.png'],
-        //     dynamic: ['4.png'],
-        //     depth: {
-        //         static: [1, 1, 1, 1, 3],
-        //         dynamic: [1],
-        //     },
-        //     animType: [2],
-        // },
-        // halloween_3: {
-        //     static: ['1.png', '3.png', '4.png', '5.png', '6.png', '7.png', '9.png'],
-        //     dynamic: ['2_1.png', '2_2.png', '8.png'],
-        //     depth: {
-        //         static: [1, 1, 2, 2, 2, 2, 3],
-        //         dynamic: [2, 1, 2],
-        //     },
-        //     animType: [3, 1, 2],
-        // },
-        // halloween_4: {
-        //     static: ['1.png', '2.png', '3.png', '4.png', '6.png', '7.png'],
-        //     dynamic: ['5.png'],
-        //     depth: {
-        //         static: [1, 1, 1, 1, 1, 3],
-        //         dynamic: [1],
-        //     },
-        //     animType: [2, 3],
-        // },
+        halloween_2: {
+            static: ['1.png', '2.png', '3.png'],
+            dynamic: ['4.png'],
+            depth: {
+                static: [1, 1, 1, 1],
+                dynamic: [1],
+            },
+            animType: [2],
+        },
+        halloween_3: {
+            static: ['1.png', '3.png', '4.png', '5.png', '6.png', '7.png'],
+            dynamic: ['2_1.png', '2_2.png', '8.png'],
+            depth: {
+                static: [1, 1, 2, 2, 2, 2],
+                dynamic: [2, 1, 2],
+            },
+            animType: [3, 1, 2],
+        },
+        halloween_4: {
+            static: ['1.png', '2.png', '3.png', '4.png', '6.png', '7.png'],
+            dynamic: ['5.png'],
+            depth: {
+                static: [1, 1, 1, 1, 1, 3],
+                dynamic: [1],
+            },
+            animType: [2, 3],
+        },
 
         // apocalypce_1: {
         //     static: ['houses&trees_bg.png', 'houses.png', 'car_trees_etc.png', 'fence.png', 'road.png'],
@@ -1891,14 +1891,24 @@ class Chunk {
                         // console.debug(key);
                     };
 
-                    // console.debug(tileX, tileY)
+                    // console.debug(this.y, tileY)
                     var perlinValue = noise.perlin2(tileX / 100, tileY / 100);
                     // Math.abs(perlinValue) > 0.7 ? console.debug('high : ' + perlinValue.toFixed(2)) : console.debug(perlinValue);
 
 
                     //==terrain1:沉積岩 terrain2:火成岩 terrain3:花崗岩 sprSand sprWater
                     if (key == "" || !key)
-                        if (tileY <= this.yRange[0]) {
+                        if (tileY == this.gameScene.groundY) {
+                            // if (perlinValue < this.pRange[0])
+                            //     key = "sprSand"
+                            // else if (perlinValue < this.pRange[1]) {
+                            //     key = "sprWater";
+                            //     animationKey = "sprWater";
+                            // }
+                            // else
+                            key = "groundTile";
+                        }
+                        else if (tileY <= this.yRange[0]) {
                             // if (perlinValue < this.pRange[0])
                             //     key = "sprSand"
                             // else if (perlinValue < this.pRange[1]) {
@@ -2144,7 +2154,6 @@ class RexTextBox extends RexPlugins.UI.TextBox {
 
         };
 
-
         //.on('type', function () {
         //})
         // console.debug(scene);
@@ -2371,17 +2380,15 @@ class RexDialog extends RexPlugins.UI.Dialog {
 //==可拉動內容
 class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
     constructor(scene, config, resolve) {
-
         var gameData = config.gameData,
             localeJSON = gameData.localeJSON,
             scrollMode = config.scrollMode ? config.scrollMode : 0,
             panelType = {//===panelType暫定: 0:緣由 1:設定 2:連結 3:道具
                 'intro': 0,
-                'setting': 3,
+                'setting': 1,
                 'links': 2,
-                'rank': 3,
+                'rank': 1,
             }[config.panelType];
-
         // console.debug(gameData);
 
         var data, footerItem, panelName = gameData.localeJSON.UI[config.panelType];
@@ -2397,7 +2404,23 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
             case 1:
                 data = {
                     name: panelName,
-                    category: {}
+                    category: {
+                        'control': [
+                            { name: 'up' },
+                            { name: 'down' },
+                            { name: 'left' },
+                            { name: 'right' },
+                            { name: 'attack' },
+                            { name: 'pause' },
+                            { name: 'backpack' },
+                            { name: 'detector' },
+                            { name: 'shiftLeft' },
+                            { name: 'shiftRight' },
+                            { name: 'functionKey' },
+                            { name: 'reset' },
+                            { name: 'exit' },
+                        ],
+                    },
                 };
                 footerItem = ['ok', 'cancel'];
                 break;
@@ -2465,6 +2488,9 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
         };
 
         var createPanel = (scene, data) => {
+            const categoryArray = Object.keys(data.category);
+            const iconW = 70, iconH = 35;
+
             var createTable = (scene, key = null) => {
                 var IsURLKey = function (key) {
                     return (key.substring(0, 4) === 'url:');
@@ -2509,15 +2535,11 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                         new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 0, undefined).setStrokeStyle(2, COLOR_LIGHT, 1)
                     ));
 
-                // console.debug(key);
                 if (key) {
                     let items = data.category[key];
-                    let capKey = key.charAt(0).toUpperCase() + key.slice(1);
-
                     const
-                        columns = 4,
+                        columns = config.width < 800 ? 2 : 4,
                         rows = Math.ceil(items.length / columns);
-                    const iconSize = 40;
 
                     let table = new RexPlugins.UI.GridSizer(scene, {
                         column: columns,
@@ -2536,6 +2558,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                         createCellContainerCallback: function (scene, col, row, config) {
                             let itemIndex = row * columns + col,
                                 item = items[itemIndex];
+                            if (!item) return;
 
                             Object.assign(config, {
                                 align: 'top',
@@ -2548,8 +2571,67 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                                 expand: true,
                             });
 
-                            let gridItem = !item ? false :
-                                createIcon(scene, item.name, iconSize, iconSize);
+                            // console.debug(gameData.controllCursor[item.name]);
+                            let iconText;
+                            switch (key) {
+                                case 'control':
+                                    iconText = gameData.controllCursor[item.name];
+                                    break;
+                                case 'language':
+                                    iconText = 'AAA';
+                                    break;
+                            };
+
+                            let icon = createIcon(scene, key, {
+                                text: iconText,
+                                width: iconW,
+                                height: iconH,
+                            })
+                                .setInteractive({ cursor: 'pointer' })
+                                .on('pointerdown', function () {
+                                    let questionData =
+                                    {
+                                        question: localeJSON.UI['avatarErro'],
+                                        options: [localeJSON.UI['close']],
+                                    };
+
+                                    //===二次確認
+                                    let confirmIdx = await new Promise(resolve => {
+                                        let confirmScene = scene.scene.add(null, new Phaser.Scene("confirmScene"), true);
+                                        //==暫停formUI在的scene，所以確認視窗放在gameScene
+                                        new RexDialog(confirmScene, {
+                                            x: config.x,
+                                            y: config.y,
+                                            data: questionData,
+                                        }, resolve)
+                                            .popUp(500);
+
+                                        scene.scene.pause();
+                                    });
+
+                                    // console.debug(questionData.options[confirmIdx]);
+
+                                    scene.scene.resume();
+                                    scene.scene.remove("confirmScene");
+
+                                })
+                                .on('pointerout', function () {
+                                    this.getElement('background').setStrokeStyle();
+                                })
+                                .on('pointerover', function () {
+                                    this.getElement('background').setStrokeStyle(5, 0xffffff);
+                                });
+
+                            let gridItem =
+                                new RexPlugins.UI.Sizer(scene, {
+                                    // space: { left: 10, right: 10, top: 10, bottom: 10, item: 10 }
+                                })
+                                    .add(icon)
+                                    .add(
+                                        scene.add.text(0, 0, localeJSON.UI[item.name]), // child
+                                        { padding: { left: 10 }, });
+
+
 
                             return gridItem;
                         }
@@ -2557,9 +2639,9 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
 
                     Sizer
                         .add(
-                            getText(capKey), // child
+                            getText(localeJSON.UI[key]), // child
                             {
-                                proportion: 1,
+                                proportion: 0,
                                 align: 'left',
                                 padding: { left: 0, right: 0, top: 5, bottom: 0 },
                                 expand: true,
@@ -2632,7 +2714,6 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
 
                             });
 
-
                             break;
                         case 2://==連結
                             const
@@ -2694,22 +2775,31 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                             });
                             break;
                     };
-
                     Sizer.add(content);
 
                 };
 
                 return Sizer;
             };
-            var createIcon = (scene, name, iconWidth, iconHeight, iconSpace = 3) => {
-                return new RexPlugins.UI.Label(scene, {
-                    orientation: scrollMode,
-                    icon: scene.add.existing(
-                        new RexPlugins.UI.RoundRectangle(scene, 0, 0, iconWidth, iconHeight, 5, COLOR_LIGHT)),
-                    text: scene.add.text(0, 0, name),
-                    space: { icon: iconSpace }
-                });
+            var createIcon = (scene, iconType, config = {}) => {
+                //===panelType暫定: 0:緣由 1:設定 2:連結 3:道具
+                //===iconType: controll,language
 
+                return new RexPlugins.UI.Label(scene, {
+                    // orientation: scrollMode,
+                    icon: panelType == 3 ? scene.add.existing(
+                        new RexPlugins.UI.RoundRectangle(scene, 0, 0, iconWidth, iconHeight, 5, COLOR_LIGHT)) : false,
+                    width: panelType != 3 ? config.width : false,
+                    height: panelType != 3 ? config.height : false,
+                    background: scene.add.existing(
+                        new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 5, COLOR_LIGHT)),
+                    text: panelType != 3 ? scene.add.text(0, 0, config.text, {
+                        color: '#000',
+                    }) : false,
+                    name: iconType,
+                    align: 'center',
+                    space: { icon: config.iconSpace ? config.iconSpace : 0 }
+                });
             };
 
             var sizer = new RexPlugins.UI.Sizer(scene, {
@@ -2725,13 +2815,12 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                 );
 
             //==設定中物品
-            Object.keys(data.category).forEach(item => {
+            categoryArray.forEach(category => {
                 sizer.add(
-                    createTable(scene, item), // child
+                    createTable(scene, category), // child
                     { expand: true },
                 );
             })
-
 
             return sizer;
         };
@@ -3186,8 +3275,6 @@ class RexForm extends RexPlugins.UI.Sizer {
             }).addBackground(scene.add.existing(
                 new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 7, undefined).setStrokeStyle(2, COLOR_LIGHT, 1)
             ));
-
-
         };
 
         const formConfig = {

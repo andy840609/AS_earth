@@ -40,7 +40,7 @@ function locatingGame() {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 300 },
-                    debug: true,
+                    // debug: true,
                 },
             },
             dom: {//==for rexUI:rexTextEdit
@@ -254,7 +254,7 @@ function locatingGame() {
                 let playerRole = 'maleAdventurer';//==之後能選其他[Biker,Cyborg,Punk]
                 let sidekick = 'Dude';//=='Owlet,Dude,Pink'
 
-                let playerName = 'ddd',
+                let playerName = '',
                     avatarIndex = 0,//==自選頭像
                     avatarBgColor = 0x5B5B5B;//
 
@@ -295,7 +295,7 @@ function locatingGame() {
                     },
                     sidekick: {
                         type: sidekick,
-                        lineStage: [0, 0],//==第2-0句
+                        lineStage: [1, 0],//==第2-0句
                         doneTalking: false,
                         stopHotkey: false,//==對話完空白鍵不再出現對話（只能滑鼠點）
                     },
@@ -317,21 +317,21 @@ function locatingGame() {
                     GameData.localeJSON = await getLanguageJSON();
 
                     //==test
-                    // gameDisplay(true);
-                    // let newGameData = await new Promise((resolve, reject) => {
-                    //     const config = Object.assign(getPhaserConfig(width, height), {
-                    //         scene: new GameStartScene(GameData, {
-                    //             getWaveImg: getWaveImg,
-                    //             resolve: resolve,
-                    //         }),
-                    //     });
-                    //     new Phaser.Game(config);
-                    // });
+                    gameDisplay(true);
+                    let newGameData = await new Promise((resolve, reject) => {
+                        const config = Object.assign(getPhaserConfig(width, height), {
+                            scene: new GameStartScene(GameData, {
+                                getWaveImg: getWaveImg,
+                                resolve: resolve,
+                            }),
+                        });
+                        new Phaser.Game(config);
+                    });
 
-                    // if (GameData.locale != newGameData.locale)
-                    //     GameData.localeJSON = await getLanguageJSON();
-                    // Object.assign(GameData, newGameData);
-                    // gameDisplay(false);
+                    if (GameData.locale != newGameData.locale)
+                        GameData.localeJSON = await getLanguageJSON();
+                    Object.assign(GameData, newGameData);
+                    gameDisplay(false);
                     //==test
 
                     initMap();
@@ -615,8 +615,8 @@ function locatingGame() {
                     data.forEach((d, i) => {
                         // console.debug(d);
                         // let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
-                        let enemy = [];//==之後隨機抽敵人組
-                        // let enemy = [enemyArr[getRandom(enemyArr.length)]];
+                        // let enemy = [];//==之後隨機抽敵人組
+                        let enemy = [enemyArr[getRandom(enemyArr.length)]];
                         let enemyStats = {};
 
                         enemy.forEach((key) => {
@@ -725,7 +725,7 @@ function locatingGame() {
                             updateStation(e.target, { mouseEvent: 0 });
                         })
                         .on('click', function (e) {
-                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             //==觸發畫面位置點擊(要在假設點上座標才對)
                             const event = new MouseEvent('click', {
                                 'view': window,
@@ -756,7 +756,7 @@ function locatingGame() {
                     const ctrlDir = assetsDir + 'ui/map/controller/';
 
                     //===UIBar
-                    const UIbuttons = ['playerStats', 'velocityChart'];
+                    const UIbuttons = ['playerStats', 'velocityChart', 'questInfo'];
 
                     //===UItooltip
                     const UItooltip = gameUI
@@ -772,7 +772,6 @@ function locatingGame() {
                     const guideArrow = gameUI
                         .append(`<div class="guideArrow"><img src="${assetsDir}ui/map/guideArrow.gif"></img></div>`)
                         .find('.guideArrow');
-
 
                     function updateTooltip(target) {
                         let bigMapDOMRect = bigMap.getBoundingClientRect();
@@ -883,7 +882,6 @@ function locatingGame() {
                                         UI
                                             .width(height * 0.5)
                                             .height(height * 0.5);
-
                                         break;
                                     case 'velocityChart':
                                         //==lock gif
@@ -906,9 +904,23 @@ function locatingGame() {
                                             .width(height * 0.4)
                                             .height(height * 0.4);
 
-
                                         break;
-
+                                    case 'questInfo':
+                                        UI
+                                            .append(`
+                                            <div>
+                                                <a href="http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans1.html" onclick="window.open('http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans1.html','ans','scrollbars=yes,width=550,height=500,left=50,top=50');return false;"> ◆ 什麼是地震定位？</a><a href="/../abcheng/circles/gameans2.html" target="_blank" onclick="window.open('/../abcheng/circles/gameans2.html','ans2','scrollbars=yes,width=850,height=500,left=50,top=50');return false;"></a>
+                                                <a href="http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans2.html" target="_blank" onclick="window.open('http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans2.html','ans2','scrollbars=yes,width=850,height=500,left=50,top=50');return false;"> ◆ 地震發生後，氣象局發布的地震資訊及相關訊息?</a><a href="/../abcheng/circles/gameans3.html" onclick="window.open('/../abcheng/circles/gameans3.html','ans','scrollbars=yes,width=650,height=500,left=50,top=50');return false;"></a>
+                                                <a href="http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans3.html" onclick="window.open('http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans3.html','ans','scrollbars=yes,width=650,height=500,left=50,top=50');return false;"> ◆ 地震定位需要取得那些資訊？</a>
+                                                <a href="http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans4.html" title="Q4Answer" onclick="window.open('http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans4.html','a4','width=650,height=500,left=50,top=50');return false;"> ◆ 認識地震波 -- 體波與表面波</a>
+                                                <a href="http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans5.html" title="a5" onclick="window.open('http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans5.html','a5','width=650,height=500,left=50,top=50');return false;"> ◆ 地震波中的體波 -- P波與S波特性</a>
+                                                <a href="http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans6.html" onclick="window.open('http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans6.html','ans','scrollbars=yes,width=650,height=500,left=50,top=50');return false;"> ◆ 如何判斷P波與S波的到達時間(到時)？</a>
+                                                <a href="http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans7.html" title="a7" onclick="window.open('http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans7.html','a7','scrollbars=yes,width=650,height=500,left=50,top=50');return false;"> ◆ 利用P波與S 波的到時可以推測地震距離有多遠</a>
+                                                <a href="http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans8.html" onclick="window.open('http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans8.html','ans','scrollbars=yes,resizable=yes,width=650,height=500,left=50,top=50');return false;"> ◆ 如何簡單推測地震的位置(震央)？ </a>
+                                            </div>
+                                            `)
+                                    // .width(height * 0.5)
+                                    // .height(height * 0.5);
                                 };
 
                             });
@@ -976,7 +988,7 @@ function locatingGame() {
                                 })
                                 .on('click', function (e) {
                                     //==速度參數要完成兩站才能調整
-                                    // if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
+                                    if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
 
                                     let button = $(this);
                                     let ckick = button.hasClass('clicked');
@@ -1135,7 +1147,7 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
-                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             let lat = e.latlng.lat,
                                 lng = e.latlng.lng
 

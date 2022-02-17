@@ -1814,6 +1814,7 @@ class UIScene extends Phaser.Scene {
                     let keys = Object.values(controllCursor).join();
                     this.cursors = this.input.keyboard.addKeys(keys);
                     gameScene.cursors = this.cursors;
+                    // console.debug(controllCursor, this.cursors);
                 };
                 update = () => {
                     if (gameScene.name != 'defend') return;
@@ -1887,13 +1888,13 @@ class UIScene extends Phaser.Scene {
 
                         };
 
-                        //==問答題
-                        this.newQuiz = (data, bossQuiz = true, resolve) => {
+                        //==問答題 quizType:['魔王問答','確認框','按鍵設定監聽按鍵','選擇語言']
+                        this.newQuiz = (data, quizType = 0, resolve) => {
                             return new RexDialog(this, {
                                 x: DLconfig.dialogX,
                                 y: DLconfig.dialogY * 0.5,
                                 data: data,
-                                bossQuiz: bossQuiz,
+                                quizType: quizType,
                             }, resolve)
                                 .setDepth(Depth.UI)
                                 .popUp(500);
@@ -1901,7 +1902,6 @@ class UIScene extends Phaser.Scene {
 
                         //==可拉動內容框
                         this.newPanel = (panelType = 0, resolve = null) => {
-
                             return new RexScrollablePanel(this, {
                                 x: DLconfig.dialogX,
                                 y: DLconfig.dialogY * 0.5,
@@ -1952,7 +1952,6 @@ class UIScene extends Phaser.Scene {
                     };
                     addRexUI();
                     guideSword();
-
 
                     gameScene.RexUI = this;
                     // console.debug(this);
@@ -3716,7 +3715,7 @@ class GameStartScene extends Phaser.Scene {
                             .setScale(1)
                             .clearTint();
                     })
-                    .on('pointerdown', () => {
+                    .on('pointerdown', async () => {
                         // console.debug(button);
                         switch (button) {
                             case 'startGame':
@@ -3733,14 +3732,24 @@ class GameStartScene extends Phaser.Scene {
                                     .setVisible(true)
                                     .bringToTop();
 
-                                let panel = this.RexUI.newPanel(button);
+                                // let panel = this.RexUI.newPanel(button);
+                                // this.RexUI.scene.bringToTop();
+                                // this.scene.pause();
+
+                                // panel.on('destroy', () => {
+                                //     blackOut.setVisible(false);
+                                //     this.scene.resume();
+                                // });
+
                                 this.RexUI.scene.bringToTop();
                                 this.scene.pause();
 
-                                panel.on('destroy', () => {
-                                    blackOut.setVisible(false);
-                                    this.scene.resume();
-                                });
+                                let buttonPressed = await new Promise(resolve => this.RexUI.newPanel(button, resolve));
+                                console.debug(buttonPressed);
+
+                                blackOut.setVisible(false);
+                                this.scene.resume();
+
                                 break;
 
                         };
@@ -5551,7 +5560,7 @@ class DigScene extends Phaser.Scene {
                         options: [localeJSON.UI['yes'], localeJSON.UI['no']],
                     };
 
-                    let enterIdx = await new Promise(resolve => this.RexUI.newQuiz(questionData, false, resolve));
+                    let enterIdx = await new Promise(resolve => this.RexUI.newQuiz(questionData, 1, resolve));
 
                     if (questionData.options[enterIdx] == localeJSON.UI['yes']) {
                         const doorDelay = 1300;
@@ -6449,7 +6458,7 @@ class BossScene extends Phaser.Scene {
                 });
             };
             var showQuiz = async () => {
-                let correct = await new Promise(resolve => this.quizObj = this.RexUI.newQuiz(getQuiz(), true, resolve));
+                let correct = await new Promise(resolve => this.quizObj = this.RexUI.newQuiz(getQuiz(), 0, resolve));
                 await new Promise(resolve => this[correct ? 'player' : 'boss'].attackAnims(resolve));
 
                 if (this.boss.stats.HP > 0 && !this.gameOver.flag) showQuiz();

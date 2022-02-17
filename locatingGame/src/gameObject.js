@@ -2165,12 +2165,13 @@ class RexDialog extends RexPlugins.UI.Dialog {
     constructor(scene, config, resolve) {
         // console.debug(scene, config, resolve);
 
+        //== quizType:['魔王問答','確認框','按鍵設定監聽按鍵','選擇語言']
         var data = config.data,
-            bossQuiz = config.bossQuiz;
+            quizType = config.quizType;
 
         const
-            COLOR_PRIMARY = bossQuiz ? 0x333333 : 0x003c8f,//==box背景色
-            COLOR_LIGHT = bossQuiz ? 0x7A7A7A : 0x1565c0,//==選項顏色
+            COLOR_PRIMARY = !quizType ? 0x333333 : 0x003c8f,//==box背景色
+            COLOR_LIGHT = !quizType ? 0x7A7A7A : 0x1565c0,//==選項顏色
             COLOR_DARK = 0xD0B625,//==標題顏色
             COLOR_CORRECT = 0x009100,
             COLOR_WRONG = 0x750000;
@@ -2195,12 +2196,12 @@ class RexDialog extends RexPlugins.UI.Dialog {
                     top: 10,
                     bottom: 10
                 },
-                align: bossQuiz ? 'left' : 'center',
+                align: !quizType ? 'left' : 'center',
             });
         };
         var setDialog = (data) => {
             // console.debug(scene);
-            if (bossQuiz) {
+            if (!quizType) {
                 //==分行
                 // const
                 //     charInLine = locale == "zh-TW" ? 8 : 15,//每行字數
@@ -2235,6 +2236,11 @@ class RexDialog extends RexPlugins.UI.Dialog {
                     };
                 };
             }
+            else if (quizType == 3) {
+                data.options.forEach((option, i) =>
+                    this.addChoice(createLabel(scene, option, COLOR_LIGHT))
+                );
+            }
             else {
                 this.getElement('content').text = data.question;
                 data.options.forEach((option, i) => {
@@ -2243,7 +2249,6 @@ class RexDialog extends RexPlugins.UI.Dialog {
                             minWidth: 80,  //===每個選項長度一樣
                         }));
                 });
-
             };
             return this;
         };
@@ -2254,9 +2259,8 @@ class RexDialog extends RexPlugins.UI.Dialog {
         const dialogConfig = {
             x: config.x,
             y: config.y,
-            // width: bossQuiz ? 360 : false,
             background: scene.add.existing(rexRect),
-            title: bossQuiz ? createLabel(scene, ' ', COLOR_DARK) : null,
+            title: !quizType ? createLabel(scene, ' ', COLOR_DARK) : null,
             // content: scene.add.text(0, 0, '', {
             //     fontSize: '36px',
             //     padding: padding,
@@ -2268,20 +2272,21 @@ class RexDialog extends RexPlugins.UI.Dialog {
                     // color: '#272727',
                     wrap: {
                         mode: 2,// 0|'none'|1|'word'|2|'char'|'character'
-                        width: bossQuiz ? 360 : false,
+                        width: !quizType ? 360 : false,
                     },
                     align: 'left',
                     padding: padding,
+                    lineSpacing: !quizType ? 10 : 30,
                 })),
-            choices: bossQuiz ?
+            choices: !quizType ?
                 [
                     createLabel(scene, ' ', COLOR_LIGHT),
                     createLabel(scene, ' ', COLOR_LIGHT),
                     createLabel(scene, ' ', COLOR_LIGHT),
                     createLabel(scene, ' ', COLOR_LIGHT),
-                ] : false,
+                ] : quizType == 3 ? [] : false,
             actions: [],
-            align: !bossQuiz ? {
+            align: quizType ? {
                 actions: 'right', // 'center'|'left'|'right'
             } : false,
             space: {
@@ -2313,7 +2318,7 @@ class RexDialog extends RexPlugins.UI.Dialog {
 
                 let answer, tweenTarget, duration;
 
-                if (bossQuiz) {
+                if (!quizType) {
                     let text = this.getElement('choices[' + index + ']').text;
                     answer = (text == data.answer);
 
@@ -2339,7 +2344,6 @@ class RexDialog extends RexPlugins.UI.Dialog {
                     duration = 80;
                     answer = index;
                     tweenTarget = [this];
-
                 };
 
                 //視窗縮小
@@ -2373,6 +2377,38 @@ class RexDialog extends RexPlugins.UI.Dialog {
         setDialog(data).layout();
 
 
+        if (quizType == 2) {
+            const keyCode = Phaser.Input.Keyboard.KeyCodes;
+            let content = this.getElement('content');
+            // console.debug(config.tmpData);
+            //==監聽鍵盤按鍵
+            scene.input.keyboard.on('keyup', (e) => {
+                let key = Object.keys(keyCode).find(key => keyCode[key] === e.keyCode),
+                    isKeyExisted = Object.values(config.tmpData).indexOf(key) !== -1;
+
+                if (isKeyExisted) {
+                    content.setText(`[size=40][color=red][b]${key}[/b][/color][/size]\n按鍵重複`);
+                }
+                else {
+                    content.setText(`[size=40][color=green][b]${key}[/b][/color][/size]`);
+
+                    scene.tweens.add({
+                        targets: this,
+                        scaleX: { start: t => t.scaleX, to: 0 },
+                        scaleY: { start: t => t.scaleY, to: 0 },
+                        ease: 'Bounce', // 'Cubic', 'Elastic', 'Bounce', 'Back'
+                        duration: 600,
+                        onComplete: () => {
+                            this.destroy();
+                            resolve(key);
+                        },
+                    });
+
+                };
+                // console.debug(e);
+                // console.debug(key, isKeyExisted);
+            });
+        };
 
     };
 };
@@ -2380,7 +2416,7 @@ class RexDialog extends RexPlugins.UI.Dialog {
 //==可拉動內容
 class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
     constructor(scene, config, resolve) {
-        var gameData = config.gameData,
+        const gameData = config.gameData,
             localeJSON = gameData.localeJSON,
             scrollMode = config.scrollMode ? config.scrollMode : 0,
             panelType = {//===panelType暫定: 0:緣由 1:設定 2:連結 3:道具
@@ -2388,20 +2424,27 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                 'setting': 1,
                 'links': 2,
                 'rank': 1,
-            }[config.panelType];
+            }[config.panelType],
+            x = config.x, y = config.y;
         // console.debug(gameData);
 
         var data, footerItem, panelName = gameData.localeJSON.UI[config.panelType];
+        var tmp = null;//==按鍵設定...
         switch (panelType) {
             case 0:
                 data = {
                     name: panelName,
                     intro: localeJSON.Intro['intro'],
-                    category: {}
+                    category: {},
                 };
                 footerItem = ['close'];
                 break;
             case 1:
+                tmp = {
+                    controllCursor: { ...gameData.controllCursor },
+                    locale: gameData.locale,
+                    localeChange: false,//==改變要重讀JSON
+                };
                 data = {
                     name: panelName,
                     category: {
@@ -2420,9 +2463,12 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                             { name: 'reset' },
                             { name: 'exit' },
                         ],
+                        'language': [
+                            { name: tmp.locale },
+                        ],
                     },
                 };
-                footerItem = ['ok', 'cancel'];
+                footerItem = ['reset', 'ok', 'cancel'];
                 break;
             case 2:
                 data = {
@@ -2489,7 +2535,6 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
 
         var createPanel = (scene, data) => {
             const categoryArray = Object.keys(data.category);
-            const iconW = 70, iconH = 35;
 
             var createTable = (scene, key = null) => {
                 var IsURLKey = function (key) {
@@ -2538,8 +2583,10 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                 if (key) {
                     let items = data.category[key];
                     const
-                        columns = config.width < 800 ? 2 : 4,
+                        columns = 2,
                         rows = Math.ceil(items.length / columns);
+
+
 
                     let table = new RexPlugins.UI.GridSizer(scene, {
                         column: columns,
@@ -2572,13 +2619,43 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                             });
 
                             // console.debug(gameData.controllCursor[item.name]);
-                            let iconText;
+                            let iconText, iconW = 70, iconH = 35;
+                            let questionData, quizType, tmpData, keyPressAction;
                             switch (key) {
                                 case 'control':
                                     iconText = gameData.controllCursor[item.name];
+                                    questionData =
+                                    {
+                                        question: localeJSON.UI['controlHint'],
+                                        options: [localeJSON.UI['cancel']],
+                                    };
+                                    quizType = 2;
+                                    tmpData = tmp.controllCursor;
+                                    keyPressAction = (icon, keyPressed) => {
+                                        if (!keyPressed) return;
+                                        icon.getElement('text').setText(keyPressed);
+                                        tmp.controllCursor[item.name] = keyPressed;
+                                    };
                                     break;
                                 case 'language':
-                                    iconText = 'AAA';
+                                    let languages = ['zh-TW', 'en-US'];
+                                    iconText = localeJSON.UI[item.name];
+                                    iconW = 120, iconH = 40;
+                                    questionData =
+                                    {
+                                        options: languages.map(lan => localeJSON.UI[lan]),
+                                    };
+                                    quizType = 3;
+                                    tmpData = tmp.locale;
+                                    keyPressAction = (icon, keyPressed) => {
+                                        icon.getElement('text').setText(questionData.options[keyPressed]);
+                                        let newData = languages[keyPressed];
+                                        if (newData !== tmp.locale) tmp.localeChange = true;
+                                        tmp.locale = newData;
+                                    };
+                                    break;
+                                default:
+                                    iconText = false;
                                     break;
                             };
 
@@ -2588,31 +2665,24 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                                 height: iconH,
                             })
                                 .setInteractive({ cursor: 'pointer' })
-                                .on('pointerdown', function () {
-                                    let questionData =
-                                    {
-                                        question: localeJSON.UI['avatarErro'],
-                                        options: [localeJSON.UI['close']],
-                                    };
+                                .on('pointerdown', async function () {
 
-                                    //===二次確認
-                                    let confirmIdx = await new Promise(resolve => {
+                                    let keyPressed = await new Promise(resolve => {
                                         let confirmScene = scene.scene.add(null, new Phaser.Scene("confirmScene"), true);
-                                        //==暫停formUI在的scene，所以確認視窗放在gameScene
+                                        //==暫停UI在的scene，所以確認視窗放在gameScene
                                         new RexDialog(confirmScene, {
-                                            x: config.x,
-                                            y: config.y,
+                                            x: x,
+                                            y: y,
                                             data: questionData,
-                                        }, resolve)
-                                            .popUp(500);
-
+                                            tmpData: tmpData,
+                                            quizType: quizType,
+                                        }, resolve).popUp(500);
                                         scene.scene.pause();
                                     });
-
-                                    // console.debug(questionData.options[confirmIdx]);
-
                                     scene.scene.resume();
                                     scene.scene.remove("confirmScene");
+
+                                    keyPressAction(this, keyPressed);
 
                                 })
                                 .on('pointerout', function () {
@@ -2622,11 +2692,13 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                                     this.getElement('background').setStrokeStyle(5, 0xffffff);
                                 });
 
-                            let gridItem =
-                                new RexPlugins.UI.Sizer(scene, {
-                                    // space: { left: 10, right: 10, top: 10, bottom: 10, item: 10 }
-                                })
-                                    .add(icon)
+
+                            let gridItem = new RexPlugins.UI.Sizer(scene, {
+                                // space: { left: 10, right: 10, top: 10, bottom: 10, item: 10 }
+                            }).add(icon);
+
+                            if (key == 'control')
+                                gridItem
                                     .add(
                                         scene.add.text(0, 0, localeJSON.UI[item.name]), // child
                                         { padding: { left: 10 }, });
@@ -2641,7 +2713,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                         .add(
                             getText(localeJSON.UI[key]), // child
                             {
-                                proportion: 0,
+                                proportion: 1,
                                 align: 'left',
                                 padding: { left: 0, right: 0, top: 5, bottom: 0 },
                                 expand: true,
@@ -2649,9 +2721,9 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                         )
                         .add(table, // child
                             {
-                                proportion: 3,
+                                proportion: 2,
                                 align: 'center',
-                                padding: { left: 0, right: 0, top: 0, bottom: 0 },
+                                padding: { left: 0, right: 0, top: 10, bottom: 10 },
                                 expand: true,
                             }
                         );
@@ -2789,13 +2861,13 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                     // orientation: scrollMode,
                     icon: panelType == 3 ? scene.add.existing(
                         new RexPlugins.UI.RoundRectangle(scene, 0, 0, iconWidth, iconHeight, 5, COLOR_LIGHT)) : false,
-                    width: panelType != 3 ? config.width : false,
-                    height: panelType != 3 ? config.height : false,
+                    width: config.width ? config.width : false,
+                    height: config.height ? config.height : false,
                     background: scene.add.existing(
                         new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 5, COLOR_LIGHT)),
-                    text: panelType != 3 ? scene.add.text(0, 0, config.text, {
+                    text: config.text ? scene.add.text(0, 0, config.text, {
                         color: '#000',
-                    }) : false,
+                    }).setOrigin(0.5) : false,
                     name: iconType,
                     align: 'center',
                     space: { icon: config.iconSpace ? config.iconSpace : 0 }
@@ -2869,9 +2941,24 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
             })
                 .on('button.click', (button, index, p, e) => {
                     let duration = 500;
-
                     // console.debug(footerItem[index]);
                     // console.debug(button, index, p, e);
+                    let localeChange = false;
+                    if (panelType === 1)
+                        switch (footerItem[index]) {
+                            case 'ok':
+                                gameData.controllCursor = tmp.controllCursor;
+                                gameData.locale = tmp.locale;
+                                // if (tmp.localeChange) {
+                                //     GameData.localeJSON = await getLanguageJSON();
+                                // };
+                                break;
+                            case 'cancel':
+                                break;
+                            case 'reset':
+
+                                break;
+                        };
 
 
                     //視窗縮小
@@ -2883,7 +2970,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                         duration: duration,
                         onComplete: () => {
                             this.destroy();
-                            // resolve(answer);
+                            if (resolve) resolve(localeChange);
                         },
                     });
 
@@ -2897,8 +2984,8 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
         };
 
         const panelConfig = {
-            x: config.x,
-            y: config.y,
+            x: x,
+            y: y,
             width: config.width,
             height: config.height,
             scrollMode: scrollMode,
@@ -2943,6 +3030,10 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
 
         this.layout();
 
+
+        // let cursors = scene.input.keyboard.addKey(67);
+
+
         // Set icon interactive
         // var print = this.add.text(0, 0, '');
         // this.input.topOnly = false;
@@ -2971,7 +3062,6 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
 //==創角色UI
 class RexForm extends RexPlugins.UI.Sizer {
     constructor(scene, config, resolve) {
-
         var gameData = config.gameData;
 
         const GetValue = Phaser.Utils.Objects.GetValue;
@@ -3067,7 +3157,7 @@ class RexForm extends RexPlugins.UI.Sizer {
                                 x: config.sceneWidth * 0.5,
                                 y: config.sceneHeight * 0.5,
                                 data: questionData,
-                                bossQuiz: false,
+                                quizType: 1,
                             }, resolve)
                                 .popUp(500);
 
@@ -3218,7 +3308,6 @@ class RexForm extends RexPlugins.UI.Sizer {
                     .setInteractive()
                     .on('pointerdown', function () {
                         let name = this.name;
-
                         //==找到頭像預覽框
                         let avatarSelect = form.getElement('#avatarSelect', true);
                         if (isTexture) {

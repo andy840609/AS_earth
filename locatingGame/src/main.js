@@ -254,7 +254,7 @@ function locatingGame() {
                 let playerRole = 'maleAdventurer';//==之後能選其他[Biker,Cyborg,Punk]
                 let sidekick = 'Dude';//=='Owlet,Dude,Pink'
 
-                let playerName = '',
+                let playerName = 'ss',
                     avatarIndex = 0,//==自選頭像
                     avatarBgColor = 0x5B5B5B;//
 
@@ -265,20 +265,20 @@ function locatingGame() {
                     velocity: 7.5,//==速度參數預設7.5
                     playerEpicenter: null,
                     controllCursor: {
-                        up: 'w',
-                        down: 's',
-                        left: 'a',
-                        right: 'd',
-                        attack: 'space',
+                        up: 'W',
+                        down: 'S',
+                        left: 'A',
+                        right: 'D',
+                        attack: 'SPACE',
                         //==UI controll
-                        pause: 'p',
-                        backpack: 'i',
-                        detector: 'o',
-                        shiftLeft: 'q',
-                        shiftRight: 'e',
-                        functionKey: 'c',
-                        reset: 'r',
-                        exit: 'esc',
+                        pause: 'P',
+                        backpack: 'I',
+                        detector: 'O',
+                        shiftLeft: 'Q',
+                        shiftRight: 'E',
+                        functionKey: 'C',
+                        reset: 'R',
+                        exit: 'ESC',
                     },
                     locale: 'zh-TW',
                     playerRole: playerRole,
@@ -725,7 +725,7 @@ function locatingGame() {
                             updateStation(e.target, { mouseEvent: 0 });
                         })
                         .on('click', function (e) {
-                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             //==觸發畫面位置點擊(要在假設點上座標才對)
                             const event = new MouseEvent('click', {
                                 'view': window,
@@ -988,7 +988,7 @@ function locatingGame() {
                                 })
                                 .on('click', function (e) {
                                     //==速度參數要完成兩站才能調整
-                                    if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
+                                    // if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
 
                                     let button = $(this);
                                     let ckick = button.hasClass('clicked');
@@ -1147,7 +1147,7 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
-                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             let lat = e.latlng.lat,
                                 lng = e.latlng.lng
 
@@ -1721,7 +1721,7 @@ function locatingGame() {
                         new Phaser.Game(config);
                     });
 
-                    console.debug(gameResult);
+                    // console.debug(gameResult);
                     let stationInfo = gameResult.stationInfo;
                     let playerInfo = gameResult.playerInfo;
 

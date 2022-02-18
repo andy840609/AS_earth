@@ -235,6 +235,7 @@ function locatingGame() {
             var gameDisplay = (display) => {
                 if (display) {
                     gameOuterDiv.fadeIn();
+                    $(bigMap).hide();
 
                     //==遊戲開始UI關閉
                     gameUI.find('.UIicon').toggleClass('clicked', false);
@@ -246,6 +247,7 @@ function locatingGame() {
                 }
                 else {
                     gameOuterDiv.fadeOut();
+                    $(bigMap).show();
                 };
                 gameStartFlag = display;
             };
@@ -302,9 +304,10 @@ function locatingGame() {
                 };
             };
             function initStartScene() {
-                var getLanguageJSON = () => {
+                var getLanguageJSON = (locale = false) => {
+                    // console.debug(locale);
                     return $.ajax({
-                        url: "data/locale/" + GameData.locale + ".json",
+                        url: "data/locale/" + (locale ? locale : GameData.locale) + ".json",
                         dataType: "json",
                         async: false,
                         // success: function (d) { console.debug(d); },
@@ -315,6 +318,7 @@ function locatingGame() {
                 };
                 var startScene = async () => {
                     GameData.localeJSON = await getLanguageJSON();
+                    GameData.getLanguageJSON = getLanguageJSON;
 
                     //==test
                     gameDisplay(true);
@@ -323,14 +327,12 @@ function locatingGame() {
                             scene: new GameStartScene(GameData, {
                                 getWaveImg: getWaveImg,
                                 resolve: resolve,
+                                getLanguageJSON: getLanguageJSON,
                             }),
                         });
                         new Phaser.Game(config);
                     });
 
-                    if (GameData.locale != newGameData.locale)
-                        GameData.localeJSON = await getLanguageJSON();
-                    Object.assign(GameData, newGameData);
                     gameDisplay(false);
                     //==test
 

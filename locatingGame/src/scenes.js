@@ -325,16 +325,38 @@ class UIScene extends Phaser.Scene {
                                         if (detectorUI) detectorUI.scene.resume();
                                         this.scene.remove();
                                         break;
-
                                     case 'tutorial':
                                         if (gameScene.name != 'defend') return;
                                         this.scene.add(null, new UIScene('tutorial', this), true);
                                         break;
+                                    case 'setting':
+                                        return;
+                                        //==對話框...在的RexUI被暫停了
+                                        this.scene.add(null, new UIScene('RexUI', this), true);
+                                        // let blackOut = this.blackOut.scene
+                                        //     .setVisible(true)
+                                        //     .bringToTop();
 
+                                        // gameScene.scene.resume();
+                                        let panel = this.RexUI.newPanel(button);
+                                        this.RexUI.scene.bringToTop();
+                                        // this.scene.pause();
+
+                                        // panel.on('destroy', () => {
+                                        //     blackOut.setVisible(false);
+                                        //     if (button == 'setting')
+                                        //         buttonGroup.forEach((group, i) =>
+                                        //             group.text.setText(this.gameData.localeJSON.UI[buttons[i]])
+                                        //         );
+                                        //     this.scene.resume();
+                                        // });
+                                        break;
                                     case 'exit':
                                         this.scene.add(null, new UIScene('exitUI', this), true);
                                         this.scene.remove();
                                         break;
+
+
                                 }
                             });
 
@@ -1873,7 +1895,7 @@ class UIScene extends Phaser.Scene {
                             //==新設定
                             // if (config) Object.assign(DLconfig, config);
 
-                            return new RexTextBox(this, {
+                            let textBox = new RexTextBox(this, {
                                 x: DLconfig.dialogX,
                                 y: DLconfig.dialogY,
                                 wrapWidth: DLconfig.dialogWidth,
@@ -1886,6 +1908,8 @@ class UIScene extends Phaser.Scene {
                                 // .setDepth(Depth.UI)
                                 .start(content, 50);
 
+                            this.textBox = textBox;
+                            return textBox;
                         };
 
                         //==問答題 quizType:['魔王問答','確認框','按鍵設定監聽按鍵','選擇語言']
@@ -2628,6 +2652,7 @@ class UIScene extends Phaser.Scene {
                                     stepText = UItextJSON['stepText'].replace('\t', this.stepObj.nowStep).replace('\t', this.stepObj.maxStep);
                                 // console.debug(this.buttonGroups)
                                 if (flash) {
+                                    this.sprinkle.setVisible(false).anims.stop();
                                     this.cameras.main.flashHandler();
                                     this.player.attackEffect.anims.remove();
                                     this.player.enableBody(true, this.physics.world.bounds.left, height * 0.5, true, true);
@@ -2727,7 +2752,7 @@ class UIScene extends Phaser.Scene {
                                     key: 'sprinkle_fly',
                                     frames: this.anims.generateFrameNumbers('sprinkle'),
                                     frameRate: 12,
-                                    repeat: 0,
+                                    repeat: 1,
                                 });
                             };
                             animsCreate();
@@ -3588,8 +3613,8 @@ class GameStartScene extends Phaser.Scene {
                 this.load.image('epicenter', UIDir + 'epicenter.png');
                 this.load.image('PSwave', UIDir + 'PSwave.png');
                 this.load.image('GDMS', UIDir + 'GDMS.png');
-                this.load.image('TAPS', UIDir + 'TAPS.png');
-
+                this.load.image('BATS', UIDir + 'BATS.png');
+                this.load.image('TECDC', UIDir + 'TECDC.png');
             };
             controller();
             intro();
@@ -3732,23 +3757,27 @@ class GameStartScene extends Phaser.Scene {
                                     .setVisible(true)
                                     .bringToTop();
 
-                                // let panel = this.RexUI.newPanel(button);
-                                // this.RexUI.scene.bringToTop();
-                                // this.scene.pause();
-
-                                // panel.on('destroy', () => {
-                                //     blackOut.setVisible(false);
-                                //     this.scene.resume();
-                                // });
-
+                                let panel = this.RexUI.newPanel(button);
                                 this.RexUI.scene.bringToTop();
                                 this.scene.pause();
 
-                                let buttonPressed = await new Promise(resolve => this.RexUI.newPanel(button, resolve));
-                                console.debug(buttonPressed);
+                                panel.on('destroy', () => {
+                                    blackOut.setVisible(false);
+                                    if (button == 'setting')
+                                        buttonGroup.forEach((group, i) =>
+                                            group.text.setText(this.gameData.localeJSON.UI[buttons[i]])
+                                        );
+                                    this.scene.resume();
+                                });
 
-                                blackOut.setVisible(false);
-                                this.scene.resume();
+                                // this.RexUI.scene.bringToTop();
+                                // this.scene.pause();
+
+                                // let buttonPressed = await new Promise(resolve => this.RexUI.newPanel(button, resolve));
+                                // console.debug(buttonPressed);
+
+                                // blackOut.setVisible(false);
+                                // this.scene.resume();
 
                                 break;
 
@@ -5420,12 +5449,12 @@ class DigScene extends Phaser.Scene {
 
                 //==每塊tile動畫
                 var animsCreate = () => {
-                    this.anims.create({
-                        key: "sprWater",
-                        frames: this.anims.generateFrameNumbers("sprWater"),
-                        frameRate: 5,
-                        repeat: -1
-                    });
+                    // this.anims.create({
+                    //     key: "sprWater",
+                    //     frames: this.anims.generateFrameNumbers("sprWater"),
+                    //     frameRate: 5,
+                    //     repeat: -1
+                    // });
 
                     this.anims.create({
                         key: "tileCrack",
@@ -5792,7 +5821,6 @@ class DigScene extends Phaser.Scene {
         };
 
         var updatePlayer = () => {
-
             if (!this.player.diggingFlag) this.player.movingHadler(this);//==挖掘時不動
             // this.player.pickingHadler(this);
             this.player.attackHandler(this);

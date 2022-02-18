@@ -920,6 +920,7 @@ const Player = new Phaser.Class({
 
     initialize:
         function Player(scene, key, stats) {
+            // scene.input.keyboard.on('keyup', (e) => { console.debug(e); });
             // console.debug(key);
             Phaser.Physics.Arcade.Sprite.call(this, scene);
             scene.physics.world.enableBody(this, 0);
@@ -1138,7 +1139,6 @@ const Player = new Phaser.Class({
     //==移動
     movingHadler: function (scene) {
         if (this.stopCursorsFlag) return;
-        // console.debug(this.anims.getName());
 
         let cursors = scene.cursors;
         let controllCursor = scene.gameData.controllCursor;
@@ -1169,13 +1169,14 @@ const Player = new Phaser.Class({
                 (currentAnims === 'player_run' || currentAnims === 'player_runAttack')) && this.body.touching.down)
                 this.anims.play('player_idle', true);
         };
+        // console.debug(cursors[controllCursor['up']].isDown);
 
         switch (scene.name) {
             default:
-            case 'defend':
+                // case 'defend':
                 if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['up']])) {
-                    //==跳
-
+                    // console.debug(cursors[controllCursor['up']]);
+                    //==跳              
                     if (this.body.touching.down) {
                         this.setVelocityY(-this.stats.jumpingPower);
                         this.anims.play('player_jump', true);
@@ -2423,12 +2424,12 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                 'intro': 0,
                 'setting': 1,
                 'links': 2,
-                'rank': 1,
+                'rank': 0,
             }[config.panelType],
             x = config.x, y = config.y;
-        // console.debug(gameData);
+        // console.debug(scene);
 
-        var data, footerItem, panelName = gameData.localeJSON.UI[config.panelType];
+        var data, footerItem, panelName = config.panelType;
         var tmp = null;//==按鍵設定...
         switch (panelType) {
             case 0:
@@ -2443,7 +2444,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                 tmp = {
                     controllCursor: { ...gameData.controllCursor },
                     locale: gameData.locale,
-                    localeChange: false,//==改變要重讀JSON
+                    localeJSON: gameData.localeJSON,//==改變要重讀JSON
                 };
                 data = {
                     name: panelName,
@@ -2586,8 +2587,6 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                         columns = 2,
                         rows = Math.ceil(items.length / columns);
 
-
-
                     let table = new RexPlugins.UI.GridSizer(scene, {
                         column: columns,
                         row: rows,
@@ -2602,7 +2601,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                             row: 10
                         },
                         name: key, // Search this name to get table back
-                        createCellContainerCallback: function (scene, col, row, config) {
+                        createCellContainerCallback: (scene, col, row, config) => {
                             let itemIndex = row * columns + col,
                                 item = items[itemIndex];
                             if (!item) return;
@@ -2619,16 +2618,13 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                             });
 
                             // console.debug(gameData.controllCursor[item.name]);
+
                             let iconText, iconW = 70, iconH = 35;
                             let questionData, quizType, tmpData, keyPressAction;
                             switch (key) {
                                 case 'control':
                                     iconText = gameData.controllCursor[item.name];
-                                    questionData =
-                                    {
-                                        question: localeJSON.UI['controlHint'],
-                                        options: [localeJSON.UI['cancel']],
-                                    };
+                                    questionData = { question: 'controlHint', options: ['cancel'], };
                                     quizType = 2;
                                     tmpData = tmp.controllCursor;
                                     keyPressAction = (icon, keyPressed) => {
@@ -2641,17 +2637,43 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                                     let languages = ['zh-TW', 'en-US'];
                                     iconText = localeJSON.UI[item.name];
                                     iconW = 120, iconH = 40;
-                                    questionData =
-                                    {
-                                        options: languages.map(lan => localeJSON.UI[lan]),
-                                    };
+                                    questionData = { options: languages };
                                     quizType = 3;
                                     tmpData = tmp.locale;
-                                    keyPressAction = (icon, keyPressed) => {
+                                    keyPressAction = async (icon, keyPressed) => {
                                         icon.getElement('text').setText(questionData.options[keyPressed]);
                                         let newData = languages[keyPressed];
-                                        if (newData !== tmp.locale) tmp.localeChange = true;
-                                        tmp.locale = newData;
+                                        if (newData !== tmp.locale) {
+                                            Object.assign(tmp, {
+                                                locale: newData,
+                                                localeJSON: await gameData.getLanguageJSON(newData),
+                                            });
+                                            // console.debug(tmp.localeJSON);
+
+                                            //===改目前的字語言
+                                            let localeJSON = tmp.localeJSON;
+                                            // console.debug(this);
+                                            this.getElement('header').setText(localeJSON.UI[data.name]);
+                                            this.getElement('footer').getElement('buttons').forEach((b, i) =>
+                                                b.setText(localeJSON.UI[footerItem[i]]));
+
+                                            let tables = this.getElement('panel').getElement('items');
+                                            Object.keys(data.category).forEach((key, i) => {
+                                                //==chidren=['category name','items grid']
+                                                let chidren = tables[i].getElement('items');
+                                                chidren[0].setText(localeJSON.UI[key]);
+                                                chidren[1].getElement('items').forEach((grid, i) => {
+                                                    if (grid) {
+                                                        let child = grid.getElement('items');
+                                                        if (key == 'control')
+                                                            child[1].setText(localeJSON.UI[data.category[key][i].name]);
+                                                        else if (key == 'language')
+                                                            child[0].setText(localeJSON.UI[newData]);
+                                                    };
+                                                });
+                                            });
+
+                                        };
                                     };
                                     break;
                                 default:
@@ -2666,14 +2688,22 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                             })
                                 .setInteractive({ cursor: 'pointer' })
                                 .on('pointerdown', async function () {
-
                                     let keyPressed = await new Promise(resolve => {
+
+                                        //==避免跳出視窗沒更新語言
+                                        let newQuestionData = {};
+                                        Object.keys(questionData).forEach(key =>
+                                            key == 'question' ?
+                                                newQuestionData[key] = tmp.localeJSON.UI[questionData[key]] :
+                                                newQuestionData[key] = questionData[key].map(k => tmp.localeJSON.UI[k])
+                                        );
+                                        // console.debug(questionData)
                                         let confirmScene = scene.scene.add(null, new Phaser.Scene("confirmScene"), true);
-                                        //==暫停UI在的scene，所以確認視窗放在gameScene
+                                        //==暫停UI在的scene，所以確認視窗放在gameScene                                  
                                         new RexDialog(confirmScene, {
                                             x: x,
                                             y: y,
-                                            data: questionData,
+                                            data: newQuestionData,
                                             tmpData: tmpData,
                                             quizType: quizType,
                                         }, resolve).popUp(500);
@@ -2789,10 +2819,11 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                             break;
                         case 2://==連結
                             const
-                                sites = ['GDMS', 'TAPS'],
+                                sites = ['GDMS', 'BATS', 'TECDC'],
                                 siteLinks = [
                                     'https://gdmsn.cwb.gov.tw/index.php',
-                                    'https://taps.earth.sinica.edu.tw/zh-TW/'
+                                    'https://bats.earth.sinica.edu.tw/',
+                                    'https://tecdc.earth.sinica.edu.tw/tecdc/',
                                 ],
                                 siteImgW = config.width * 0.6,
                                 siteImgH = config.height * 0.5;
@@ -2902,7 +2933,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                 text: scene.add.text(0, 0, text, {
                     fontSize: '48px',
                     padding: padding,
-                }),
+                }).setOrigin(0.5),
                 space: {
                     left: 10,
                     right: 10,
@@ -2923,7 +2954,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                     text: scene.add.text(0, 0, gameData.localeJSON.UI[text], {
                         fontSize: 18,
                         padding: padding
-                    }),
+                    }).setOrigin(0.5),
                     align: 'center',
                     space: {
                         left: 10,
@@ -2943,20 +2974,17 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                     let duration = 500;
                     // console.debug(footerItem[index]);
                     // console.debug(button, index, p, e);
-                    let localeChange = false;
+
                     if (panelType === 1)
                         switch (footerItem[index]) {
                             case 'ok':
-                                gameData.controllCursor = tmp.controllCursor;
-                                gameData.locale = tmp.locale;
-                                // if (tmp.localeChange) {
-                                //     GameData.localeJSON = await getLanguageJSON();
-                                // };
+                                Object.assign(gameData, tmp);
+
                                 break;
                             case 'cancel':
                                 break;
                             case 'reset':
-
+                                return;
                                 break;
                         };
 
@@ -2970,7 +2998,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                         duration: duration,
                         onComplete: () => {
                             this.destroy();
-                            if (resolve) resolve(localeChange);
+                            // if (resolve) resolve();
                         },
                     });
 
@@ -2991,7 +3019,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
             scrollMode: scrollMode,
             background: scene.add.existing(
                 new RexPlugins.UI.RoundRectangle(scene, 0, 0, 2, 2, 10, COLOR_PRIMARY)),
-            header: createLabel(scene, data.name, COLOR_LIGHT),
+            header: createLabel(scene, localeJSON.UI[data.name], COLOR_LIGHT),
             footer: createFooter(scene, footerItem),
             panel: {
                 child: createPanel(scene, data),

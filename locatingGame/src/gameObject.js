@@ -1174,6 +1174,7 @@ const Player = new Phaser.Class({
         switch (scene.name) {
             default:
                 // case 'defend':
+                // console.debug(cursors);
                 if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['up']])) {
                     // console.debug(cursors[controllCursor['up']]);
                     //==跳              
@@ -2979,7 +2980,6 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                         switch (footerItem[index]) {
                             case 'ok':
                                 Object.assign(gameData, tmp);
-
                                 break;
                             case 'cancel':
                                 break;

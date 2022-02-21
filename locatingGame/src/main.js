@@ -297,7 +297,7 @@ function locatingGame() {
                     },
                     sidekick: {
                         type: sidekick,
-                        lineStage: [1, 0],//==第2-0句
+                        lineStage: [3, 0],//==第2-0句
                         doneTalking: false,
                         stopHotkey: false,//==對話完空白鍵不再出現對話（只能滑鼠點）
                     },
@@ -321,25 +321,25 @@ function locatingGame() {
                     GameData.getLanguageJSON = getLanguageJSON;
 
                     //==test
-                    gameDisplay(true);
-                    let newGameData = await new Promise((resolve, reject) => {
-                        const config = Object.assign(getPhaserConfig(width, height), {
-                            scene: new GameStartScene(GameData, {
-                                getWaveImg: getWaveImg,
-                                resolve: resolve,
-                                getLanguageJSON: getLanguageJSON,
-                            }),
-                        });
-                        new Phaser.Game(config);
-                    });
+                    // gameDisplay(true);
+                    // let newGameData = await new Promise((resolve, reject) => {
+                    //     const config = Object.assign(getPhaserConfig(width, height), {
+                    //         scene: new GameStartScene(GameData, {
+                    //             getWaveImg: getWaveImg,
+                    //             resolve: resolve,
+                    //             getLanguageJSON: getLanguageJSON,
+                    //         }),
+                    //     });
+                    //     new Phaser.Game(config);
+                    // });
 
-                    gameDisplay(false);
+                    // gameDisplay(false);
                     //==test
 
                     initMap();
 
                     //==test
-                    // gameStart('defend');
+                    gameStart('defend');
                     // gameStart('dig');
                     //==test
                 };

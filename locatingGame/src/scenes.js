@@ -14,8 +14,9 @@ class UIScene extends Phaser.Scene {
             tooltip: 30,
         };
 
-        const controllCursor = gameScene.gameData.controllCursor;
-        const UItextJSON = gameScene.gameData.localeJSON.UI;
+        const gameData = gameScene.gameData;
+        // const gameData.controllCursor = gameScene.gameData.gameData.controllCursor;
+        // const gameData.localeJSON.UI = gameScene.gameData.localeJSON.UI;
 
         const tooltip = {
             tooltipHandler: (create = true, data = {}) => {
@@ -23,8 +24,8 @@ class UIScene extends Phaser.Scene {
                     let obj = data.obj;
                     let x = obj.x + obj.displayWidth * (0.5 - obj.originX) + (data.dx ? data.dx : 0);
                     let y = obj.y + obj.displayHeight * (1 - obj.originY) + 18 + (data.dy ? data.dy : 0);
-                    let hotKeyString = data.text ? false : controllCursor[obj.name];
-                    let text = UItextJSON[data.text ? data.text : obj.name] + (hotKeyString ? `(${hotKeyString})` : '');
+                    let hotKeyString = data.text ? false : gameData.controllCursor[obj.name];
+                    let text = gameData.localeJSON.UI[data.text ? data.text : obj.name] + (hotKeyString ? `(${hotKeyString})` : '');
                     let tweensDuration = 200;
 
                     //===background img
@@ -101,9 +102,7 @@ class UIScene extends Phaser.Scene {
                 let UIButtonArr = gameScene.UIButtonArr;
                 const eachButtonW = 85;
 
-                preload = () => {
-
-                };
+                preload = () => { };
                 create = () => {
                     const tooltipHandler = tooltip.tooltipHandler;
                     //==判斷離開出現在bar上
@@ -235,8 +234,9 @@ class UIScene extends Phaser.Scene {
                     };
                     var hotkeyPress = () => {
                         let cursors = gameScene.cursors;
+                        // console.debug(cursors, gameData.controllCursor)
                         UIButtonArr.forEach(button => {
-                            if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor[button]])) {
+                            if (Phaser.Input.Keyboard.JustDown(cursors[gameData.controllCursor[button]])) {
                                 if (button == 'exit' && !this.gameClear) return;
                                 let iconButton = this.children.getByName(button);
                                 iconButton.emit('pointerdown');
@@ -290,7 +290,7 @@ class UIScene extends Phaser.Scene {
                     let buttonGroup = buttons.map((button, i) => {
                         let y = menuY + buttonGap * (i + 1);
                         let menuButton = this.add.image(menu.x, y, 'menuButton');
-                        let buttonText = this.add.text(menu.x, y, UItextJSON[button], { font: '40px Arial', fill: '#ffffff' })
+                        let buttonText = this.add.text(menu.x, y, gameData.localeJSON.UI[button], { font: '40px Arial', fill: '#ffffff' })
                             .setOrigin(0.5).setAlpha(0);
                         let buttonScale = buttonText.height * 2 / menuButton.height;
 
@@ -330,26 +330,31 @@ class UIScene extends Phaser.Scene {
                                         this.scene.add(null, new UIScene('tutorial', this), true);
                                         break;
                                     case 'setting':
-                                        return;
-                                        //==對話框...在的RexUI被暫停了
-                                        this.scene.add(null, new UIScene('RexUI', this), true);
-                                        // let blackOut = this.blackOut.scene
-                                        //     .setVisible(true)
-                                        //     .bringToTop();
+                                        //==RexUI被暫停所以直接呼叫RexScrollablePanel
+                                        //==pauseUI被暫停,所以RexScrollablePanel要在另個scence
+                                        let settingUI = this.scene.add(null, new Phaser.Scene("settingUI"), true);
+                                        let panel = new RexScrollablePanel(settingUI, {
+                                            x: width * 0.5,
+                                            y: height * 0.5,
+                                            width: width * 0.6,
+                                            height: height * 0.8,
+                                            panelType: button,
+                                            gameData: gameScene.gameData,
+                                        })
+                                            .setDepth(Depth.UI)
+                                            .popUp(500);
+                                        let iconBar = gameScene.game.scene.getScene('iconBar');
 
-                                        // gameScene.scene.resume();
-                                        let panel = this.RexUI.newPanel(button);
-                                        this.RexUI.scene.bringToTop();
-                                        // this.scene.pause();
+                                        iconBar.scene.pause();
+                                        this.scene.pause();
 
-                                        // panel.on('destroy', () => {
-                                        //     blackOut.setVisible(false);
-                                        //     if (button == 'setting')
-                                        //         buttonGroup.forEach((group, i) =>
-                                        //             group.text.setText(this.gameData.localeJSON.UI[buttons[i]])
-                                        //         );
-                                        //     this.scene.resume();
-                                        // });
+                                        panel.on('destroy', () => {
+                                            this.scene.resume();
+                                            iconBar.scene.resume();
+                                            settingUI.scene.remove();
+
+                                            gameScene.game.scene.getScene('cursors').updateFlag = true;
+                                        });
                                         break;
                                     case 'exit':
                                         this.scene.add(null, new UIScene('exitUI', this), true);
@@ -571,8 +576,8 @@ class UIScene extends Phaser.Scene {
                                                 let nowIdx = button.block.nowIdx++,
                                                     gap = button.block.gap;
 
-                                                brushHandle1.x = handleXMin + nowIdx * gap;
-                                                brushHandle2.x = handleXMin + (nowIdx + 1) * gap;
+                                                brushHandle1.x = handleXMin + nowIdx * gap * 0.5;
+                                                brushHandle2.x = brushHandle1.x + gap;
                                                 brushHandle1.dir = -1;
                                                 brushHandle2.dir = 1;
 
@@ -644,7 +649,7 @@ class UIScene extends Phaser.Scene {
                                 if (d == 'shiftLeft') brushHandle1.dir = 1;
                                 else if (d == 'shiftRight') brushHandle2.dir = -1;
                                 else if (d == 'functionKey') {
-                                    let max = 4;
+                                    let max = 3;
                                     handleButton.block = {
                                         maxIdx: max - 1,//0-4
                                         nowIdx: 0,
@@ -680,8 +685,8 @@ class UIScene extends Phaser.Scene {
                             let cursors = gameScene.cursors;
                             detectorButtons.forEach(button => {
                                 let condition = button.name == 'functionKey' ?
-                                    Phaser.Input.Keyboard.JustDown(cursors[controllCursor[button.name]]) :
-                                    cursors[controllCursor[button.name]].isDown;
+                                    Phaser.Input.Keyboard.JustDown(cursors[gameData.controllCursor[button.name]]) :
+                                    cursors[gameData.controllCursor[button.name]].isDown;
 
                                 if (condition) button.emit('pointerdown');
 
@@ -846,8 +851,8 @@ class UIScene extends Phaser.Scene {
                                                 let nowIdx = button.block.nowIdx++,
                                                     gap = button.block.gap;
 
-                                                brushHandle1.x = handleXMin + nowIdx * gap;
-                                                brushHandle2.x = handleXMin + (nowIdx + 1) * gap;
+                                                brushHandle1.x = handleXMin + nowIdx * gap * 0.5;
+                                                brushHandle2.x = brushHandle1.x + gap;
                                                 brushHandle1.dir = -1;
                                                 brushHandle2.dir = 1;
 
@@ -916,7 +921,7 @@ class UIScene extends Phaser.Scene {
                                 if (d == 'shiftLeft') brushHandle1.dir = 1;
                                 else if (d == 'shiftRight') brushHandle2.dir = -1;
                                 else if (d == 'functionKey') {
-                                    let max = 4;
+                                    let max = 3;
                                     handleButton.block = {
                                         maxIdx: max - 1,//0-4
                                         nowIdx: 0,
@@ -991,8 +996,8 @@ class UIScene extends Phaser.Scene {
                             let cursors = gameScene.cursors;
                             detectorButtons.forEach(button => {
                                 let condition = button.name == 'functionKey' ?
-                                    Phaser.Input.Keyboard.JustDown(cursors[controllCursor[button.name]]) :
-                                    cursors[controllCursor[button.name]].isDown;
+                                    Phaser.Input.Keyboard.JustDown(cursors[gameData.controllCursor[button.name]]) :
+                                    cursors[gameData.controllCursor[button.name]].isDown;
 
                                 if (condition) button.emit('pointerdown');
                             });
@@ -1185,7 +1190,7 @@ class UIScene extends Phaser.Scene {
                         var updateButton = () => {
                             let cursors = gameScene.cursors;
                             detectorButtons.forEach(button => {
-                                if (cursors[controllCursor[button.name]].isDown) {
+                                if (cursors[gameData.controllCursor[button.name]].isDown) {
                                     button.emit('pointerdown');
                                 };
                             });
@@ -1265,7 +1270,7 @@ class UIScene extends Phaser.Scene {
                             bar.strokeRoundedRect(x, blockMargin, blockW, blockW, barRadius);
 
                             //==label(day,hr,min)
-                            let label = this.add.text(barX + x + blockW * 0.5, barY + blockMargin + blockW, UItextJSON[timeString[i]],
+                            let label = this.add.text(barX + x + blockW * 0.5, barY + blockMargin + blockW, gameData.localeJSON.UI[timeString[i]],
                                 { fontSize: '14px', fill: '#fff' })
                                 .setOrigin(0.5, 0)
                                 .setDepth(Depth.UI + 1);
@@ -1704,7 +1709,7 @@ class UIScene extends Phaser.Scene {
                             hpBarGroup.add(hpBox);
                         };
                         var initText = () => {
-                            let text = this.add.text(0, 0, `${UItextJSON['bossName']}\n                      `,
+                            let text = this.add.text(0, 0, `${gameData.localeJSON.UI['bossName']}\n                      `,
                                 {
                                     fontSize: '32px', fill: '#fff', align: 'center',
                                     stroke: '#003e4f',
@@ -1833,15 +1838,22 @@ class UIScene extends Phaser.Scene {
             case 'cursors'://==避免暫停後按鍵沒反應
                 preload = () => { };
                 create = () => {
-                    let keys = Object.values(controllCursor).join();
-                    this.cursors = this.input.keyboard.addKeys(keys);
+                    let keys = Object.values(gameData.controllCursor).join();
+
+                    Object.assign(this, {
+                        updateFlag: false,
+                        cursors: this.input.keyboard.addKeys(keys),
+                    });
+                    // this.cursors = this.input.keyboard.addKeys(keys);
+
                     gameScene.cursors = this.cursors;
-                    // console.debug(controllCursor, this.cursors);
+                    // console.debug(gameData.controllCursor, this.cursors);
                 };
                 update = () => {
-                    if (gameScene.name != 'defend') return;
+
                     //==update orb(when pause gameScene wont do update funtion)
                     var updateOrb = () => {
+                        if (gameScene.name != 'defend') return;
                         gameScene.orbGroup.children.iterate(child => {
 
                             if (child.beholdingFlag || (child.laserUpdateFlag || !child.body.touching.down)) {//(child.laserUpdateFlag && child.body.touching.down)
@@ -1861,8 +1873,19 @@ class UIScene extends Phaser.Scene {
 
                         });
                     };
-                    updateOrb();
+                    var updateCursors = () => {
+                        if (!this.updateFlag) return;
+                        let keys = Object.values(gameData.controllCursor).join();
+                        this.input.keyboard.removeAllKeys();
+                        this.cursors = this.input.keyboard.addKeys(keys);
+                        gameScene.cursors = this.cursors;
 
+                        console.debug(gameScene.cursors);
+                        this.updateFlag = false;
+                    };
+
+                    updateOrb();
+                    updateCursors();
                 };
                 break;
             case 'blackOut'://==教學用黑幕
@@ -2178,7 +2201,7 @@ class UIScene extends Phaser.Scene {
                         });
                     };
                     var title = () => {
-                        this.title = this.add.text(width * 0.5, height * 0.3, UItextJSON['chooseCharacter'],
+                        this.title = this.add.text(width * 0.5, height * 0.3, gameData.localeJSON.UI['chooseCharacter'],
                             {
                                 fontSize: '48px',
                                 fill: '#000000',
@@ -2355,9 +2378,16 @@ class UIScene extends Phaser.Scene {
                             svgObj: new Promise(r => {
                                 //==getWaveSVG
                                 gameScene.waveForm.getWaveImg(tutorialData, null).then(success => {
-                                    this.load.svg('tutorial_waveForm', success.svg, { scale: 1 });
-                                    // this.waveForm.svgObj = success;
-                                    r(success);
+                                    let key = 'tutorial_waveForm';
+
+                                    this.textures.removeKey(key);
+                                    this.load.svg(key, success.svg, { scale: 1 }).start();
+
+                                    this.load.on('filecomplete', (loadKey) =>
+                                        loadKey === key ? r(success) : false
+                                    );
+
+
                                 });
                             }),
                             overviewSvgObj: new Promise(r => {
@@ -2465,10 +2495,18 @@ class UIScene extends Phaser.Scene {
                                 };
 
                                 let button = this.add.image(x, y, img).setDepth(Depth.UI);
-                                let buttonText = this.add.text(x, y, UItextJSON[name], { font: '24px Arial', fill: '#000000' })
+                                let buttonText = this.add.text(x, y, gameData.localeJSON.UI[name], { font: '24px Arial', fill: '#000000' })
                                     .setOrigin(originX, 0.5)
                                     .setAlpha(alpha)
                                     .setDepth(Depth.UI);
+
+                                if (i === 3 || i === 4) {
+                                    buttonText
+                                        .setInteractive({ cursor: 'pointer' })
+                                        .on('pointerover', () => button.emit('pointerover'))
+                                        .on('pointerout', () => button.emit('pointerout'))
+                                        .on('pointerdown', () => button.emit('pointerdown'));
+                                };
 
                                 button
                                     .setScale(imgScale)//menu.width / 4 / menuButton.width
@@ -2642,17 +2680,58 @@ class UIScene extends Phaser.Scene {
                                 },
                             });
 
+                            //==過關
+                            this.clearText = this.add.text(width * 0.5, height * 0.5, gameData.localeJSON.UI['clear'],
+                                {
+                                    fontSize: '200px',
+                                    fill: '#EB8529',
+                                    stroke: '#EA8D33',
+                                    strokeThickness: 10,
+                                    shadow: {
+                                        offsetX: 5,
+                                        offsetY: 5,
+                                        color: '#EC6B09',
+                                        blur: 3,
+                                        // stroke: true,
+                                        fill: true
+                                    },
+                                    padding: {
+                                        top: 3,
+                                        bottom: 3,
+                                    },
+                                })
+                                .setOrigin(0.5)
+                                .setVisible(false)
+                                .setAlpha(0)
+                                .setDepth(Depth.UI + 1);
+
+                            Object.assign(this.clearText, {
+                                showingTween: null,
+                                showHandler: () => {
+                                    const showDuration = 1000;
+                                    if (this.clearText.showingTween) this.clearText.showingTween.remove();
+                                    this.clearText.showingTween = this.tweens.add({
+                                        targets: this.clearText,
+                                        alpha: { start: 0, to: 1 },
+                                        duration: showDuration,
+                                        repeat: 0,
+                                        yoyo: true,
+                                        ease: 'Linear.easeOut',
+                                    });
+                                },
+                            });
                         };
                         var stepHandler = () => {
                             this.stepObj = { nowStep: 1, maxStep: 5 };
                             this.stepClear = null;
                             this.stepHandler = (flash = true) => {
                                 let step = this.stepObj.nowStep,
-                                    titleText = UItextJSON['tutorial' + step],
-                                    stepText = UItextJSON['stepText'].replace('\t', this.stepObj.nowStep).replace('\t', this.stepObj.maxStep);
+                                    titleText = gameData.localeJSON.UI['tutorial' + step],
+                                    stepText = gameData.localeJSON.UI['stepText'].replace('\t', this.stepObj.nowStep).replace('\t', this.stepObj.maxStep);
                                 // console.debug(this.buttonGroups)
                                 if (flash) {
                                     this.sprinkle.setVisible(false).anims.stop();
+                                    this.clearText.setVisible(false);
                                     this.cameras.main.flashHandler();
                                     this.player.attackEffect.anims.remove();
                                     this.player.enableBody(true, this.physics.world.bounds.left, height * 0.5, true, true);
@@ -2673,15 +2752,21 @@ class UIScene extends Phaser.Scene {
                                     });
                                     this.detectorUI.scene.sleep();
                                     this.waveForm.gameObjs.setVisible(false);
-                                    this.buttonGroups['info1'].setVisible(false);
-                                    this.buttonGroups['info2'].setVisible(false);
+                                    [this.buttonGroups['info1'], this.buttonGroups['info2']].forEach((info, i) => {
+                                        if (info.showingTween) info.showingTween.remove();
+                                        info.setVisible(false);
+
+                                        let button = info.getChildren()[0];
+                                        if (button.click) button.emit('pointerdown');
+                                    });
+
                                 };
 
                                 switch (step) {
                                     case 1:
-                                        let upKey = controllCursor['up'],
-                                            leftKey = controllCursor['left'],
-                                            rightKey = controllCursor['right'];
+                                        let upKey = gameData.controllCursor['up'],
+                                            leftKey = gameData.controllCursor['left'],
+                                            rightKey = gameData.controllCursor['right'];
                                         titleText = titleText.replace('\t', `${leftKey},${rightKey},${upKey}`);
 
                                         this.buttonGroups['previous'].setVisible(false);
@@ -2689,7 +2774,7 @@ class UIScene extends Phaser.Scene {
                                         this.stepClear = [false, false, false];//==三個按鍵是否被按過
                                         break;
                                     case 2:
-                                        let attackKey = controllCursor['attack'];
+                                        let attackKey = gameData.controllCursor['attack'];
                                         titleText = titleText.replace('\t', attackKey);
 
                                         this.buttonGroups['previous'].setVisible(true);
@@ -2704,7 +2789,7 @@ class UIScene extends Phaser.Scene {
                                         this.stepClear = false;//==dummy是否受擊
                                         break;
                                     case 3:
-                                        let downKey = controllCursor['down'];
+                                        let downKey = gameData.controllCursor['down'];
                                         titleText = titleText.replace('\t', downKey);
 
                                         this.orbGroup.getChildren()[0]
@@ -2717,10 +2802,24 @@ class UIScene extends Phaser.Scene {
                                         // titleText = titleText.replace('\t', `${leftKey},${rightKey},${upKey}`);
                                         this.buttonGroups['next'].setVisible(true)
                                             .getChildren().find(c => c.type === "Text")
-                                            .setText(UItextJSON['next']);
+                                            .setText(gameData.localeJSON.UI['next']);
 
-                                        this.buttonGroups['info1'].setVisible(true);
-                                        this.buttonGroups['info2'].setVisible(true);
+                                        [this.buttonGroups['info1'], this.buttonGroups['info2']].forEach((info, i) => {
+                                            if (info.showingTween) info.showingTween.remove();
+
+                                            info.showingTween = this.tweens.add({
+                                                targets: info.getChildren(),
+                                                alpha: { start: 0, to: 1 },
+                                                duration: 1500,
+                                                delay: i * 1500,
+                                                repeat: 0,
+                                                ease: 'Linear.easeIn',
+                                                onStart: () => info.setVisible(true),
+                                                onComplete: (tween, target) => i === 0 && (!target[0].click) ?
+                                                    target[0].emit('pointerdown') : false
+                                            });
+
+                                        });
 
                                         this.player.disableBody(true, true);
                                         this.detectorUI.scene.wake();
@@ -2767,6 +2866,10 @@ class UIScene extends Phaser.Scene {
                                     this
                                         .setVisible(true)
                                         .play('sprinkle_fly');
+
+                                    this.scene.clearText
+                                        .setVisible(true)
+                                        .showHandler();
                                 });
                             this.stepHandler(false);
                         };
@@ -2941,7 +3044,7 @@ class UIScene extends Phaser.Scene {
                                     ((currentAnims === 'player_runAttack' || (currentAnims === 'player_jumpAttack') && !this.body.touching.down) && this.anims.isPlaying)
                                     || (currentAnims === 'player_doubleJump' && !this.body.touching.down);
 
-                                if (cursors[controllCursor['left']].isDown) {
+                                if (cursors[gameData.controllCursor['left']].isDown) {
                                     if (nowStep == 1) scene.stepClear[0] = true;
                                     this.setVelocityX(-this.stats.movementSpeed);
                                     if (!this.flipX) this.filpHandler(true);
@@ -2953,7 +3056,7 @@ class UIScene extends Phaser.Scene {
                                     this.anims.play(!this.body.touching.down ? 'player_jump' : 'player_run', true);
 
                                 }
-                                else if (cursors[controllCursor['right']].isDown) {
+                                else if (cursors[gameData.controllCursor['right']].isDown) {
                                     if (nowStep == 1) scene.stepClear[1] = true;
                                     this.setVelocityX(this.stats.movementSpeed);
                                     if (this.flipX) this.filpHandler(false);
@@ -2973,7 +3076,7 @@ class UIScene extends Phaser.Scene {
                                 };
 
 
-                                if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['up']])) {
+                                if (Phaser.Input.Keyboard.JustDown(cursors[gameData.controllCursor['up']])) {
                                     //==跳
                                     if (this.body.touching.down) {
                                         if (nowStep == 1) scene.stepClear[2] = true;
@@ -2988,7 +3091,7 @@ class UIScene extends Phaser.Scene {
                                         this.doublejumpFlag = false;
                                     };
                                 }
-                                else if (cursors[controllCursor['up']].isDown) {
+                                else if (cursors[gameData.controllCursor['up']].isDown) {
                                     //==跳
                                     if (this.body.touching.down) {
                                         this.setVelocityY(-this.stats.jumpingPower);
@@ -3006,7 +3109,7 @@ class UIScene extends Phaser.Scene {
                             pickingHadler: function (scene) {
                                 // if (scene.stepObj.nowStep != 3 && scene.stepObj.nowStep != 5) return;
                                 let cursors = gameScene.cursors;
-                                if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['down']])) {
+                                if (Phaser.Input.Keyboard.JustDown(cursors[gameData.controllCursor['down']])) {
 
                                     // console.debug('pick');
                                     if (this.pickUpObj) {  //==put down
@@ -3049,7 +3152,7 @@ class UIScene extends Phaser.Scene {
                                 let cursors = gameScene.cursors;
 
                                 this.attackEffect.setPosition(this.x, this.y);
-                                if (cursors[controllCursor['attack']].isDown) {//==按著連續攻擊
+                                if (cursors[gameData.controllCursor['attack']].isDown) {//==按著連續攻擊
                                     let currentAnims = this.anims.getName();
                                     let attacking =
                                         (currentAnims === 'player_attack' || currentAnims === 'player_runAttack' ||
@@ -3411,18 +3514,21 @@ class UIScene extends Phaser.Scene {
                             this.physics.add.collider(this.orbGroup, this.platforms);
                         };
                         var initWave = async () => {
-                            let wave = this.add.image(tutorialX, tutorialY + tutorialH * 0.46, 'tutorial_waveForm')
+                            let wave = this.add.image(tutorialX, tutorialY + tutorialH * 0.46)
                                 .setDepth(8)
                                 .setAlpha(.7)
                                 .setVisible(false);
-
-                            wave.setScale(tutorialW / wave.width, tutorialH / wave.height);
 
                             Object.assign(this.waveForm, {
                                 gameObjs: wave,
                                 svgObj: await this.waveForm.svgObj,
                                 overviewSvgObj: await this.waveForm.overviewSvgObj,
                             });
+
+                            //==確定loader讀完才setTexture(不然會用到上次的)
+                            wave
+                                .setTexture('tutorial_waveForm')
+                                .setScale(tutorialW / wave.width, tutorialH / wave.height);
 
                             // ===detector
                             this.detectorUI = this.scene.add(null, new UIScene('detectorUI', this, {
@@ -3522,7 +3628,7 @@ class UIScene extends Phaser.Scene {
                                     this.buttonGroups['next']
                                         .setVisible(true)
                                         .getChildren().find(c => c.type === "Text")
-                                        .setText(UItextJSON['done']);
+                                        .setText(gameData.localeJSON.UI['done']);
                                 };
                         // console.debug(this.orbGroup.getChildren().every(child => child.body.touching.down))
 

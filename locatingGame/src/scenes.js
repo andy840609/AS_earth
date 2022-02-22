@@ -15,8 +15,7 @@ class UIScene extends Phaser.Scene {
         };
 
         const gameData = gameScene.gameData;
-        // const gameData.controllCursor = gameScene.gameData.gameData.controllCursor;
-        // const gameData.localeJSON.UI = gameScene.gameData.localeJSON.UI;
+        const UItextJSON = gameData.localeJSON.UI;
 
         const tooltip = {
             tooltipHandler: (create = true, data = {}) => {
@@ -25,7 +24,7 @@ class UIScene extends Phaser.Scene {
                     let x = obj.x + obj.displayWidth * (0.5 - obj.originX) + (data.dx ? data.dx : 0);
                     let y = obj.y + obj.displayHeight * (1 - obj.originY) + 18 + (data.dy ? data.dy : 0);
                     let hotKeyString = data.text ? false : gameData.controllCursor[obj.name];
-                    let text = gameData.localeJSON.UI[data.text ? data.text : obj.name] + (hotKeyString ? `(${hotKeyString})` : '');
+                    let text = UItextJSON[data.text ? data.text : obj.name] + (hotKeyString ? `(${hotKeyString})` : '');
                     let tweensDuration = 200;
 
                     //===background img
@@ -290,7 +289,7 @@ class UIScene extends Phaser.Scene {
                     let buttonGroup = buttons.map((button, i) => {
                         let y = menuY + buttonGap * (i + 1);
                         let menuButton = this.add.image(menu.x, y, 'menuButton');
-                        let buttonText = this.add.text(menu.x, y, gameData.localeJSON.UI[button], { font: '40px Arial', fill: '#ffffff' })
+                        let buttonText = this.add.text(menu.x, y, UItextJSON[button], { font: '40px Arial', fill: '#ffffff' })
                             .setOrigin(0.5).setAlpha(0);
                         let buttonScale = buttonText.height * 2 / menuButton.height;
 
@@ -340,6 +339,7 @@ class UIScene extends Phaser.Scene {
                                             height: height * 0.8,
                                             panelType: button,
                                             gameData: gameScene.gameData,
+                                            noLocleSetting: true,
                                         })
                                             .setDepth(Depth.UI)
                                             .popUp(500);
@@ -1270,7 +1270,7 @@ class UIScene extends Phaser.Scene {
                             bar.strokeRoundedRect(x, blockMargin, blockW, blockW, barRadius);
 
                             //==label(day,hr,min)
-                            let label = this.add.text(barX + x + blockW * 0.5, barY + blockMargin + blockW, gameData.localeJSON.UI[timeString[i]],
+                            let label = this.add.text(barX + x + blockW * 0.5, barY + blockMargin + blockW, UItextJSON[timeString[i]],
                                 { fontSize: '14px', fill: '#fff' })
                                 .setOrigin(0.5, 0)
                                 .setDepth(Depth.UI + 1);
@@ -1317,8 +1317,8 @@ class UIScene extends Phaser.Scene {
                                     obj: this,
                                     img: 'tooltipButton',
                                     dy: -40,
-                                    dx: -33,
-                                    originX: 0,
+                                    // dx: -33,
+                                    originX: -0.01,
                                 });
                             })
                             .on('pointerout', function () {
@@ -1709,7 +1709,7 @@ class UIScene extends Phaser.Scene {
                             hpBarGroup.add(hpBox);
                         };
                         var initText = () => {
-                            let text = this.add.text(0, 0, `${gameData.localeJSON.UI['bossName']}\n                      `,
+                            let text = this.add.text(0, 0, `${UItextJSON['bossName']}\n                      `,
                                 {
                                     fontSize: '32px', fill: '#fff', align: 'center',
                                     stroke: '#003e4f',
@@ -1880,7 +1880,7 @@ class UIScene extends Phaser.Scene {
                         this.cursors = this.input.keyboard.addKeys(keys);
                         gameScene.cursors = this.cursors;
 
-                        console.debug(gameScene.cursors);
+                        // console.debug(gameScene.cursors);
                         this.updateFlag = false;
                     };
 
@@ -2201,7 +2201,7 @@ class UIScene extends Phaser.Scene {
                         });
                     };
                     var title = () => {
-                        this.title = this.add.text(width * 0.5, height * 0.3, gameData.localeJSON.UI['chooseCharacter'],
+                        this.title = this.add.text(width * 0.5, height * 0.3, UItextJSON['chooseCharacter'],
                             {
                                 fontSize: '48px',
                                 fill: '#000000',
@@ -2495,7 +2495,7 @@ class UIScene extends Phaser.Scene {
                                 };
 
                                 let button = this.add.image(x, y, img).setDepth(Depth.UI);
-                                let buttonText = this.add.text(x, y, gameData.localeJSON.UI[name], { font: '24px Arial', fill: '#000000' })
+                                let buttonText = this.add.text(x, y, UItextJSON[name], { font: '24px Arial', fill: '#000000' })
                                     .setOrigin(originX, 0.5)
                                     .setAlpha(alpha)
                                     .setDepth(Depth.UI);
@@ -2681,7 +2681,7 @@ class UIScene extends Phaser.Scene {
                             });
 
                             //==過關
-                            this.clearText = this.add.text(width * 0.5, height * 0.5, gameData.localeJSON.UI['clear'],
+                            this.clearText = this.add.text(width * 0.5, height * 0.5, UItextJSON['clear'],
                                 {
                                     fontSize: '200px',
                                     fill: '#EB8529',
@@ -2726,8 +2726,8 @@ class UIScene extends Phaser.Scene {
                             this.stepClear = null;
                             this.stepHandler = (flash = true) => {
                                 let step = this.stepObj.nowStep,
-                                    titleText = gameData.localeJSON.UI['tutorial' + step],
-                                    stepText = gameData.localeJSON.UI['stepText'].replace('\t', this.stepObj.nowStep).replace('\t', this.stepObj.maxStep);
+                                    titleText = UItextJSON['tutorial' + step],
+                                    stepText = UItextJSON['stepText'].replace('\t', this.stepObj.nowStep).replace('\t', this.stepObj.maxStep);
                                 // console.debug(this.buttonGroups)
                                 if (flash) {
                                     this.sprinkle.setVisible(false).anims.stop();
@@ -2802,7 +2802,7 @@ class UIScene extends Phaser.Scene {
                                         // titleText = titleText.replace('\t', `${leftKey},${rightKey},${upKey}`);
                                         this.buttonGroups['next'].setVisible(true)
                                             .getChildren().find(c => c.type === "Text")
-                                            .setText(gameData.localeJSON.UI['next']);
+                                            .setText(UItextJSON['next']);
 
                                         [this.buttonGroups['info1'], this.buttonGroups['info2']].forEach((info, i) => {
                                             if (info.showingTween) info.showingTween.remove();
@@ -3628,7 +3628,7 @@ class UIScene extends Phaser.Scene {
                                     this.buttonGroups['next']
                                         .setVisible(true)
                                         .getChildren().find(c => c.type === "Text")
-                                        .setText(gameData.localeJSON.UI['done']);
+                                        .setText(UItextJSON['done']);
                                 };
                         // console.debug(this.orbGroup.getChildren().every(child => child.body.touching.down))
 

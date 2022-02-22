@@ -1171,46 +1171,42 @@ const Player = new Phaser.Class({
         };
         // console.debug(cursors[controllCursor['up']].isDown);
 
-        switch (scene.name) {
-            default:
-                // case 'defend':
-                // console.debug(cursors);
-                if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['up']])) {
-                    // console.debug(cursors[controllCursor['up']]);
-                    //==跳              
-                    if (this.body.touching.down) {
-                        this.setVelocityY(-this.stats.jumpingPower);
-                        this.anims.play('player_jump', true);
-                        this.dust.setPosition(this.x, this.y)
-                            // .setPosition(this.x + 40 * (this.flipX ? 1 : - 1), this.y + 15)
-                            .play('player_jumpDust');
 
-                        this.doublejumpFlag = true;
-                    }
-                    //==二段跳
-                    else if (this.anims.getName() === 'player_jump' && this.doublejumpFlag) {
-                        this.setVelocityY(-this.stats.jumpingPower);
-                        this.anims.play('player_doubleJump', true);
-                        this.doublejumpFlag = false;
-                    };
+        if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['up']])) {
+            //==跳              
+            if (this.body.touching.down) {
+                this.setVelocityY(-this.stats.jumpingPower);
+                this.anims.play('player_jump', true);
+                this.dust.setPosition(this.x, this.y)
+                    // .setPosition(this.x + 40 * (this.flipX ? 1 : - 1), this.y + 15)
+                    .play('player_jumpDust');
 
-                }
-                else if (cursors[controllCursor['up']].isDown) {
-                    //==跳
-                    if (this.body.touching.down) {
-                        this.setVelocityY(-this.stats.jumpingPower);
-                        this.anims.play('player_jump', true);
-                    };
-                };
-                break;
-            // case 'dig':
-            //     //==飛(dig)
-            //     if (cursors[controllCursor['up']].isDown) {
-            //         this.setVelocityY(-this.stats.jumpingPower);
-            //         this.anims.play('player_jump', true);
-            //     };
-            //     break;
+                this.doublejumpFlag = true;
+            }
+            //==二段跳
+            else if (this.anims.getName() === 'player_jump' && this.doublejumpFlag) {
+                this.setVelocityY(-this.stats.jumpingPower);
+                this.anims.play('player_doubleJump', true);
+                this.doublejumpFlag = false;
+            };
+
+        }
+        else if (cursors[controllCursor['up']].isDown) {
+            //==跳
+            if (this.body.touching.down) {
+                this.setVelocityY(-this.stats.jumpingPower);
+                this.anims.play('player_jump', true);
+            };
         };
+
+        // case 'dig':
+        //     //==飛(dig)
+        //     if (cursors[controllCursor['up']].isDown) {
+        //         this.setVelocityY(-this.stats.jumpingPower);
+        //         this.anims.play('player_jump', true);
+        //     };
+        //     break;
+
     },
     //==撿起
     pickingHadler: function (scene) {
@@ -2378,7 +2374,6 @@ class RexDialog extends RexPlugins.UI.Dialog {
 
         setDialog(data).layout();
 
-
         if (quizType == 2) {
             const keyCode = Phaser.Input.Keyboard.KeyCodes;
             let content = this.getElement('content');
@@ -2389,7 +2384,7 @@ class RexDialog extends RexPlugins.UI.Dialog {
                     isKeyExisted = Object.values(config.tmpData).indexOf(key) !== -1;
 
                 if (isKeyExisted) {
-                    content.setText(`[size=40][color=red][b]${key}[/b][/color][/size]\n按鍵重複`);
+                    content.setText(`[size=40][color=red][b]${key}[/b][/color][/size]\n${config.localeJSON['keyRepeat']}`);
                 }
                 else {
                     content.setText(`[size=40][color=green][b]${key}[/b][/color][/size]`);
@@ -2465,11 +2460,10 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                             { name: 'reset' },
                             { name: 'exit' },
                         ],
-                        'language': [
-                            { name: tmp.locale },
-                        ],
                     },
                 };
+                if (!config.noLocleSetting) data.category.language = [{ name: tmp.locale }];
+
                 footerItem = ['reset', 'ok', 'cancel'];
                 break;
             case 2:
@@ -2633,6 +2627,36 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                                         icon.getElement('text').setText(keyPressed);
                                         tmp.controllCursor[item.name] = keyPressed;
                                     };
+                                    sizer.on('resetControl', () => {
+                                        Object.assign(tmp, {
+                                            controllCursor: {
+                                                up: 'W',
+                                                down: 'S',
+                                                left: 'A',
+                                                right: 'D',
+                                                attack: 'SPACE',
+                                                //==UI controll
+                                                pause: 'P',
+                                                backpack: 'I',
+                                                detector: 'O',
+                                                shiftLeft: 'Q',
+                                                shiftRight: 'E',
+                                                functionKey: 'C',
+                                                reset: 'R',
+                                                exit: 'ESC',
+                                            },
+                                        });
+                                        let tables = this.getElement('panel').getElement('items');
+                                        //==chidren=['category name','items grid']
+                                        let chidren = tables[0].getElement('items');
+                                        chidren[1].getElement('items').forEach((grid, i) => {
+                                            if (grid) {
+                                                let child = grid.getElement('items');
+                                                child[0].setText(tmp.controllCursor[data.category[key][i].name]);
+                                            };
+                                        });
+
+                                    });
                                     break;
                                 case 'language':
                                     let languages = ['zh-TW', 'en-US'];
@@ -2642,14 +2666,14 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                                     quizType = 3;
                                     tmpData = tmp.locale;
                                     keyPressAction = async (icon, keyPressed) => {
-                                        icon.getElement('text').setText(questionData.options[keyPressed]);
                                         let newData = languages[keyPressed];
                                         if (newData !== tmp.locale) {
                                             Object.assign(tmp, {
                                                 locale: newData,
                                                 localeJSON: await gameData.getLanguageJSON(newData),
                                             });
-                                            // console.debug(tmp.localeJSON);
+
+                                            // console.debug(tmp.controllCursor);
 
                                             //===改目前的字語言
                                             let localeJSON = tmp.localeJSON;
@@ -2676,6 +2700,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
 
                                         };
                                     };
+                                    sizer.on('resetLanguage', () => keyPressAction(icon, 0, true));
                                     break;
                                 default:
                                     iconText = false;
@@ -2707,6 +2732,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                                             data: newQuestionData,
                                             tmpData: tmpData,
                                             quizType: quizType,
+                                            localeJSON: tmp.localeJSON.UI,
                                         }, resolve).popUp(500);
                                         scene.scene.pause();
                                     });
@@ -2905,7 +2931,6 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                     space: { icon: config.iconSpace ? config.iconSpace : 0 }
                 });
             };
-
             var sizer = new RexPlugins.UI.Sizer(scene, {
                 orientation: !scrollMode,
                 space: { item: 10 }
@@ -2984,6 +3009,9 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                             case 'cancel':
                                 break;
                             case 'reset':
+                                this.getElement('panel').emit('resetControl');
+                                this.getElement('panel').emit('resetLanguage');
+
                                 return;
                                 break;
                         };
@@ -3055,34 +3083,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
             // sizerEvents: true,
         };
         super(scene, panelConfig);
-
         this.layout();
-
-
-        // let cursors = scene.input.keyboard.addKey(67);
-
-
-        // Set icon interactive
-        // var print = this.add.text(0, 0, '');
-        // this.input.topOnly = false;
-        // var labels = [];
-        // labels.push(...this.getElement('#skills.items', true));
-        // labels.push(...this.getElement('#items.items', true));
-        // var scene = this;
-        // labels.forEach(function (label) {
-        //     if (!label) {
-        //         return;
-        //     }
-
-        //     var click = new RexPlugins.UI.click(label.getElement('icon'), { threshold: 10 })
-        //         .on('click', function () {
-        //             if (!label.getTopmostSizer().isInTouching()) {
-        //                 return;
-        //             }
-        //             var category = label.getParentSizer().name;
-        //             print.text += `${category}:${label.text}\n`;
-        //         });
-        // })
 
     };
 };

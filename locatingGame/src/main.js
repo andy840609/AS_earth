@@ -176,6 +176,29 @@ function locatingGame() {
             })
         );
 
+        //===C.讀範例波形資料(教學用)
+        let tutorialData = new Promise((resolve, reject) => {
+            let data;
+            //A-2.===依個測站名稱得個分量xy陣列
+            const dir = datafileDir + 'event/tutorial/';
+            const files = ['2010.166.MASB.BHE.xy', '2010.166.MASB.BHN.xy', '2010.166.MASB.BHZ.xy'];
+            const fileDataKey = ['x', 'y'];
+
+            data = files.map(async (file) => {
+                d.waveData =
+                    Promise.all(
+                        channel.map(async (cha) => {
+                            let path = dir + '.' + d.station + '.' + cha + fileExtension;
+                            return { channel: cha, data: await readTextFile(path, fileDataKey) };
+                        })
+                    );
+                return d;
+            });
+
+            resolve(data);
+
+        });
+
         data = Promise.all([stationData, epicenterData]).then(sucess => {
             // console.debug(sucess);
             let tmp = sucess[0];
@@ -183,7 +206,7 @@ function locatingGame() {
             return tmp;
         });
 
-        // console.debug(data);
+        console.debug(data);
         return game;
     };
 
@@ -192,7 +215,6 @@ function locatingGame() {
 
         //===append map,gameInnerDiv..etc
         function initForm() {
-
             chartContainerJQ.append(`
                 <form id="form-game">
 
@@ -297,7 +319,7 @@ function locatingGame() {
                     },
                     sidekick: {
                         type: sidekick,
-                        lineStage: [3, 0],//==第2-0句
+                        lineStage: [1, 0],//==第2-0句
                         doneTalking: false,
                         stopHotkey: false,//==對話完空白鍵不再出現對話（只能滑鼠點）
                     },
@@ -339,7 +361,7 @@ function locatingGame() {
                     initMap();
 
                     //==test
-                    gameStart('defend');
+                    // gameStart('defend');
                     // gameStart('dig');
                     //==test
                 };
@@ -758,7 +780,7 @@ function locatingGame() {
                     const ctrlDir = assetsDir + 'ui/map/controller/';
 
                     //===UIBar
-                    const UIbuttons = ['playerStats', 'velocityChart', 'questInfo'];
+                    const UIbuttons = ['questInfo', 'velocityChart', 'playerStats'];
 
                     //===UItooltip
                     const UItooltip = gameUI
@@ -860,7 +882,6 @@ function locatingGame() {
                                 .find('.UIbar')
                                 .width(UIbarW)
                                 .height(UIbarH);
-
                         };
                         var addIcons = () => {
                             const left = (UIbarW - iconW) * 0.5;
@@ -908,21 +929,66 @@ function locatingGame() {
 
                                         break;
                                     case 'questInfo':
+                                        const infoCount = 9;
+                                        const infoImgDir = assetsDir + 'ui/map/questInfo/';
+                                        const imgW = width * 0.6 * 2 / 3 - 15;//== col 8/12 ,margin=15
+                                        let getImgHTML = (img, imgScale = 1) => {
+                                            return `<img src='${infoImgDir + img}' width='${imgW * imgScale}px'></img>`;
+                                        };
+
                                         UI
+                                            .width(width * 0.6)
+                                            // .height(height * 0.5)
                                             .append(`
-                                            <div>
-                                                <a href="http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans1.html" onclick="window.open('http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans1.html','ans','scrollbars=yes,width=550,height=500,left=50,top=50');return false;"> ◆ 什麼是地震定位？</a><a href="/../abcheng/circles/gameans2.html" target="_blank" onclick="window.open('/../abcheng/circles/gameans2.html','ans2','scrollbars=yes,width=850,height=500,left=50,top=50');return false;"></a>
-                                                <a href="http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans2.html" target="_blank" onclick="window.open('http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans2.html','ans2','scrollbars=yes,width=850,height=500,left=50,top=50');return false;"> ◆ 地震發生後，氣象局發布的地震資訊及相關訊息?</a><a href="/../abcheng/circles/gameans3.html" onclick="window.open('/../abcheng/circles/gameans3.html','ans','scrollbars=yes,width=650,height=500,left=50,top=50');return false;"></a>
-                                                <a href="http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans3.html" onclick="window.open('http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans3.html','ans','scrollbars=yes,width=650,height=500,left=50,top=50');return false;"> ◆ 地震定位需要取得那些資訊？</a>
-                                                <a href="http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans4.html" title="Q4Answer" onclick="window.open('http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans4.html','a4','width=650,height=500,left=50,top=50');return false;"> ◆ 認識地震波 -- 體波與表面波</a>
-                                                <a href="http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans5.html" title="a5" onclick="window.open('http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans5.html','a5','width=650,height=500,left=50,top=50');return false;"> ◆ 地震波中的體波 -- P波與S波特性</a>
-                                                <a href="http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans6.html" onclick="window.open('http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans6.html','ans','scrollbars=yes,width=650,height=500,left=50,top=50');return false;"> ◆ 如何判斷P波與S波的到達時間(到時)？</a>
-                                                <a href="http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans7.html" title="a7" onclick="window.open('http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans7.html','a7','scrollbars=yes,width=650,height=500,left=50,top=50');return false;"> ◆ 利用P波與S 波的到時可以推測地震距離有多遠</a>
-                                                <a href="http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans8.html" onclick="window.open('http://qcntw.earth.sinica.edu.tw/games/game01_location/gameans8.html','ans','scrollbars=yes,resizable=yes,width=650,height=500,left=50,top=50');return false;"> ◆ 如何簡單推測地震的位置(震央)？ </a>
+                                            <div class="row">
+                                            <div class="col-4">
+                                                <!-- List group -->
+                                                <div class="list-group" id="infoList" role="tablist"></div>
                                             </div>
-                                            `)
-                                    // .width(height * 0.5)
-                                    // .height(height * 0.5);
+
+                                            <div class="col-8">   
+                                                <!-- Tab panes -->
+                                                <div class="tab-content" id="infoContent"></div>    
+                                            </div>
+                                            </div>                       
+                                        `);
+
+
+                                        let infoListHTML = [...Array(infoCount).keys()].map((d, i) => `
+                                            <a class="list-group-item list-group-item-action ${i === 0 ? 'active' : ''}" data-toggle="list" href="#questInfo${i}" role="tab">${GameData.localeJSON.UI['questInfo' + i]}</a>
+                                        `);
+                                        let infoContentHTML = [...Array(infoCount).keys()].map((d, i) => {
+                                            let content = GameData.localeJSON.Intro['questInfo' + i];
+
+                                            switch (i) {
+                                                case 1:
+                                                    content = content.replace('\t', getImgHTML('1.gif'));
+                                                    break;
+                                                case 2:
+                                                    content = content.replace('\t', getImgHTML('2.gif', 0.8));
+                                                    break;
+                                                case 5:
+                                                    content = content.replace('\t', getImgHTML('3.png', 0.8));
+                                                    break;
+                                                case 6:
+                                                    content = content.replace('\t', getImgHTML('4.png'));
+                                                    break;
+                                                case 7:
+                                                    content = content.replace('\t', getImgHTML('5.png')).replace('\t', getImgHTML('6.png', 0.8));
+                                                    break;
+                                                case 8:
+                                                    content = content.replace('\t', getImgHTML('7.png', 0.8));
+                                                    break;
+                                            };
+
+                                            return `<div class="tab-pane fade ${i === 0 ? 'show active' : ''}" id="questInfo${i}" role="tabpanel" style="white-space: pre-wrap">${content}</div>`;
+
+                                        });
+
+                                        UI.find('#infoList').append(infoListHTML);
+                                        UI.find('#infoContent').append(infoContentHTML);
+
+                                        break;
                                 };
 
                             });
@@ -1102,7 +1168,7 @@ function locatingGame() {
                                         <img src="${sidekickDir}/textBox.png" width="${textBoxW}px">
                                         <div class="sidekickText" style="white-space: pre-wrap"></div>
                                         <div class="hint">
-                                        ( ${localeJSON.sidekickHint.replace('\t', ' space ')} )
+                                        ( ${localeJSON.sidekickHint.replace('\t', ' SPACE ').replace('\t', ' A ')} )
                                         </div>                                
                                     </div>`
                                 )
@@ -1184,6 +1250,12 @@ function locatingGame() {
                             // console.debug(e);
 
                             switch (e.code) {
+                                case 'KeyA':
+                                    GameData.sidekick.lineStage[1] <= 1 ?
+                                        GameData.sidekick.lineStage[1] = 0 :
+                                        GameData.sidekick.lineStage[1] -= 2;
+                                    gameUI.find('.sidekick').trigger("click");
+                                    break;
                                 case 'Space':
                                     if (GameData.sidekick.stopHotkey) return;
                                     gameUI.find('.sidekick').trigger("click");
@@ -1193,6 +1265,9 @@ function locatingGame() {
                                     break;
                                 case 'KeyV':
                                     gameUI.find('#velocityChart').trigger("click");
+                                    break;
+                                case 'KeyQ':
+                                    gameUI.find('#questInfo').trigger("click");
                                     break;
                                 case 'KeyY':
                                 case 'KeyN':

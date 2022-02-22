@@ -8,6 +8,7 @@
         "contact": "contact",
         "control": "control",
         "controlHint": "controlHint",
+        "keyRepeat": "keyRepeat",
         "up": "up",
         "down": "down",
         "left": "left",

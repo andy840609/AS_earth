@@ -267,7 +267,7 @@ svg {
 }
 
 /* *******************qcntw資料******************* */
-#questInfoUI a {
+/* #questInfoUI>* {
     color: #0d6efd;
     text-decoration: none;
     white-space: nowrap;
@@ -276,7 +276,7 @@ svg {
 
 #questInfoUI a:hover {
     color: #0a58ca;
-}
+} */
 
 /* *******************速度圖手把動畫******************* */
 #velocityChartUI>svg .handle .anim {

@@ -12,8 +12,8 @@ function DSBC() {
     chart.data = (value) => {
         console.log(value);
         let copyObj = JSON.parse(JSON.stringify(value));//不影響原資料
-        let dataType = typeof (copyObj[0]);
-
+        let dataType = typeof (copyObj);
+        console.log(dataType);
         var readTextFile = (file) => {
             var tmpData;
 
@@ -69,7 +69,7 @@ function DSBC() {
             rawFile.send(null);
             // console.debug(tmpData);
             return tmpData;
-        }
+        };
         var sortData = (data, sortByKey) => {
             // console.debug(data, sortByKey);
 
@@ -83,7 +83,7 @@ function DSBC() {
             console.debug("=============");
 
             return sortedData;
-        }
+        };
 
         //判斷第一個元素是字串路徑要讀檔,還是物件資料
         if (dataType == 'string') {
@@ -100,7 +100,7 @@ function DSBC() {
         }
         else {
             console.debug("unknow dataType");
-        }
+        };
 
         return chart;
     }
@@ -186,7 +186,6 @@ function DSBC() {
             //================dropdown-menu內元素被點擊不關閉menu
             let All_dropdownMenu = $('.dropdown-menu');
             All_dropdownMenu.on("click.bs.dropdown", e => e.stopPropagation());
-
 
             ~function requestColors() {
                 var url = '../src/php/getNetworkList.php';
@@ -389,7 +388,7 @@ function DSBC() {
                     return 0;
                 });
 
-            }
+            };
 
             const width = 800;
             const height = 600;
@@ -468,17 +467,12 @@ function DSBC() {
             const categories = Array.from(new Set([].concat(...dataKeys.map(key => [].concat(...data[key].columns.map(k => data[key][k].columns))))));
             sortDataKeys(categories);
             // console.debug(categories);
-            // console.debug(categories);
-
             // console.debug(getKeyName('size'));
             const svg = d3.create("svg").attr("viewBox", [0, 0, width, height]);
             const focusGroup = svg.append("g").attr("class", "focusGroup");
             const subjectAxis = svg.append("g").attr("class", "subjectAxis");
             const series1Axis = svg.append("g").attr("class", "series1Axis");
             const series2Axis = svg.append("g").attr("class", "series2Axis");
-
-
-
 
             var newDataObj;
             var subjectScale, series1Scale, series2Scale;
@@ -582,7 +576,6 @@ function DSBC() {
                     }
                 };
                 function render() {
-
                     let All_seriesData = newDataObj.seriesData;
                     let series1Domain = newDataObj.series1Domain;
                     let series2Domain = newDataObj.series2Domain;
@@ -623,14 +616,12 @@ function DSBC() {
                     //     .domain([0, 100000])
                     //     .range([0, 700]);
                     //==================================test
-                    let seriesScale = logScale ? 'scaleLog' : 'scaleLinear';
-
-                    series1Scale = d3[seriesScale]()
+                    series1Scale = d3[logScale ? 'scaleLog' : 'scaleLinear']()
                         .domain(series1Domain)
                         .nice()
                         .range(series1ScaleRange);
 
-                    series2Scale = d3[seriesScale]()
+                    series2Scale = d3[logScale ? 'scaleLog' : 'scaleLinear']()
                         .domain(series2Domain)
                         .nice()
                         .range(series2ScaleRange);
@@ -860,18 +851,16 @@ function DSBC() {
                 if (!newDataObj) {
                     newDataObj = getNewData();
                     init();
-                }
+                };
                 render();
                 return trans_duration;
-            }
+            };
             function getNewData() {
                 let All_seriesData = [];
                 let series1Domain, series2Domain;
                 var getSeries = (key) => {
                     //===count or size....
                     const seriesData = data[key];
-                    // const subjects = seriesData.columns;
-                    // console.debug(seriesData);
                     // console.debug(subjects);
                     const series = d3.stack()
                         .keys(categories)
@@ -879,13 +868,13 @@ function DSBC() {
                         (subjects).map(d => { return d.forEach(v => v.key = d.key), d });
                     // console.debug(series1);
                     return series;
-                }
+                };
                 var getSeriesDomain = () => {
                     let series1 = All_seriesData[0];
                     let series2 = All_seriesData[1];
                     series1Domain = (series1DomainMax ? [0, series1DomainMax] : [0, d3.max(series1, d => d3.max(d, d => d[1]))]);
                     series2Domain = (series2DomainMax ? [0, series2DomainMax] : [0, d3.max(series2, d => d3.max(d, d => d[1]))]);
-                }
+                };
                 dataKeys.forEach(key => All_seriesData.push(getSeries(key)));
                 // console.debug(All_seriesData);
                 getSeriesDomain();
@@ -896,13 +885,11 @@ function DSBC() {
                     series2Domain: series2Domain,
                     chartType: 'vertical',
                 };
-            }
+            };
 
             updateChart();
 
-
             function events(svg) {
-
                 const tooltipGroup = svg.append("g").attr('class', 'tooltipGroup');
                 const barCollection = svg.selectAll('.bar');
                 const barNodes = barCollection.nodes();
@@ -1306,7 +1293,7 @@ function DSBC() {
                     chartContainer.select('#logScale').on('change', e => {
                         let check = e.target.checked;
                         // console.debug(check)
-                        updateChart(newDataObj.chartType, true, check);
+                        // updateChart(newDataObj.chartType, true, check);
                     });
 
                 };
@@ -1339,7 +1326,7 @@ function DSBC() {
                 chartOptionEvent();
                 infoBoxDragEvent();
                 tooltipEvent();
-            }
+            };
 
             svg.call(events);
 
@@ -1347,7 +1334,7 @@ function DSBC() {
         };
         function printChart() {
             chartContainerJQ.find('#charts').children().remove();
-            var i = 1;
+
 
             var getChartMenu = (title) => {
                 // console.log(d.data);
@@ -1594,47 +1581,16 @@ function DSBC() {
                 }
 
             }
-            var series1DomainMax = null, series2DomainMax = null;
-            //====more than one chart so get the max domain to make yaxis in the same range
-            // if (data.length > 1) {
 
-            //     function getMaxDomain(data, groupCount) {
-            //         let maxDomain = d3.max(data, d => {
-            //             // console.debug(d);
-            //             let dataKeys = d.columns.slice(1);
-            //             // console.debug(dataKeys);
-            //             return d3.max(d.data, name => {
-            //                 // console.debug(name);
-            //                 let groupKey = name.columns;
-            //                 let total = 0;
-            //                 for (let i = 0; i < dataKeys.length; i++)
-            //                     total += parseFloat(name[dataKeys[i]][groupKey[groupCount]]);
-            //                 // console.debug(total);
-            //                 return total;
-            //             })
-            //         });
-            //         return maxDomain;
-            //     }
-
-
-            //     // console.debug(dataKeys);
-            //     series1DomainMax = getMaxDomain(data, 0);
-            //     // console.debug(series1DomainMax);
-            //     series2DomainMax = getMaxDomain(data, 1);
-            //     // console.debug(series2DomainMax);
-            // }
-            data.forEach(d => {
-                // console.debug(d);
-                let chartNode = stackedBar(d, series1DomainMax, series2DomainMax);
-                // console.debug(chartNode);
-                getChartMenu('A');
-                chartContainerJQ.find('#chart' + i).append(chartNode);
-                i++;
-                // console.debug(i);
-            })
+            var i = 1;
+            let chartNode = stackedBar(data);
+            getChartMenu('A');
+            chartContainerJQ.find('#chart' + i).append(chartNode);
+            // console.debug(i);
             MenuEvents();
-        };
 
+            // console.debug(data);
+        };
         if (!(chartContainerJQ.find('#form-chart').length >= 1))
             init();
 

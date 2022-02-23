@@ -178,35 +178,32 @@ function locatingGame() {
 
         //===C.讀範例波形資料(教學用)
         let tutorialData = new Promise((resolve, reject) => {
-            let data;
-            //A-2.===依個測站名稱得個分量xy陣列
             const dir = datafileDir + 'event/tutorial/';
             const files = ['2010.166.MASB.BHE.xy', '2010.166.MASB.BHN.xy', '2010.166.MASB.BHZ.xy'];
             const fileDataKey = ['x', 'y'];
 
-            data = files.map(async (file) => {
-                d.waveData =
-                    Promise.all(
-                        channel.map(async (cha) => {
-                            let path = dir + '.' + d.station + '.' + cha + fileExtension;
-                            return { channel: cha, data: await readTextFile(path, fileDataKey) };
-                        })
-                    );
-                return d;
-            });
+            let data;
+            data =
+                Promise.all(
+                    files.map(async (file) => {
+                        let path = dir + file;
+                        return { channel: file[file.lastIndexOf('.') - 1], data: await readTextFile(path, fileDataKey) };
+                    })
+                );
 
             resolve(data);
 
         });
 
-        data = Promise.all([stationData, epicenterData]).then(sucess => {
+        data = Promise.all([stationData, epicenterData, tutorialData]).then(sucess => {
             // console.debug(sucess);
             let tmp = sucess[0];
             tmp.epicenter = sucess[1];
+            tmp.tutorialData = sucess[2];
             return tmp;
         });
 
-        console.debug(data);
+        // console.debug(data);
         return game;
     };
 
@@ -278,7 +275,7 @@ function locatingGame() {
                 let playerRole = 'maleAdventurer';//==之後能選其他[Biker,Cyborg,Punk]
                 let sidekick = 'Dude';//=='Owlet,Dude,Pink'
 
-                let playerName = 'ss',
+                let playerName = '',
                     avatarIndex = 0,//==自選頭像
                     avatarBgColor = 0x5B5B5B;//
 
@@ -343,19 +340,19 @@ function locatingGame() {
                     GameData.getLanguageJSON = getLanguageJSON;
 
                     //==test
-                    // gameDisplay(true);
-                    // let newGameData = await new Promise((resolve, reject) => {
-                    //     const config = Object.assign(getPhaserConfig(width, height), {
-                    //         scene: new GameStartScene(GameData, {
-                    //             getWaveImg: getWaveImg,
-                    //             resolve: resolve,
-                    //             getLanguageJSON: getLanguageJSON,
-                    //         }),
-                    //     });
-                    //     new Phaser.Game(config);
-                    // });
+                    gameDisplay(true);
+                    let newGameData = await new Promise((resolve, reject) => {
+                        const config = Object.assign(getPhaserConfig(width, height), {
+                            scene: new GameStartScene(GameData, {
+                                getWaveImg: getWaveImg,
+                                resolve: resolve,
+                                getLanguageJSON: getLanguageJSON,
+                            }),
+                        });
+                        new Phaser.Game(config);
+                    });
 
-                    // gameDisplay(false);
+                    gameDisplay(false);
                     //==test
 
                     initMap();
@@ -365,7 +362,6 @@ function locatingGame() {
                     // gameStart('dig');
                     //==test
                 };
-
                 startScene();
             };
             function initEndScene(win = false) {
@@ -749,7 +745,7 @@ function locatingGame() {
                             updateStation(e.target, { mouseEvent: 0 });
                         })
                         .on('click', function (e) {
-                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             //==觸發畫面位置點擊(要在假設點上座標才對)
                             const event = new MouseEvent('click', {
                                 'view': window,
@@ -1056,7 +1052,7 @@ function locatingGame() {
                                 })
                                 .on('click', function (e) {
                                     //==速度參數要完成兩站才能調整
-                                    // if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
+                                    if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
 
                                     let button = $(this);
                                     let ckick = button.hasClass('clicked');
@@ -1215,7 +1211,7 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
-                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             let lat = e.latlng.lat,
                                 lng = e.latlng.lng
 
@@ -1922,7 +1918,7 @@ function locatingGame() {
     //==取得波形svg圖
     async function getWaveImg(stationData, timeDomain = null, overview = false) {
         // console.debug(stationData, timeDomain);
-        let waveData = await (stationData.waveData ? stationData.waveData : data[0].waveData);
+        let waveData = await (stationData.waveData ? stationData.waveData : data.tutorialData);
         // console.debug(waveData);
 
         function getSvgUrl(data) {

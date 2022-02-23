@@ -2416,11 +2416,11 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
         const gameData = config.gameData,
             localeJSON = gameData.localeJSON,
             scrollMode = config.scrollMode ? config.scrollMode : 0,
-            panelType = {//===panelType暫定: 0:緣由 1:設定 2:連結 3:道具
+            panelType = {//===panelType暫定: 0:緣由 1:設定 2:連結 3:排行榜 4.道具
                 'intro': 0,
                 'setting': 1,
                 'links': 2,
-                'rank': 0,
+                'rank': 3,
             }[config.panelType],
             x = config.x, y = config.y;
         // console.debug(scene);
@@ -2474,6 +2474,13 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                 footerItem = ['close'];
                 break;
             case 3:
+                data = {
+                    name: panelName,
+                    category: {}
+                };
+                footerItem = ['close'];
+                break;
+            case 4:
                 data = {
                     name: panelName,
                     category: {

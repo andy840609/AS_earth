@@ -2368,8 +2368,8 @@ class UIScene extends Phaser.Scene {
                     };
                     var wave = () => {
                         let tutorialData = {
-                            Pwave: 30,
-                            Swave: 50,
+                            Pwave: 28.05,
+                            Swave: 52.74,
                             allowedErro: 6,   //==P波S波的容許誤差(pixel)
                         };
 
@@ -2386,7 +2386,6 @@ class UIScene extends Phaser.Scene {
                                     this.load.on('filecomplete', (loadKey) =>
                                         loadKey === key ? r(success) : false
                                     );
-
 
                                 });
                             }),

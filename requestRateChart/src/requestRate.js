@@ -343,7 +343,6 @@ function requestRate() {
         };
 
         var init = () => {
-
             var initNode = () => {
                 chartContainerJQ.append(`
                 <form id="form-header">
@@ -383,7 +382,6 @@ function requestRate() {
                     });
             };
             var initData = () => {
-
                 {      //刪掉不需要的type ＆ 算rateData
                     // const typesOfException = [6, 7];
                     // console.debug(typesOfException);
@@ -812,8 +810,6 @@ function requestRate() {
 
         //===3 types of chart
         function RQRchart() {
-            // console.debug(data);
-            // console.debug(rateData);
             ~function init() {
                 chartContainerJQ.append(`
                 <form id="form-chart">
@@ -1046,7 +1042,6 @@ function requestRate() {
 
             };
             function updateChart(trans = false) {
-
                 function init() {
                     var initChart = () => {
                         //==title
@@ -1446,16 +1441,12 @@ function requestRate() {
                     init();
                 };
                 render();
-
-
-
             };
 
             updateChart();
 
             function events(svg) {
                 // console.debug(newDataObj);
-
                 var xAxisDomain = newDataObj.xAxisDomain,
                     xAxisOption = newDataObj.xAxisOption,
                     yAxisOption = newDataObj.yAxisOption,
@@ -2513,7 +2504,6 @@ function requestRate() {
                         logScale = newDataObj.logScale;
 
                     // console.debug(logScale);
-
                     x = d3['scaleLinear']()
                         .domain([0, d3.max(gapGroupData)])
                         .range([margin.left, width - margin.right])
@@ -2640,7 +2630,6 @@ function requestRate() {
             updateChart();
 
             function events(svg) {
-
                 const tooltip = chartContainerD3.select("#charts")
                     .append("div")
                     .attr("id", "tooltip");
@@ -2973,7 +2962,6 @@ function requestRate() {
                 };
                 chartEvent();
                 chartOptionEvent();
-
             };
             svg.call(events);
 

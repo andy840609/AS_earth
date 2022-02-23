@@ -260,11 +260,11 @@
         var title = 'GDMS資料服務統計';
         var obj = { data: data, title: title };
         var obj2 = JSON.parse(JSON.stringify(obj));
-        var Data = [obj,];
+
         // console.debug(Data);
 
         var chart = DSBC()
-            .data(Data)
+            .data(obj)
             .string({ subject: '資料庫', category: '年' })
             // .string({ subject: '年', category: '資料庫' })
             .selector('#A');

@@ -258,14 +258,13 @@
         };
 
         var title = 'GDMS資料服務統計';
-        var obj = { data: data, title: title };
-        var obj2 = JSON.parse(JSON.stringify(obj));
+        var obj2 = JSON.parse(JSON.stringify(data));
 
         // console.debug(Data);
 
         var chart = DSBC()
-            .data(obj)
-            .string({ subject: '資料庫', category: '年' })
+            .data(data)
+            .string({ subject: '資料庫', category: '年', title: title })
             // .string({ subject: '年', category: '資料庫' })
             .selector('#A');
         chart();

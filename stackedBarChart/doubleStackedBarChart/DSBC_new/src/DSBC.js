@@ -3,12 +3,11 @@ function DSBC() {
     var selector = 'body';
     var data = [];
     var dataString = {};
-    var colorPalette = null;
 
     chart.selector = (value) => {
         selector = value;
         return chart;
-    }
+    };
     chart.data = (value) => {
         console.log(value);
         let copyObj = JSON.parse(JSON.stringify(value));//不影響原資料
@@ -103,313 +102,214 @@ function DSBC() {
         };
 
         return chart;
-    }
+    };
     chart.string = (value) => {
         dataString = value;
         return chart;
-    }
+    };
     function chart() {
-
         const chartContainerJQ = $(selector);
+        const chartContainerD3 = d3.select(selector);
 
-        function init() {
-            chartContainerJQ.append(`
-            <form id="form-chart">
-            <div class="form-group" id="chartsOptions" style="display: inline;">
-            <div class="row">
+        const width = 800;
+        const height = 600;
+        const margin = ({ top: 80, right: 50, bottom: 40, left: 50 });
 
-            <!-- ... reset 
-            <div class="form-group col-lg-3 col-md-3 col-sm-6" >
-                <button type="button" class="btn btn-secondary" id="reset">
-                    reset
-                </button>
-            </div>
-            ...-->
+        const defaultSizeUnit = 'GB';
+        const dataKeys = Object.getOwnPropertyNames(data);//series key
+        var subjects, categories;
+        var colorPalette = {};
 
-            <!-- ...change chart   ...-->
-            <div class="form-group col-md-6  d-flex flex-row align-items-start">
-                <label for="changeChart" class="col-form-label col-4" >chart</label>
-                <div class="btn-group btn-group-toggle col-8" data-toggle="buttons">
-                    <label class="btn btn-secondary">
-                        <input type="radio" name ="changeChart" value="vertical" checked> chart1
-                    </label>
-                    <label class="btn btn-secondary active">
-                        <input type="radio" name ="changeChart" value="horizontal"> chart2
-                    </label>
-                </div>
-            </div>   
-
-            <!-- ... show info ... -->    
-            <div class="form-group col-md-6 d-flex flex-row align-items-start">
-                <label for="showInfoButton" class="col-form-label col-4" >Show</label>
-                <div class="btn-group btn-group-toggle col-8" role="group">
-                    <button id="showInfoButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        select
-                    </button>
-                    <div class="dropdown-menu" id="showInfoMenu" aria-labelledby="showInfoButton">
-                        <div  id="showInfoDropDownMenu">
-
-                            <div class="form-check d-flex flex-row flex-wrap " style="text-align: ;">
-                                <input class="form-check-input  col-4" type="checkbox" id="showLegend" name="show" value="0" checked>
-                                <label class="form-check-label  col-12" for="showLegend">legend</label>
-                            </div>
-                           
-                        </div>
-                    </div>
-                </div>
-            </div>  
-
-            <!-- ...log scale  ...-->
-            <div
-            class="form-group col-md-6  d-flex  flex-row justify-content-start  align-items-end">               
-                <div id="logScale-group" class="form-check" >
-                    <input class="form-check-input  col-4" type="checkbox" id="logScale" name="logScale">
-                    <label class="form-check  col-12" for="logScale" data-lang="">
-                        log scale
-                    </label>                        
-                </div>                         
-            </div>
-
- 
-
-            </div>
-            </div>
-                <div class="form-group" id="charts" style="position: relative; z-index:0;"></div>          
-                <div id="outerdiv"
-                     style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:999;width:100%;height:100%;display:none;">
-                    <div id="innerdiv" style=" background-color: rgb(255, 255, 255);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
-                </div>
-            </div>
-            </form>
-            `);
-
-            //================dropdown-menu內元素被點擊不關閉menu
-            let All_dropdownMenu = $('.dropdown-menu');
-            All_dropdownMenu.on("click.bs.dropdown", e => e.stopPropagation());
-
-            ~function requestColors() {
-                var url = '../src/php/getNetworkList.php';
-                $.ajax({
-                    url: url,
-                    dataType: 'json',
-                    async: false,
-                    success: function (rtdata) {
-                        let obj = {};
-                        rtdata.forEach(d => obj[d.network_code] = d.color);
-                        colorPalette = obj;
-                    }, error: function (jqXHR, textStatus, errorThrown) {
-                        console.log("can't get color on database");
-                        colorPalette = {
-                            CWBSN: "#2ca9e1",
-                            GNSS: "#df7163",
-                            GW: "#f8b500",
-                            MAGNET: "#005243",
-                            TSMIP: "#7a4171",
-                            categories: '#808080',
-                        }
-                    }
-
-                });
-            }();
-            // console.debug(colorPalette);
-            //==========test=====
-            // $('body').on("mouseover", function (e) {
-            //     console.debug(e.target.nodeName);
-            // })
-            //===================
+        // console.debug(getKeyName('size'));
+        const getKeyName = (key) => {
+            let keyName, keyUnit = '';
+            switch (key) {
+                case 'subject':
+                    keyName = dataString.subject ? dataString.subject : 'subject';
+                    break;
+                case 'category':
+                    keyName = dataString.category ? dataString.category : 'category';
+                    break;
+                case 'count':
+                    keyName = '下載次數';
+                    keyUnit = '次';
+                    break;
+                case 'file_size':
+                    keyName = '下載量';
+                    keyUnit = defaultSizeUnit;
+                    break;
+                default:
+                    keyName = key;
+                    break;
+            }
+            return { name: keyName, unit: keyUnit };
         };
-        function stackedBar(chartData, series1DomainMax = null, series2DomainMax = null) {
-            // console.debug(chartData);
+        const getColor = (key, dataCount = 0) => {
+            // console.debug(key, dataCount);
+            let color, gradientColor;
+            function getGradientColor(hex, level) {
+                // console.debug(hex, level);
+                let maxLevel = categories.length - 1;
 
-            const convert_download_unit = (value, unitBefore, unitAfter = undefined) => {
-                let newValue, newUnit;
-                const unit1 = ['b', 'B'];
-                const unit2 = ['', 'K', 'M', 'G', 'T'];
-
-
-                var getUnit = (unit) => {
-                    let unit1, unit2;
-
-                    if (unit.length > 1) {
-                        unit1 = unit[1];
-                        unit2 = unit[0];
-                    }
-                    else if (unit.length == 1) {
-                        unit1 = unit;
-                        unit2 = '';
+                var gradient = (color, level) => {
+                    let val = 30;
+                    if (color + maxLevel * val > 240) {
+                        val = (d3.max([color, 240]) - color) / maxLevel;
+                        // console.debug(val);
                     }
 
-                    return {
-                        unit1: unit1,
-                        unit2: unit2,
-                    }
+                    let tmp = color + level * val;
+                    color = tmp > 255 ? 255 : tmp;
+                    return color;
+                };
+
+                let red = parseInt("0x" + hex.slice(1, 3)),
+                    green = parseInt("0x" + hex.slice(3, 5)),
+                    blue = parseInt("0x" + hex.slice(5, 7));
+
+                red = gradient(red, level);
+                green = gradient(green, level);
+                blue = gradient(blue, level);
+
+                let rgb = "rgb(" + red + "," + green + "," + blue + ")";
+                return rgb;
+            }
+
+            color = colorPalette[key];
+            //===if color not in colorPalette, get a random color and put in
+            if (!color) {
+                var randomColor = () => {
+                    let hex = Math.floor(Math.random() * 255).toString(16);
+                    if (hex.length < 2)
+                        hex = '0' + hex;
+                    return hex;
                 }
-                var getRatio = (unitA, unitB, unitArr, powerBase) => {
-                    let ratio;
-                    let A_index = unitArr.indexOf(unitA);
-                    let B_index = unitArr.indexOf(unitB);
+                color = '#';
+                for (let i = 0; i < 3; i++)
+                    color += randomColor();
+                colorPalette[key] = color;
+            };
+            gradientColor = getGradientColor(color, dataCount);
+            return gradientColor;
+        };
+        const convert_download_unit = (value, unitBefore, unitAfter = undefined) => {
+            let newValue, newUnit;
+            const unit1 = ['b', 'B'];
+            const unit2 = ['', 'K', 'M', 'G', 'T'];
 
-                    if (A_index != -1 && B_index != -1) {
-                        let power = A_index - B_index;
-                        ratio = Math.pow(powerBase, power);
-                    }
-                    else {
-                        ratio = 1;
-                    }
-                    return ratio;
+
+            var getUnit = (unit) => {
+                let unit1, unit2;
+
+                if (unit.length > 1) {
+                    unit1 = unit[1];
+                    unit2 = unit[0];
                 }
-
-                let unitBefore_obj = getUnit(unitBefore);
-
-                if (unitAfter) {//unitBefore 單位轉換到 unitAfter
-                    let unitAfter_obj = getUnit(unitAfter);
-                    let ratio1 = getRatio(unitBefore_obj.unit1, unitAfter_obj.unit1, unit1, 8);
-                    let ratio2 = getRatio(unitBefore_obj.unit2, unitAfter_obj.unit2, unit2, 1024);
-                    // console.debug(unitBefore_obj, unitAfter_obj);
-                    // console.debug(ratio1, ratio2);
-                    newValue = value * ratio1 * ratio2;
-                    newUnit = unitAfter;
-                }
-                else {//unitBefore 單位轉換到 value>=1或單位已是最小(b)為止 ,並給newUnit
-
-                    let unit1_index = unit1.indexOf(unitBefore_obj.unit1);
-                    let unit2_index = unit2.indexOf(unitBefore_obj.unit2);
-                    newValue = value;
-                    // let newUnit1 = unitBefore_unit1, newUnit2 = unitBefore_unit2;
-
-                    while (newValue < 1 && (unit1_index != 0 || unit2_index != 0)) {
-                        //先轉unit2,不夠才轉unit1
-                        if (unit2_index > 0) {
-                            unit2_index -= 1;
-                            newValue *= 1024;
-                        } else {
-                            unit1_index -= 1;
-                            newValue *= 8;
-                        }
-
-                    }
-                    newUnit = unit2[unit2_index] + unit1[unit1_index];
-
+                else if (unit.length == 1) {
+                    unit1 = unit;
+                    unit2 = '';
                 }
 
                 return {
-                    value: newValue,
-                    unit: newUnit,
-                };
-            };
-            const getKeyName = (key) => {
-                let keyName, keyUnit = '';
-                switch (key) {
-                    case 'subject':
-                        keyName = dataString.subject ? dataString.subject : 'subject';
-                        break;
-                    case 'category':
-                        keyName = dataString.category ? dataString.category : 'category';
-                        break;
-                    case 'count':
-                        keyName = '下載次數';
-                        keyUnit = '次';
-                        break;
-                    case 'file_size':
-                        keyName = '下載量';
-                        keyUnit = dataSizeUnit;
-                        break;
-                    default:
-                        keyName = key;
-                        break;
+                    unit1: unit1,
+                    unit2: unit2,
                 }
-                return { name: keyName, unit: keyUnit };
-            };
-            const getColor = (key, dataCount = 0) => {
-                // console.debug(key, dataCount);
-                let color, gradientColor;
-                function getGradientColor(hex, level) {
-                    // console.debug(hex, level);
-                    let maxLevel = categories.length - 1;
+            }
+            var getRatio = (unitA, unitB, unitArr, powerBase) => {
+                let ratio;
+                let A_index = unitArr.indexOf(unitA);
+                let B_index = unitArr.indexOf(unitB);
 
-                    var gradient = (color, level) => {
-                        let val = 30;
-                        if (color + maxLevel * val > 240) {
-                            val = (d3.max([color, 240]) - color) / maxLevel;
-                            // console.debug(val);
-                        }
-
-                        let tmp = color + level * val;
-                        color = tmp > 255 ? 255 : tmp;
-                        return color;
-                    };
-
-                    let red = parseInt("0x" + hex.slice(1, 3)),
-                        green = parseInt("0x" + hex.slice(3, 5)),
-                        blue = parseInt("0x" + hex.slice(5, 7));
-
-                    red = gradient(red, level);
-                    green = gradient(green, level);
-                    blue = gradient(blue, level);
-
-                    let rgb = "rgb(" + red + "," + green + "," + blue + ")";
-                    return rgb;
+                if (A_index != -1 && B_index != -1) {
+                    let power = A_index - B_index;
+                    ratio = Math.pow(powerBase, power);
                 }
-
-                color = colorPalette[key];
-                //===if color not in colorPalette, get a random color and put in
-                if (!color) {
-                    var randomColor = () => {
-                        let hex = Math.floor(Math.random() * 255).toString(16);
-                        if (hex.length < 2)
-                            hex = '0' + hex;
-                        return hex;
-                    }
-                    color = '#';
-                    for (let i = 0; i < 3; i++)
-                        color += randomColor();
-                    colorPalette[key] = color;
+                else {
+                    ratio = 1;
                 }
+                return ratio;
+            }
 
-                // console.debug(colorPalette);
-                gradientColor = getGradientColor(color, dataCount);
-                // console.debug(gradientColor);
-                return gradientColor;
-            };
-            //TSMIP放第一, CWBSN第二
-            const sortDataKeys = (array) => {
-                array.sort(function (a, b) {
-                    console.debug(a, b);
+            let unitBefore_obj = getUnit(unitBefore);
 
-                    // if (a > b) {
-                    //     return 1;
-                    // }
-                    if (a < b) {
-                        return -1;
+            if (unitAfter) {//unitBefore 單位轉換到 unitAfter
+                let unitAfter_obj = getUnit(unitAfter);
+                let ratio1 = getRatio(unitBefore_obj.unit1, unitAfter_obj.unit1, unit1, 8);
+                let ratio2 = getRatio(unitBefore_obj.unit2, unitAfter_obj.unit2, unit2, 1024);
+                // console.debug(unitBefore_obj, unitAfter_obj);
+                // console.debug(ratio1, ratio2);
+                newValue = value * ratio1 * ratio2;
+                newUnit = unitAfter;
+            }
+            else {//unitBefore 單位轉換到 value>=1或單位已是最小(b)為止 ,並給newUnit
+
+                let unit1_index = unit1.indexOf(unitBefore_obj.unit1);
+                let unit2_index = unit2.indexOf(unitBefore_obj.unit2);
+                newValue = value;
+                // let newUnit1 = unitBefore_unit1, newUnit2 = unitBefore_unit2;
+
+                while (newValue < 1 && (unit1_index != 0 || unit2_index != 0)) {
+                    //先轉unit2,不夠才轉unit1
+                    if (unit2_index > 0) {
+                        unit2_index -= 1;
+                        newValue *= 1024;
+                    } else {
+                        unit1_index -= 1;
+                        newValue *= 8;
                     }
-                    if (a == 'TSMIP' || a == 'CWBSN') {
-                        return -1;
-                    }
-                    return 0;
-                });
+
+                }
+                newUnit = unit2[unit2_index] + unit1[unit1_index];
+
+            }
+
+            return {
+                value: newValue,
+                unit: newUnit,
+            };
+        };
+
+        var init = () => {
+            var initNode = () => {
+                chartContainerJQ.append(`
+                <form id="form-header">
+                    <div class="form-group">
+                        <div class="row">
+    
+                            <!-- ... chart type ... -->                
+                            <div class="form-group col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start">
+                                <label class="col-form-label col-5" >ChartType</label>
+                                <div class="btn-group btn-group-toggle col-8" data-toggle="buttons">
+    
+                                    <label class="btn btn-secondary active">
+                                        <input type="radio" name ="chartType" value="1" checked> 1
+                                    </label>
+                                    <label class="btn btn-secondary">
+                                        <input type="radio" name ="chartType" value="2"> 2
+                                    </label>
+                       
+                                </div>
+                            </div>   
+        
+                        </div>
+                    </div>       
+                </form>
+                `);
+                //============================
+                chartContainerJQ.find('input[name ="chartType"]')
+                    .on('click', () => printChart());
 
             };
-
-            const width = 800;
-            const height = 600;
-            const margin = ({ top: 80, right: 50, bottom: 40, left: 50 });
-
-            const dataSizeUnit = 'GB';
-            const data = function () {
-                const convertData = function (data) {
-
-                    let dataObj = data;
-                    let Objkeys = Object.getOwnPropertyNames(dataObj).filter(key => key != 'columns');
-                    // console.debug(Objkeys);
+            var initData = () => {
+                const convertData = () => {
                     let split_and_convert = (string, convertedUnit) => {
                         let sizeArr = string.split(' ');
                         let size = parseFloat(sizeArr[0]);
                         let unit = sizeArr[1];
                         return convert_download_unit(size, unit, convertedUnit).value;
                     };
-
-                    Objkeys.forEach((Objkey, index, arr) => {
-                        let obj = dataObj[Objkey];
+                    dataKeys.forEach(key => {
+                        let obj = data[key];
                         let DBKeys = Object.getOwnPropertyNames(obj).filter(key => key != 'columns' && key != 'total');
                         obj.columns = DBKeys;
                         // console.debug(DBKeys);
@@ -420,12 +320,12 @@ function DSBC() {
                                 let yearKeys = Object.getOwnPropertyNames(obj[DBkey]).filter(key => key != 'columns');
                                 obj[DBkey].columns = yearKeys;
 
-                                if (Objkey == 'file_size') //==file_size
+                                if (key == 'file_size') //==file_size
                                 {
                                     yearKeys.forEach(yearKey => {
                                         // console.debug(obj[DBkey][yearKey]);
                                         if (typeof (obj[DBkey][yearKey]) == 'string')
-                                            obj[DBkey][yearKey] = split_and_convert(obj[DBkey][yearKey], dataSizeUnit);
+                                            obj[DBkey][yearKey] = split_and_convert(obj[DBkey][yearKey], defaultSizeUnit);
                                     });
                                 };
                             };
@@ -433,41 +333,509 @@ function DSBC() {
                         });
 
                     });
-                    dataObj.columns = Objkeys.filter(key => {
-                        // console.debug(dataObj[key].total);
+                    data.columns = dataKeys.filter(key => {
+                        // console.debug(data[key].total);
                         let boolean = true;
-                        if (dataObj[key].hasOwnProperty('total'))
-                            if (dataObj[key].total == 0)
+                        if (data[key].hasOwnProperty('total'))
+                            if (data[key].total == 0)
                                 boolean = false;
                         return boolean;
                     });
-                    // console.debug(dataObj);
-                    return dataObj;
+                    // console.debug(data);
                 };
-                chartData.data = convertData(chartData.data);
-                return chartData.data;
-            }();
-            // console.debug(data);
-            const dataKeys = data.columns;//series key
-            // console.debug(dataKeys);
-            // console.debug(colorPalette);
-            //放入seriesColor
-            ~function () {
+                const getDataKey = () => {
+                    //TSMIP放第一, CWBSN第二
+                    let sortDataKeys = (array) => {
+                        array.sort(function (a, b) {
+                            if (a < b)
+                                return -1;
+                            if (a == 'TSMIP' || a == 'CWBSN')
+                                return -1;
+                            return 0;
+                        });
+
+                    };
+                    //===取出所有主要的key(ex:每個DB)並去重複
+                    subjects = Array.from(new Set([].concat(...dataKeys.map(key => [].concat(...data[key].columns)))));
+                    //===取出所有最下層key(ex:每個DB的年份)並去重複
+                    categories = Array.from(new Set([].concat(...dataKeys.map(key => [].concat(...data[key].columns.map(k => data[key][k].columns))))));
+                    sortDataKeys(subjects);
+                    sortDataKeys(categories);
+                };
+                convertData();
+                getDataKey();
+
+            };
+            var initColor = () => {
+                let requestColors = () => {
+                    let tmp;
+                    $.ajax({
+                        url: '../src/php/getNetworkList.php',
+                        dataType: 'json',
+                        async: false,
+                        success: function (rtdata) {
+                            let obj = {};
+                            rtdata.forEach(d => obj[d.network_code] = d.color);
+                            tmp = obj;
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            // console.log("can't get color on database");
+                            tmp = {
+                                CWBSN: "#2ca9e1",
+                                GNSS: "#df7163",
+                                GW: "#f8b500",
+                                MAGNET: "#005243",
+                                TSMIP: "#7a4171",
+                                categories: '#808080',
+                            };
+                        },
+                    });
+                    Object.assign(colorPalette, tmp);
+                };
                 const seriesColor = ["#d53e4f", "#3288bd"];
-                if (!colorPalette) colorPalette = {};
-                dataKeys.forEach((key, i) => colorPalette[key] = seriesColor[i % seriesColor.length]);
+                dataKeys.forEach((key, i) => colorPalette[key] = seriesColor[i]);
+                requestColors();
+            };
+            initNode();
+            initData();
+            initColor();
+
+            console.debug(data);
+            console.debug(subjects, categories);
+            console.debug(colorPalette);
+            //==========test=====
+            // $('body').on("mouseover", function (e) {
+            //     console.debug(e.target.nodeName);
+            // })
+            //===================
+        };
+        var printChart = () => {
+            chartContainerJQ.find('#form-chart').remove();
+            var getChartMenu = () => {
+                // console.log(d.data);
+                var div = document.createElement("div");
+                div.setAttribute("id", "chart" + i);
+                div.setAttribute("class", "chart col-md-12 col-sm-12");
+                div.setAttribute("style", "position:relative");
+
+                var nav = document.createElement('nav');
+                nav.setAttribute("id", "nav" + i);
+                nav.setAttribute("class", "toggle-menu");
+                nav.setAttribute("style", "position:absolute");
+                nav.style.right = "0";
+
+                var a = document.createElement('a');
+                a.setAttribute("class", "toggle-nav");
+                a.setAttribute("href", "#");
+                a.innerHTML = "&#9776;";
+                nav.append(a);
+
+                var ul = document.createElement("ul");
+                ul.classList.add("active");
+                nav.append(ul);
+
+                var chartDropDown = ['bigimg', 'svg', 'png', 'jpg'];
+                chartDropDown.forEach(option => {
+                    var li = document.createElement("li");
+                    var item = document.createElement("a");
+                    item.href = "javascript:void(0)";
+
+                    if (option != chartDropDown[0])
+                        item.innerHTML = "下載圖表爲" + option;
+                    else
+                        item.innerHTML = "檢視圖片";
+
+                    item.addEventListener("click", (e, a) => {
+                        let svgArr = [];
+                        let svg = chartContainerJQ.find("#" + $(e.target).parents('.chart')[0].id).children('svg')[0];
+                        // console.debug(svg);
+                        svgArr.push(svg);
+                        downloadSvg(svgArr, 'title', option);
+                    });
+
+                    li.append(item);
+                    ul.append(li);
+                });
+                // console.debug(chartContainerJQ.find());
+                chartContainerJQ.find('#charts').append(div);
+                chartContainerJQ.find('#chart' + i).append(nav);
+            };
+            var MenuEvents = () => {
+                var charts = document.getElementById('charts');
+                var stopPropagation = (e) => {
+                    e.stopPropagation();
+                }
+
+                //start or stop DOM event capturing
+                function chartEventControl(control) {
+                    if (control == 'stop') {
+                        // console.debug('add');
+                        charts.addEventListener('mousemove', stopPropagation, true);
+                        charts.addEventListener('mouseenter', stopPropagation, true);
+                    }
+                    else {
+                        // console.debug('remove');
+                        charts.removeEventListener('mousemove', stopPropagation, true);
+                        charts.removeEventListener('mouseenter', stopPropagation, true);
+                    }
+                }
+
+                $('.toggle-nav').off('click');
+                $('.toggle-nav').click(function (e) {
+                    // console.debug(e.target === this);//e.target===this
+
+                    $(this).toggleClass('active');
+                    $(this).next().toggleClass('active');
+                    e.preventDefault();
+
+                    //選單打開後阻止事件Capture到SVG(選單打開後svg反應mousemove,mouseenter圖片會有問題)
+                    if ($(this).hasClass('active'))
+                        chartEventControl('stop');
+                    else
+                        chartEventControl('start');
+
+
+                });
+                // console.debug($(".toggle-nav"));
+                $('body').off('click');
+                $('body').click(function (e) {
+                    $(".toggle-nav").each((i, d) => {
+                        // console.debug(e.target == d);
+                        // console.debug(e.target);
+                        if (e.target != d && $(d).hasClass('active')) {
+                            $(d).toggleClass('active');
+                            $(d).next().toggleClass('active');
+
+                            setTimeout(() => chartEventControl('start'), 100);
+                        }
+                    });
+                });
+            };
+            var downloadSvg = (svgArr, fileName, option) => {
+
+                function getSvgUrl(svgNode) {
+                    var svgData = (new XMLSerializer()).serializeToString(svgNode);
+                    var svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+                    var svgUrl = URL.createObjectURL(svgBlob);
+                    return svgUrl;
+                }
+                function getCanvas(resize) {
+                    // =============== canvas init
+                    let canvas = document.createElement('canvas');
+                    let context = canvas.getContext('2d');
+
+                    var svgWidth = svgArr[0].viewBox.baseVal.width;
+                    var svgHeight = svgArr[0].viewBox.baseVal.height * svgArr.length;
+                    var canvasWidth, canvasHeight;
+                    //檢視時縮放,下載時放大
+                    if (resize) {
+                        // var windowW = $(window).width();//获取当前窗口宽度 
+                        // var windowH = $(window).height();//获取当前窗口高度 
+
+                        var windowW = window.innerWidth;//获取当前窗口宽度 
+                        var windowH = window.innerHeight;//获取当前窗口高度 
+
+                        // console.debug("window = ");
+                        // console.debug(windowW, windowH);
+                        // console.debug(svgW, svgH);
+                        var width, height;
+                        var scale = 0.9;//缩放尺寸
+                        height = windowH * scale;
+                        width = height / svgHeight * svgWidth;
+                        // console.debug("before scale = ");
+                        // console.debug(width, height);
+                        while (width > windowW * scale) {//如宽度扔大于窗口宽度 
+                            height = height * scale;//再对宽度进行缩放
+                            width = width * scale;
+                        }
+                        // console.debug("scaled = ");
+                        // console.debug(width, height);
+                        canvasWidth = width;
+                        canvasHeight = height;
+                    }
+                    else {
+                        var scale = 1.5;
+                        canvasWidth = svgWidth * scale;
+                        canvasHeight = svgHeight * scale;
+                    }
+
+                    canvas.width = canvasWidth;
+                    canvas.height = canvasHeight;
+                    //====bgcolor
+                    context.fillStyle = "white";
+                    context.fillRect(0, 0, canvas.width, canvas.height);
+                    return [canvas, context];
+
+                }
+                function download(href, name) {
+                    var downloadLink = document.createElement("a");
+                    downloadLink.href = href;
+                    downloadLink.download = name;
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                }
+                function show(width, height) {
+                    // $('#bigimg').attr("src", img);//设置#bigimg元素的src属性 
+                    // $('#outerdiv').fadeIn("fast");//淡入显示#outerdiv及.pimg 
+                    // $('#outerdiv').off('click');
+                    // $('#outerdiv').click(function () {//再次点击淡出消失弹出层 
+                    //     $(this).fadeOut("fast");
+                    // });
+                    let outerdiv = $('#outerdiv');
+
+                    outerdiv.fadeIn("fast");//淡入显示#outerdiv及.pimg 
+                    outerdiv.off('click');
+                    outerdiv.click(function (e) {//再次点击淡出消失弹出层 
+                        if (e.target.id != 'outerdiv') return;
+                        $(this).fadeOut("fast");
+                        $(originParent).children('svg').remove();
+                        originSvg.removeAttribute('width');
+                        originSvg.removeAttribute('height');
+                        originParent.append(originSvg);
+                    });
+
+                    let originSvg = svgArr[0];
+                    let originParent = originSvg.parentNode;
+                    let cloneSvg = originSvg.cloneNode(true);
+                    originSvg.setAttribute('width', width);
+                    originSvg.setAttribute('height', height);
+                    document.querySelector('#innerdiv').append(originSvg);
+                    originParent.append(cloneSvg);
+
+                }
+
+                if (option == 'svg') {
+                    //==============merge svg
+                    var newSvg = document.createElement('svg');
+
+
+                    svgArr.forEach(svg => {
+                        var svgjQobj = $(svg);
+                        svgjQobj.clone().appendTo(newSvg);
+                    });
+                    // console.debug(newSvg);
+                    var svgUrl = getSvgUrl(newSvg);
+                    download(svgUrl, fileName + '.' + option);
+                }
+                else {
+                    //==============each svg draw to canvas
+                    var CanvasObjArr = getCanvas(option == 'bigimg');
+                    // console.debug(CanvasObjArr);
+                    var canvas = CanvasObjArr[0];
+                    var context = CanvasObjArr[1];
+                    var imageWidth = canvas.width;
+                    var imageHeight = canvas.height / svgArr.length;
+
+
+                    svgArr.forEach((svg, index) => {
+                        var svgNode = svg;
+                        var svgUrl = getSvgUrl(svgNode);
+                        var image = new Image();
+                        image.src = svgUrl;
+                        image.onload = () => {
+                            context.drawImage(image, 0, index * imageHeight, imageWidth, imageHeight);
+
+                            //done drawing and output
+                            if (index == svgArr.length - 1) {
+                                var imgUrl;
+                                if (option == 'bigimg') {
+                                    // imgUrl = canvas.toDataURL();// default png
+                                    // show(imgUrl);
+                                    // let canvas = getCanvas(true)[0];
+                                    // // console.debug(canvas);
+                                    show(imageWidth, imageHeight);
+                                }
+                                else {
+                                    imgUrl = canvas.toDataURL('image/' + option);
+                                    download(imgUrl, fileName + '.' + option);
+                                }
+                            }
+                        }
+                    });
+                }
+
+            };
+
+            var i = 1;
+            let chartType = document.querySelector('input[name ="chartType"]:checked').value,
+                chartNode = chartType == 1 ? doubleChart() : singleChart();
+            getChartMenu();
+            chartContainerJQ.find('#chart' + i).append(chartNode);
+            MenuEvents();
+
+            // console.debug(data);
+        };
+
+        function doubleChart() {
+            ~function init() {
+                chartContainerJQ.append(`
+                <form id="form-chart">
+                <div class="form-group" id="chartsOptions" style="display: inline;">
+                <div class="row">
+    
+                    <!-- ... leftAxis ... -->    
+                    <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
+                        <label for="leftAxisOptionButton" class="col-form-label col-5" >LeftAxis</label>
+                        <div class="btn-group btn-group-toggle col-7" role="group">
+                            <button id="leftAxisOptionButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                count
+                            </button>
+                            <div class="dropdown-menu" id="leftAxisMenu" aria-labelledby="leftAxisOptionButton">
+                                <div class="form-group col-12 d-flex flex-row flex-wrap align-items-start justify-content-between" id="leftAxisDropDownMenu" >
+                                
+    
+                                <label class="font-weight-bold" for="">Metric</label>                    
+                                <div class="col-12 d-flex flex-row">
+
+                                    <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
+                                        <input class="form-check-input col-3" type="checkbox" id="leftAxis_count" name="leftAxisMetric" value="count" checked>
+                                        <label class="" for="leftAxis_count">count</label>
+                                    </div>
+                                    <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
+                                        <input class="form-check-input col-3" type="checkbox" id="leftAxis_group" name="leftAxisMetric" value="group">
+                                        <label for="leftAxis_group">group</label>
+                                    </div>
+                                    <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
+                                        <input class="form-check-input col-3" type="checkbox" id="leftAxis_fileSize" name="leftAxisMetric" value="file_size">
+                                        <label for="leftAxis_fileSize">fileSize</label>
+                                    </div>
+                                    
+                                </div>
+    
+                                <label class="font-weight-bold" for="">Scale</label>
+                                <div class="col-12 d-flex flex-row">
+                                    <div class="col-4 form-check d-flex align-items-start" style="text-align: center;">
+                                        <input class="form-check-input col-3" type="checkbox" id="rightAxis_log" name="rightAxisScale" value="log">
+                                        <label class="" for="rightAxis_log">logrithmic</label>
+                                    </div>
+                                </div>                          
+                                
+    
+                                </div>
+                            </div>
+                        </div>
+                    </div>  
+                    
+                    <!-- ... rightAxis ... -->    
+                    <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
+                        <label for="rightAxisOptionButton" class="col-form-label col-5" >RightAxis</label>
+                        <div class="btn-group btn-group-toggle col-7" role="group">
+                            <button id="rightAxisOptionButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                fileSize
+                            </button>
+                            <div class="dropdown-menu" id="rightAxisMenu" aria-labelledby="rightAxisOptionButton">
+                                <div class="form-group col-12 d-flex flex-row flex-wrap align-items-start justify-content-between" id="rightAxisDropDownMenu" >
+    
+                                <label class="font-weight-bold" for="">Metric</label>                    
+                                <div class="col-12 d-flex flex-row">
+                                    <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
+                                        <input class="form-check-input col-3" type="checkbox" id="rightAxis_count" name="rightAxisMetric" value="count">
+                                        <label class="" for="rightAxis_count">count</label>
+                                    </div>
+                                    <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
+                                        <input class="form-check-input col-3" type="checkbox" id="rightAxis_group" name="rightAxisMetric" value="group">
+                                        <label for="rightAxis_group">group</label>
+                                    </div>
+                                    <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
+                                        <input class="form-check-input col-3" type="checkbox" id="rightAxis_fileSize" name="rightAxisMetric" value="file_size" checked>
+                                        <label for="rightAxis_fileSize">fileSize</label>
+                                    </div>
+                                </div>
+    
+                                <label class="font-weight-bold" for="">Scale</label>
+                                <div class="col-12 d-flex flex-row">
+                                    <div class="col-4 form-check d-flex align-items-start" style="text-align: center;">
+                                        <input class="form-check-input col-3" type="checkbox" id="rightAxis_log" name="rightAxisScale" value="log">
+                                        <label class="" for="rightAxis_log">logrithmic</label>
+                                    </div>
+                                </div>                          
+    
+    
+                                </div>
+                            </div>
+                        </div>
+                    </div>  
+                
+                    <!-- ... display selector ... -->    
+                    <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
+                        <label for="displaySelectButton" class="col-form-label col-5" >Display</label>
+                        <div class="btn-group btn-group-toggle col-7" role="group">
+                            <button id="displaySelectButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                select
+                            </button>
+                            <div class="dropdown-menu" id="displayMenu" aria-labelledby="displaySelectButton">
+                                <div id="displayDropDownMenu" >
+                                
+                                </div>
+                            </div>
+                        </div>
+                    </div>  
+    
+                    <!-- ... show info ... -->    
+                    <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
+                        <label for="showInfoButton" class="col-form-label col-5" >Show</label>
+                        <div class="btn-group btn-group-toggle col-7" role="group">
+                            <button id="showInfoButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                select
+                            </button>
+                            <div class="dropdown-menu" id="showInfoMenu" aria-labelledby="showInfoButton">
+                                <div  id="showInfoDropDownMenu">
+    
+                                    <div class="form-check col-12">
+                                        <input class="form-check-input  col-3" type="checkbox" id="showLegend" name="show" value="1" checked>
+                                        <label class="form-check-label  col-12" for="showLegend">legend</label>
+                                    </div>
+    
+    
+                                </div>
+                            </div>
+                        </div>
+                    </div>  
+
+                    <!-- ...change chart   ...-->
+                    <div class="form-group col-md-6  d-flex flex-row align-items-start">
+                        <label for="changeChart" class="col-form-label col-4" >chart</label>
+                        <div class="btn-group btn-group-toggle col-8" data-toggle="buttons">
+                            <label class="btn btn-secondary">
+                                <input type="radio" name ="changeChart" value="vertical" checked> chart1
+                            </label>
+                            <label class="btn btn-secondary active">
+                                <input type="radio" name ="changeChart" value="horizontal"> chart2
+                            </label>
+                        </div>
+                    </div>   
+    
+   
+                </div>
+    
+                
+                <div class="form-group"  id="chartMain">
+    
+                    <div class="form-group" id="charts"></div>        
+                     
+                    <div id="outerdiv"
+                        style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:10;width:100%;height:100%;display:none;">
+                        <div id="innerdiv" style=" background-color: rgb(255, 255, 255);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div>                      
+                    </div>
+    
+                    <div id='loading'>
+                        <div class="spinner-border"role="status">
+                            <span class="sr-only" >Loading...</span>
+                        </div>
+                        Loading...
+                    </div>
+                </div>
+                
+                </form>
+    
+               
+                `);
+                //================dropdown-menu內元素被點擊不關閉menu
+                let All_dropdownMenu = $('.dropdown-menu');
+                All_dropdownMenu.on("click.bs.dropdown", e => e.stopPropagation());
+
             }();
-
-            //===取出所有主要的key(ex:每個DB)並去重複
-            const subjects = Array.from(new Set([].concat(...dataKeys.map(key => [].concat(...data[key].columns)))));
-            // console.debug(subjects);
-            sortDataKeys(subjects);
-
-            //===取出所有最下層key(ex:每個DB的年份)並去重複
-            const categories = Array.from(new Set([].concat(...dataKeys.map(key => [].concat(...data[key].columns.map(k => data[key][k].columns))))));
-            sortDataKeys(categories);
-            // console.debug(categories);
-            // console.debug(getKeyName('size'));
             const svg = d3.create("svg").attr("viewBox", [0, 0, width, height]);
             const focusGroup = svg.append("g").attr("class", "focusGroup");
             const subjectAxis = svg.append("g").attr("class", "subjectAxis");
@@ -475,18 +843,12 @@ function DSBC() {
             const series2Axis = svg.append("g").attr("class", "series2Axis");
 
             var newDataObj;
-            var subjectScale, series1Scale, series2Scale;
-            var bar_interval;
-            function updateChart(chartType = 'vertical', trans = false, logScale = false) {
-                // console.debug(chartType)
-                // console.debug(newDataObj)
-                // var chartType = chartType;//vertical horizontal
-                const max_barWidth = chartType == 'vertical' ? 500 : 60;
-                bar_interval = chartType == 'vertical' ? 1 : 50;
-                const trans_duration = trans ? 500 : 0;
+            var subjectScale, leftScale, rightScale;
+
+            function updateChart(trans = false) {
+                const transDuration = trans ? 500 : 0;
 
                 function init() {
-
                     svg.append('g')
                         .attr("class", "title")
                         .attr("transform", `translate(${margin.left + (width - margin.left - margin.right) / 2}, ${margin.top / 2})`)
@@ -498,7 +860,7 @@ function DSBC() {
                         .attr("font-weight", 900)
                         .attr("text-anchor", "middle")
                         .attr("alignment-baseline", "middle")
-                        .text(chartData.title);
+                        .text(data.title);
 
                     //===Axis
                     subjectAxis
@@ -576,64 +938,62 @@ function DSBC() {
                     }
                 };
                 function render() {
-                    let All_seriesData = newDataObj.seriesData;
-                    let series1Domain = newDataObj.series1Domain;
-                    let series2Domain = newDataObj.series2Domain;
+                    console.debug(newDataObj);
+                    var newData = newDataObj.newData;
+                    var leftAxisOption = newDataObj.leftAxisOption;
+                    var rightAxisOption = newDataObj.rightAxisOption;
+                    var displayArr = newDataObj.displayArr;
+                    var barOption = newDataObj.barOption;
 
-                    var subjectScaleRange, series1ScaleRange, series2ScaleRange;
+                    var subjectRange, leftRange, rightRange;
 
-                    switch (chartType) {
-                        default:
-                        case 'vertical':
-                            subjectScaleRange = [margin.left, width - margin.right];
-                            series1ScaleRange = [height - margin.bottom, margin.top];
-                            series2ScaleRange = [height - margin.bottom, margin.top];
-
-                            break;
-                        case 'horizontal':
-                            let chartWidth = width - margin.right - margin.left;
-                            let seriesAxisWidth = (chartWidth - bar_interval) * 0.5;
-                            subjectScaleRange = [height - margin.bottom, margin.top];
-                            series1ScaleRange = [margin.left + seriesAxisWidth, margin.left];
-                            series2ScaleRange = [series1ScaleRange[0] + bar_interval, width - margin.right];
-                            break;
-
+                    if (barOption.orientation) {
+                        subjectRange = [margin.left, width - margin.right];
+                        leftRange = [height - margin.bottom, margin.top];
+                        rightRange = [height - margin.bottom, margin.top];
                     }
+                    else {
+                        let chartWidth = width - margin.right - margin.left;
+                        let seriesAxisWidth = (chartWidth - barOption.interval) * 0.5;
+                        subjectRange = [height - margin.bottom, margin.top];
+                        leftRange = [margin.left + seriesAxisWidth, margin.left];
+                        rightRange = [leftRange[0] + barOption.interval, width - margin.right];
+                    };
 
                     subjectScale = d3.scaleBand()
                         .domain(subjects)
-                        .range(subjectScaleRange)
+                        .range(subjectRange)
                         .padding(0.1);
 
                     //==================================test
-                    // console.debug(series1ScaleRange)
+                    // console.debug(leftRange)
                     // series1Domain[0] = 1
                     // series2Domain[0] = 1
-                    // series1ScaleRange.reverse();
-                    // series2ScaleRange.reverse();
+                    // leftRange.reverse();
+                    // rightRange.reverse();
 
                     // var logScale = d3.scaleLog()
                     //     .domain([0, 100000])
                     //     .range([0, 700]);
                     //==================================test
-                    series1Scale = d3[logScale ? 'scaleLog' : 'scaleLinear']()
-                        .domain(series1Domain)
+                    leftScale = d3[leftAxisOption.logScale ? 'scaleLog' : 'scaleLinear']()
+                        .domain([0, d3.max(newData[0], d => d3.max(d, d => d[1]))])
                         .nice()
-                        .range(series1ScaleRange);
+                        .range(leftRange);
 
-                    series2Scale = d3[logScale ? 'scaleLog' : 'scaleLinear']()
-                        .domain(series2Domain)
+                    rightScale = d3[rightAxisOption.logScale ? 'scaleLog' : 'scaleLinear']()
+                        .domain([0, d3.max(newData[1], d => d3.max(d, d => d[1]))])
                         .nice()
-                        .range(series2ScaleRange);
+                        .range(rightRange);
 
-                    console.debug(series1Scale.domain())
-                    console.debug(series1Scale.range())
+                    // console.debug(leftScale.domain())
+                    // console.debug(leftScale.range())
 
                     var updateAxis = () => {
                         var removeAxis = g => g.selectAll(":not(.axisName)").remove();
                         var makeSubjectAxis = g => {
                             let axisPos, translate, refreshing;
-                            if (chartType == 'vertical') {
+                            if (barOption.orientation) {
                                 axisPos = 'axisBottom';
                                 translate = [0, height - margin.bottom];
                                 refreshing = g => {
@@ -657,12 +1017,12 @@ function DSBC() {
 
                                     let domain_d = g.select('.domain').attr('d');
                                     g.selectAll('.domain')
-                                        .data(All_seriesData)
+                                        .data(newData)
                                         .join('path')
                                         .attr('class', 'domain')
                                         .attr('stroke', 'currentColor')
                                         .attr('d', domain_d)
-                                        .attr("transform", (d, i) => `translate(${bar_interval * 0.5 * (i * 2 - 1)},0)`)
+                                        .attr("transform", (d, i) => `translate(${barOption.interval * 0.5 * (i * 2 - 1)},0)`)
 
                                     g.selectAll(".tick text").attr('x', 0).attr('y', 0).attr('dy', '0.32em');
                                     g.select('.axisName').attr("transform", `translate(0,${height - margin.bottom * 0.2})`)
@@ -679,14 +1039,14 @@ function DSBC() {
                         }
                         var makeSeriesAxis = (g, yNum) => {
 
-                            let seriesScale = yNum - 1 ? series2Scale : series1Scale;
+                            let seriesScale = yNum - 1 ? rightScale : leftScale;
                             let axisPos, translate, refreshing;
                             let sign = { 1: -1, 2: 1 }[yNum];
                             let seriesName = getKeyName(dataKeys[yNum - 1]);
                             let axisText = seriesName.name + '(' + seriesName.unit + ')';
 
                             // console.debug(seriesName)
-                            if (chartType == 'vertical') {
+                            if (barOption.orientation) {
                                 axisPos = { 1: 'axisLeft', 2: 'axisRight' }[yNum];
                                 translate = { 1: [margin.left, 0], 2: [width - margin.right, 0] }[yNum];
                                 refreshing = g => {
@@ -704,10 +1064,10 @@ function DSBC() {
 
                                     g.selectAll('.tick').style("text-anchor", "middle");
                                     g.select('.axisName')
-                                        .attr("transform", `translate(${[axisOrigin + 2 * bar_interval * sign, margin.bottom * 0.5]})`)
+                                        .attr("transform", `translate(${[axisOrigin + 2 * barOption.interval * sign, margin.bottom * 0.5]})`)
                                         .text(axisText)
                                         .append('tspan')
-                                        .attr("x", sign * bar_interval * 1.5)
+                                        .attr("x", sign * barOption.interval * 1.5)
                                         .attr("dy", 2)
                                         .attr("alignment-baseline", "middle")
                                         .attr("font-size", 60)
@@ -719,7 +1079,7 @@ function DSBC() {
                             g
                                 .attr("transform", `translate(${translate})`)
                                 .call(removeAxis)
-                                .transition().duration(trans_duration)
+                                .transition().duration(transDuration)
                                 .call(d3[axisPos](seriesScale).ticks(null, "s").tickSizeOuter(0))
 
                             g.call(refreshing)//有呼叫補間動畫會不能append所以另外call一次
@@ -763,8 +1123,8 @@ function DSBC() {
                                 barGroup_collection.each(function (dataKey, i) {
                                     // console.debug(dataKey, i)
                                     let seriesGroup = d3.select(this);
-                                    let seriesData = All_seriesData[i];
-                                    let seriesScale = i ? series2Scale : series1Scale;
+                                    let seriesData = newData[i];
+                                    let seriesScale = i ? rightScale : leftScale;
 
                                     seriesGroup
                                         .selectAll("g")
@@ -785,11 +1145,11 @@ function DSBC() {
                                                 // console.debug(d)
                                                 let rect = d3.select(this);
 
-                                                if (chartType == 'vertical') {
-                                                    let barWidth = subjectScale.bandwidth() / 2 > max_barWidth ? max_barWidth : subjectScale.bandwidth() / 2;
-                                                    let transX = i ? subjectScale.bandwidth() / 2 + bar_interval : subjectScale.bandwidth() / 2 - barWidth - bar_interval;
+                                                if (barOption.orientation) {
+                                                    let barWidth = subjectScale.bandwidth() / 2 > barOption.maxWidth ? barOption.maxWidth : subjectScale.bandwidth() / 2;
+                                                    let transX = i ? subjectScale.bandwidth() / 2 + barOption.interval : subjectScale.bandwidth() / 2 - barWidth - barOption.interval;
                                                     rect
-                                                        .transition().duration(trans_duration)
+                                                        .transition().duration(transDuration)
                                                         .attr("transform", `translate(${transX}, 0)`)
                                                         .attr("x", d => subjectScale(d.data))
                                                         .attr("y", d => seriesScale(d[1]))
@@ -797,10 +1157,10 @@ function DSBC() {
                                                         .attr("width", barWidth)
                                                 }
                                                 else {
-                                                    let barWidth = subjectScale.bandwidth() > max_barWidth ? max_barWidth : subjectScale.bandwidth();
+                                                    let barWidth = subjectScale.bandwidth() > barOption.maxWidth ? barOption.maxWidth : subjectScale.bandwidth();
                                                     let transY = (subjectScale.bandwidth() - barWidth) * 0.5;
                                                     rect
-                                                        .transition().duration(trans_duration)
+                                                        .transition().duration(transDuration)
                                                         .attr("transform", `translate(0, ${transY})`)
                                                         .attr("x", d => seriesScale(d[i ? 0 : 1]))
                                                         .attr("y", d => subjectScale(d.data))
@@ -849,19 +1209,36 @@ function DSBC() {
                     updateTooltips();
                 };
                 if (!newDataObj) {
-                    newDataObj = getNewData();
+                    newDataObj = getNewData({
+                        leftAxisOption: {
+                            metric: chartContainerD3.select('input[name=leftAxisMetric]:checked').property("value"),
+                            logScale: false,
+                        },
+                        rightAxisOption: {
+                            metric: chartContainerD3.select('input[name=rightAxisMetric]:checked').property("value"),
+                            logScale: false,
+                        },
+                        displayArr: d3.range(subjects.length),
+                        showArr: chartContainerD3.selectAll('input[name=show]:checked').nodes().map(node => parseInt(node.value)),
+                    });
                     init();
                 };
                 render();
-                return trans_duration;
+
             };
-            function getNewData() {
-                let All_seriesData = [];
-                let series1Domain, series2Domain;
+            function getNewData(chartOption) {
+                let newData;
+
+                let leftAxisOption = chartOption.hasOwnProperty('leftAxisOption') ? chartOption.leftAxisOption : newDataObj.leftAxisOption,
+                    rightAxisOption = chartOption.hasOwnProperty('rightAxisOption') ? chartOption.rightAxisOption : newDataObj.rightAxisOption,
+                    displayArr = chartOption.hasOwnProperty('displayArr') ? chartOption.displayArr : newDataObj.displayArr,
+                    showArr = chartOption.hasOwnProperty('showArr') ? chartOption.showArr : newDataObj.showArr,
+                    orientation = chartOption.hasOwnProperty('orientation') ? chartOption.orientation : newDataObj ? newDataObj.barOption.orientation : 1;
+
                 var getSeries = (key) => {
                     //===count or size....
                     const seriesData = data[key];
-                    // console.debug(subjects);
+                    // console.debug(data, key);
                     const series = d3.stack()
                         .keys(categories)
                         .value((subject, category) => seriesData[subject] ? (seriesData[subject][category] || 0) : 0)//沒有值當0(bar heigth=0)
@@ -869,27 +1246,32 @@ function DSBC() {
                     // console.debug(series1);
                     return series;
                 };
-                var getSeriesDomain = () => {
-                    let series1 = All_seriesData[0];
-                    let series2 = All_seriesData[1];
-                    series1Domain = (series1DomainMax ? [0, series1DomainMax] : [0, d3.max(series1, d => d3.max(d, d => d[1]))]);
-                    series2Domain = (series2DomainMax ? [0, series2DomainMax] : [0, d3.max(series2, d => d3.max(d, d => d[1]))]);
-                };
-                dataKeys.forEach(key => All_seriesData.push(getSeries(key)));
-                // console.debug(All_seriesData);
-                getSeriesDomain();
+
+                newData = [leftAxisOption.metric, rightAxisOption.metric,].map(key => getSeries(key));
 
                 return {
-                    seriesData: All_seriesData,
-                    series1Domain: series1Domain,
-                    series2Domain: series2Domain,
-                    chartType: 'vertical',
+                    newData: newData ? newData : newDataObj.newData,
+                    leftAxisOption: leftAxisOption,
+                    rightAxisOption: rightAxisOption,
+                    displayArr: displayArr,
+                    showArr: showArr,
+                    barOption: {
+                        orientation: orientation,
+                        maxWidth: orientation ? 500 : 60,
+                        interval: orientation ? 1 : 50,
+                    },
+
                 };
             };
-
             updateChart();
 
             function events(svg) {
+                var newData = newDataObj.newData;
+                var leftAxisOption = newDataObj.leftAxisOption;
+                var rightAxisOption = newDataObj.rightAxisOption;
+                var displayArr = newDataObj.displayArr;
+                var barOption = newDataObj.barOption;
+
                 const tooltipGroup = svg.append("g").attr('class', 'tooltipGroup');
                 const barCollection = svg.selectAll('.bar');
                 const barNodes = barCollection.nodes();
@@ -1184,7 +1566,7 @@ function DSBC() {
                                 }
 
                             })
-                    }
+                    };
                     function subjectClickEvent(tickCollection) {
                         // console.debug(tickCollection);
 
@@ -1257,6 +1639,54 @@ function DSBC() {
                 };
                 var chartOptionEvent = () => {
                     const chartContainer = d3.select(selector);
+                    //=====xaxis option
+                    let xAxisMetric = chartContainerD3.selectAll('input[name ="xAxisMetric"]');
+                    let xAxisMetricText = chartContainerD3.select('#xAxisOptionButton');
+                    let xAxisLog = chartContainerD3.select('#xAxis_log');
+                    // console.debug(xAxisLog);
+
+                    xAxisMetric
+                        .on('change', e => {
+                            let value = e.target.value;
+                            let checked = e.target.checked;
+                            //＝＝＝單選,其他勾拿掉
+                            xAxisMetric.nodes().filter(chkbox => chkbox !== e.target).forEach(chkbox => chkbox.checked = false);
+
+                            //＝＝＝被點擊的勾不能拿掉
+                            if (!checked) {
+                                e.target.checked = true;
+                                return;
+                            };
+
+                            //===改變按鈕text
+                            xAxisMetricText.text(value);
+
+
+
+                            //==date不能log scale
+                            let metricIsDate = value == 'date';
+                            xAxisOption.logScale = metricIsDate ? false : xAxisLog.property('checked');
+                            xAxisLog.property('disabled', metricIsDate);
+
+                            //===更新圖表
+                            xAxisOption.metric = value;
+                            xAxisDomain = null;//==domain無關聯所以重置
+
+                            newDataObj = getNewData({ xAxisOption: xAxisOption, xAxisDomain: xAxisDomain });
+                            updateChart();
+
+                        });
+
+                    xAxisLog
+                        .on('change', e => {
+                            xAxisOption.logScale = e.target.checked;
+                            newDataObj = getNewData({ xAxisOption: xAxisOption });
+                            updateChart();
+                        });
+
+
+
+
                     //=====change 
                     // console.debug(chartContainer.select('input[name ="changeChart"]'))
                     chartContainer.selectAll('input[name ="changeChart"]')
@@ -1269,7 +1699,7 @@ function DSBC() {
                             let changeChart = e.target.value;
                             // console.debug(changeChart);
                             newDataObj.chartType = changeChart;
-                            let trans_duration = updateChart(changeChart, true);
+                            let transDuration = updateChart(changeChart, true);
                             //=== reset tooltip
                             // tooltipGroup.selectAll("g[id^='totalTooltip']").remove();
                             tickBeenClicked.forEach(tick => d3.select(tick).dispatch("click"));//remove totalTooltip
@@ -1281,21 +1711,12 @@ function DSBC() {
                                         .dispatch("click");
                                 });
                                 tickBeenClicked.forEach(tick => d3.select(tick).dispatch("click"));//make totalTooltip
-                            }, trans_duration);
+                            }, transDuration);
 
                         });
                     //=====shows
                     chartContainer.select('#showLegend').on('change', e =>
                         svg.selectAll('.legend').attr("display", e.target.checked ? 'inline' : 'none'));
-
-
-                    //=====logScale
-                    chartContainer.select('#logScale').on('change', e => {
-                        let check = e.target.checked;
-                        // console.debug(check)
-                        // updateChart(newDataObj.chartType, true, check);
-                    });
-
                 };
                 var infoBoxDragEvent = () => {
 
@@ -1332,271 +1753,16 @@ function DSBC() {
 
             return svg.node();
         };
-        function printChart() {
-            chartContainerJQ.find('#charts').children().remove();
+        function singleChart() {
 
-
-            var getChartMenu = (title) => {
-                // console.log(d.data);
-                var div = document.createElement("div");
-                div.setAttribute("id", "chart" + i);
-                div.setAttribute("class", "chart col-md-12 col-sm-12");
-                div.setAttribute("style", "position:relative");
-
-                var nav = document.createElement('nav');
-                nav.setAttribute("id", "nav" + i);
-                nav.setAttribute("class", "toggle-menu");
-                nav.setAttribute("style", "position:absolute");
-                nav.style.right = "0";
-
-                var a = document.createElement('a');
-                a.setAttribute("class", "toggle-nav");
-                a.setAttribute("href", "#");
-                a.innerHTML = "&#9776;";
-                nav.append(a);
-
-                var ul = document.createElement("ul");
-                ul.classList.add("active");
-                nav.append(ul);
-
-                var chartDropDown = ['bigimg', 'svg', 'png', 'jpg'];
-                chartDropDown.forEach(option => {
-                    var li = document.createElement("li");
-                    var item = document.createElement("a");
-                    item.href = "javascript:void(0)";
-
-                    if (option != chartDropDown[0])
-                        item.innerHTML = "下載圖表爲" + option;
-                    else
-                        item.innerHTML = "檢視圖片";
-
-                    item.addEventListener("click", (e, a) => {
-                        let svgArr = [];
-                        let svg = chartContainerJQ.find("#" + $(e.target).parents('.chart')[0].id).children('svg')[0];
-                        // console.debug(svg);
-                        svgArr.push(svg);
-                        downloadSvg(svgArr, title, option);
-                    });
-
-                    li.append(item);
-                    ul.append(li);
-                });
-                // console.debug(chartContainerJQ.find());
-                chartContainerJQ.find('#charts').append(div);
-                chartContainerJQ.find('#chart' + i).append(nav);
-            }
-            var MenuEvents = () => {
-                var charts = document.getElementById('charts');
-                var stopPropagation = (e) => {
-                    e.stopPropagation();
-                }
-
-                //start or stop DOM event capturing
-                function chartEventControl(control) {
-                    if (control == 'stop') {
-                        // console.debug('add');
-                        charts.addEventListener('mousemove', stopPropagation, true);
-                        charts.addEventListener('mouseenter', stopPropagation, true);
-                    }
-                    else {
-                        // console.debug('remove');
-                        charts.removeEventListener('mousemove', stopPropagation, true);
-                        charts.removeEventListener('mouseenter', stopPropagation, true);
-                    }
-                }
-
-                $('.toggle-nav').off('click');
-                $('.toggle-nav').click(function (e) {
-                    // console.debug(e.target === this);//e.target===this
-
-                    $(this).toggleClass('active');
-                    $(this).next().toggleClass('active');
-                    e.preventDefault();
-
-                    //選單打開後阻止事件Capture到SVG(選單打開後svg反應mousemove,mouseenter圖片會有問題)
-                    if ($(this).hasClass('active'))
-                        chartEventControl('stop');
-                    else
-                        chartEventControl('start');
-
-
-                });
-                // console.debug($(".toggle-nav"));
-                $('body').off('click');
-                $('body').click(function (e) {
-                    $(".toggle-nav").each((i, d) => {
-                        // console.debug(e.target == d);
-                        // console.debug(e.target);
-                        if (e.target != d && $(d).hasClass('active')) {
-                            $(d).toggleClass('active');
-                            $(d).next().toggleClass('active');
-
-                            setTimeout(() => chartEventControl('start'), 100);
-                        }
-                    });
-                });
-            }
-            var downloadSvg = (svgArr, fileName, option) => {
-
-                function getSvgUrl(svgNode) {
-                    var svgData = (new XMLSerializer()).serializeToString(svgNode);
-                    var svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-                    var svgUrl = URL.createObjectURL(svgBlob);
-                    return svgUrl;
-                }
-                function getCanvas(resize) {
-                    // =============== canvas init
-                    let canvas = document.createElement('canvas');
-                    let context = canvas.getContext('2d');
-
-                    var svgWidth = svgArr[0].viewBox.baseVal.width;
-                    var svgHeight = svgArr[0].viewBox.baseVal.height * svgArr.length;
-                    var canvasWidth, canvasHeight;
-                    //檢視時縮放,下載時放大
-                    if (resize) {
-                        // var windowW = $(window).width();//获取当前窗口宽度 
-                        // var windowH = $(window).height();//获取当前窗口高度 
-
-                        var windowW = window.innerWidth;//获取当前窗口宽度 
-                        var windowH = window.innerHeight;//获取当前窗口高度 
-
-                        // console.debug("window = ");
-                        // console.debug(windowW, windowH);
-                        // console.debug(svgW, svgH);
-                        var width, height;
-                        var scale = 0.9;//缩放尺寸
-                        height = windowH * scale;
-                        width = height / svgHeight * svgWidth;
-                        // console.debug("before scale = ");
-                        // console.debug(width, height);
-                        while (width > windowW * scale) {//如宽度扔大于窗口宽度 
-                            height = height * scale;//再对宽度进行缩放
-                            width = width * scale;
-                        }
-                        // console.debug("scaled = ");
-                        // console.debug(width, height);
-                        canvasWidth = width;
-                        canvasHeight = height;
-                    }
-                    else {
-                        var scale = 1.5;
-                        canvasWidth = svgWidth * scale;
-                        canvasHeight = svgHeight * scale;
-                    }
-
-                    canvas.width = canvasWidth;
-                    canvas.height = canvasHeight;
-                    //====bgcolor
-                    context.fillStyle = "white";
-                    context.fillRect(0, 0, canvas.width, canvas.height);
-                    return [canvas, context];
-
-                }
-                function download(href, name) {
-                    var downloadLink = document.createElement("a");
-                    downloadLink.href = href;
-                    downloadLink.download = name;
-                    document.body.appendChild(downloadLink);
-                    downloadLink.click();
-                    document.body.removeChild(downloadLink);
-                }
-                function show(width, height) {
-                    // $('#bigimg').attr("src", img);//设置#bigimg元素的src属性 
-                    // $('#outerdiv').fadeIn("fast");//淡入显示#outerdiv及.pimg 
-                    // $('#outerdiv').off('click');
-                    // $('#outerdiv').click(function () {//再次点击淡出消失弹出层 
-                    //     $(this).fadeOut("fast");
-                    // });
-                    let outerdiv = $('#outerdiv');
-
-                    outerdiv.fadeIn("fast");//淡入显示#outerdiv及.pimg 
-                    outerdiv.off('click');
-                    outerdiv.click(function (e) {//再次点击淡出消失弹出层 
-                        if (e.target.id != 'outerdiv') return;
-                        $(this).fadeOut("fast");
-                        $(originParent).children('svg').remove();
-                        originSvg.removeAttribute('width');
-                        originSvg.removeAttribute('height');
-                        originParent.append(originSvg);
-                    });
-
-                    let originSvg = svgArr[0];
-                    let originParent = originSvg.parentNode;
-                    let cloneSvg = originSvg.cloneNode(true);
-                    originSvg.setAttribute('width', width);
-                    originSvg.setAttribute('height', height);
-                    document.querySelector('#innerdiv').append(originSvg);
-                    originParent.append(cloneSvg);
-
-                }
-
-                if (option == 'svg') {
-                    //==============merge svg
-                    var newSvg = document.createElement('svg');
-
-
-                    svgArr.forEach(svg => {
-                        var svgjQobj = $(svg);
-                        svgjQobj.clone().appendTo(newSvg);
-                    });
-                    // console.debug(newSvg);
-                    var svgUrl = getSvgUrl(newSvg);
-                    download(svgUrl, fileName + '.' + option);
-                }
-                else {
-                    //==============each svg draw to canvas
-                    var CanvasObjArr = getCanvas(option == 'bigimg');
-                    // console.debug(CanvasObjArr);
-                    var canvas = CanvasObjArr[0];
-                    var context = CanvasObjArr[1];
-                    var imageWidth = canvas.width;
-                    var imageHeight = canvas.height / svgArr.length;
-
-
-                    svgArr.forEach((svg, index) => {
-                        var svgNode = svg;
-                        var svgUrl = getSvgUrl(svgNode);
-                        var image = new Image();
-                        image.src = svgUrl;
-                        image.onload = () => {
-                            context.drawImage(image, 0, index * imageHeight, imageWidth, imageHeight);
-
-                            //done drawing and output
-                            if (index == svgArr.length - 1) {
-                                var imgUrl;
-                                if (option == 'bigimg') {
-                                    // imgUrl = canvas.toDataURL();// default png
-                                    // show(imgUrl);
-                                    // let canvas = getCanvas(true)[0];
-                                    // // console.debug(canvas);
-                                    show(imageWidth, imageHeight);
-                                }
-                                else {
-                                    imgUrl = canvas.toDataURL('image/' + option);
-                                    download(imgUrl, fileName + '.' + option);
-                                }
-                            }
-                        }
-                    });
-                }
-
-            }
-
-            var i = 1;
-            let chartNode = stackedBar(data);
-            getChartMenu('A');
-            chartContainerJQ.find('#chart' + i).append(chartNode);
-            // console.debug(i);
-            MenuEvents();
-
-            // console.debug(data);
         };
-        if (!(chartContainerJQ.find('#form-chart').length >= 1))
-            init();
 
+        if (!(chartContainerJQ.find('#form-header').length >= 1)) {
+            init();
+            console.log('init header & data for once');
+        };
         printChart();
-    }
+    };
     return chart;
 
-
-}
+};

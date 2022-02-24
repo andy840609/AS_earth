@@ -92,7 +92,7 @@ function requestRate() {
                     // console.debug(index);
                 }
                 colorPalette[type] = color;
-            }
+            };
 
             return color;
         };
@@ -484,7 +484,6 @@ function requestRate() {
             };
             initNode();
             initData();
-
         };
         var printChart = () => {
             chartContainerJQ.find('#form-chart').remove();
@@ -720,7 +719,6 @@ function requestRate() {
                 }
 
             };
-
 
             let chartType = document.querySelector('input[name ="chartType"]:checked').value;
             // console.debug(chartType);
@@ -1000,7 +998,6 @@ function requestRate() {
                     xAxisDomain = chartOption.hasOwnProperty('xAxisDomain') ? chartOption.xAxisDomain : newDataObj.xAxisDomain,
                     displayArr = chartOption.hasOwnProperty('displayArr') ? chartOption.displayArr : newDataObj.displayArr,
                     showArr = chartOption.hasOwnProperty('showArr') ? chartOption.showArr : newDataObj.showArr;
-
                 // console.debug(xAxisDomain);
 
                 var update_newData_and_newRateData = () => {
@@ -2625,7 +2622,7 @@ function requestRate() {
                     init();
                 };
                 render();
-                // console.debug(newDataObj);
+                console.debug(newDataObj);
             };
             updateChart();
 
@@ -2787,7 +2784,6 @@ function requestRate() {
                     //=====rateOption
                     let rateOption = chartContainerD3.selectAll('input[name ="rateOption"]');
                     let rateOptionSvg = chartContainerD3.select('#rateOptionButton>svg');
-
                     // console.debug(rateOption);
 
                     rateOption
@@ -2850,7 +2846,6 @@ function requestRate() {
                             gapOptionRange
                                 .on('input', e => {
                                     //==========================同步textBox =================================
-
                                     let optionsIdx = e.target.value;
                                     // console.debug(optionsIdx)
                                     let minMultiplicandArr_idx = gapMultiplicandArr.indexOf(newDataObj.rateOptionData.minMultiplicand);
@@ -2899,7 +2894,6 @@ function requestRate() {
                     let userDataObj = userChartOption[1];
                     if (userDataObj) {
                         console.log('userChartOption1');
-
 
                         // let userRateOption = userDataObj.rateOption;
                         let userMetric = userDataObj.metric;
@@ -3108,7 +3102,6 @@ function requestRate() {
             const focusGroup = svg.append("g").attr('class', 'focus').attr("clip-path", "url(#clip)");
             const legendGroup = svg.append("g").attr('class', 'legendGroup');
 
-
             var x, y;
             var newDataObj;
 
@@ -3116,7 +3109,6 @@ function requestRate() {
             // var transPromises = [];//==避免mouseover中斷rateLine動畫造成線斷在中間
 
             function getNewData(chartOption) {
-
                 let xAxisOption = chartOption.hasOwnProperty('xAxisOption') ? { ...chartOption.xAxisOption } : newDataObj.xAxisOption,
                     yAxisOption = chartOption.hasOwnProperty('yAxisOption') ? { ...chartOption.yAxisOption } : newDataObj.yAxisOption,
                     selectedDomain = chartOption.hasOwnProperty('selectedDomain') ? chartOption.selectedDomain : newDataObj.selectedDomain,
@@ -3183,7 +3175,6 @@ function requestRate() {
             };
             function updateChart(trans = false) {
                 function init() {
-
                     var initChart = () => {
                         //==title
                         let title = 'GDMS系統負載監測';
@@ -3568,7 +3559,6 @@ function requestRate() {
                     showArr = newDataObj.showArr;
 
                 function chartEvent() {
-
                     const defs = svg.append("defs");
                     //===遮罩
                     defs
@@ -4080,7 +4070,6 @@ function requestRate() {
 
                 };
                 function legendEvent() {
-
                     var raiseAndDrag = (d3_selection) => {
                         let x_fixed = 0, y_fixed = 0;
                         let legend_dragBehavior = d3.drag()
@@ -4145,4 +4134,4 @@ function requestRate() {
 
     };
     return chart;
-}
+};

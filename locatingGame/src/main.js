@@ -40,7 +40,7 @@ function locatingGame() {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 300 },
-                    // debug: true,
+                    debug: true,
                 },
             },
             dom: {//==for rexUI:rexTextEdit
@@ -316,7 +316,7 @@ function locatingGame() {
                     },
                     sidekick: {
                         type: sidekick,
-                        lineStage: [1, 0],//==第2-0句
+                        lineStage: [0, 0],//==第2-0句
                         doneTalking: false,
                         stopHotkey: false,//==對話完空白鍵不再出現對話（只能滑鼠點）
                     },
@@ -340,25 +340,25 @@ function locatingGame() {
                     GameData.getLanguageJSON = getLanguageJSON;
 
                     //==test
-                    gameDisplay(true);
-                    let newGameData = await new Promise((resolve, reject) => {
-                        const config = Object.assign(getPhaserConfig(width, height), {
-                            scene: new GameStartScene(GameData, {
-                                getWaveImg: getWaveImg,
-                                resolve: resolve,
-                                getLanguageJSON: getLanguageJSON,
-                            }),
-                        });
-                        new Phaser.Game(config);
-                    });
+                    // gameDisplay(true);
+                    // let newGameData = await new Promise((resolve, reject) => {
+                    //     const config = Object.assign(getPhaserConfig(width, height), {
+                    //         scene: new GameStartScene(GameData, {
+                    //             getWaveImg: getWaveImg,
+                    //             resolve: resolve,
+                    //             getLanguageJSON: getLanguageJSON,
+                    //         }),
+                    //     });
+                    //     new Phaser.Game(config);
+                    // });
 
-                    gameDisplay(false);
+                    // gameDisplay(false);
                     //==test
 
                     initMap();
 
                     //==test
-                    // gameStart('defend');
+                    gameStart('defend');
                     // gameStart('dig');
                     //==test
                 };
@@ -635,8 +635,8 @@ function locatingGame() {
                     data.forEach((d, i) => {
                         // console.debug(d);
                         // let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
-                        // let enemy = [];//==之後隨機抽敵人組
-                        let enemy = [enemyArr[getRandom(enemyArr.length)]];
+                        let enemy = ['dove'];//==之後隨機抽敵人組
+                        // let enemy = [enemyArr[getRandom(enemyArr.length)]];
                         let enemyStats = {};
 
                         enemy.forEach((key) => {
@@ -776,7 +776,7 @@ function locatingGame() {
                     const ctrlDir = assetsDir + 'ui/map/controller/';
 
                     //===UIBar
-                    const UIbuttons = ['questInfo', 'velocityChart', 'playerStats'];
+                    const UIbuttons = ['playerStats', 'velocityChart', 'questInfo'];
 
                     //===UItooltip
                     const UItooltip = gameUI
@@ -839,7 +839,7 @@ function locatingGame() {
                             let targetDOMRect = target.getBoundingClientRect();
                             // console.debug(target);
 
-                            let top = targetDOMRect.top - bigMapDOMRect.top,
+                            let top = id == UIbuttons[2] ? height * 0.1 : targetDOMRect.top - bigMapDOMRect.top,
                                 left = targetDOMRect.left - bigMapDOMRect.left + 80;
 
                             UI.css({ top: top, left: left, });
@@ -934,18 +934,18 @@ function locatingGame() {
 
                                         UI
                                             .width(width * 0.6)
-                                            // .height(height * 0.5)
+                                            .height(height * 0.8)
                                             .append(`
                                             <div class="row">
-                                            <div class="col-4">
-                                                <!-- List group -->
-                                                <div class="list-group" id="infoList" role="tablist"></div>
-                                            </div>
+                                                <div class="col-4">
+                                                    <!-- List group -->
+                                                    <div class="list-group scroll" id="infoList" role="tablist"></div>
+                                                </div>
 
-                                            <div class="col-8">   
-                                                <!-- Tab panes -->
-                                                <div class="tab-content" id="infoContent"></div>    
-                                            </div>
+                                                <div class="col-8">   
+                                                    <!-- Tab panes -->
+                                                    <div  class="tab-content scroll" id="infoContent"></div>
+                                                </div>
                                             </div>                       
                                         `);
 
@@ -961,7 +961,7 @@ function locatingGame() {
                                                     content = content.replace('\t', getImgHTML('1.gif'));
                                                     break;
                                                 case 2:
-                                                    content = content.replace('\t', getImgHTML('2.gif', 0.8));
+                                                    content = content.replace('\t', getImgHTML('2.png', 0.8));
                                                     break;
                                                 case 5:
                                                     content = content.replace('\t', getImgHTML('3.png', 0.8));

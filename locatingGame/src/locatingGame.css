@@ -221,6 +221,7 @@ svg {
     right: 0px;
     bottom: 0px;
     z-index: 1100;
+    display: none;
 }
 
 #gameUI .sidekickUI .sidekick {
@@ -277,6 +278,17 @@ svg {
 #questInfoUI a:hover {
     color: #0a58ca;
 } */
+
+#questInfoUI .row,
+#questInfoUI .row>* {
+    height: 100%;
+}
+
+#questInfoUI .scroll {
+    /* overflow: auto; */
+    height: 100%;
+    overflow-x: hidden;
+}
 
 /* *******************速度圖手把動畫******************* */
 #velocityChartUI>svg .handle .anim {

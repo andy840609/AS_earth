@@ -4285,8 +4285,11 @@ class LoadingScene extends Phaser.Scene {
                     // console.debug(this.aliveEnemy);
                     gameScene.aliveEnemy.forEach(enemy => {
                         const dir = gameObjDir + 'enemy/' + enemy + '/';
-                        const frameObj = { frameWidth: 48, frameHeight: 48 };
-                        this.load.spritesheet(enemy + '_Attack', dir + 'Attack.png', frameObj);
+                        const frameObj = enemy != 'dove' ?
+                            { frameWidth: 48, frameHeight: 48 } :
+                            { frameWidth: 32, frameHeight: 32 };
+
+                        if (enemy != 'dove') this.load.spritesheet(enemy + '_Attack', dir + 'Attack.png', frameObj);
                         this.load.spritesheet(enemy + '_Death', dir + 'Death.png', frameObj);
                         this.load.spritesheet(enemy + '_Hurt', dir + 'Hurt.png', frameObj);
                         this.load.spritesheet(enemy + '_Idle', dir + 'Idle.png', frameObj);

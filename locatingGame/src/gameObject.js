@@ -23,18 +23,18 @@ const GameObjectStats = {
             movementSpeed: 200,
             jumpingPower: 200,
         },
+        dove: {
+            HP: 300,
+            attackPower: 5,
+            movementSpeed: 800,
+            jumpingPower: 0,
+        },
         zombie: {
             HP: 800,
             attackPower: 10,
             movementSpeed: 200,
             jumpingPower: 200,
         },
-        // dove: {
-        //     HP: 300,
-        //     attackPower: 5,
-        //     movementSpeed: 500,
-        //     jumpingPower: 0,
-        // },
         boss: {
             HP: 1000,
             attackPower: 30,
@@ -422,6 +422,7 @@ const Enemy = new Phaser.Class({
                     attackRate = 10;
 
                 let idleFrame = null;
+                let flyingUnit = false;
                 switch (key) {
                     case 'dog':
                         idleFrame = { rate: 10, repeatDelay: 500, };
@@ -431,6 +432,7 @@ const Enemy = new Phaser.Class({
                         break;
                     case 'dove':
                         idleFrame = { rate: 10, repeatDelay: 500, };
+                        flyingUnit = true;
                         break;
                     default:
                         idleFrame = { rate: 10, repeatDelay: 500, };
@@ -462,12 +464,14 @@ const Enemy = new Phaser.Class({
                     frameRate: walkRate,
                     repeat: -1,
                 });
-                scene.anims.create({
-                    key: key + '_Attack',
-                    frames: scene.anims.generateFrameNumbers(key + '_Attack'),
-                    frameRate: attackRate,
-                    repeat: -1,
-                });
+
+                if (!flyingUnit)
+                    scene.anims.create({
+                        key: key + '_Attack',
+                        frames: scene.anims.generateFrameNumbers(key + '_Attack'),
+                        frameRate: attackRate,
+                        repeat: -1,
+                    });
             };
             animsCreate(key);
 
@@ -486,8 +490,10 @@ const Enemy = new Phaser.Class({
                 .play(key + '_Idle');
 
             // this.onWorldBounds = true;
+            let bodySize = (key == 'dove') ? [15, 15] : [25, 18];
+
             this.body
-                .setSize(25, 18)
+                .setSize(...bodySize)
                 .setGravityY(5000);
 
             // this.body.collideWorldBounds = true;
@@ -504,8 +510,9 @@ const Enemy = new Phaser.Class({
 
     //=處理轉向
     filpHandler: function (filp) {
+        let bodyOffset = (this.name == 'dove') ? [filp ? 14 : 4, 18] : [filp ? 18 : 5, 30];
         this.flipX = filp;
-        this.body.setOffset(filp ? 18 : 5, 30);
+        this.body.setOffset(...bodyOffset);
     },
 
     //==血條顯示
@@ -809,22 +816,15 @@ const Enemy = new Phaser.Class({
                 if (!this.stats.active)
                     if (dist < 300 || this.behavior == 'hurt') {
                         this.stats.active = true;
-                        if (!this.behavior) this.behavior = 'chasing';
+                        if (!this.behavior) this.behavior = 'flying';
+                        this.body.setAllowGravity(false);
                     }
                     else return;
                 //===開始行爲模式(0.受傷 1.攻擊 2.追擊 3.休息 )
                 else {
-                    if (!this.behavior) this.behavior = 'chasing';
-                    if (dist < enemyAttackRange && !(this.behavior == 'hurt' || this.behavior == 'rest'))
-                        this.behavior = 'attack';
-
-                    // var isCollided = scene.physics.world.overlap(player, platforms);
-                    // console.debug(isCollided);
-
-                    // console.debug(this.behavior);
                     switch (this.behavior) {
                         case 'hurt':
-                            this.anims.play('dog_Hurt', true);
+                            this.anims.play('dove_Hurt', true);
                             const knockBackDuration = 200;
 
                             if (this.behaviorCallback) {
@@ -839,67 +839,78 @@ const Enemy = new Phaser.Class({
                                 }, [], scene);
 
                             break;
-                        case 'attack':
-                            this.anims.play('dog_Attack', true);
-                            this.body.reset(this.x, this.y);//==停下
-                            if (dist > enemyAttackRange && this.behavior != 'rest')
-                                this.behavior = 'chasing';
-                            break;
-                        case 'chasing':
-                            // ==== accelerateToObject(gameObject, destination, acceleration, xSpeedMax, ySpeedMax);
-                            scene.physics.accelerateToObject(this, player, 500, 500, 500);
-                            // this.physics.moveToObject(this, player, 500, chasingDuration);
-                            this.anims.play('dog_Walk', true);
-
-                            //==時間到後休息restFlag= true        
-
-
+                        default:
+                        case 'flying':
+                            //==遊走到隨機位置                       
                             if (!this.behaviorCallback) {
-                                const chasingDuration = Phaser.Math.FloatBetween(5, 6) * 1000;//追擊隨機x秒後休息
-                                // console.debug('追擊時間：' + chasingDuration);
-                                this.behaviorCallback = scene.time.delayedCall(chasingDuration, () => {
-                                    this.behavior = 'rest';
-                                    this.body.reset(this.x, this.y);//==停下
+                                this.anims.play('dove_Walk', true);
+
+                                // ==== accelerateToObject(gameObject, destination, acceleration, xSpeedMax, ySpeedMax);
+                                let randomX = Phaser.Math.Between(0, scene.sys.game.canvas.width - 16);//==隨機移動到螢幕內x;
+                                let randomY = Phaser.Math.Between(0, scene.sys.game.canvas.height * 0.2);
+                                let speed = this.stats.movementSpeed;//pixel per sec
+
+                                // let dist = Phaser.Math.Distance.BetweenPoints(this, { x: randomX, y: randomY });
+                                // let cruisingDuration = dist / (speed / Phaser.Math.Between(1000, 10000));
+                                // let cruisingDuration = 10000;
+                                // ====scene.physics.moveTo(gameObject, x, y, speed(pixel/sec), maxTime(ms));
+                                // scene.physics.moveTo(this, randomX, randomY, speed, cruisingDuration);
+                                scene.physics.accelerateTo(this, randomX, randomY, speed, speed);
+                                // console.debug('move to :' + randomX);   
+                                // console.debug(cruisingDuration);
+
+                                this.behaviorCallback = scene.time.delayedCall(5000, () => {
+                                    // this.behavior = 'rest';
+                                    // this.body
+                                    //     .setAllowGravity(false)
+                                    //     .reset(this.x, this.y);//==停下
                                     this.behaviorCallback = null;
                                     // console.debug('休息');
                                 }, [], scene);
+
+                                //===判斷移動位子來轉向
+                                let filpDir = randomX < this.x;
+                                if (this.flipX != filpDir)
+                                    this.filpHandler(filpDir);
+
+                                this.randomPosition = [randomX, randomY];
                             }
-                            // this.behaviorCallback.remove();
-                            // console.debug(this.behaviorCallback);
+                            else {
+                                if (this.x === this.randomPosition[0] && this.y === this.randomPosition[1]) {
+                                    console.debug('AAA')
+                                }
+                            };
+
+
                             break;
-                        default:
                         case 'rest':
-                            this.anims.play('dog_Idle', true);
+                            // console.debug('休息');
+                            this.anims.play('dove_Idle', true);
+
+
                             if (!this.behaviorCallback) {
-                                const restingDuration = Phaser.Math.FloatBetween(1.5, 2) * 1000;//==休息隨機x秒
+                                const restingDuration = Phaser.Math.FloatBetween(1.5, 3) * 1000;//==休息隨機x秒
                                 // console.debug('休息時間：' + restingDuration);
                                 this.behaviorCallback = scene.time.delayedCall(restingDuration, () => {
-                                    this.behavior = 'chasing';
+                                    this.behavior = 'flying';
                                     this.behaviorCallback = null;
                                     // console.debug('追擊');
                                 }, [], scene);
                             }
                             break;
-                    }
-
-
-                    //===判斷player相對敵人的位子來轉向(轉向時停下)
-                    let filpDir = player.x < this.x;
-                    if (this.flipX != filpDir) {
-                        this.filpHandler(filpDir);
-                        this.body.reset(this.x, this.y);
                     };
 
                 };
                 // console.debug();
                 //==死亡
                 if (this.stats.HP <= 0) {
-                    // console.debug('dog_Death');
                     this.knockBackCallback.remove();
-                    this.behavior = 'Death';
-                    this.body.reset(this.x, this.y);
-                    this.body.enable = false;
-                    this.anims.play('dog_Death', true);
+                    if (this.body.touching.down) {
+                        this.behavior = 'Death';
+                        this.body.reset(this.x, this.y);
+                        this.body.enable = false;
+                    };
+                    this.anims.play('dove_Death', true);
 
                 };
 

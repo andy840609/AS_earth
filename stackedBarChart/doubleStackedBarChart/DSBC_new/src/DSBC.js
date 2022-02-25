@@ -45,21 +45,21 @@ function DSBC() {
                         var startIndex = file.lastIndexOf(startStr) + startStr.length;
                         var fileName = file.substring(startIndex);
 
-                        var series1Axis;
+                        var leftAxis;
                         // console.debug(fileName.indexOf('time') != -1);
                         if (fileName.indexOf('time') != -1)
-                            series1Axis = "次數";
+                            leftAxis = "次數";
                         else if (fileName.indexOf('size') != -1)
-                            series1Axis = "下載量";
+                            leftAxis = "下載量";
                         else
-                            series1Axis = fileName;
+                            leftAxis = fileName;
 
                         tmpData = {
                             data: tmp,
                             columns: columns,
                             legend: '資料庫',
                             title: 'title',
-                            series1Axis: series1Axis,
+                            leftAxis: leftAxis,
                         };
 
                     }
@@ -137,6 +137,10 @@ function DSBC() {
                 case 'file_size':
                     keyName = '下載量';
                     keyUnit = defaultSizeUnit;
+                    break;
+                case 'group':
+                    keyName = '單日一次';
+                    keyUnit = '次';
                     break;
                 default:
                     keyName = key;
@@ -392,7 +396,7 @@ function DSBC() {
                     });
                     Object.assign(colorPalette, tmp);
                 };
-                const seriesColor = ["#d53e4f", "#3288bd"];
+                const seriesColor = ["#750000", "#003D79"];
                 dataKeys.forEach((key, i) => colorPalette[key] = seriesColor[i]);
                 requestColors();
             };
@@ -698,7 +702,7 @@ function DSBC() {
                                     </div>
                                     <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
                                         <input class="form-check-input col-3" type="checkbox" id="leftAxis_fileSize" name="leftAxisMetric" value="file_size">
-                                        <label for="leftAxis_fileSize">fileSize</label>
+                                        <label for="leftAxis_fileSize">file_size</label>
                                     </div>
                                     
                                 </div>
@@ -706,8 +710,8 @@ function DSBC() {
                                 <label class="font-weight-bold" for="">Scale</label>
                                 <div class="col-12 d-flex flex-row">
                                     <div class="col-4 form-check d-flex align-items-start" style="text-align: center;">
-                                        <input class="form-check-input col-3" type="checkbox" id="rightAxis_log" name="rightAxisScale" value="log">
-                                        <label class="" for="rightAxis_log">logrithmic</label>
+                                        <input class="form-check-input col-3" type="checkbox" id="leftAxis_log" name="rightAxisScale" value="log">
+                                        <label class="" for="leftAxis_log">logrithmic</label>
                                     </div>
                                 </div>                          
                                 
@@ -722,7 +726,7 @@ function DSBC() {
                         <label for="rightAxisOptionButton" class="col-form-label col-5" >RightAxis</label>
                         <div class="btn-group btn-group-toggle col-7" role="group">
                             <button id="rightAxisOptionButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                fileSize
+                                file_size
                             </button>
                             <div class="dropdown-menu" id="rightAxisMenu" aria-labelledby="rightAxisOptionButton">
                                 <div class="form-group col-12 d-flex flex-row flex-wrap align-items-start justify-content-between" id="rightAxisDropDownMenu" >
@@ -739,7 +743,7 @@ function DSBC() {
                                     </div>
                                     <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
                                         <input class="form-check-input col-3" type="checkbox" id="rightAxis_fileSize" name="rightAxisMetric" value="file_size" checked>
-                                        <label for="rightAxis_fileSize">fileSize</label>
+                                        <label for="rightAxis_fileSize">file_size</label>
                                     </div>
                                 </div>
     
@@ -837,10 +841,12 @@ function DSBC() {
 
             }();
             const svg = d3.create("svg").attr("viewBox", [0, 0, width, height]);
+            const legendGroup = svg.append("g").attr('class', 'legendGroup');
             const focusGroup = svg.append("g").attr("class", "focusGroup");
             const subjectAxis = svg.append("g").attr("class", "subjectAxis");
-            const series1Axis = svg.append("g").attr("class", "series1Axis");
-            const series2Axis = svg.append("g").attr("class", "series2Axis");
+            const leftAxis = svg.append("g").attr("class", "leftAxis");
+            const rightAxis = svg.append("g").attr("class", "rightAxis");
+
 
             var newDataObj;
             var subjectScale, leftScale, rightScale;
@@ -871,7 +877,7 @@ function DSBC() {
                         .attr("font-size", 12)
                         .text(getKeyName('subject').name);
 
-                    series1Axis
+                    leftAxis
                         .attr("color", getColor(dataKeys[0]))
                         .append('text')
                         .attr("class", "axisName")
@@ -881,7 +887,7 @@ function DSBC() {
                         .style("text-anchor", "middle")
                         .attr("alignment-baseline", "text-before-edge");
 
-                    series2Axis
+                    rightAxis
                         .attr("color", getColor(dataKeys[1]))
                         .append('text')
                         .attr("class", "axisName")
@@ -898,23 +904,16 @@ function DSBC() {
                         var rect_interval = 1;
                         var rect_width = 50;
                         var rect_height = 10;
-                        var legend = svg.append("g")
+
+                        var legend = legendGroup.append("g")
                             .attr("class", "legend")
-                            .attr("transform", `translate(${width - margin.right - categories.length * (rect_width + rect_interval)}, ${margin.top * 0.6})`)
+                            .attr("transform", `translate(${width - margin.right - categories.length * (rect_width + rect_interval)}, ${margin.top * 0.6})`);
+
+                        legend
                             .selectAll("g")
                             .data(categories)
                             .join("g")
-                            .attr("transform", (d, i) => `translate(${i * (rect_width + rect_interval)}, 0)`);
-
-                        svg.select('.legend')
-                            .append("text")
-                            .attr("font-size", 13)
-                            .attr("font-weight", 900)
-                            .attr("text-anchor", "start")
-                            .attr("alignment-baseline", "after-edge")
-                            .text(getKeyName('category').name);
-
-                        legend
+                            .attr("transform", (d, i) => `translate(${i * (rect_width + rect_interval)}, 0)`)
                             .call(g => {
                                 g.append("rect")
                                     .attr("width", rect_width)
@@ -935,7 +934,15 @@ function DSBC() {
                                     .text(d => d)
                             });
 
-                    }
+                        legend
+                            .append("text")
+                            .attr("font-size", 13)
+                            .attr("font-weight", 900)
+                            .attr("text-anchor", "start")
+                            .attr("alignment-baseline", "after-edge")
+                            .text(getKeyName('category').name);
+
+                    };
                 };
                 function render() {
                     console.debug(newDataObj);
@@ -965,31 +972,26 @@ function DSBC() {
                         .range(subjectRange)
                         .padding(0.1);
 
-                    //==================================test
-                    // console.debug(leftRange)
-                    // series1Domain[0] = 1
-                    // series2Domain[0] = 1
-                    // leftRange.reverse();
-                    // rightRange.reverse();
-
-                    // var logScale = d3.scaleLog()
-                    //     .domain([0, 100000])
-                    //     .range([0, 700]);
-                    //==================================test
                     leftScale = d3[leftAxisOption.logScale ? 'scaleLog' : 'scaleLinear']()
-                        .domain([0, d3.max(newData[0], d => d3.max(d, d => d[1]))])
-                        .nice()
+                        .domain([+leftAxisOption.logScale, d3.max(newData[0], d => d3.max(d, d => d[1]))])
                         .range(leftRange);
+                    if (leftAxisOption.logScale) leftScale.nice();
 
                     rightScale = d3[rightAxisOption.logScale ? 'scaleLog' : 'scaleLinear']()
-                        .domain([0, d3.max(newData[1], d => d3.max(d, d => d[1]))])
-                        .nice()
+                        .domain([+rightAxisOption.logScale, d3.max(newData[1], d => d3.max(d, d => d[1]))])
                         .range(rightRange);
+                    if (rightAxisOption.logScale) rightScale.nice();
 
                     // console.debug(leftScale.domain())
                     // console.debug(leftScale.range())
 
                     var updateAxis = () => {
+                        function formatPower(x) {
+                            const e = Math.log10(x);
+                            if (e !== Math.floor(e)) return; // Ignore non-exact power of ten.
+                            return `10${(e + "").replace(/./g, c => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c] || "⁻")}`;
+                        };
+
                         var removeAxis = g => g.selectAll(":not(.axisName)").remove();
                         var makeSubjectAxis = g => {
                             let axisPos, translate, refreshing;
@@ -1037,18 +1039,18 @@ function DSBC() {
                                     .attr("font-weight", 500)
                                 );
                         }
-                        var makeSeriesAxis = (g, yNum) => {
+                        var makeSeriesAxis = (g, isRight) => {
 
-                            let seriesScale = yNum - 1 ? rightScale : leftScale;
+                            let seriesScale = isRight ? rightScale : leftScale;
                             let axisPos, translate, refreshing;
-                            let sign = { 1: -1, 2: 1 }[yNum];
-                            let seriesName = getKeyName(dataKeys[yNum - 1]);
+                            let sign = { 0: -1, 1: 1 }[+isRight];
+                            let seriesName = getKeyName(newData.metric[+isRight]);
                             let axisText = seriesName.name + '(' + seriesName.unit + ')';
 
-                            // console.debug(seriesName)
+
                             if (barOption.orientation) {
-                                axisPos = { 1: 'axisLeft', 2: 'axisRight' }[yNum];
-                                translate = { 1: [margin.left, 0], 2: [width - margin.right, 0] }[yNum];
+                                axisPos = { 0: 'axisLeft', 1: 'axisRight' }[+isRight];
+                                translate = { 0: [margin.left, 0], 1: [width - margin.right, 0] }[+isRight];
                                 refreshing = g => {
                                     g.select('.axisName')
                                         .attr("transform", `rotate(${90 * sign}) translate(${[height / 2 * sign, -margin.left * 0.9]})`)
@@ -1060,7 +1062,7 @@ function DSBC() {
                                 translate = [0, height - margin.bottom];
                                 refreshing = g => {
                                     let axisOrigin = seriesScale.range()[0];//0的位置
-                                    let axisTextArrow = { 1: '← ', 2: ' →' }[yNum];
+                                    let axisTextArrow = { 0: '← ', 1: ' →' }[+isRight];
 
                                     g.selectAll('.tick').style("text-anchor", "middle");
                                     g.select('.axisName')
@@ -1080,17 +1082,23 @@ function DSBC() {
                                 .attr("transform", `translate(${translate})`)
                                 .call(removeAxis)
                                 .transition().duration(transDuration)
-                                .call(d3[axisPos](seriesScale).ticks(null, "s").tickSizeOuter(0))
+                                .call(g => {
+                                    let axisFun = d3[axisPos](seriesScale).tickSizeOuter(0);
+                                    (isRight ? rightAxisOption : leftAxisOption).logScale ?
+                                        axisFun.ticks(Math.log10(seriesScale.domain()[1] / seriesScale.domain()[0]) + 1, formatPower) :
+                                        axisFun.ticks(width / 80);
+                                    axisFun(g);
 
-                            g.call(refreshing)//有呼叫補間動畫會不能append所以另外call一次
-                        }
+                                });
+
+                            g.call(refreshing);//有呼叫補間動畫會不能append所以另外call一次
+                        };
                         subjectAxis.call(makeSubjectAxis);
-                        series1Axis.call(series1Axis => makeSeriesAxis(series1Axis, 1));
-                        series2Axis.call(series1Axis => makeSeriesAxis(series1Axis, 2));
-                    }
+                        leftAxis.call(g => makeSeriesAxis(g, true));
+                        rightAxis.call(g => makeSeriesAxis(g, false));
+                    };
 
                     var updateFocus = () => {
-
                         function getDasharrayStr(barWidth, barHeight) {
                             let showLength = barWidth + barHeight - 1.5;
                             let hideLength = barWidth + 3;
@@ -1110,11 +1118,10 @@ function DSBC() {
                             // let endWithGap = (quotient % 2 == 0);
                             dashStr += remainder + ',' + hideLength;
                             return dashStr;
-                        }
-
+                        };
                         focusGroup
                             .selectAll("g.seriesGroup")
-                            .data(dataKeys)
+                            .data(newData.metric)
                             .join("g")
                             .attr("class", "seriesGroup")
                             .attr("id", (d, i) => "seriesGroup" + (i + 1))
@@ -1125,6 +1132,7 @@ function DSBC() {
                                     let seriesGroup = d3.select(this);
                                     let seriesData = newData[i];
                                     let seriesScale = i ? rightScale : leftScale;
+                                    let seriesOption = i ? rightAxisOption : leftAxisOption;
 
                                     seriesGroup
                                         .selectAll("g")
@@ -1144,16 +1152,25 @@ function DSBC() {
                                             rect_collection.each(function (d) {
                                                 // console.debug(d)
                                                 let rect = d3.select(this);
+                                                let y1 = d[0], y2 = d[1];
+                                                if (seriesOption.logScale) {
+                                                    y1 = (y1 == 0 ? seriesScale.domain()[0] : y1);
+                                                    y2 = (y2 == 0 ? seriesScale.domain()[0] : y2);
+                                                    // console.debug(y1, y2);
+                                                };
+
 
                                                 if (barOption.orientation) {
                                                     let barWidth = subjectScale.bandwidth() / 2 > barOption.maxWidth ? barOption.maxWidth : subjectScale.bandwidth() / 2;
                                                     let transX = i ? subjectScale.bandwidth() / 2 + barOption.interval : subjectScale.bandwidth() / 2 - barWidth - barOption.interval;
+
+
                                                     rect
                                                         .transition().duration(transDuration)
                                                         .attr("transform", `translate(${transX}, 0)`)
                                                         .attr("x", d => subjectScale(d.data))
-                                                        .attr("y", d => seriesScale(d[1]))
-                                                        .attr("height", d => seriesScale(d[0]) - seriesScale(d[1]))
+                                                        .attr("y", d => seriesScale(y2))
+                                                        .attr("height", d => seriesScale(y1) - seriesScale(y2))
                                                         .attr("width", barWidth)
                                                 }
                                                 else {
@@ -1167,46 +1184,20 @@ function DSBC() {
                                                         .attr("height", barWidth)
                                                         .attr("width", d => Math.abs(seriesScale(d[0]) - seriesScale(d[1])))
 
-                                                }
-                                            }))
+                                                };
 
-
-                                    // let subjectTotal_width = 3;
-
-                                    // seriesGroup
-                                    //     .append('g')
-                                    //     .attr("class", "subjectTotal")
-                                    //     .attr("position", "relative")
-                                    //     .attr("top", 5)
-                                    //     .selectAll("rect")
-                                    //     .data(seriesData[seriesData.length - 1])
-                                    //     .join("rect")
-                                    //     .attr("fill", "none")
-                                    //     .attr("x", d => subjectScale(d.data))
-                                    //     .attr("y", d => seriesScale(d[1]) - subjectTotal_width * 0.5)
-                                    //     .attr("height", d => seriesScale(0) - seriesScale(d[1]) + subjectTotal_width)
-                                    //     .attr("width", barWidth + subjectTotal_width)
-                                    //     .attr("stroke", seriesColor[i])
-                                    //     .attr("stroke-width", subjectTotal_width)
-                                    //     .attr("stroke-dasharray", function () {
-                                    //         let barWidth = parseInt(this.getAttribute("width"));
-                                    //         let barHeight = parseInt(this.getAttribute("height"));
-                                    //         let dashStr = getDasharrayStr(barWidth, barHeight);
-                                    //         return dashStr;
-                                    //     })
-                                    //     .attr('stroke-opacity', .8)
-                                    //     .attr("transform", `translate(${ transX - subjectTotal_width * 0.5}, 0)`);
-
+                                            })
+                                        );
                                 })
                             );
 
-                    }
-                    var updateTooltips = () => {
+                    };
+                    // var updateTooltips = () => {
 
-                    }
+                    // };
                     updateAxis();
                     updateFocus();
-                    updateTooltips();
+                    // updateTooltips();
                 };
                 if (!newDataObj) {
                     newDataObj = getNewData({
@@ -1227,8 +1218,6 @@ function DSBC() {
 
             };
             function getNewData(chartOption) {
-                let newData;
-
                 let leftAxisOption = chartOption.hasOwnProperty('leftAxisOption') ? chartOption.leftAxisOption : newDataObj.leftAxisOption,
                     rightAxisOption = chartOption.hasOwnProperty('rightAxisOption') ? chartOption.rightAxisOption : newDataObj.rightAxisOption,
                     displayArr = chartOption.hasOwnProperty('displayArr') ? chartOption.displayArr : newDataObj.displayArr,
@@ -1247,7 +1236,9 @@ function DSBC() {
                     return series;
                 };
 
-                newData = [leftAxisOption.metric, rightAxisOption.metric,].map(key => getSeries(key));
+                let metric = [leftAxisOption.metric, rightAxisOption.metric];
+                let newData = metric.map(key => getSeries(key));
+                newData.metric = metric;
 
                 return {
                     newData: newData ? newData : newDataObj.newData,
@@ -1260,7 +1251,6 @@ function DSBC() {
                         maxWidth: orientation ? 500 : 60,
                         interval: orientation ? 1 : 50,
                     },
-
                 };
             };
             updateChart();
@@ -1390,11 +1380,11 @@ function DSBC() {
                             let barWidth = parseInt(bar.getAttribute('width'));
                             let barHeight = parseInt(bar.getAttribute('height'));
 
-                            // let trans_x = bar_x + subjectScale.bandwidth() / 2 + seriesIndex * barWidth + (seriesIndex - !seriesIndex) * bar_interval + tooltip_width * 0.1;
+                            // let trans_x = bar_x + subjectScale.bandwidth() / 2 + seriesIndex * barWidth + (seriesIndex - !seriesIndex) * barOption.interval + tooltip_width * 0.1;
                             // let trans_y = bar_y + (barHeight - tooltip_height) / 2;
                             let trans_x =
-                                newDataObj.chartType == 'vertical' ?
-                                    bar_x + subjectScale.bandwidth() / 2 + seriesIndex * barWidth + (seriesIndex - !seriesIndex) * bar_interval + tooltip_width * 0.1 :
+                                newDataObj.barOption.orientation ?
+                                    bar_x + subjectScale.bandwidth() / 2 + seriesIndex * barWidth + (seriesIndex - !seriesIndex) * barOption.interval + tooltip_width * 0.1 :
                                     bar_x + barWidth + tooltip_width * 0.1;
                             let trans_y = bar_y + (barHeight - tooltip_height) / 2;
 
@@ -1638,19 +1628,19 @@ function DSBC() {
                     }));
                 };
                 var chartOptionEvent = () => {
-                    const chartContainer = d3.select(selector);
-                    //=====xaxis option
-                    let xAxisMetric = chartContainerD3.selectAll('input[name ="xAxisMetric"]');
-                    let xAxisMetricText = chartContainerD3.select('#xAxisOptionButton');
-                    let xAxisLog = chartContainerD3.select('#xAxis_log');
-                    // console.debug(xAxisLog);
 
-                    xAxisMetric
+                    //=====leftAxis option
+                    let leftAxisMetric = chartContainerD3.selectAll('input[name ="leftAxisMetric"]');
+                    let leftAxisMetricText = chartContainerD3.select('#leftAxisOptionButton');
+                    let leftAxisLog = chartContainerD3.select('#leftAxis_log');
+                    // console.debug(leftAxisLog);
+
+                    leftAxisMetric
                         .on('change', e => {
                             let value = e.target.value;
                             let checked = e.target.checked;
                             //＝＝＝單選,其他勾拿掉
-                            xAxisMetric.nodes().filter(chkbox => chkbox !== e.target).forEach(chkbox => chkbox.checked = false);
+                            leftAxisMetric.nodes().filter(chkbox => chkbox !== e.target).forEach(chkbox => chkbox.checked = false);
 
                             //＝＝＝被點擊的勾不能拿掉
                             if (!checked) {
@@ -1659,37 +1649,66 @@ function DSBC() {
                             };
 
                             //===改變按鈕text
-                            xAxisMetricText.text(value);
-
-
-
-                            //==date不能log scale
-                            let metricIsDate = value == 'date';
-                            xAxisOption.logScale = metricIsDate ? false : xAxisLog.property('checked');
-                            xAxisLog.property('disabled', metricIsDate);
+                            leftAxisMetricText.text(value);
 
                             //===更新圖表
-                            xAxisOption.metric = value;
-                            xAxisDomain = null;//==domain無關聯所以重置
+                            leftAxisOption.metric = value;
 
-                            newDataObj = getNewData({ xAxisOption: xAxisOption, xAxisDomain: xAxisDomain });
+                            newDataObj = getNewData({ leftAxisOption: leftAxisOption });
                             updateChart();
 
                         });
 
-                    xAxisLog
+                    leftAxisLog
                         .on('change', e => {
-                            xAxisOption.logScale = e.target.checked;
-                            newDataObj = getNewData({ xAxisOption: xAxisOption });
+                            leftAxisOption.logScale = e.target.checked;
+                            newDataObj = getNewData({ leftAxisOption: leftAxisOption });
                             updateChart();
                         });
 
+                    //=====rightAxis option
+                    let rightAxisMetric = chartContainerD3.selectAll('input[name ="rightAxisMetric"]');
+                    let rightAxisMetricText = chartContainerD3.select('#rightAxisOptionButton');
+                    let rightAxisLog = chartContainerD3.select('#rightAxis_log');
+                    // console.debug(rightAxisLog);
+
+                    rightAxisMetric
+                        .on('change', e => {
+                            let value = e.target.value;
+                            let checked = e.target.checked;
+                            //＝＝＝單選,其他勾拿掉
+                            rightAxisMetric.nodes().filter(chkbox => chkbox !== e.target).forEach(chkbox => chkbox.checked = false);
+
+                            //＝＝＝被點擊的勾不能拿掉
+                            if (!checked) {
+                                e.target.checked = true;
+                                return;
+                            };
+
+                            //===改變按鈕text
+                            rightAxisMetricText.text(value);
+
+                            //===更新圖表
+                            rightAxisOption.metric = value;
+
+                            newDataObj = getNewData({ rightAxisOption: rightAxisOption });
+                            updateChart();
+
+                        });
+
+                    rightAxisLog
+                        .on('change', e => {
+                            // console.debug(rightAxisOption);
+                            rightAxisOption.logScale = e.target.checked;
+                            newDataObj = getNewData({ rightAxisOption: rightAxisOption });
+                            updateChart();
+                        });
 
 
 
                     //=====change 
-                    // console.debug(chartContainer.select('input[name ="changeChart"]'))
-                    chartContainer.selectAll('input[name ="changeChart"]')
+                    // console.debug(chartContainerD3.select('input[name ="changeChart"]'))
+                    chartContainerD3.selectAll('input[name ="changeChart"]')
                         .on('click', e => {
                             // console.debug('change')
                             //===for reset tooltip after chart change
@@ -1715,10 +1734,10 @@ function DSBC() {
 
                         });
                     //=====shows
-                    chartContainer.select('#showLegend').on('change', e =>
+                    chartContainerD3.select('#showLegend').on('change', e =>
                         svg.selectAll('.legend').attr("display", e.target.checked ? 'inline' : 'none'));
                 };
-                var infoBoxDragEvent = () => {
+                function legendEvent() {
 
                     var raiseAndDrag = (d3_selection) => {
                         let x_fixed = 0, y_fixed = 0;
@@ -1729,23 +1748,46 @@ function DSBC() {
                                 x_fixed = e.x - matrix.e;
                                 y_fixed = e.y - matrix.f;
                             })
-                            .on('drag', function (e) {
-                                d3.select(this).attr("transform", `translate(${e.x - x_fixed}, ${e.y - y_fixed})`);
+                            .on('drag end', function (e) {
+                                // console.log('drag');
+                                let translateX = e.x - x_fixed;
+                                let translateY = e.y - y_fixed;
+
+                                let targetSVGRect = this.getBBox();
+                                let targetWidth = targetSVGRect.width;
+                                let targetHeight = targetSVGRect.height;
+                                let targetFix = this.classList.contains('overview') ? 20 : 0;//overview要算上toolbar高
+
+                                // console.debug(targetSVGRect);
+                                let range_margin = 5;
+                                let xRange = [0 + range_margin, width - targetWidth - range_margin];
+                                let yRange = [targetFix + range_margin, height - targetHeight + targetFix - range_margin];
+                                //不能拉出svg範圍
+
+                                if (translateX < xRange[0])
+                                    translateX = xRange[0];
+                                else if (translateX > xRange[1])
+                                    translateX = xRange[1];
+                                // console.debug(width)
+                                if (translateY < yRange[0])
+                                    translateY = yRange[0];
+                                else if (translateY > yRange[1])
+                                    translateY = yRange[1];
+
+                                d3.select(this).attr("transform", `translate(${translateX}, ${translateY})`);
                             })
-                            .on('end', e => {
-                                // console.log('drag end');
-                            });
 
                         d3_selection
+                            .attr("cursor", 'grab')
                             .call(g => g.raise())//把選中元素拉到最上層(比zoom的選取框優先)
-                            .call(legend_dragBehavior);
+                            .call(g => g.selectAll('.legend').call(legend_dragBehavior));
 
-                    }
-                    svg.select('.legend').call(raiseAndDrag);
+                    };
+                    svg.select('.legendGroup').call(raiseAndDrag);
 
                 };
                 chartOptionEvent();
-                infoBoxDragEvent();
+                legendEvent();
                 tooltipEvent();
             };
 

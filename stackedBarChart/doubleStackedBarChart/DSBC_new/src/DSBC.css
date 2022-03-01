@@ -86,3 +86,7 @@ a {
 
     display: none;
 }
+
+#chartsOptions {
+    white-space: nowrap;
+}

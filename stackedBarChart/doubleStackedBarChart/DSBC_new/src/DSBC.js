@@ -120,7 +120,7 @@ function DSBC() {
         var subjects, categories;
         var colorPalette = {};
 
-        // console.debug(getKeyName('size'));
+        // console.debug(dataKeys);
         const getKeyName = (key) => {
             let keyName, keyUnit = '';
             switch (key) {
@@ -145,7 +145,7 @@ function DSBC() {
                 default:
                     keyName = key;
                     break;
-            }
+            };
             return { name: keyName, unit: keyUnit };
         };
         const getColor = (key, dataCount = 0) => {
@@ -160,9 +160,9 @@ function DSBC() {
                     if (color + maxLevel * val > 240) {
                         val = (d3.max([color, 240]) - color) / maxLevel;
                         // console.debug(val);
-                    }
+                    };
 
-                    let tmp = color + level * val;
+                    let tmp = color + level * val + (dataCount ? val : 0);
                     color = tmp > 255 ? 255 : tmp;
                     return color;
                 };
@@ -177,7 +177,7 @@ function DSBC() {
 
                 let rgb = "rgb(" + red + "," + green + "," + blue + ")";
                 return rgb;
-            }
+            };
 
             color = colorPalette[key];
             //===if color not in colorPalette, get a random color and put in
@@ -187,7 +187,7 @@ function DSBC() {
                     if (hex.length < 2)
                         hex = '0' + hex;
                     return hex;
-                }
+                };
                 color = '#';
                 for (let i = 0; i < 3; i++)
                     color += randomColor();
@@ -281,15 +281,15 @@ function DSBC() {
                         <div class="row">
     
                             <!-- ... chart type ... -->                
-                            <div class="form-group col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start">
-                                <label class="col-form-label col-5" >ChartType</label>
-                                <div class="btn-group btn-group-toggle col-8" data-toggle="buttons">
+                            <div class="form-group col-lg-6 col-md-6 col-sm-12 d-flex flex-row align-items-start">
+                                <label class="col-form-label col-5" >圖表類型</label>
+                                <div class="btn-group btn-group-toggle col-7" data-toggle="buttons">
     
                                     <label class="btn btn-secondary active">
-                                        <input type="radio" name ="chartType" value="1" checked> 1
+                                        <input type="radio" name ="chartType" value="1" checked> 統計圖
                                     </label>
                                     <label class="btn btn-secondary">
-                                        <input type="radio" name ="chartType" value="2"> 2
+                                        <input type="radio" name ="chartType" value="2"> 累積圖
                                     </label>
                        
                                 </div>
@@ -397,7 +397,7 @@ function DSBC() {
                     Object.assign(colorPalette, tmp);
                 };
                 const seriesColor = ["#750000", "#003D79"];
-                dataKeys.forEach((key, i) => colorPalette[key] = seriesColor[i]);
+                [0, 1].forEach(i => colorPalette[i] = seriesColor[i]);
                 requestColors();
             };
             initNode();
@@ -680,38 +680,38 @@ function DSBC() {
     
                     <!-- ... leftAxis ... -->    
                     <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
-                        <label for="leftAxisOptionButton" class="col-form-label col-5" >LeftAxis</label>
+                        <label for="leftAxisOptionButton" class="col-form-label col-5" >左軸</label>
                         <div class="btn-group btn-group-toggle col-7" role="group">
                             <button id="leftAxisOptionButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                count
+                                下載次數
                             </button>
                             <div class="dropdown-menu" id="leftAxisMenu" aria-labelledby="leftAxisOptionButton">
                                 <div class="form-group col-12 d-flex flex-row flex-wrap align-items-start justify-content-between" id="leftAxisDropDownMenu" >
                                 
     
-                                <label class="font-weight-bold" for="">Metric</label>                    
+                                <label class="font-weight-bold" for="">計量</label>                    
                                 <div class="col-12 d-flex flex-row">
 
                                     <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
                                         <input class="form-check-input col-3" type="checkbox" id="leftAxis_count" name="leftAxisMetric" value="count" checked>
-                                        <label class="" for="leftAxis_count">count</label>
+                                        <label class="" for="leftAxis_count">下載次數</label>
                                     </div>
                                     <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
                                         <input class="form-check-input col-3" type="checkbox" id="leftAxis_group" name="leftAxisMetric" value="group">
-                                        <label for="leftAxis_group">group</label>
+                                        <label for="leftAxis_group">單日一次</label>
                                     </div>
                                     <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
                                         <input class="form-check-input col-3" type="checkbox" id="leftAxis_fileSize" name="leftAxisMetric" value="file_size">
-                                        <label for="leftAxis_fileSize">file_size</label>
+                                        <label for="leftAxis_fileSize">下載量</label>
                                     </div>
                                     
                                 </div>
     
-                                <label class="font-weight-bold" for="">Scale</label>
+                                <label class="font-weight-bold" for="">尺度</label>
                                 <div class="col-12 d-flex flex-row">
                                     <div class="col-4 form-check d-flex align-items-start" style="text-align: center;">
                                         <input class="form-check-input col-3" type="checkbox" id="leftAxis_log" name="rightAxisScale" value="log">
-                                        <label class="" for="leftAxis_log">logrithmic</label>
+                                        <label class="" for="leftAxis_log">取對數</label>
                                     </div>
                                 </div>                          
                                 
@@ -723,35 +723,35 @@ function DSBC() {
                     
                     <!-- ... rightAxis ... -->    
                     <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
-                        <label for="rightAxisOptionButton" class="col-form-label col-5" >RightAxis</label>
+                        <label for="rightAxisOptionButton" class="col-form-label col-5" >右軸</label>
                         <div class="btn-group btn-group-toggle col-7" role="group">
                             <button id="rightAxisOptionButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                file_size
+                                下載量
                             </button>
                             <div class="dropdown-menu" id="rightAxisMenu" aria-labelledby="rightAxisOptionButton">
                                 <div class="form-group col-12 d-flex flex-row flex-wrap align-items-start justify-content-between" id="rightAxisDropDownMenu" >
     
-                                <label class="font-weight-bold" for="">Metric</label>                    
+                                <label class="font-weight-bold" for="">計量</label>                    
                                 <div class="col-12 d-flex flex-row">
                                     <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
                                         <input class="form-check-input col-3" type="checkbox" id="rightAxis_count" name="rightAxisMetric" value="count">
-                                        <label class="" for="rightAxis_count">count</label>
+                                        <label class="" for="rightAxis_count">下載次數</label>
                                     </div>
                                     <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
                                         <input class="form-check-input col-3" type="checkbox" id="rightAxis_group" name="rightAxisMetric" value="group">
-                                        <label for="rightAxis_group">group</label>
+                                        <label for="rightAxis_group">單日一次</label>
                                     </div>
                                     <div class="form-check col-4 d-flex align-items-start" style="text-align: center;">
                                         <input class="form-check-input col-3" type="checkbox" id="rightAxis_fileSize" name="rightAxisMetric" value="file_size" checked>
-                                        <label for="rightAxis_fileSize">file_size</label>
+                                        <label for="rightAxis_fileSize">下載量</label>
                                     </div>
                                 </div>
     
-                                <label class="font-weight-bold" for="">Scale</label>
+                                <label class="font-weight-bold" for="">尺度</label>
                                 <div class="col-12 d-flex flex-row">
                                     <div class="col-4 form-check d-flex align-items-start" style="text-align: center;">
                                         <input class="form-check-input col-3" type="checkbox" id="rightAxis_log" name="rightAxisScale" value="log">
-                                        <label class="" for="rightAxis_log">logrithmic</label>
+                                        <label class="" for="rightAxis_log">取對數</label>
                                     </div>
                                 </div>                          
     
@@ -763,10 +763,10 @@ function DSBC() {
                 
                     <!-- ... display selector ... -->    
                     <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
-                        <label for="displaySelectButton" class="col-form-label col-5" >Display</label>
+                        <label for="displaySelectButton" class="col-form-label col-5" >資料庫</label>
                         <div class="btn-group btn-group-toggle col-7" role="group">
                             <button id="displaySelectButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                select
+                                請選擇
                             </button>
                             <div class="dropdown-menu" id="displayMenu" aria-labelledby="displaySelectButton">
                                 <div id="displayDropDownMenu" >
@@ -778,10 +778,10 @@ function DSBC() {
     
                     <!-- ... show info ... -->    
                     <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
-                        <label for="showInfoButton" class="col-form-label col-5" >Show</label>
+                        <label for="showInfoButton" class="col-form-label col-5" >圖例</label>
                         <div class="btn-group btn-group-toggle col-7" role="group">
                             <button id="showInfoButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                select
+                                請選擇
                             </button>
                             <div class="dropdown-menu" id="showInfoMenu" aria-labelledby="showInfoButton">
                                 <div  id="showInfoDropDownMenu">
@@ -799,13 +799,13 @@ function DSBC() {
 
                     <!-- ...change chart   ...-->
                     <div class="form-group col-md-6  d-flex flex-row align-items-start">
-                        <label for="changeChart" class="col-form-label col-4" >chart</label>
+                        <label for="changeChart" class="col-form-label col-4" >方向</label>
                         <div class="btn-group btn-group-toggle col-8" data-toggle="buttons">
                             <label class="btn btn-secondary">
-                                <input type="radio" name ="changeChart" value="vertical" checked> chart1
+                                <input type="radio" name ="changeChart" value="vertical" checked> 垂直
                             </label>
                             <label class="btn btn-secondary active">
-                                <input type="radio" name ="changeChart" value="horizontal"> chart2
+                                <input type="radio" name ="changeChart" value="horizontal"> 水平
                             </label>
                         </div>
                     </div>   
@@ -878,7 +878,7 @@ function DSBC() {
                         .text(getKeyName('subject').name);
 
                     leftAxis
-                        .attr("color", getColor(dataKeys[0]))
+                        .attr("color", getColor(0))
                         .append('text')
                         .attr("class", "axisName")
                         .attr("fill", "currentcolor")
@@ -888,7 +888,7 @@ function DSBC() {
                         .attr("alignment-baseline", "text-before-edge");
 
                     rightAxis
-                        .attr("color", getColor(dataKeys[1]))
+                        .attr("color", getColor(1))
                         .append('text')
                         .attr("class", "axisName")
                         .attr("fill", "currentcolor")
@@ -982,7 +982,7 @@ function DSBC() {
                         .range(rightRange);
                     if (rightAxisOption.logScale) rightScale.nice();
 
-                    // console.debug(leftScale.domain())
+                    // console.debug(leftScale.domain(), rightScale.domain())
                     // console.debug(leftScale.range())
 
                     var updateAxis = () => {
@@ -1094,8 +1094,8 @@ function DSBC() {
                             g.call(refreshing);//有呼叫補間動畫會不能append所以另外call一次
                         };
                         subjectAxis.call(makeSubjectAxis);
-                        leftAxis.call(g => makeSeriesAxis(g, true));
-                        rightAxis.call(g => makeSeriesAxis(g, false));
+                        leftAxis.call(g => makeSeriesAxis(g, false));
+                        rightAxis.call(g => makeSeriesAxis(g, true));
                     };
 
                     var updateFocus = () => {
@@ -1133,7 +1133,7 @@ function DSBC() {
                                     let seriesData = newData[i];
                                     let seriesScale = i ? rightScale : leftScale;
                                     let seriesOption = i ? rightAxisOption : leftAxisOption;
-
+                                    // console.debug(categories)
                                     seriesGroup
                                         .selectAll("g")
                                         .data(seriesData)
@@ -1144,7 +1144,7 @@ function DSBC() {
                                         .attr("class", "bar")
                                         //for index of barCollection
                                         .property("value", (d, index) => i * subjects.length * categories.length + categories.indexOf(d.key) * subjects.length + index)
-                                        .attr("fill", d => getColor(dataKeys[i], categories.indexOf(d.key)))
+                                        .attr("fill", (d) => getColor(i, categories.length - 1 - categories.indexOf(d.key)))
                                         .attr("stroke", "#D3D3D3")
                                         .attr("stroke-width", 3)
                                         .attr('stroke-opacity', 0)
@@ -1157,25 +1157,28 @@ function DSBC() {
                                                     y1 = (y1 == 0 ? seriesScale.domain()[0] : y1);
                                                     y2 = (y2 == 0 ? seriesScale.domain()[0] : y2);
                                                     // console.debug(y1, y2);
+                                                    // console.debug(seriesScale(y1) - seriesScale(y2));
                                                 };
 
 
                                                 if (barOption.orientation) {
                                                     let barWidth = subjectScale.bandwidth() / 2 > barOption.maxWidth ? barOption.maxWidth : subjectScale.bandwidth() / 2;
                                                     let transX = i ? subjectScale.bandwidth() / 2 + barOption.interval : subjectScale.bandwidth() / 2 - barWidth - barOption.interval;
-
+                                                    let height = seriesScale(y1) - seriesScale(y2);
+                                                    height = height <= 0 ? 0 : height;
 
                                                     rect
                                                         .transition().duration(transDuration)
                                                         .attr("transform", `translate(${transX}, 0)`)
                                                         .attr("x", d => subjectScale(d.data))
-                                                        .attr("y", d => seriesScale(y2))
-                                                        .attr("height", d => seriesScale(y1) - seriesScale(y2))
+                                                        .attr("y", seriesScale(y2))
+                                                        .attr("height", height)
                                                         .attr("width", barWidth)
                                                 }
                                                 else {
                                                     let barWidth = subjectScale.bandwidth() > barOption.maxWidth ? barOption.maxWidth : subjectScale.bandwidth();
                                                     let transY = (subjectScale.bandwidth() - barWidth) * 0.5;
+
                                                     rect
                                                         .transition().duration(transDuration)
                                                         .attr("transform", `translate(0, ${transY})`)
@@ -1183,7 +1186,6 @@ function DSBC() {
                                                         .attr("y", d => subjectScale(d.data))
                                                         .attr("height", barWidth)
                                                         .attr("width", d => Math.abs(seriesScale(d[0]) - seriesScale(d[1])))
-
                                                 };
 
                                             })
@@ -1649,7 +1651,7 @@ function DSBC() {
                             };
 
                             //===改變按鈕text
-                            leftAxisMetricText.text(value);
+                            leftAxisMetricText.text(getKeyName(value).name);
 
                             //===更新圖表
                             leftAxisOption.metric = value;
@@ -1686,7 +1688,7 @@ function DSBC() {
                             };
 
                             //===改變按鈕text
-                            rightAxisMetricText.text(value);
+                            rightAxisMetricText.text(getKeyName(value).name);
 
                             //===更新圖表
                             rightAxisOption.metric = value;

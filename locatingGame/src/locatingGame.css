@@ -70,6 +70,24 @@ h3,
     /* margin: 0px auto; */
 }
 
+.black-tooltip {
+    position: absolute;
+    z-index: 1;
+    padding: 6px;
+    background-color: rgb(0, 0, 0);
+    border: 5px solid rgb(255, 255, 255);
+    border-radius: 10px;
+    color: rgb(255, 255, 255);
+    white-space: nowrap;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    display: none;
+    pointer-events: none;
+}
+
 /* 取消tooltip三角形 */
 .leaflet-tooltip-top:before,
 .leaflet-tooltip-bottom:before,
@@ -198,30 +216,12 @@ svg {
     background-size: 100%; */
 }
 
-#tooltip {
-    position: absolute;
-    z-index: 1;
-    padding: 6px;
-    background-color: rgb(0, 0, 0);
-    border: 5px solid rgb(255, 255, 255);
-    border-radius: 10px;
-    color: rgb(255, 255, 255);
-    white-space: nowrap;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-    display: none;
-    pointer-events: none;
-}
-
 #gameUI .sidekickUI {
     position: absolute;
     right: 0px;
     bottom: 0px;
     z-index: 1100;
-    display: none;
+    /* display: none; */
 }
 
 #gameUI .sidekickUI .sidekick {
@@ -267,6 +267,39 @@ svg {
     left: 80px;
 }
 
+
+
+/* *******************playerStats******************* */
+
+#playerStatsUI .row {
+    margin: 5px;
+}
+
+#playerStatsUI p {
+    margin: 5px auto 0px;
+    font-weight: bold;
+}
+
+#playerStatsUI .barBox {
+    background-color: rgb(192, 192, 192);
+    border-radius: 15px;
+}
+
+#playerStatsUI .bar {
+    color: white;
+    text-align: right;
+    font-size: 20px;
+    border-radius: 15px;
+}
+
+#playerStatsUI .HP {
+    background-color: rgb(116, 194, 92);
+}
+
+#playerStatsUI .MP {
+    background-color: rgb(0, 17, 167);
+}
+
 /* *******************qcntw資料******************* */
 /* #questInfoUI>* {
     color: #0d6efd;
@@ -289,6 +322,8 @@ svg {
     height: 100%;
     overflow-x: hidden;
 }
+
+
 
 /* *******************速度圖手把動畫******************* */
 #velocityChartUI>svg .handle .anim {

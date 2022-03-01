@@ -4289,7 +4289,7 @@ class LoadingScene extends Phaser.Scene {
                             { frameWidth: 48, frameHeight: 48 } :
                             { frameWidth: 32, frameHeight: 32 };
 
-                        if (enemy != 'dove') this.load.spritesheet(enemy + '_Attack', dir + 'Attack.png', frameObj);
+                        this.load.spritesheet(enemy + '_Attack', dir + 'Attack.png', enemy == 'dove' ? { frameWidth: 48, frameHeight: 48 } : frameObj);
                         this.load.spritesheet(enemy + '_Death', dir + 'Death.png', frameObj);
                         this.load.spritesheet(enemy + '_Hurt', dir + 'Hurt.png', frameObj);
                         this.load.spritesheet(enemy + '_Idle', dir + 'Idle.png', frameObj);
@@ -5018,6 +5018,8 @@ class DefendScene extends Phaser.Scene {
             if (!stationStats.liberate) {
                 this.physics.add.overlap(this.player.bullets, this.enemy, this.player.playerAttack, null, this);
                 this.physics.add.overlap(this.enemy, this.player, this.enemy.enemyAttack, null, this);
+                this.enemy.children.iterate(child => child.bullets ?
+                    this.physics.add.overlap(this.player, child.bullets, child.bulletAttack, null, this) : false);
             };
 
         };
@@ -5081,6 +5083,50 @@ class DefendScene extends Phaser.Scene {
                 // foe.anims.play('dog_Attack', true);
             };
             this.physics.add.collider(this.enemy, this.platforms);
+
+
+            //==丟雞蛋
+            this.enemy.children.iterate(child => {
+                if (child.bullets) {
+
+                    child.bulletAttack = (player, bullet) => {
+                        bullet.disableBody(true, true);
+
+                        const knockBackDuration = 400;
+                        const knockBackSpeed = 200;
+
+                        if (!player.invincibleFlag) {
+                            //==暫停人物操作(一直往前走不會有擊退效果)
+                            player.stopCursorsFlag = true;
+                            player.statsChangeHandler({ HP: -child.stats.attackPower }, this);
+                            if (player.stats.HP <= 0) return;
+
+                            player.invincibleFlag = true;
+                            // player.setTint(0xff0000);
+
+                            player.body.setVelocityX(knockBackSpeed * (child.x < player.x ? 1 : -1));
+
+                            this.time.delayedCall(knockBackDuration, () => {
+                                player.body.reset(player.x, player.y);//==停下
+                                player.stopCursorsFlag = false;
+                            }, [], this);
+
+                        };
+                    };
+
+                    this.physics.add.collider(child.bullets, this.platforms,
+                        (bullet, platform) => {
+                            let anim = child.name + '_Attack2';
+                            if (bullet.anims.getName() === anim) return;
+                            bullet.play(anim, true);
+                            bullet.body.enable = false;
+                            this.time.delayedCall(1000, () => {
+                                bullet.disableBody(true, true);
+                            }, [], this);
+                        });
+
+                };
+            });
 
         };
         var initTimer = () => {

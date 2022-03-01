@@ -316,7 +316,7 @@ function locatingGame() {
                     },
                     sidekick: {
                         type: sidekick,
-                        lineStage: [0, 0],//==第2-0句
+                        lineStage: [1, 0],//==第2-0句
                         doneTalking: false,
                         stopHotkey: false,//==對話完空白鍵不再出現對話（只能滑鼠點）
                     },
@@ -358,7 +358,7 @@ function locatingGame() {
                     initMap();
 
                     //==test
-                    gameStart('defend');
+                    // gameStart('defend');
                     // gameStart('dig');
                     //==test
                 };
@@ -684,7 +684,15 @@ function locatingGame() {
 
                             });
 
-                        marker.bindTooltip(d['station'], {
+
+                        let tooltipHtml = `
+                            <text>${GameData.localeJSON.UI['station'] + ' : ' + d['station']}</text><br>
+                            <text>${GameData.localeJSON.UI['station'] + ' : ' + d['station']}</text><br>
+
+                        `;
+
+
+                        marker.bindTooltip(tooltipHtml, {
                             direction: 'top',
                             // permanent: true,
                             className: 'station-tooltip',
@@ -844,9 +852,11 @@ function locatingGame() {
 
                             UI.css({ top: top, left: left, });
 
-                            //==速度參數圖表更新
-                            if (id == UIbuttons[1])
+
+                            if (id == UIbuttons[1])  //==速度參數圖表更新
                                 d3.select(`#${UIbuttons[1]}UI>svg`).dispatch('updateEvt');
+                            else if (id == UIbuttons[0])  //==人物圖更新
+                                gameUI.find(`#${UIbuttons[0]}UI`).trigger('updateEvt');
                         }
                         else UI.hide();
 
@@ -898,9 +908,71 @@ function locatingGame() {
 
                                 switch (btn) {
                                     case 'playerStats':
+                                        const avatarDir = `${assetsDir}avatar/${GameData.playerRole}/${GameData.playerCustom.avatarIndex}.png`;
                                         UI
                                             .width(height * 0.5)
-                                            .height(height * 0.5);
+                                            .height(height * 0.5)
+                                            .append(`
+                                            <div class='black-tooltip'></div>
+                                            <div class='row'>
+                                                <div class='col-4 d-flex align-items-center'>
+                                                    <img src='${avatarDir}' width='100px'></img>                                                    
+                                                </div>
+
+                                                <div class='col-8'>
+                                                    <p>HP</p>
+                                                    <div class="barBox">
+                                                        <div class="bar HP"></div>
+                                                    </div>
+                                                    
+                                                    <p>MP</p>
+                                                    <div class="barBox">
+                                                        <div class="bar MP"></div>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                            `);
+
+                                        UI.find('.barBox')
+                                            .on('mouseover', function (e) {
+                                                let isHP = this.children[0].classList.contains('HP');
+                                                let playerStats = GameData.playerStats;
+                                                let status = isHP ?
+                                                    playerStats.HP + ' / ' + playerStats.maxHP :
+                                                    playerStats.MP + ' / ' + playerStats.maxMP;
+
+                                                UI.find('.black-tooltip')
+                                                    .text((isHP ? 'HP ' : 'MP ') + status)
+                                                    .css({
+                                                        "top": `${isHP ? 0 : this.getBoundingClientRect().height * 2}px`,
+                                                        "left": `${e.offsetX}px`
+                                                    })
+                                                    .show();
+
+                                            })
+                                            .on('mouseout', (e) => {
+                                                UI.find('.black-tooltip')
+                                                    .hide();
+                                            });
+
+                                        UI.on('updateEvt', () => {
+                                            let playerStats = GameData.playerStats;
+                                            // console.debug(UI);
+                                            let hpPercent = parseFloat((playerStats.HP / playerStats.maxHP * 100).toFixed(1)) + '%',
+                                                mpPercent = parseFloat((playerStats.MP / playerStats.maxMP * 100).toFixed(1)) + '%';
+
+                                            UI.find('.HP')
+                                                .width(hpPercent)
+                                                .text(hpPercent);
+                                            UI.find('.MP')
+                                                .width(mpPercent)
+                                                .text(mpPercent);
+                                        });
+
+
+
+
                                         break;
                                     case 'velocityChart':
                                         //==lock gif
@@ -1052,7 +1124,7 @@ function locatingGame() {
                                 })
                                 .on('click', function (e) {
                                     //==速度參數要完成兩站才能調整
-                                    if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
+                                    // if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
 
                                     let button = $(this);
                                     let ckick = button.hasClass('clicked');
@@ -1194,8 +1266,6 @@ function locatingGame() {
                                     false : sidekick.trigger("click"));
 
                         };
-
-
                         init();
                         updateSidekick(...GameData.sidekick.lineStage);
                     };
@@ -1211,7 +1281,7 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
-                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             let lat = e.latlng.lat,
                                 lng = e.latlng.lng
 
@@ -1305,7 +1375,6 @@ function locatingGame() {
 
                     let radius = 0, step = 0;
                     let interval = setInterval(() => {
-
                         let part = parseInt(step / eachPartStep);
 
                         switch (part) {
@@ -1327,7 +1396,6 @@ function locatingGame() {
                         step++;
 
                     }, delay);
-
 
                     circleObj.setStyle({ opacity: 1 });//==一開始不顯示
                 };
@@ -1885,7 +1953,7 @@ function locatingGame() {
                         updateMapUI(playerInfo, 1000);
 
                         //==通關
-                        if (gameResult.bossDefeated) {//gameResult.bossDefeated
+                        if (1) {//gameResult.bossDefeated
                             // console.debug('通關');
                             initEndScene(true);
                             return;
@@ -2496,7 +2564,7 @@ function locatingGame() {
                 const UI = d3.select('#velocityChartUI');
                 const tooltip = UI
                     .append("div")
-                    .attr("id", "tooltip");
+                    .attr("class", "black-tooltip");
                 // const tooltipMouseGap = 50;//tooltip與滑鼠距離
 
                 focusGroup
@@ -2959,7 +3027,7 @@ function locatingGame() {
         function events(svg) {
             const tooltip = d3.select(".rankChart")
                 .append("div")
-                .attr("id", "tooltip");
+                .attr("class", "black-tooltip ");
             const mouseGap = 50;
 
             var replayAnime = () => {
@@ -3052,7 +3120,6 @@ function locatingGame() {
                     });
 
             };
-
             replayAnime();
             barHover();
 

@@ -340,19 +340,19 @@ function locatingGame() {
                     GameData.getLanguageJSON = getLanguageJSON;
 
                     //==test
-                    // gameDisplay(true);
-                    // let newGameData = await new Promise((resolve, reject) => {
-                    //     const config = Object.assign(getPhaserConfig(width, height), {
-                    //         scene: new GameStartScene(GameData, {
-                    //             getWaveImg: getWaveImg,
-                    //             resolve: resolve,
-                    //             getLanguageJSON: getLanguageJSON,
-                    //         }),
-                    //     });
-                    //     new Phaser.Game(config);
-                    // });
+                    gameDisplay(true);
+                    let newGameData = await new Promise((resolve, reject) => {
+                        const config = Object.assign(getPhaserConfig(width, height), {
+                            scene: new GameStartScene(GameData, {
+                                getWaveImg: getWaveImg,
+                                resolve: resolve,
+                                getLanguageJSON: getLanguageJSON,
+                            }),
+                        });
+                        new Phaser.Game(config);
+                    });
 
-                    // gameDisplay(false);
+                    gameDisplay(false);
                     //==test
 
                     initMap();
@@ -635,8 +635,8 @@ function locatingGame() {
                     data.forEach((d, i) => {
                         // console.debug(d);
                         // let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
-                        let enemy = ['dove'];//==之後隨機抽敵人組
-                        // let enemy = [enemyArr[getRandom(enemyArr.length)]];
+                        // let enemy = ['dove'];//==之後隨機抽敵人組
+                        let enemy = [enemyArr[getRandom(enemyArr.length)]];
                         let enemyStats = {};
 
                         enemy.forEach((key) => {
@@ -686,9 +686,9 @@ function locatingGame() {
 
 
                         let tooltipHtml = `
-                            <text>${GameData.localeJSON.UI['station'] + ' : ' + d['station']}</text><br>
-                            <text>${GameData.localeJSON.UI['station'] + ' : ' + d['station']}</text><br>
-
+                            <text class='staName'>${GameData.localeJSON.UI['station'] + ' : ' + d['station']}</text><br>
+                            <text class='enmeyType'>${GameData.localeJSON.UI['enmey'] + ' : '}</text>
+                            ${enemy.map(e => `<img src='${assetsDir + 'icon/' + e + '.png'}' width='25px'></img>`).join(' ')}<br>            
                         `;
 
 
@@ -711,10 +711,8 @@ function locatingGame() {
                         });
                         // console.debug(marker.getIcon())
 
-
                         // markerArr.push(marker);
                         // circleArr.push(circle);
-
                         // updateStation(marker, { icon: 'default' });
                     });
 
@@ -1124,7 +1122,7 @@ function locatingGame() {
                                 })
                                 .on('click', function (e) {
                                     //==速度參數要完成兩站才能調整
-                                    // if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
+                                    if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
 
                                     let button = $(this);
                                     let ckick = button.hasClass('clicked');
@@ -1281,7 +1279,7 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
-                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             let lat = e.latlng.lat,
                                 lng = e.latlng.lng
 
@@ -1872,7 +1870,7 @@ function locatingGame() {
                         updateStation(siteData, { icon: 'clear' });
 
                     //===update circle
-                    if (stationInfo.clear) {
+                    if (stationInfo.clear) {//stationInfo.clear
                         let timeGap = Math.abs(stationInfo.orbStats.reduce((acc, cur) => acc.time - cur.time));
 
                         //距離=時間*速度,km換算成m;
@@ -1883,7 +1881,33 @@ function locatingGame() {
                         let pre_radius = siteData.options.data.circleObj.getRadius();
                         if (Math.abs(radius - pre_radius) > 1)
                             updateStation(siteData, { circleRadius: radius });
+
+                        //==更新tooltip
+                        // console.debug(siteData, stationInfo.liberate);
+                        let tooltipContent = `
+                            <text class='staName'>${GameData.localeJSON.UI['station'] + ' : ' + stationData.station}</text><br>
+                            <text class='pTime'>${GameData.localeJSON.UI['pTime'] + ' : ' + parseFloat((stationInfo.orbStats[0].time).toFixed(2)) + ' s'}</text><br>
+                            <text class='sTime'>${GameData.localeJSON.UI['sTime'] + ' : ' + parseFloat((stationInfo.orbStats[1].time).toFixed(2)) + ' s'}</text><br>
+                            <text class='timeGap'>${GameData.localeJSON.UI['timeGap'] + ' : ' + parseFloat(timeGap.toFixed(2)) + ' s'}</text><br>
+                            <text class='preDistance'>${GameData.localeJSON.UI['preDistance'] + ' : ' + parseFloat((radius / 1000).toFixed(1)) + ' km'}</text><br>
+                           
+                           ${stationInfo.liberate ? '' :
+                                `<text class='enmeyType'>${GameData.localeJSON.UI['enmey'] + ' : '}</text>
+                           ${Object.keys(stationInfo.enemyStats).map(e =>
+                                    stationInfo.enemyStats[e].HP >= 0 ?
+                                        `<img src='${assetsDir + 'icon/' + e + '.png'}' width='25px'></img>` : '').join(' ')}<br>`}
+                        `;
+
+
+
+
+                        siteData.setTooltipContent(tooltipContent);
+
+
+
                     };
+
+
 
                     //===更新測站情報
                     Object.assign(stationData.stationStats, stationInfo);
@@ -2597,7 +2621,7 @@ function locatingGame() {
 
                                     tooltip.html(`
                                     <h5>${station}</h5>
-                                    <h5>${GameData.localeJSON.UI['preDistance']} : ${dist} km</h5>
+                                    <h5>${GameData.localeJSON.UI['assumedDist']} : ${dist} km</h5>
                                     <h5>${GameData.localeJSON.UI['estimatedTime']} : ${timeGap} s</h5>
                                     `);
 

@@ -835,7 +835,6 @@ const Enemy = new Phaser.Class({
                     if (dist < 300 || this.behavior == 'hurt') {
                         this.stats.active = true;
                         if (!this.behavior) this.behavior = 'flying';
-                        this.body.setAllowGravity(false);
                     }
                     else return;
                 //===開始行爲模式(0.受傷 1.攻擊 2.追擊 3.休息 )
@@ -859,6 +858,7 @@ const Enemy = new Phaser.Class({
                             //==遊走到隨機位置                       
                             if (!this.behaviorCallback) {
                                 this.anims.play('dove_Walk', true);
+                                this.body.setAllowGravity(false);
 
                                 // ==== accelerateToObject(gameObject, destination, acceleration, xSpeedMax, ySpeedMax);
                                 let randomX = Phaser.Math.Between(0, scene.sys.game.canvas.width - 16);//==隨機移動到螢幕內x;

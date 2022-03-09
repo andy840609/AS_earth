@@ -2590,7 +2590,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                             lineSpacing: major ? 10 : 5,
                             align: 'left',
                             padding: padding,
-                        }))
+                        }));
 
                     if (!major)
                         BBCodeText
@@ -3491,5 +3491,159 @@ class RexForm extends RexPlugins.UI.Sizer {
 
         // console.debug(this);
 
+    };
+};
+
+//===sheet
+class RexSheet extends RexPlugins.UI.Sizer {
+    constructor(scene, config, resolve) {
+        const Depth = 30;
+        const UItextJSON = config.gameData.localeJSON.UI;
+        const GetValue = Phaser.Utils.Objects.GetValue;
+        const COLOR_PRIMARY = 0x4e342e;
+        const COLOR_LIGHT = 0x7b5e57;
+        const COLOR_DARK = 0x260e04;
+        const padding = {
+            left: 3,
+            right: 3,
+            top: 3,
+            bottom: 3,
+        };
+        var createHeader = (scene, text, backgroundColor) => {
+            return new RexPlugins.UI.Label(scene, {
+                background: scene.add.existing(new RexPlugins.UI.RoundRectangle(scene, 0, 0, 100, 40, 20, backgroundColor)),
+                text: scene.add.text(0, 0, text, {
+                    fontSize: '24px',
+                    padding: padding,
+                }),
+                space: {
+                    left: 10,
+                    right: 10,
+                    top: 10,
+                    bottom: 10
+                },
+                align: 'right',
+            });
+        };
+
+        const formConfig = {
+            orientation: 1,
+            x: config.x,
+            y: config.y,
+        };
+
+        super(scene, formConfig);
+        var background = scene.add.image(0, 0, config.img).setDepth(0);
+        var getText = (text, major = true) => {
+            let BBCodeText = scene.add.existing(
+                new RexPlugins.UI.BBCodeText(scene, 0, 0, text, {
+                    fontSize: major ? '24px' : '18px',
+                    color: '#ffffff',
+                    wrap: {
+                        mode: 2,// 0|'none'|1|'word'|2|'char'|'character'
+                        width: (major ? 1 : 0.6) * config.width
+                    },
+                    underline: {
+                        color: '#9D9D9D',  // css string, or number
+                        thickness: 2,
+                        offset: 4
+                    },
+                    lineSpacing: major ? 10 : 5,
+                    align: 'left',
+                    padding: padding,
+                }));
+
+            if (!major)
+                BBCodeText
+                    .setInteractive()
+                    .on('areadown', function (key) {
+                        if (IsURLKey(key)) window.open(GetURL(key), '_blank');
+                    });
+
+            return BBCodeText;
+        };
+
+        this
+            .addBackground(background)
+            .add(createHeader(scene, UItextJSON['characterSet'], COLOR_DARK),
+                {
+
+                    padding: { top: 10, bottom: 10, left: 10, right: 10 },
+
+                })
+            .add(getText(UItextJSON[config.text]),
+                {
+                    padding: { top: 10, bottom: 10, left: 10, right: 10 },
+                })
+            .setOrigin(0.5)
+            .layout();
+
+
+        return;
+
+        let obj = config.obj;
+        let x = obj.x + obj.displayWidth * (0.5 - obj.originX) + (config.dx ? config.dx : 0);
+        let y = obj.y + obj.displayHeight * (1 - obj.originY) + 18 + (config.dy ? config.dy : 0);
+        let hotKeyString = config.text ? false : gameData.controllCursor[obj.name];
+        let text = UItextJSON[config.text ? config.text : obj.name] + (hotKeyString ? `(${hotKeyString})` : '');
+        let tweensDuration = 200;
+
+        //===background img
+        let img = scene.add.image(x, y + 1, config.img)
+            .setFlipY(config.filpY ? config.filpY : false)
+            .setOrigin(config.originX ? config.originX : 0.5, config.originY ? config.originY : 0.5)
+        // .setDepth(Depth);
+
+        //===tooltip text
+        let tooltip = scene.add.text(0, 0, text, {
+            font: (config.fontSize ? config.fontSize : 30) + 'px sans-serif',
+            fill: '#000000',
+        })
+            .setOrigin(0.5)
+        // .setDepth(Depth);
+
+        tooltip.setPosition(x + tooltip.width * 0.75 * (0.5 - (config.originX ? config.originX : 0.5)) * 2, y);
+
+        //==picture for instruction
+        let pic = null;
+        if (config.pic)
+            pic = scene.add.image(tooltip.x, tooltip.y + tooltip.height + 10, config.pic)
+                .setScale(0.6)
+                .setOrigin(0.5, 0)
+                .setAlpha(0)
+        // .setDepth(Depth);
+
+        img.setScale(0, (tooltip.height + (pic ? pic.displayHeight : 0)) * (config.scaleY ? config.scaleY : 1.2) / img.height);
+
+        scene.tweens.add({
+            targets: tooltip,
+            repeat: 0,
+            ease: 'Back.easeInOut',
+            duration: tweensDuration * 2,
+            alpha: { from: 0, to: 1 },
+        });
+
+        scene.tweens.add({
+            targets: img,
+            repeat: 0,
+            ease: 'Circ.easeInOut',
+            duration: tweensDuration,
+            scaleX: { from: tooltip.width * 0.1 / img.width, to: tooltip.width * 1.5 / img.width },
+
+        });
+
+        if (pic)
+            scene.tweens.add({
+                targets: pic,
+                repeat: 0,
+                ease: 'Circ.easeInOut',
+                duration: tweensDuration,
+                scale: { from: 0, to: 0.4 },
+                alpha: { from: 0, to: 1 },
+            });
+
+        let sheetGroup = [tooltip, img, pic];
+
+        return sheetGroup;
     };
 };

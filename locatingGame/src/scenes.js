@@ -47,7 +47,8 @@ class UIScene extends Phaser.Scene {
                     let pic = null;
                     if (data.pic)
                         pic = this.add.image(tooltip.x, tooltip.y + tooltip.height + 10, data.pic)
-                            .setScale(0.5)
+                            .setScale(0.6)
+                            .setOrigin(0.5, 0)
                             .setAlpha(0)
                             .setDepth(Depth.tooltip);
 
@@ -76,7 +77,7 @@ class UIScene extends Phaser.Scene {
                             repeat: 0,
                             ease: 'Circ.easeInOut',
                             duration: tweensDuration,
-                            scale: { from: 0, to: 0.5 },
+                            scale: { from: 0, to: 0.4 },
                             alpha: { from: 0, to: 1 },
                         });
 
@@ -2286,9 +2287,8 @@ class UIScene extends Phaser.Scene {
                         this.load.image('infoTextBox', UIDir + 'infoTextBox.png');
                         this.load.image('sheet', UIDir + 'sheet.png');
                         this.load.spritesheet('sprinkle', UIDir + 'sprinkle.png', { frameWidth: 300, frameHeight: 300 });
-                        if (gameScene.name != 'GameStart')
-                            this.load.image('PSwave', assetsDir + 'ui/game/Transitions/PSwave.png');
-                        else this.load.image('tooltipButton', assetsDir + 'ui/game/tooltipButton.png');
+                        this.load.image('wf_plot', assetsDir + 'ui/game/Transitions/wf_plot.png');
+                        if (gameScene.name == 'GameStart') this.load.image('tooltipButton', assetsDir + 'ui/game/tooltipButton.png');
                     };
                     var player = () => {
                         if (gameScene.name != 'GameStart') return;
@@ -2563,19 +2563,25 @@ class UIScene extends Phaser.Scene {
                                                 if (!button.click) {
                                                     let anotherButton, infoTooltip;
                                                     if (name == 'info1') {
-                                                        infoTooltip = tooltipHandler(true, {
+                                                        infoTooltip = new RexSheet(this.detectorUI, {
                                                             obj: button,
                                                             img: 'sheet',
                                                             text: 'info1_detail',
                                                             originX: -0.1,
                                                             originY: 0.3,
-                                                            dx: -80,
-                                                            dy: -50,
                                                             fontSize: 20,
-                                                            pic: 'PSwave',
-                                                        });
+                                                            pic: 'wf_plot',
+
+                                                            gameData: gameScene.gameData,
+                                                            x: width * 0.5,
+                                                            y: height * 0.5,
+                                                            width: width * 0.5,
+                                                            height: height * 0.5,
+                                                        }, null)
+                                                            .setDepth(Depth.tooltip)
+                                                            .popUp(500);
                                                         anotherButton = 'info2';
-                                                        this.buttonGroups.infoObjs = infoTooltip;
+                                                        this.buttonGroups.infoObjs = [infoTooltip];
 
                                                         this.detectorUI.brushHandles.forEach(b => b.disableInteractive());
                                                         this.detectorUI.detectorButtons.forEach(b => b.disableInteractive());
@@ -5180,7 +5186,7 @@ class DefendScene extends Phaser.Scene {
         // this.time.paused = true;
 
         //==test
-        // this.scene.add(null, new UIScene('tutorial', this), true);
+        this.scene.add(null, new UIScene('tutorial', this), true);
     };
     update() {
         // this.gameTimer.paused = false;//==時間繼續

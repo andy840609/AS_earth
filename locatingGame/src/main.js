@@ -358,7 +358,7 @@ function locatingGame() {
                     initMap();
 
                     //==test
-                    // gameStart('defend');
+                    gameStart('defend');
                     // gameStart('dig');
                     //==test
                 };

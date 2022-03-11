@@ -2286,6 +2286,7 @@ class UIScene extends Phaser.Scene {
                         this.load.image('info', UIDir + 'info.png');
                         this.load.image('infoTextBox', UIDir + 'infoTextBox.png');
                         this.load.image('sheet', UIDir + 'sheet.png');
+                        this.load.image('sheetArrow', UIDir + 'sheetArrow.png');
                         this.load.spritesheet('sprinkle', UIDir + 'sprinkle.png', { frameWidth: 300, frameHeight: 300 });
                         this.load.image('wf_plot', assetsDir + 'ui/game/Transitions/wf_plot.png');
                         if (gameScene.name == 'GameStart') this.load.image('tooltipButton', assetsDir + 'ui/game/tooltipButton.png');
@@ -2563,20 +2564,17 @@ class UIScene extends Phaser.Scene {
                                                 if (!button.click) {
                                                     let anotherButton, infoTooltip;
                                                     if (name == 'info1') {
+                                                        this.scene.pause();
+
                                                         infoTooltip = new RexSheet(this.detectorUI, {
-                                                            obj: button,
                                                             img: 'sheet',
                                                             text: 'info1_detail',
-                                                            originX: -0.1,
-                                                            originY: 0.3,
-                                                            fontSize: 20,
                                                             pic: 'wf_plot',
-
                                                             gameData: gameScene.gameData,
                                                             x: width * 0.5,
                                                             y: height * 0.5,
-                                                            width: width * 0.5,
-                                                            height: height * 0.5,
+                                                            width: 700,
+                                                            height: 600,
                                                         }, null)
                                                             .setDepth(Depth.tooltip)
                                                             .popUp(500);
@@ -2585,6 +2583,7 @@ class UIScene extends Phaser.Scene {
 
                                                         this.detectorUI.brushHandles.forEach(b => b.disableInteractive());
                                                         this.detectorUI.detectorButtons.forEach(b => b.disableInteractive());
+                                                        infoTooltip.once('destroy', () => { this.scene.resume(); button.click = false; });
                                                     }
                                                     else {
                                                         infoTooltip = [];

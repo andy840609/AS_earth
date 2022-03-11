@@ -340,19 +340,19 @@ function locatingGame() {
                     GameData.getLanguageJSON = getLanguageJSON;
 
                     //==test
-                    gameDisplay(true);
-                    let newGameData = await new Promise((resolve, reject) => {
-                        const config = Object.assign(getPhaserConfig(width, height), {
-                            scene: new GameStartScene(GameData, {
-                                getWaveImg: getWaveImg,
-                                resolve: resolve,
-                                getLanguageJSON: getLanguageJSON,
-                            }),
-                        });
-                        new Phaser.Game(config);
-                    });
+                    // gameDisplay(true);
+                    // let newGameData = await new Promise((resolve, reject) => {
+                    //     const config = Object.assign(getPhaserConfig(width, height), {
+                    //         scene: new GameStartScene(GameData, {
+                    //             getWaveImg: getWaveImg,
+                    //             resolve: resolve,
+                    //             getLanguageJSON: getLanguageJSON,
+                    //         }),
+                    //     });
+                    //     new Phaser.Game(config);
+                    // });
 
-                    gameDisplay(false);
+                    // gameDisplay(false);
                     //==test
 
                     initMap();

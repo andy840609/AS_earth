@@ -3494,23 +3494,26 @@ class RexForm extends RexPlugins.UI.Sizer {
 };
 
 //===sheet
-class RexSheet extends RexPlugins.UI.Sizer {
+class RexSheet extends RexPlugins.UI.FixWidthSizer {
     constructor(scene, config, resolve) {
-        const Depth = 30;
         const UItextJSON = config.gameData.localeJSON.UI;
-        const GetValue = Phaser.Utils.Objects.GetValue;
-        const COLOR_PRIMARY = 0x4e342e;
-        const COLOR_LIGHT = 0x7b5e57;
-        const COLOR_DARK = 0x260e04;
         const padding = {
             left: 3,
             right: 3,
             top: 3,
             bottom: 3,
         };
+
+        var keyWords = [];
+        switch (config.text) {
+            case 'info1_detail':
+                keyWords = [UItextJSON['Pwave'], UItextJSON['Swave']];
+                break;
+        };
+
         var createHeader = (scene, text, backgroundColor) => {
             return new RexPlugins.UI.Label(scene, {
-                background: scene.add.existing(new RexPlugins.UI.RoundRectangle(scene, 0, 0, 100, 40, 20, backgroundColor)),
+                background: scene.add.existing(new RexPlugins.UI.RoundRectangle(scene, 0, 0, 100, 40, 0, backgroundColor)),
                 text: scene.add.text(0, 0, text, {
                     fontSize: '24px',
                     padding: padding,
@@ -3522,127 +3525,144 @@ class RexSheet extends RexPlugins.UI.Sizer {
                     bottom: 10
                 },
                 align: 'right',
-            });
+            })
+                .setInteractive({ cursor: 'pointer' })
+                .on('pointerdown', () => this.destroy());
+
         };
 
-        const formConfig = {
-            orientation: 1,
+        const sheetConfig = {
             x: config.x,
             y: config.y,
+            width: config.width,
+            height: config.height,
+            align: 'center',
+            space: {
+                left: 3,
+                right: 3,
+                top: 3,
+                bottom: 3,
+                item: 8,
+                line: 8,
+            },
+            sizerEvents: true,
         };
-
-        super(scene, formConfig);
+        super(scene, sheetConfig);
         var background = scene.add.image(0, 0, config.img).setDepth(0);
-        var getText = (text, major = true) => {
-            let BBCodeText = scene.add.existing(
-                new RexPlugins.UI.BBCodeText(scene, 0, 0, text, {
-                    fontSize: major ? '24px' : '18px',
-                    color: '#ffffff',
-                    wrap: {
-                        mode: 2,// 0|'none'|1|'word'|2|'char'|'character'
-                        width: (major ? 1 : 0.6) * config.width
-                    },
-                    underline: {
-                        color: '#9D9D9D',  // css string, or number
-                        thickness: 2,
-                        offset: 4
-                    },
-                    lineSpacing: major ? 10 : 5,
-                    align: 'left',
-                    padding: padding,
-                }));
-
-            if (!major)
-                BBCodeText
-                    .setInteractive()
-                    .on('areadown', function (key) {
-                        if (IsURLKey(key)) window.open(GetURL(key), '_blank');
-                    });
-
-            return BBCodeText;
-        };
+        var header = createHeader(scene, UItextJSON['closeInfo'], '#842B00');
 
         this
             .addBackground(background)
-            .add(createHeader(scene, UItextJSON['characterSet'], COLOR_DARK),
-                {
+            .add(header,
+                { padding: { top: 20, bottom: 10, left: config.width * 0.7 } })
+            .addNewLine()
+            .on('postlayout', function (children, sizer) {
+                children.filter(child => child.type === "Text" || (child.type === "Image" && child.name === "pic"))
+                    .forEach(child => {
+                        let duration, delay;
 
-                    padding: { top: 10, bottom: 10, left: 10, right: 10 },
+                        switch (child.type) {
+                            case "Text":
+                                duration = 600,
+                                    delay = 0;
+                                break;
+                            case "Image":
+                                duration = 600,
+                                    delay = 300;
+                                break;
+                        };
+                        scene.tweens.add({
+                            targets: child,
+                            alpha: { start: 0, to: 1 },
+                            ease: 'Cubic.easeIn', // 'Cubic', 'Elastic', 'Bounce', 'Back'
+                            duration: duration,
+                            delay: delay,
+                        });
+                    });
 
-                })
-            .add(getText(UItextJSON[config.text]),
-                {
-                    padding: { top: 10, bottom: 10, left: 10, right: 10 },
-                })
+            });
+
+        //==內文
+        const content = UItextJSON[config.text];
+        const lines = content.split('\n');
+
+        var getText = (str) => {
+            let keyWordIdx = keyWords.findIndex(w => w === str);
+            let text = scene.add.text(0, 0, str, {
+                fontSize: 20,
+                color: keyWordIdx >= 0 ? ['#AE0000', '#003D79'][keyWordIdx] : '#000000',
+            }).setOrigin(0.5);
+
+            if (keyWordIdx !== -1)
+                text
+                    .setInteractive({ cursor: 'pointer' })
+                    .on('pointerover', () => {
+                        text.setScale(1.5);
+                        let hintGroup = [this.getElement('arrow' + keyWordIdx), this.getElement('label' + keyWordIdx)];
+
+                        scene.tweens.add({
+                            targets: hintGroup,
+                            alpha: { start: 0, to: 1 },
+                            ease: 'Cubic.easeIn', // 'Cubic', 'Elastic', 'Bounce', 'Back'
+                            duration: 500,
+                            onStart: (tween, targets) =>
+                                targets.forEach(t => t.setPosition(200, 200))
+                        });
+                        scene.tweens.add({
+                            targets: hintGroup,
+                            alpha: { start: 0, to: 1 },
+                            ease: 'Cubic.easeIn', // 'Cubic', 'Elastic', 'Bounce', 'Back'
+                            duration: 500,
+                            onStart: (tween, targets) =>
+                                targets.forEach(t => t.setPosition(200, 200))
+                        });
+                    })
+                    .on('pointerout', () => {
+                        text.setScale(1);
+                        this.getElement('arrow' + keyWordIdx)
+                            .setAlpha(0);
+
+                    });
+
+            return text;
+        };
+        var spitKey = (words) => {
+            //==不一定先出現keyWords裡前面的元素，所以不能用迴圈
+            let IdxOfArray = keyWords.map((key, i) => words[words.length - 1].indexOf(key));
+            let minIdxOf = Math.min(...IdxOfArray.filter(i => i !== -1));
+            let keyIdx = IdxOfArray.findIndex(io => io === minIdxOf);
+            if (keyIdx !== -1) {
+                let ws = words.pop().split(keyWords[keyIdx]);
+                words.push(ws[0], keyWords[keyIdx], ws[1]);
+                return spitKey(words);
+            };
+            return words;
+        };
+        for (var li = 0, lcnt = lines.length; li < lcnt; li++) {
+            let words = spitKey([lines[li]]);//['ABC']
+            for (var wi = 0, wcnt = words.length; wi < wcnt; wi++) {
+                this.add(getText(words[wi]));
+            };
+            this.addNewLine();
+        };
+
+        //==圖片
+        var img = scene.add.image(0, 0, config.pic).setName('pic');
+        img.setScale(config.width * 0.8 / img.width);
+
+        this
+            .add(img)
             .setOrigin(0.5)
             .layout();
 
+        keyWords.forEach((key, i) =>
+            this
+                .add(scene.add.image(0, 0, 'sheetArrow'), { key: 'arrow' + i })
+                .add(scene.add.text(0, 0, key), { key: 'label' + i })
+        );
 
-        return;
 
-        let obj = config.obj;
-        let x = obj.x + obj.displayWidth * (0.5 - obj.originX) + (config.dx ? config.dx : 0);
-        let y = obj.y + obj.displayHeight * (1 - obj.originY) + 18 + (config.dy ? config.dy : 0);
-        let hotKeyString = config.text ? false : gameData.controllCursor[obj.name];
-        let text = UItextJSON[config.text ? config.text : obj.name] + (hotKeyString ? `(${hotKeyString})` : '');
-        let tweensDuration = 200;
 
-        //===background img
-        let img = scene.add.image(x, y + 1, config.img)
-            .setFlipY(config.filpY ? config.filpY : false)
-            .setOrigin(config.originX ? config.originX : 0.5, config.originY ? config.originY : 0.5)
-        // .setDepth(Depth);
 
-        //===tooltip text
-        let tooltip = scene.add.text(0, 0, text, {
-            font: (config.fontSize ? config.fontSize : 30) + 'px sans-serif',
-            fill: '#000000',
-        })
-            .setOrigin(0.5)
-        // .setDepth(Depth);
-
-        tooltip.setPosition(x + tooltip.width * 0.75 * (0.5 - (config.originX ? config.originX : 0.5)) * 2, y);
-
-        //==picture for instruction
-        let pic = null;
-        if (config.pic)
-            pic = scene.add.image(tooltip.x, tooltip.y + tooltip.height + 10, config.pic)
-                .setScale(0.6)
-                .setOrigin(0.5, 0)
-                .setAlpha(0)
-        // .setDepth(Depth);
-
-        img.setScale(0, (tooltip.height + (pic ? pic.displayHeight : 0)) * (config.scaleY ? config.scaleY : 1.2) / img.height);
-
-        scene.tweens.add({
-            targets: tooltip,
-            repeat: 0,
-            ease: 'Back.easeInOut',
-            duration: tweensDuration * 2,
-            alpha: { from: 0, to: 1 },
-        });
-
-        scene.tweens.add({
-            targets: img,
-            repeat: 0,
-            ease: 'Circ.easeInOut',
-            duration: tweensDuration,
-            scaleX: { from: tooltip.width * 0.1 / img.width, to: tooltip.width * 1.5 / img.width },
-
-        });
-
-        if (pic)
-            scene.tweens.add({
-                targets: pic,
-                repeat: 0,
-                ease: 'Circ.easeInOut',
-                duration: tweensDuration,
-                scale: { from: 0, to: 0.4 },
-                alpha: { from: 0, to: 1 },
-            });
-
-        let sheetGroup = [tooltip, img, pic];
-
-        return sheetGroup;
     };
 };

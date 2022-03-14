@@ -3599,6 +3599,11 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
                     .on('pointerover', () => {
                         text.setScale(1.5);
                         let hintGroup = [this.getElement('arrow' + keyWordIdx), this.getElement('label' + keyWordIdx)];
+                        let pic = this.getElement('pic');
+                        let arrowPos = keyWordIdx === 0 ?
+                            [pic.x - pic.displayWidth * 0.25, pic.y + pic.displayHeight * 0.18] :
+                            [pic.x - pic.displayWidth * 0.08, pic.y - pic.displayHeight * 0.4];
+                        // console.debug(pic);
 
                         scene.tweens.add({
                             targets: hintGroup,
@@ -3606,16 +3611,16 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
                             ease: 'Cubic.easeIn', // 'Cubic', 'Elastic', 'Bounce', 'Back'
                             duration: 500,
                             onStart: (tween, targets) =>
-                                targets.forEach(t => t.setPosition(200, 200))
+                                targets.forEach(t => t.setPosition(...arrowPos))
                         });
-                        scene.tweens.add({
-                            targets: hintGroup,
-                            alpha: { start: 0, to: 1 },
-                            ease: 'Cubic.easeIn', // 'Cubic', 'Elastic', 'Bounce', 'Back'
-                            duration: 500,
-                            onStart: (tween, targets) =>
-                                targets.forEach(t => t.setPosition(200, 200))
-                        });
+                        // scene.tweens.add({
+                        //     targets: hintGroup,
+                        //     alpha: { start: 0, to: 1 },
+                        //     ease: 'Cubic.easeIn', // 'Cubic', 'Elastic', 'Bounce', 'Back'
+                        //     duration: 500,
+                        //     onStart: (tween, targets) =>
+                        //         targets.forEach(t => t.setPosition(...pos))
+                        // });
                     })
                     .on('pointerout', () => {
                         text.setScale(1);
@@ -3651,13 +3656,13 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
         img.setScale(config.width * 0.8 / img.width);
 
         this
-            .add(img)
+            .add(img, { key: 'pic' })
             .setOrigin(0.5)
             .layout();
 
         keyWords.forEach((key, i) =>
             this
-                .add(scene.add.image(0, 0, 'sheetArrow'), { key: 'arrow' + i })
+                .add(scene.add.image(0, 0, 'sheetArrow').setScale(0.7), { key: 'arrow' + i })
                 .add(scene.add.text(0, 0, key), { key: 'label' + i })
         );
 

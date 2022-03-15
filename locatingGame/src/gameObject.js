@@ -3601,29 +3601,37 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
                         let hintGroup = [this.getElement('arrow' + keyWordIdx), this.getElement('label' + keyWordIdx)];
                         let pic = this.getElement('pic');
                         let arrowPos = keyWordIdx === 0 ?
-                            [pic.x - pic.displayWidth * 0.25, pic.y + pic.displayHeight * 0.18] :
-                            [pic.x - pic.displayWidth * 0.08, pic.y - pic.displayHeight * 0.4];
-                        // console.debug(pic);
+                            [pic.x - pic.displayWidth * 0.27, pic.y + pic.displayHeight * 0.18] :
+                            [pic.x - pic.displayWidth * 0.09, pic.y - pic.displayHeight * 0.4];
+                        console.debug(text);
 
-                        scene.tweens.add({
+
+                        let tweens1 = scene.tweens.add({
                             targets: hintGroup,
                             alpha: { start: 0, to: 1 },
                             ease: 'Cubic.easeIn', // 'Cubic', 'Elastic', 'Bounce', 'Back'
                             duration: 500,
                             onStart: (tween, targets) =>
-                                targets.forEach(t => t.setPosition(...arrowPos))
+                                hintGroup[1].setPosition(...arrowPos),
                         });
-                        // scene.tweens.add({
-                        //     targets: hintGroup,
-                        //     alpha: { start: 0, to: 1 },
-                        //     ease: 'Cubic.easeIn', // 'Cubic', 'Elastic', 'Bounce', 'Back'
-                        //     duration: 500,
-                        //     onStart: (tween, targets) =>
-                        //         targets.forEach(t => t.setPosition(...pos))
-                        // });
+
+                        let tweens2 = scene.tweens.add({
+                            targets: hintGroup[0],
+                            x: { start: arrowPos[0], to: arrowPos[0] + 10 },
+                            y: { start: arrowPos[1], to: arrowPos[1] + 10 },
+                            ease: 'Cubic.easeIn', // 'Cubic', 'Elastic', 'Bounce', 'Back'
+                            duration: 300,
+                            repeat: -1,
+                            yoyo: true,
+                        });
+
+                        text.tweens = [tweens1, tweens2];
                     })
                     .on('pointerout', () => {
                         text.setScale(1);
+
+                        text.tweens.forEach(t => t.remove());//remove
+
                         this.getElement('arrow' + keyWordIdx)
                             .setAlpha(0);
 

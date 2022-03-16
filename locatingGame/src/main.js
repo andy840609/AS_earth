@@ -40,7 +40,7 @@ function locatingGame() {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 300 },
-                    debug: true,
+                    // debug: true,
                 },
             },
             dom: {//==for rexUI:rexTextEdit
@@ -54,12 +54,7 @@ function locatingGame() {
         selector = value;
         return game;
     };
-    game.dataDir = (value) => {
-        const event = '2010.166';//之後能選
-        const eventCatlog = (value ? value : datafileDir + 'event/') + event + '/';
-        const channel = ['BHE', 'BHN', 'BHZ'];//不一定BH的話還要有檔案得到
-        const fileExtension = '.xy';
-
+    game.dataDir = async (value) => {
         //==異步讀檔,回傳一個promise而非結果
         var readTextFile = (filePath, fileDataKey) => {
             // console.debug(fileDataKey);
@@ -109,7 +104,6 @@ function locatingGame() {
             });
 
         };
-
         var ajaxReadFile = (dataObj) => {
             return $.ajax({
                 url: dataObj.url ? dataObj.url : '',
@@ -122,6 +116,12 @@ function locatingGame() {
             });
         };
 
+        const eventArr = ajaxReadFile({ url: datafileDir + 'event/eventList.txt', async: false }).responseText.split('\n');
+        // const event = eventArr[2];//之後能選
+        const event = eventArr[getRandom(eventArr.length)];
+        const eventCatlog = (value ? value : datafileDir + 'event/') + event + '/';
+        const channel = ['BHE', 'BHN', 'BHZ'];//不一定BH的話還要有檔案得到
+        const fileExtension = '.xy';
 
         //===A.讀測站資料
         let stationData = new Promise((resolve, reject) =>
@@ -179,8 +179,15 @@ function locatingGame() {
         //===C.讀範例波形資料(教學用)
         let tutorialData = new Promise((resolve, reject) => {
             const dir = datafileDir + 'event/tutorial/';
-            const files = ['2010.166.MASB.BHE.xy', '2010.166.MASB.BHN.xy', '2010.166.MASB.BHZ.xy'];
+            const files = ['2010.166.TDCB.BHE.xy', '2010.166.TDCB.BHN.xy', '2010.166.TDCB.BHZ.xy'];
             const fileDataKey = ['x', 'y'];
+            const tutorialData = {//09850, 16630
+                Pwave: 9.85,//P到時
+                Swave: 16.63,//S到時
+                allowedErro: 6,//==P波S波的容許誤差(pixel)
+                isTutorial: true,//==用來判斷時間軸位置
+            };
+
 
             let data;
             data =
@@ -191,7 +198,7 @@ function locatingGame() {
                     })
                 );
 
-            resolve(data);
+            resolve(Object.assign(tutorialData, { waveData: data, }));
 
         });
 
@@ -200,6 +207,7 @@ function locatingGame() {
             let tmp = sucess[0];
             tmp.epicenter = sucess[1];
             tmp.tutorialData = sucess[2];
+            tmp.event = event;
             return tmp;
         });
 
@@ -340,25 +348,26 @@ function locatingGame() {
                     GameData.getLanguageJSON = getLanguageJSON;
 
                     //==test
-                    // gameDisplay(true);
-                    // let newGameData = await new Promise((resolve, reject) => {
-                    //     const config = Object.assign(getPhaserConfig(width, height), {
-                    //         scene: new GameStartScene(GameData, {
-                    //             getWaveImg: getWaveImg,
-                    //             resolve: resolve,
-                    //             getLanguageJSON: getLanguageJSON,
-                    //         }),
-                    //     });
-                    //     new Phaser.Game(config);
-                    // });
+                    gameDisplay(true);
+                    let newGameData = await new Promise((resolve, reject) => {
+                        const config = Object.assign(getPhaserConfig(width, height), {
+                            scene: new GameStartScene(GameData, {
+                                getWaveImg: getWaveImg,
+                                tutorialData: data.tutorialData,
+                                resolve: resolve,
+                                getLanguageJSON: getLanguageJSON,
+                            }),
+                        });
+                        new Phaser.Game(config);
+                    });
 
-                    // gameDisplay(false);
+                    gameDisplay(false);
                     //==test
 
                     initMap();
 
                     //==test
-                    gameStart('defend');
+                    // gameStart('defend');
                     // gameStart('dig');
                     //==test
                 };
@@ -720,17 +729,17 @@ function locatingGame() {
                     // L.layerGroup(circleArr, { key: 'circleGroup' }).addTo(mapObj);
 
                     let size = 40;
-                    //＝＝test 震央
-                    // L.marker(data.epicenter['coordinate'], {
-                    //     icon: L.icon({
-                    //         iconUrl: assetsDir + 'icon/star.png',
-                    //         iconSize: [size, size],
-                    //         iconAnchor: [size / 2, size / 2],
-                    //     }),
-                    //     pane: 'markerPane',
-                    //     data: data.epicenter,
-                    // }).addTo(mapObj);
-                    //＝＝test 震央
+                    //==test 震央
+                    L.marker(data.epicenter['coordinate'], {
+                        icon: L.icon({
+                            iconUrl: assetsDir + 'icon/star.png',
+                            iconSize: [size, size],
+                            iconAnchor: [size / 2, size / 2],
+                        }),
+                        pane: 'markerPane',
+                        data: data.epicenter,
+                    }).addTo(mapObj);
+                    //==test 震央
 
                     assumedEpicenter = L.marker(data.epicenter['coordinate'], {
                         icon: L.icon({
@@ -1854,6 +1863,7 @@ function locatingGame() {
                         const config = Object.assign(getPhaserConfig(width, height), {
                             scene: new DefendScene(stationData, GameData, {
                                 getWaveImg: getWaveImg,
+                                tutorialData: data.tutorialData,
                                 resolve: resolve,
                             }),
                         });
@@ -2041,7 +2051,7 @@ function locatingGame() {
             // const height = 600;
             const width = window.innerWidth,
                 height = window.innerHeight;
-            const margin = { top: 30, right: 30, bottom: height * 0.075, left: 45 };
+            const margin = { top: 30, right: 30, bottom: height * 0.075, left: 55 };
             const svg = d3.create("svg")
                 .attr("viewBox", [0, 0, width, height]);
             const xAxis = svg.append("g").attr("class", "xAxis");
@@ -2115,7 +2125,7 @@ function locatingGame() {
                 var updateAxis = () => {
 
                     var makeXAxis = g => g
-                        .attr("transform", `translate(0,${height - margin.bottom})`)
+                        .attr("transform", `translate(0,${height - margin.bottom * (stationData.isTutorial ? 2.5 : 1)})`)
                         .style('font', 'small-caps bold 20px/1 sans-serif')
                         .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0))
                         .call(g => g.append('text')
@@ -2178,15 +2188,16 @@ function locatingGame() {
                                     .attr("stroke", color)
                                     .attr("d", line(data));
 
+                                let channel = d.channel.slice(-1);
                                 g
                                     .append("text")
-                                    .attr("transform", `translate(${margin.left - 2},${y(data[0].y)})`)
+                                    .attr("transform", `translate(${margin.left},${y(data[0].y)})`)
                                     .attr("fill", color)
                                     .attr("text-anchor", "end")
                                     // .attr("alignment-baseline", "before-edge")
                                     .attr("font-weight", "bold")
                                     .attr("font-size", "20")
-                                    .text(d.channel.slice(-1));
+                                    .text(channel + GameData.localeJSON.UI['channel' + channel]);
 
                             })
                         );

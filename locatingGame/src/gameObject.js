@@ -109,7 +109,7 @@ const GameObjectStats = {
             hardness: 1,
         },
         terrain2: {//火成岩
-            hardness: 2,
+            hardness: 1,
         },
         terrain3: {//花崗岩
             hardness: 2,
@@ -1813,17 +1813,23 @@ class Chunk {
             allowGravity: false,
             immovable: true
         });
+        this.liquid = scene.physics.add.group({
+            allowGravity: false,
+            immovable: true
+        });
 
         //==碰撞
         scene.physics.add.collider(this.gameScene.player, this.tiles, this.gameScene.player.playerDig, null, this);
         scene.physics.add.collider(this.gameScene.sidekick, this.tiles);
+        scene.physics.add.overlap(this.gameScene.player, this.liquid, this.gameScene.player.playerSwim, null, this);
         this.isLoaded = false;
         // console.debug(this.tiles)
 
         //==range to set tile
-        //==沉積岩:8km 火成岩:10 花崗岩:20
+        //==沉積岩:0~8km 火成岩:8~100 花崗岩:10~100 軟流圈:100~
         let getYRange = (km) => scene.groundY + parseInt(km / scene.depthCounter.depthScale);
-        this.yRange = [getYRange(8), getYRange(10), getYRange(20)];
+        // this.yRange = [getYRange(8), getYRange(10), getYRange(20), getYRange(100)];
+        this.yRange = [getYRange(8), getYRange(10), getYRange(100)];
         this.pRange = [-0.2, -0.1];
         // console.debug(scene.groundY);
     };
@@ -1831,6 +1837,7 @@ class Chunk {
     unload() {
         if (this.isLoaded) {
             this.tiles.clear(true, true);
+            this.liquid.clear(true, true);
             this.isLoaded = false;
         };
     };
@@ -1848,7 +1855,7 @@ class Chunk {
                     if (tileX < 0 || tileX >= this.gameScene.groundW) continue;
 
                     //==地磚
-                    let key, animationKey;
+                    let key, animationKey, isLiquid = false;
 
                     //==魔王城
                     let depthCounter = this.gameScene.depthCounter;
@@ -1871,9 +1878,9 @@ class Chunk {
 
                         //門
                         if (tileX == bossX && tileY == bossY) {
-                            // console.debug(this);
                             let bossCastle = this.gameScene.physics.add.sprite(bossX, bossY + tileSize * 1.1, 0, 0, 'bossDoor');
                             let doorW = Math.ceil(bossCastle.width / tileSize) * tileSize;
+                            // console.debug(bossCastle);
 
                             bossCastle
                                 .setScale(doorW / bossCastle.width)
@@ -1953,7 +1960,7 @@ class Chunk {
                             // else
                             key = "terrain2";
                         }
-                        else if (tileY <= this.yRange[2]) {
+                        else if (tileY <= this.yRange[2]) {//有火成也有變質
                             // if (perlinValue < this.pRange[0])
                             //     key = "sprSand"
                             // else if (perlinValue < this.pRange[1]) {
@@ -1961,10 +1968,13 @@ class Chunk {
                             //     animationKey = "sprWater";
                             // }
                             // else
-                            key = "terrain3";
+                            // key = "terrain3";
+                            key = perlinValue < this.pRange[1] ? "terrain2" : "terrain3";
                         }
                         else {
-                            key = "gateStone";
+                            key = "lava";
+                            animationKey = "lava";
+                            isLiquid = true;
                         };
 
                     var tile = new Tile(this.gameScene, tileX, tileY, key);
@@ -1973,7 +1983,7 @@ class Chunk {
                         tile.play(animationKey);
                     };
 
-                    this.tiles.add(tile);
+                    isLiquid ? this.liquid.add(tile) : this.tiles.add(tile);
                 };
             };
 
@@ -3496,7 +3506,12 @@ class RexForm extends RexPlugins.UI.Sizer {
 //===sheet
 class RexSheet extends RexPlugins.UI.FixWidthSizer {
     constructor(scene, config, resolve) {
+
         const UItextJSON = config.gameData.localeJSON.UI;
+        const COLOR_PRIMARY = 0x005AB5;
+        const COLOR_SECONDARY = 0x750000;
+        const COLOR_DARK = 0x000000;
+
         const padding = {
             left: 3,
             right: 3,
@@ -3524,7 +3539,7 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
                     top: 10,
                     bottom: 10
                 },
-                align: 'right',
+                // align: 'right',
             })
                 .setInteractive({ cursor: 'pointer' })
                 .on('pointerdown', () => this.destroy());
@@ -3549,7 +3564,7 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
         };
         super(scene, sheetConfig);
         var background = scene.add.image(0, 0, config.img).setDepth(0);
-        var header = createHeader(scene, UItextJSON['closeInfo'], '#842B00');
+        var header = createHeader(scene, UItextJSON['closeInfo'], COLOR_DARK);
 
         this
             .addBackground(background)
@@ -3590,7 +3605,7 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
             let keyWordIdx = keyWords.findIndex(w => w === str);
             let text = scene.add.text(0, 0, str, {
                 fontSize: 20,
-                color: keyWordIdx >= 0 ? ['#AE0000', '#003D79'][keyWordIdx] : '#000000',
+                color: keyWordIdx >= 0 ? ['#005AB5', '#750000'][keyWordIdx] : '#000000',
             }).setOrigin(0.5);
 
             if (keyWordIdx !== -1)
@@ -3598,21 +3613,28 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
                     .setInteractive({ cursor: 'pointer' })
                     .on('pointerover', () => {
                         text.setScale(1.5);
-                        let hintGroup = [this.getElement('arrow' + keyWordIdx), this.getElement('label' + keyWordIdx)];
+                        let hintGroup = [
+                            this.getElement('arrow' + keyWordIdx),
+                            this.getElement('label' + keyWordIdx),
+                            this.getElement('line' + keyWordIdx)];
+
                         let pic = this.getElement('pic');
                         let arrowPos = keyWordIdx === 0 ?
                             [pic.x - pic.displayWidth * 0.27, pic.y + pic.displayHeight * 0.18] :
                             [pic.x - pic.displayWidth * 0.09, pic.y - pic.displayHeight * 0.4];
-                        console.debug(text);
-
+                        // console.debug(hintGroup[2].getCenter());
 
                         let tweens1 = scene.tweens.add({
                             targets: hintGroup,
                             alpha: { start: 0, to: 1 },
                             ease: 'Cubic.easeIn', // 'Cubic', 'Elastic', 'Bounce', 'Back'
                             duration: 500,
-                            onStart: (tween, targets) =>
-                                hintGroup[1].setPosition(...arrowPos),
+                            onStart: (tween, targets) => {
+                                hintGroup[1].setPosition(arrowPos[0] - 60, arrowPos[1] - 50);
+                                hintGroup[2]
+                                    .setPosition(arrowPos[0] + 46, pic.y - pic.displayHeight * 0.5 - 10)
+                                    .setTo(0, 0, 0, pic.displayHeight + 20);
+                            },
                         });
 
                         let tweens2 = scene.tweens.add({
@@ -3629,11 +3651,13 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
                     })
                     .on('pointerout', () => {
                         text.setScale(1);
-
                         text.tweens.forEach(t => t.remove());//remove
 
-                        this.getElement('arrow' + keyWordIdx)
-                            .setAlpha(0);
+                        let hintGroup = [
+                            this.getElement('arrow' + keyWordIdx),
+                            this.getElement('label' + keyWordIdx),
+                            this.getElement('line' + keyWordIdx)];
+                        hintGroup.forEach(ele => ele.setAlpha(0));
 
                     });
 
@@ -3665,17 +3689,39 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
 
         this
             .add(img, { key: 'pic' })
-            .setOrigin(0.5)
-            .layout();
+            .addNewLine();
+
+        //==箭頭,標籤,線
+        var getLabel = (text, i = 0) => {
+            return new RexPlugins.UI.Label(scene, {
+                background: scene.add.existing(
+                    new RexPlugins.UI.RoundRectangle(scene, 0, 0, 100, 40, 5, i % 2 === 0 ? COLOR_PRIMARY : COLOR_SECONDARY)
+                        .setStrokeStyle(5, COLOR_DARK, 1)),
+                text: scene.add.text(0, 0, text, {
+                    fontSize: '24px',
+                    padding: padding,
+                }),
+            }).setAlpha(0);
+        };
+        var getArrow = () => {
+            return scene.add.image(0, 0, 'sheetArrow')
+                .setScale(0.7)
+                .setAlpha(0);
+        };
+        var getLine = () => {
+            return scene.add.line(0, 0, 0, 0, 0, 0, 0xEA7500)
+            // .setAlpha(0);
+        };
 
         keyWords.forEach((key, i) =>
             this
-                .add(scene.add.image(0, 0, 'sheetArrow').setScale(0.7), { key: 'arrow' + i })
-                .add(scene.add.text(0, 0, key), { key: 'label' + i })
+                .add(getArrow(), { key: 'arrow' + i })
+                .add(getLabel(key, i), { key: 'label' + i })
+                .add(getLine(), { key: 'line' + i })
         );
 
 
-
+        this.layout();
 
     };
 };

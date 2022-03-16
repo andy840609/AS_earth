@@ -42,17 +42,7 @@ class UIScene extends Phaser.Scene {
                         .setDepth(Depth.tooltip);
 
                     tooltip.setPosition(x + tooltip.width * 0.75 * (0.5 - (data.originX ? data.originX : 0.5)) * 2, y);
-
-                    //==picture for instruction
-                    let pic = null;
-                    if (data.pic)
-                        pic = this.add.image(tooltip.x, tooltip.y + tooltip.height + 10, data.pic)
-                            .setScale(0.6)
-                            .setOrigin(0.5, 0)
-                            .setAlpha(0)
-                            .setDepth(Depth.tooltip);
-
-                    img.setScale(0, (tooltip.height + (pic ? pic.displayHeight : 0)) * (data.scaleY ? data.scaleY : 1.2) / img.height);
+                    img.setScale(0, tooltip.height * (data.scaleY ? data.scaleY : 1.2) / img.height);
 
                     this.tweens.add({
                         targets: tooltip,
@@ -70,19 +60,8 @@ class UIScene extends Phaser.Scene {
                         scaleX: { from: tooltip.width * 0.1 / img.width, to: tooltip.width * 1.5 / img.width },
 
                     });
-
-                    if (pic)
-                        this.tweens.add({
-                            targets: pic,
-                            repeat: 0,
-                            ease: 'Circ.easeInOut',
-                            duration: tweensDuration,
-                            scale: { from: 0, to: 0.4 },
-                            alpha: { from: 0, to: 1 },
-                        });
-
                     this.tooltip.tooltipGroup = [tooltip, img];
-                    if (pic) this.tooltip.tooltipGroup.push(pic);
+
 
                     return this.tooltip.tooltipGroup;
 
@@ -2368,11 +2347,8 @@ class UIScene extends Phaser.Scene {
                         this.load.image('detectorScreen', dir + 'detectorScreen.png');
                     };
                     var wave = () => {
-                        let tutorialData = {
-                            Pwave: 28.05,
-                            Swave: 52.74,
-                            allowedErro: 6,   //==P波S波的容許誤差(pixel)
-                        };
+                        let tutorialData = gameScene.waveForm.tutorialData;
+                        // console.debug(tutorialData);
 
                         this.waveForm = {
                             tutorialData: tutorialData,
@@ -2558,8 +2534,6 @@ class UIScene extends Phaser.Scene {
                                             case 'info2':
                                                 let tooltipHandler = this.detectorUI.tooltip.tooltipHandler;
                                                 this.buttonGroups.infoObjs.forEach(obj => obj.destroy());
-                                                this.detectorUI.brushHandles.forEach(b => b.setInteractive());
-                                                this.detectorUI.detectorButtons.forEach(b => b.setInteractive());
 
                                                 if (!button.click) {
                                                     let anotherButton, infoTooltip;
@@ -2583,7 +2557,11 @@ class UIScene extends Phaser.Scene {
 
                                                         this.detectorUI.brushHandles.forEach(b => b.disableInteractive());
                                                         this.detectorUI.detectorButtons.forEach(b => b.disableInteractive());
-                                                        infoTooltip.once('destroy', () => { this.scene.resume(); button.click = false; });
+                                                        infoTooltip.once('destroy', () => {
+                                                            this.scene.resume(); button.click = false;
+                                                            this.detectorUI.brushHandles.forEach(b => b.setInteractive());
+                                                            this.detectorUI.detectorButtons.forEach(b => b.setInteractive());
+                                                        });
                                                     }
                                                     else {
                                                         infoTooltip = [];
@@ -2814,8 +2792,8 @@ class UIScene extends Phaser.Scene {
                                             info.showingTween = this.tweens.add({
                                                 targets: info.getChildren(),
                                                 alpha: { start: 0, to: 1 },
-                                                duration: 1500,
-                                                delay: i * 1500,
+                                                duration: 800,
+                                                delay: i * 800,
                                                 repeat: 0,
                                                 ease: 'Linear.easeIn',
                                                 onStart: () => info.setVisible(true),
@@ -3518,7 +3496,7 @@ class UIScene extends Phaser.Scene {
                             this.physics.add.collider(this.orbGroup, this.platforms);
                         };
                         var initWave = async () => {
-                            let wave = this.add.image(tutorialX, tutorialY + tutorialH * 0.46)
+                            let wave = this.add.image(tutorialX, tutorialY + tutorialH * 0.6)
                                 .setDepth(8)
                                 .setAlpha(.7)
                                 .setVisible(false);
@@ -3705,7 +3683,10 @@ class GameStartScene extends Phaser.Scene {
                 background: 'castle_2',
                 characters: Object.keys(GameObjectStats.player),
             },
-            waveForm: { getWaveImg: other.getWaveImg },//==tutorial
+            waveForm: {
+                getWaveImg: other.getWaveImg,
+                tutorialData: other.tutorialData,
+            },//==tutorial
             resolve: other.resolve,
         });
 
@@ -4120,7 +4101,8 @@ class LoadingScene extends Phaser.Scene {
                         // this.load.image('sprSand', terrainDir + 'sprSand.png');
                         // this.load.spritesheet('sprWater', terrainDir + 'sprWater.png',
                         //     { frameWidth: 60, frameHeight: 60 });
-
+                        this.load.spritesheet('lava', terrainDir + 'lava.png',
+                            { frameWidth: 125, frameHeight: 125 });
                         this.load.image('gateStone', terrainDir + 'gateStone.png');
                         this.load.image('groundTile', terrainDir + '0.png');
                         this.load.image('terrain1', terrainDir + '1.png');
@@ -4566,6 +4548,7 @@ class DefendScene extends Phaser.Scene {
                 getWaveImg: other.getWaveImg,
                 domain: stationData.stationStats.orbStats ?
                     stationData.stationStats.orbStats.xAxisDomain : null,
+                tutorialData: other.tutorialData,
             },
             gameOver: {
                 gameClear: false,//寶石調整過位置
@@ -5185,7 +5168,7 @@ class DefendScene extends Phaser.Scene {
         // this.time.paused = true;
 
         //==test
-        this.scene.add(null, new UIScene('tutorial', this), true);
+        // this.scene.add(null, new UIScene('tutorial', this), true);
     };
     update() {
         // this.gameTimer.paused = false;//==時間繼續
@@ -5476,9 +5459,9 @@ class DigScene extends Phaser.Scene {
             tileSize: 125,//==地質塊寬高
             depthCounter: {
                 epicenter: placeData.depth,
-                // depthScale: 0.03,//0.003
+                // depthScale: 0.01,//0.003
                 depthScale: 0.008,//0.003
-                // depthScale: 10,//0.003
+                // depthScale: 0.1,//0.003
                 coordinate: placeData.coordinate,
                 bossRoom: false,
                 depthCount: 0,
@@ -5616,6 +5599,13 @@ class DigScene extends Phaser.Scene {
                     // });
 
                     this.anims.create({
+                        key: "lava",
+                        frames: this.anims.generateFrameNumbers("lava"),
+                        frameRate: 5,
+                        repeat: -1
+                    });
+
+                    this.anims.create({
                         key: "tileCrack",
                         frames: this.anims.generateFrameNumbers("tileCrack"),
                         frameRate: 15,
@@ -5715,6 +5705,16 @@ class DigScene extends Phaser.Scene {
                     //     if (tile.body.touching.down) player.diggingHadler(player, tile);
                     // };
 
+                },
+                playerSwim: (player, tile) => {
+                    let liquid = tile.texture.key;
+                    // console.debug(liquid);
+                    switch (liquid) {
+                        case 'lava':
+                            break;
+                        case 'water':
+                            break;
+                    };
                 },
                 playerOpenGate: async () => {
                     this.gameTimer.paused = true;//==暫停
@@ -6009,8 +6009,8 @@ class DigScene extends Phaser.Scene {
                     if (existingChunk == null) {
                         var newChunk = new Chunk(this, x, y);
                         this.chunks.push(newChunk);
-                    }
-                }
+                    };
+                };
             };
 
             for (var i = 0; i < this.chunks.length; i++) {
@@ -6032,6 +6032,7 @@ class DigScene extends Phaser.Scene {
 
         };
         var updateGate = () => {
+            if (!this.bossCastle) return;
             var touching = !this.bossCastle.body.touching.none;// || this.bossCastle.body.embedded
             var wasTouching = !this.bossCastle.body.wasTouching.none;
 

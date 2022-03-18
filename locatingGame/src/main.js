@@ -40,7 +40,7 @@ function locatingGame() {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 300 },
-                    // debug: true,
+                    debug: true,
                 },
             },
             dom: {//==for rexUI:rexTextEdit
@@ -280,10 +280,10 @@ function locatingGame() {
             };
 
             function initGameData() {
-                let playerRole = 'maleAdventurer';//==之後能選其他[Biker,Cyborg,Punk]
+                let playerRole = 'femalePerson';//==之後能選其他[femalePerson,maleAdventurer]
                 let sidekick = 'Dude';//=='Owlet,Dude,Pink'
 
-                let playerName = '',
+                let playerName = 'AA',
                     avatarIndex = 0,//==自選頭像
                     avatarBgColor = 0x5B5B5B;//
 
@@ -324,7 +324,7 @@ function locatingGame() {
                     },
                     sidekick: {
                         type: sidekick,
-                        lineStage: [1, 0],//==第2-0句
+                        lineStage: [0, 0],//==第2-0句
                         doneTalking: false,
                         stopHotkey: false,//==對話完空白鍵不再出現對話（只能滑鼠點）
                     },
@@ -367,7 +367,7 @@ function locatingGame() {
                     initMap();
 
                     //==test
-                    // gameStart('defend');
+                    gameStart('defend');
                     // gameStart('dig');
                     //==test
                 };
@@ -580,7 +580,7 @@ function locatingGame() {
                             [latDomain[1] + movableRange, lngDomain[1] + movableRange]
                         ],
                         zoomControl: false,
-                        attributionControl: false,
+                        // attributionControl: false,
                     });
 
                     const esriMap = {
@@ -591,7 +591,7 @@ function locatingGame() {
                     // esri map layer
                     L.tileLayer(esriMap.url, {
                         maxZoom: 15,
-                        attribution: esriMap.attr,
+                        // attribution: esriMap.attr,
                     }).addTo(mapObj);
 
                 };
@@ -1131,7 +1131,7 @@ function locatingGame() {
                                 })
                                 .on('click', function (e) {
                                     //==速度參數要完成兩站才能調整
-                                    if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
+                                    // if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
 
                                     let button = $(this);
                                     let ckick = button.hasClass('clicked');
@@ -1288,7 +1288,7 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
-                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             let lat = e.latlng.lat,
                                 lng = e.latlng.lng
 

@@ -59,6 +59,22 @@ const GameObjectStats = {
             MP: 60,
             maxMP: 60,
         },
+        femalePerson: {
+            class: 1,
+            movementSpeed: 460,
+            jumpingPower: 320,
+            attackSpeed: 400,//一發持續300ms
+            attackPower: 120,
+            attackRange: 55,
+            bulletSize: [120, 130],
+            knockBackSpeed: 250,//==擊退時間固定200ms,這個速度越大擊退越遠
+            manaCost: 10,
+            manaRegen: 0.1,//per 10 ms(game update per 10ms)0.1
+            HP: 150,
+            maxHP: 150,
+            MP: 60,
+            maxMP: 60,
+        },
     },
     sidekick: {
         Dude: {
@@ -124,6 +140,75 @@ const GameObjectStats = {
             hardness: 999,
         },
 
+    },
+};
+//==動畫相關(素材寬高,播放速度)
+const GameObjectFrame = {
+    maleAdventurer: {
+        frameObj: {
+            frameWidth: 96,
+            frameHeight: 128
+        },
+        frameRate: {
+            idle: 5,
+            run: 8,
+            runAttack: 8,
+            attack: 10,
+            specialAttack: 15,
+            hurt: 8,
+            death: 6,
+            jump: 4,
+            doubleJump: 8,
+            jumpAttack: 8,
+            timesUp: 4,
+            cheer: 4,
+            jumpDust: 15,
+            attackEffect: 10,
+            jumpAttackEffect: 15,
+            runAttackEffect: 8,
+            ultAttackEffect: 7,
+            pickSwing: 15,
+        },
+        effect: {
+            attack: [120, 130],
+            jump: [150, 100],
+            run: [150, 100],
+            ult: [300, 150],
+            pick: [120, 130],
+        },
+    },
+    femalePerson: {
+        frameObj: {
+            frameWidth: 96,
+            frameHeight: 128
+        },
+        frameRate: {
+            idle: 3,
+            run: 10,
+            runAttack: 8,
+            attack: 10,
+            specialAttack: 15,
+            hurt: 8,
+            death: 6,
+            jump: 4,
+            doubleJump: 3,
+            jumpAttack: 8,
+            timesUp: 4,
+            cheer: 4,
+            jumpDust: 15,
+            attackEffect: 10,
+            jumpAttackEffect: 15,
+            runAttackEffect: 8,
+            ultAttackEffect: 7,
+            pickSwing: 15,
+        },
+        effect: {
+            attack: [120, 130],
+            jump: [150, 100],
+            run: [150, 100],
+            ult: [300, 150],
+            pick: [120, 130],
+        },
     },
 };
 
@@ -954,87 +1039,89 @@ const Player = new Phaser.Class({
 
             //==anims
             var animsCreate = () => {
+                let frameRate = GameObjectFrame[key].frameRate;
+
                 scene.anims.create({
                     key: 'player_idle',
                     frames: scene.anims.generateFrameNumbers('player_idle'),
-                    frameRate: 5,
+                    frameRate: frameRate.idle,
                     repeat: -1,
                 });
 
                 scene.anims.create({
                     key: 'player_run',
                     frames: scene.anims.generateFrameNumbers('player_run'),
-                    frameRate: 8,
+                    frameRate: frameRate.run,
                     repeat: -1,
                 });
 
                 scene.anims.create({
                     key: 'player_runAttack',
                     frames: scene.anims.generateFrameNumbers('player_runAttack'),
-                    frameRate: 8,
+                    frameRate: frameRate.runAttack,
                     repeat: 0,
                 });
 
                 scene.anims.create({
                     key: 'player_attack',
                     frames: scene.anims.generateFrameNumbers('player_attack'),
-                    frameRate: 10,
+                    frameRate: frameRate.attack,
                     repeat: 0,
                 });
 
                 scene.anims.create({
                     key: 'player_specialAttack',
                     frames: scene.anims.generateFrameNumbers('player_specialAttack'),
-                    frameRate: 15,
+                    frameRate: frameRate.specialAttack,
                     repeat: 0,
                 });
 
                 scene.anims.create({
                     key: 'player_hurt',
                     frames: scene.anims.generateFrameNumbers('player_hurt'),
-                    frameRate: 8,
+                    frameRate: frameRate.hurt,
                     repeat: 0,
                 });
 
                 scene.anims.create({
                     key: 'player_death',
                     frames: scene.anims.generateFrameNumbers('player_death'),
-                    frameRate: 6,
+                    frameRate: frameRate.death,
                     repeat: 0,
                 });
 
                 scene.anims.create({
                     key: 'player_jump',
                     frames: scene.anims.generateFrameNumbers('player_jump'),
-                    frameRate: 4,
+                    frameRate: frameRate.jump,
                     repeat: 0,
                 });
 
                 scene.anims.create({
                     key: 'player_doubleJump',
                     frames: scene.anims.generateFrameNumbers('player_doubleJump'),
-                    frameRate: 8,
+                    frameRate: frameRate.doubleJump,
                     repeat: 0,
                 });
 
                 scene.anims.create({
                     key: 'player_jumpAttack',
                     frames: scene.anims.generateFrameNumbers('player_jumpAttack'),
-                    frameRate: 8,
+                    frameRate: frameRate.jumpAttack,
                     repeat: 0,
                 });
 
                 scene.anims.create({
                     key: 'player_timesUp',
                     frames: scene.anims.generateFrameNumbers('player_timesUp'),
-                    frameRate: 4,
+                    frameRate: frameRate.timesUp,
                     repeat: 0,
                 });
 
                 scene.anims.create({
                     key: 'player_cheer',
                     frames: scene.anims.generateFrameNumbers('player_cheer'),
-                    frameRate: 4,
+                    frameRate: frameRate.cheer,
                     repeat: -1,
                 });
 
@@ -1042,28 +1129,28 @@ const Player = new Phaser.Class({
                 scene.anims.create({
                     key: 'player_jumpDust',
                     frames: scene.anims.generateFrameNumbers('player_jumpDust'),
-                    frameRate: 15,
+                    frameRate: frameRate.doubleJump,
                     repeat: 0,
                 });
 
                 scene.anims.create({
                     key: 'player_attackEffect',
                     frames: scene.anims.generateFrameNumbers('player_attackEffect'),
-                    frameRate: 10,
+                    frameRate: frameRate.attackEffect,
                     repeat: 0,
                 });
 
                 scene.anims.create({
                     key: 'player_jumpAttackEffect',
                     frames: scene.anims.generateFrameNumbers('player_jumpAttackEffect'),
-                    frameRate: 15,
+                    frameRate: frameRate.jumpAttackEffect,
                     repeat: 0,
                 });
 
                 scene.anims.create({
                     key: 'player_runAttackEffect',
                     frames: scene.anims.generateFrameNumbers('player_runAttackEffect'),
-                    frameRate: 8,
+                    frameRate: frameRate.runAttackEffect,
                     repeat: 0,
                 });
 
@@ -1071,14 +1158,14 @@ const Player = new Phaser.Class({
                     scene.anims.create({
                         key: 'player_ultAttackEffect',
                         frames: scene.anims.generateFrameNumbers('player_ultAttackEffect'),
-                        frameRate: 7,
+                        frameRate: frameRate.ultAttackEffect,
                         repeat: 0,
                     });
                 else if (scene.name == "dig")
                     scene.anims.create({
                         key: 'player_pickSwing',
                         frames: scene.anims.generateFrameNumbers('player_pickSwing'),
-                        frameRate: 15,
+                        frameRate: frameRate.pickSwing,
                         repeat: 0,
                     });
 
@@ -3135,6 +3222,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
 class RexForm extends RexPlugins.UI.Sizer {
     constructor(scene, config, resolve) {
         var gameData = config.gameData;
+        var character = config.character;
 
         const GetValue = Phaser.Utils.Objects.GetValue;
         const COLOR_PRIMARY = 0x4e342e;
@@ -3245,6 +3333,7 @@ class RexForm extends RexPlugins.UI.Sizer {
                         if (questionData.options[confirmIdx] == localeJSON.UI['yes']) {
                             // console.debug(playerName, avatarIndex, avatarBgColor);
 
+                            gameData.playerRole = character;
                             Object.assign(gameData.playerCustom, {
                                 avatarIndex: avatarIndex,
                                 avatarBgColor, avatarBgColor,
@@ -3316,7 +3405,7 @@ class RexForm extends RexPlugins.UI.Sizer {
                 return new RexPlugins.UI.Label(scene, {
                     background: scene.add.existing(
                         new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 5, avatarBgColor).setStrokeStyle(5, COLOR_LIGHT)),
-                    icon: scene.add.image(0, 0, gameData.playerRole + '_avatar' + avatarIndex),
+                    icon: scene.add.image(0, 0, character + '_avatar' + avatarIndex),
                     name: 'avatarSelect',
                     align: 'left',
                     space: {
@@ -3368,7 +3457,7 @@ class RexForm extends RexPlugins.UI.Sizer {
                 return new RexPlugins.UI.Label(scene, {
                     background: scene.add.existing(
                         new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 5, isTexture ? undefined : key)),
-                    icon: isTexture ? scene.add.image(0, 0, gameData.playerRole + '_avatar' + key) : false,
+                    icon: isTexture ? scene.add.image(0, 0, character + '_avatar' + key) : false,
                     name: key,
                     space: {
                         left: 10,
@@ -3383,7 +3472,7 @@ class RexForm extends RexPlugins.UI.Sizer {
                         //==找到頭像預覽框
                         let avatarSelect = form.getElement('#avatarSelect', true);
                         if (isTexture) {
-                            avatarSelect.getElement('icon').setTexture(gameData.playerRole + '_avatar' + name);
+                            avatarSelect.getElement('icon').setTexture(character + '_avatar' + name);
                             avatarIndex = name;
                         }
                         else {

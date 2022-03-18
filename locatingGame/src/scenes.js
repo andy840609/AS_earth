@@ -1943,7 +1943,7 @@ class UIScene extends Phaser.Scene {
                         };
 
                         //==使用者填入表單
-                        this.newForm = (resolve = null) => {
+                        this.newForm = (character, resolve = null) => {
                             // 
                             return new RexForm(this, {
                                 width: width * 0.3,
@@ -1951,6 +1951,7 @@ class UIScene extends Phaser.Scene {
                                 sceneWidth: width,
                                 sceneHeight: height,
                                 gameData: gameScene.gameData,
+                                character: character,
                             }, resolve)
                                 .setDepth(Depth.UI)
                                 .popUp(500);
@@ -2036,40 +2037,40 @@ class UIScene extends Phaser.Scene {
 
                         characters.forEach((chara, i) => {
                             var animsCreate = () => {
+                                let frameRate = GameObjectFrame[chara].frameRate;
                                 this.anims.create({
                                     key: chara + '_idle',
                                     frames: this.anims.generateFrameNumbers(chara + '_idle'),
-                                    frameRate: 7,
+                                    frameRate: frameRate.idle,
                                     repeat: -1,
                                 });
                                 this.anims.create({
                                     key: chara + '_run',
                                     frames: this.anims.generateFrameNumbers(chara + '_run'),
-                                    frameRate: 10,
+                                    frameRate: frameRate.run,
                                     repeat: -1,
                                 });
                                 this.anims.create({
                                     key: chara + '_doubleJump',
                                     frames: this.anims.generateFrameNumbers(chara + '_doubleJump'),
-                                    frameRate: 6,
+                                    frameRate: frameRate.doubleJump,
                                     repeat: -1,
                                 });
                                 this.anims.create({
                                     key: chara + '_attack',
                                     frames: this.anims.generateFrameNumbers(chara + '_attack'),
-                                    frameRate: 9,
+                                    frameRate: frameRate.attack,
                                     repeat: -1,
                                 });
                                 this.anims.create({
                                     key: chara + '_swordSwing',
                                     frames: this.anims.generateFrameNumbers(chara + '_swordSwing', { start: 0, end: 4 }),
-                                    frameRate: 9,
+                                    frameRate: frameRate.attackEffect,
                                     repeat: -1,
                                 });
 
                             };
                             animsCreate();
-
 
                             let character = this.add.sprite(gap * (i + 1), height * 0.8)
                                 .setDepth(10)
@@ -2127,7 +2128,7 @@ class UIScene extends Phaser.Scene {
 
                                     //===創角色表單
                                     let RexUIscene = gameScene.RexUI;
-                                    scene.form = RexUIscene.newForm();
+                                    scene.form = RexUIscene.newForm(chara);
                                     RexUIscene.scene.bringToTop();
 
                                     scene.form
@@ -2144,9 +2145,9 @@ class UIScene extends Phaser.Scene {
 
                                                 scene.time.delayedCall(destroyDelay * 0.5, () => cameras.fadeOut(500, 0, 0, 0), [], this);
                                                 scene.time.delayedCall(destroyDelay, () => {
-                                                    if (1) {
+                                                    if (1) {//===一開始不進入教學？
+                                                        scene.scene.remove();
                                                         gameScene.scene.add(null, new UIScene('tutorial', scene), true);
-                                                        // scene.scene.remove();
                                                     }
                                                     else {
                                                         gameScene.game.destroy(true, false);
@@ -2276,33 +2277,20 @@ class UIScene extends Phaser.Scene {
                         var sprite = () => {
                             const playerRole = gameScene.gameData.playerRole;
                             const dir = gameObjDir + 'player/' + playerRole + '/';
-                            const frameObj = { frameWidth: 96, frameHeight: 128 };
-                            // const frameObj = { frameWidth: 48, frameHeight: 48 };
+                            const playerFrame = GameObjectFrame[playerRole];
+                            const frameObj = playerFrame.frameObj;
 
                             this.load.spritesheet('player_attack', dir + 'attack.png', frameObj);
-                            this.load.spritesheet('player_specialAttack', dir + 'specialAttack.png', frameObj);
-                            this.load.spritesheet('player_death', dir + 'death.png', frameObj);
                             this.load.spritesheet('player_jump', dir + 'jump.png', frameObj);
                             this.load.spritesheet('player_doubleJump', dir + 'doubleJump.png', frameObj);
                             this.load.spritesheet('player_jumpAttack', dir + 'jumpAttack.png', frameObj);
-                            this.load.spritesheet('player_hurt', dir + 'hurt.png', frameObj);
                             this.load.spritesheet('player_idle', dir + 'idle.png', frameObj);
                             this.load.spritesheet('player_run', dir + 'run.png', frameObj);
                             this.load.spritesheet('player_runAttack', dir + 'runAttack.png', frameObj);
-                            this.load.spritesheet('player_timesUp', dir + 'timesUp.png', frameObj);
-                            this.load.spritesheet('player_cheer', dir + 'cheer.png', frameObj);
 
                             //==effect
                             const effectDir = gameObjDir + 'player/effect/';
-                            const effectFrameObj = {
-                                maleAdventurer: {
-                                    attack: [120, 130],
-                                    jump: [150, 100],
-                                    run: [150, 100],
-                                    ult: [300, 150],
-                                    pick: [120, 130],
-                                },
-                            }[playerRole];
+                            const effectFrameObj = playerFrame.effect;
 
                             this.load.spritesheet('player_jumpDust', effectDir + 'jump_dust.png', { frameWidth: 38, frameHeight: 60 });
 
@@ -2315,7 +2303,6 @@ class UIScene extends Phaser.Scene {
 
                         };
                         sprite();
-
                     };
                     var dummy = () => {
                         const dummyDir = assetsDir + 'gameObj/enemy/zombie/';
@@ -2869,133 +2856,79 @@ class UIScene extends Phaser.Scene {
                         //==anims
                         var animsCreate = () => {
                             if (gameScene.name != 'GameStart') return;
+                            let frameRate = GameObjectFrame[gameScene.gameData.playerRole].frameRate;
+
                             this.anims.create({
                                 key: 'player_idle',
                                 frames: this.anims.generateFrameNumbers('player_idle'),
-                                frameRate: 5,
+                                frameRate: frameRate.idle,
                                 repeat: -1,
                             });
 
                             this.anims.create({
                                 key: 'player_run',
                                 frames: this.anims.generateFrameNumbers('player_run'),
-                                frameRate: 8,
+                                frameRate: frameRate.run,
                                 repeat: -1,
                             });
 
                             this.anims.create({
                                 key: 'player_runAttack',
                                 frames: this.anims.generateFrameNumbers('player_runAttack'),
-                                frameRate: 8,
+                                frameRate: frameRate.runAttack,
                                 repeat: 0,
                             });
 
                             this.anims.create({
                                 key: 'player_attack',
                                 frames: this.anims.generateFrameNumbers('player_attack'),
-                                frameRate: 10,
+                                frameRate: frameRate.attack,
                                 repeat: 0,
                             });
 
-                            this.anims.create({
-                                key: 'player_specialAttack',
-                                frames: this.anims.generateFrameNumbers('player_specialAttack'),
-                                frameRate: 15,
-                                repeat: 0,
-                            });
-
-                            this.anims.create({
-                                key: 'player_hurt',
-                                frames: this.anims.generateFrameNumbers('player_hurt'),
-                                frameRate: 8,
-                                repeat: 0,
-                            });
-
-                            this.anims.create({
-                                key: 'player_death',
-                                frames: this.anims.generateFrameNumbers('player_death'),
-                                frameRate: 6,
-                                repeat: 0,
-                            });
 
                             this.anims.create({
                                 key: 'player_jump',
                                 frames: this.anims.generateFrameNumbers('player_jump'),
-                                frameRate: 4,
+                                frameRate: frameRate.jump,
                                 repeat: 0,
                             });
 
                             this.anims.create({
                                 key: 'player_doubleJump',
                                 frames: this.anims.generateFrameNumbers('player_doubleJump'),
-                                frameRate: 8,
+                                frameRate: frameRate.doubleJump,
                                 repeat: 0,
                             });
 
                             this.anims.create({
                                 key: 'player_jumpAttack',
                                 frames: this.anims.generateFrameNumbers('player_jumpAttack'),
-                                frameRate: 8,
+                                frameRate: frameRate.jumpAttack,
                                 repeat: 0,
-                            });
-
-                            this.anims.create({
-                                key: 'player_timesUp',
-                                frames: this.anims.generateFrameNumbers('player_timesUp'),
-                                frameRate: 4,
-                                repeat: 0,
-                            });
-
-                            this.anims.create({
-                                key: 'player_cheer',
-                                frames: this.anims.generateFrameNumbers('player_cheer'),
-                                frameRate: 4,
-                                repeat: -1,
                             });
 
                             //==effect
                             this.anims.create({
-                                key: 'player_jumpDust',
-                                frames: this.anims.generateFrameNumbers('player_jumpDust'),
-                                frameRate: 15,
-                                repeat: 0,
-                            });
-
-                            this.anims.create({
                                 key: 'player_attackEffect',
                                 frames: this.anims.generateFrameNumbers('player_attackEffect'),
-                                frameRate: 10,
+                                frameRate: frameRate.attackEffect,
                                 repeat: 0,
                             });
 
                             this.anims.create({
                                 key: 'player_jumpAttackEffect',
                                 frames: this.anims.generateFrameNumbers('player_jumpAttackEffect'),
-                                frameRate: 15,
+                                frameRate: frameRate.jumpAttackEffect,
                                 repeat: 0,
                             });
 
                             this.anims.create({
                                 key: 'player_runAttackEffect',
                                 frames: this.anims.generateFrameNumbers('player_runAttackEffect'),
-                                frameRate: 8,
+                                frameRate: frameRate.runAttackEffect,
                                 repeat: 0,
                             });
-
-                            if (this.name == "boss")
-                                this.anims.create({
-                                    key: 'player_ultAttackEffect',
-                                    frames: this.anims.generateFrameNumbers('player_ultAttackEffect'),
-                                    frameRate: 7,
-                                    repeat: 0,
-                                });
-                            else if (this.name == "dig")
-                                this.anims.create({
-                                    key: 'player_pickSwing',
-                                    frames: this.anims.generateFrameNumbers('player_pickSwing'),
-                                    frameRate: 15,
-                                    repeat: 0,
-                                });
 
                         };
                         animsCreate();
@@ -3715,10 +3648,10 @@ class GameStartScene extends Phaser.Scene {
 
             var sprite = () => {
                 const playerDir = assetsDir + 'gameObj/player/';
-                const frameObj = { frameWidth: 96, frameHeight: 128 };
 
                 characters.forEach(chara => {
                     let dir = playerDir + chara + '/';
+                    const frameObj = GameObjectFrame[chara].frameObj;
 
                     this.load.spritesheet(chara + '_idle', dir + 'idle.png', frameObj);
                     this.load.spritesheet(chara + '_run', dir + 'run.png', frameObj);
@@ -3726,13 +3659,6 @@ class GameStartScene extends Phaser.Scene {
                     this.load.spritesheet(chara + '_attack', dir + 'attack.png', frameObj);
                     this.load.spritesheet(chara + '_swordSwing', dir + 'swordSwing.png', { frameWidth: 120, frameHeight: 130 });
 
-                    // this.load.spritesheet('player_specialAttack', dir + 'specialAttack.png', frameObj);
-                    // this.load.spritesheet('player_death', dir + 'death.png', frameObj);
-                    // this.load.spritesheet('player_jump', dir + 'jump.png', frameObj);
-
-                    // this.load.spritesheet('player_jumpAttack', dir + 'jumpAttack.png', frameObj);
-                    // this.load.spritesheet('player_hurt', dir + 'hurt.png', frameObj);
-                    // this.load.spritesheet('player_runAttack', dir + 'runAttack.png', frameObj);
 
                 });
 
@@ -4184,8 +4110,8 @@ class LoadingScene extends Phaser.Scene {
                 var sprite = () => {
                     const playerRole = gameData.playerRole;
                     const dir = gameObjDir + 'player/' + playerRole + '/';
-                    const frameObj = { frameWidth: 96, frameHeight: 128 };
-                    // const frameObj = { frameWidth: 48, frameHeight: 48 };
+                    const playerFrame = GameObjectFrame[playerRole];
+                    const frameObj = playerFrame.frameObj;
 
                     this.load.spritesheet('player_attack', dir + 'attack.png', frameObj);
                     this.load.spritesheet('player_specialAttack', dir + 'specialAttack.png', frameObj);
@@ -4202,15 +4128,7 @@ class LoadingScene extends Phaser.Scene {
 
                     //==effect
                     const effectDir = gameObjDir + 'player/effect/';
-                    const effectFrameObj = {
-                        maleAdventurer: {
-                            attack: [120, 130],
-                            jump: [150, 100],
-                            run: [150, 100],
-                            ult: [300, 150],
-                            pick: [120, 130],
-                        },
-                    }[playerRole];
+                    const effectFrameObj = playerFrame.effect;
 
                     this.load.spritesheet('player_jumpDust', effectDir + 'jump_dust.png', { frameWidth: 38, frameHeight: 60 });
 

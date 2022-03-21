@@ -61,19 +61,19 @@ const GameObjectStats = {
         },
         femalePerson: {
             class: 1,
-            movementSpeed: 460,
+            movementSpeed: 400,
             jumpingPower: 320,
-            attackSpeed: 400,//一發持續300ms
-            attackPower: 120,
-            attackRange: 55,
-            bulletSize: [120, 130],
-            knockBackSpeed: 250,//==擊退時間固定200ms,這個速度越大擊退越遠
-            manaCost: 10,
-            manaRegen: 0.1,//per 10 ms(game update per 10ms)0.1
-            HP: 150,
-            maxHP: 150,
-            MP: 60,
-            maxMP: 60,
+            attackSpeed: 800,//一發持續300ms
+            attackPower: 80,
+            attackRange: 1000,
+            bulletSize: [30, 30],
+            knockBackSpeed: 10,//==擊退時間固定200ms,這個速度越大擊退越遠
+            manaCost: 15,
+            manaRegen: 10,//per 10 ms(game update per 10ms)0.1
+            HP: 80,
+            maxHP: 80,
+            MP: 150,
+            maxMP: 150,
         },
     },
     sidekick: {
@@ -185,29 +185,30 @@ const GameObjectFrame = {
         frameRate: {
             idle: 3,
             run: 10,
-            runAttack: 8,
+            runAttack: 10,
             attack: 10,
             specialAttack: 15,
             hurt: 8,
-            death: 6,
+            death: 4,
             jump: 4,
-            doubleJump: 3,
-            jumpAttack: 8,
+            doubleJump: 5,
+            jumpAttack: 15,
             timesUp: 4,
             cheer: 4,
             jumpDust: 15,
             attackEffect: 10,
             jumpAttackEffect: 15,
-            runAttackEffect: 8,
+            runAttackEffect: 15,
             ultAttackEffect: 7,
             pickSwing: 15,
         },
         effect: {
             attack: [120, 130],
-            jump: [150, 100],
-            run: [150, 100],
+            jump: [96, 128],
+            run: [96, 128],
             ult: [300, 150],
             pick: [120, 130],
+            bullet: [60, 60],
         },
     },
 };
@@ -445,8 +446,8 @@ const Bullet = new Phaser.Class({
         let fireDir = onXaxis ? (attacker.flipX ? -1 : 1) : 1,
             fixedRange = attacker.stats.class == 0 ? attackRange : 0,
             fireX = attacker.x + (onXaxis ? fixedRange : 0) * fireDir,
-            fireY = attacker.y + (!onXaxis ? fixedRange + 50 : 0) * fireDir;
-
+            fireY = attacker.y + (!onXaxis ? fixedRange + 50 : 10);
+        // console.debug(fireY)
         this.enableBody(true, fireX, fireY, true, true);
 
         if (attacker.stats.class != 0)
@@ -476,6 +477,8 @@ const Bullet = new Phaser.Class({
                 this.disableBody(true, true);
         }
         else {
+            if (this.attacker.name === 'player') this.angle += 10;
+
             let outOfRange = this.attackRange ?
                 Phaser.Math.Distance.BetweenPoints(this.attacker, this) > this.attackRange : false;
             let outOfWindow = !this.scene.cameras.main.worldView.contains(this.x, this.y);
@@ -1129,7 +1132,7 @@ const Player = new Phaser.Class({
                 scene.anims.create({
                     key: 'player_jumpDust',
                     frames: scene.anims.generateFrameNumbers('player_jumpDust'),
-                    frameRate: frameRate.doubleJump,
+                    frameRate: frameRate.jumpDust,
                     repeat: 0,
                 });
 
@@ -1153,6 +1156,23 @@ const Player = new Phaser.Class({
                     frameRate: frameRate.runAttackEffect,
                     repeat: 0,
                 });
+
+                if (stats.class === 1)//遠程子彈
+                {
+                    scene.anims.create({
+                        key: 'player_bullet1',
+                        frames: scene.anims.generateFrameNumbers('player_bullet1'),
+                        frameRate: frameRate.attackEffect,
+                        repeat: 0,
+                    });
+
+                    scene.anims.create({
+                        key: 'player_bullet2',
+                        frames: scene.anims.generateFrameNumbers('player_bullet2'),
+                        frameRate: frameRate.attackEffect,
+                        repeat: 0,
+                    });
+                };
 
                 if (scene.name == "boss")
                     scene.anims.create({
@@ -1188,8 +1208,9 @@ const Player = new Phaser.Class({
             //===init attack
             this.bullets = scene.physics.add.group({
                 classType: Bullet,
-                maxSize: stats.class == 0 ? 1 : 5,
+                maxSize: stats.class == 0 ? 1 : 10,
                 runChildUpdate: true,
+                // setDepth: { value: 15 },
                 // maxVelocityY: 0,
             }).setOrigin(1, 0);
 
@@ -1384,17 +1405,6 @@ const Player = new Phaser.Class({
                 return;
             };
 
-            //==bullet
-            var bullet = this.bullets.get();
-            // console.debug(bullet);
-            if (bullet) {
-                bullet.body.setSize(...this.stats.bulletSize);
-                bullet.fire(this, this.stats.attackSpeed, this.stats.attackRange);
-
-                this.statsChangeHandler({ MP: - this.stats.manaCost }, this);
-            };
-
-
             //==anims
             // console.debug(this.anims);
             let isJumping = !this.body.touching.down;
@@ -1408,6 +1418,18 @@ const Player = new Phaser.Class({
 
             if (currentAnims === 'player_attack' && this.anims.isPlaying) return;
             this.anims.play(attackAnims);
+
+            //==bullet
+            var bullet = this.bullets.get();
+            // console.debug(this.stats);
+            if (bullet) {
+                bullet.body.setSize(...this.stats.bulletSize);
+                bullet.fire(this, this.stats.attackSpeed, this.stats.attackRange);
+                if (this.stats.class)
+                    bullet.play(isRuning ? 'player_bullet2' : 'player_bullet1', true);
+                this.statsChangeHandler({ MP: - this.stats.manaCost }, this);
+                // console.debug(bullet);
+            };
 
         };
 
@@ -3334,6 +3356,7 @@ class RexForm extends RexPlugins.UI.Sizer {
                             // console.debug(playerName, avatarIndex, avatarBgColor);
 
                             gameData.playerRole = character;
+                            gameData.playerStats = { ...GameObjectStats.player[character] };
                             Object.assign(gameData.playerCustom, {
                                 avatarIndex: avatarIndex,
                                 avatarBgColor, avatarBgColor,

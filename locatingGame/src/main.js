@@ -280,7 +280,7 @@ function locatingGame() {
             };
 
             function initGameData() {
-                let playerRole = 'femalePerson';//==之後能選其他[femalePerson,maleAdventurer]
+                let playerRole = 'maleAdventurer';//==之後能選其他[femalePerson,maleAdventurer]
                 let sidekick = 'Dude';//=='Owlet,Dude,Pink'
 
                 let playerName = 'AA',

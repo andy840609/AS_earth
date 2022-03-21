@@ -2035,7 +2035,7 @@ class UIScene extends Phaser.Scene {
                         let characters = creatorObj.characters;
                         let gap = width / (characters.length + 1);
 
-                        characters.forEach((chara, i) => {
+                        let charaSprites = characters.map((chara, i) => {
                             var animsCreate = () => {
                                 let frameRate = GameObjectFrame[chara].frameRate;
                                 this.anims.create({
@@ -2136,18 +2136,18 @@ class UIScene extends Phaser.Scene {
                                         .on('destroy', (form) => {
 
                                             if (form.formConfirm) {
-                                                this
-                                                    .removeInteractive()
-                                                    .play(chara + '_doubleJump');
+                                                charaSprites.forEach(chara => chara.removeInteractive());
+                                                this.play(chara + '_doubleJump');
+                                                // console.debug(charaSprites);
 
                                                 //==創建完成到大地圖
                                                 let destroyDelay = 1200;
 
                                                 scene.time.delayedCall(destroyDelay * 0.5, () => cameras.fadeOut(500, 0, 0, 0), [], this);
                                                 scene.time.delayedCall(destroyDelay, () => {
-                                                    if (1) {//===一開始不進入教學？
-                                                        scene.scene.remove();
+                                                    if (1) {//===一開始不進入教學？                                                
                                                         gameScene.scene.add(null, new UIScene('tutorial', scene), true);
+                                                        scene.time.delayedCall(destroyDelay, () => scene.scene.remove());
                                                     }
                                                     else {
                                                         gameScene.game.destroy(true, false);
@@ -2178,6 +2178,8 @@ class UIScene extends Phaser.Scene {
                                 .setScale(1.6)
                                 .setOrigin(0.45, 0.35)
                                 .setDepth(9);
+
+                            return character;
 
                         });
                     };
@@ -2292,6 +2294,7 @@ class UIScene extends Phaser.Scene {
                             const effectDir = gameObjDir + 'player/effect/';
                             const effectFrameObj = playerFrame.effect;
 
+
                             this.load.spritesheet('player_jumpDust', effectDir + 'jump_dust.png', { frameWidth: 38, frameHeight: 60 });
 
                             this.load.spritesheet('player_attackEffect', dir + 'swordSwing.png',
@@ -2300,7 +2303,13 @@ class UIScene extends Phaser.Scene {
                                 { frameWidth: effectFrameObj.jump[0], frameHeight: effectFrameObj.jump[1] });
                             this.load.spritesheet('player_runAttackEffect', dir + 'runAttackEffect.png',
                                 { frameWidth: effectFrameObj.run[0], frameHeight: effectFrameObj.run[1] });
-
+                            if (gameScene.gameData.playerStats.class)//遠程子彈
+                            {
+                                this.load.spritesheet('player_bullet1', dir + 'bullet1.png',
+                                    { frameWidth: effectFrameObj.bullet[0], frameHeight: effectFrameObj.bullet[1] });
+                                this.load.spritesheet('player_bullet2', dir + 'bullet2.png',
+                                    { frameWidth: effectFrameObj.bullet[0], frameHeight: effectFrameObj.bullet[1] });
+                            };
                         };
                         sprite();
                     };
@@ -2930,6 +2939,23 @@ class UIScene extends Phaser.Scene {
                                 repeat: 0,
                             });
 
+                            if (gameScene.gameData.playerStats.class)//遠程子彈
+                            {
+                                this.anims.create({
+                                    key: 'player_bullet1',
+                                    frames: this.anims.generateFrameNumbers('player_bullet1'),
+                                    frameRate: frameRate.attackEffect,
+                                    repeat: 0,
+                                });
+
+                                this.anims.create({
+                                    key: 'player_bullet2',
+                                    frames: this.anims.generateFrameNumbers('player_bullet2'),
+                                    frameRate: frameRate.attackEffect,
+                                    repeat: 0,
+                                });
+                            };
+
                         };
                         animsCreate();
 
@@ -3080,12 +3106,6 @@ class UIScene extends Phaser.Scene {
                                         return;
                                     };
 
-                                    //==bullet
-                                    var bullet = this.bullets.get();
-                                    if (bullet) {
-                                        bullet.body.setSize(...this.stats.bulletSize);
-                                        bullet.fire(this, this.stats.attackSpeed, this.stats.attackRange);
-                                    };
 
                                     //==anims
                                     // console.debug(this.anims);
@@ -3100,6 +3120,18 @@ class UIScene extends Phaser.Scene {
 
                                     if (currentAnims === 'player_attack' && this.anims.isPlaying) return;
                                     this.anims.play(attackAnims);
+
+                                    //==bullet
+                                    var bullet = this.bullets.get();
+                                    if (bullet) {
+                                        bullet
+                                            .setDepth(15)
+                                            .body.setSize(...this.stats.bulletSize);
+                                        bullet.fire(this, this.stats.attackSpeed, this.stats.attackRange);
+                                        if (this.stats.class)
+                                            bullet.play(isRuning ? 'player_bullet2' : 'player_bullet1', true);
+                                        // console.debug(bullet.depth);
+                                    };
 
                                 };
 
@@ -3120,14 +3152,9 @@ class UIScene extends Phaser.Scene {
                             classType: Bullet,
                             maxSize: this.player.stats.class == 0 ? 1 : 5,
                             runChildUpdate: true,
+                            // setDepth: { value: 15 },
                             // maxVelocityY: 0,
-                        }).setOrigin(1, 0).setDepth(9);
-
-                        //===init effect sprite
-                        // this.dust = this.add.sprite(0, 0)
-                        //     .setScale(2.5)
-                        //     .setOrigin(1, 0.4)
-                        //     .setDepth(9);
+                        }).setOrigin(1, 0);
 
                         this.player.attackEffect = this.add.sprite(0, 0)
                             .setScale(2)
@@ -3651,14 +3678,15 @@ class GameStartScene extends Phaser.Scene {
 
                 characters.forEach(chara => {
                     let dir = playerDir + chara + '/';
-                    const frameObj = GameObjectFrame[chara].frameObj;
+                    const playerFrame = GameObjectFrame[chara];
+                    const frameObj = playerFrame.frameObj;
+                    const effectFrameObj = playerFrame.effect;
 
                     this.load.spritesheet(chara + '_idle', dir + 'idle.png', frameObj);
                     this.load.spritesheet(chara + '_run', dir + 'run.png', frameObj);
                     this.load.spritesheet(chara + '_doubleJump', dir + 'doubleJump.png', frameObj);
                     this.load.spritesheet(chara + '_attack', dir + 'attack.png', frameObj);
-                    this.load.spritesheet(chara + '_swordSwing', dir + 'swordSwing.png', { frameWidth: 120, frameHeight: 130 });
-
+                    this.load.spritesheet(chara + '_swordSwing', dir + 'swordSwing.png', { frameWidth: effectFrameObj.attack[0], frameHeight: effectFrameObj.attack[1] });
 
                 });
 
@@ -4130,6 +4158,7 @@ class LoadingScene extends Phaser.Scene {
                     const effectDir = gameObjDir + 'player/effect/';
                     const effectFrameObj = playerFrame.effect;
 
+
                     this.load.spritesheet('player_jumpDust', effectDir + 'jump_dust.png', { frameWidth: 38, frameHeight: 60 });
 
                     this.load.spritesheet('player_attackEffect', dir + 'swordSwing.png',
@@ -4138,6 +4167,15 @@ class LoadingScene extends Phaser.Scene {
                         { frameWidth: effectFrameObj.jump[0], frameHeight: effectFrameObj.jump[1] });
                     this.load.spritesheet('player_runAttackEffect', dir + 'runAttackEffect.png',
                         { frameWidth: effectFrameObj.run[0], frameHeight: effectFrameObj.run[1] });
+
+                    if (gameData.playerStats.class)//遠程子彈
+                    {
+                        this.load.spritesheet('player_bullet1', dir + 'bullet1.png',
+                            { frameWidth: effectFrameObj.bullet[0], frameHeight: effectFrameObj.bullet[1] });
+                        this.load.spritesheet('player_bullet2', dir + 'bullet2.png',
+                            { frameWidth: effectFrameObj.bullet[0], frameHeight: effectFrameObj.bullet[1] });
+                    };
+
 
                     if (packNum == 3)
                         this.load.spritesheet('player_ultAttackEffect', effectDir + 'ult_effect.png',

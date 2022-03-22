@@ -6,12 +6,13 @@ function waveXdist() {
     chart.selector = (value) => {
         selector = value;
         return chart;
-    }
+    };
     chart.dataPath = (value) => {
         let fileXY_paths = value.data;
         let staAz_paths = value.az;
         let staDist_paths = value.dist;
         let Taxis_paths = value.Taxis;
+        let eventlist_paths = value.eventlist;
 
         const dataKey = ['network', 'station', 'channel', 'data', 'dist', 'az'];
         //==test
@@ -279,12 +280,18 @@ function waveXdist() {
         const dataKey_Taxis = ['time'];
         var TaxisPromise = readTextFile(Taxis_paths, dataKey_Taxis);
 
-        data = Promise.all([getXYData(), azPromise, distPromise, TaxisPromise]).then(success => {
+        //==eventlist.txt
+        var eventlistPromise = readTextFile(eventlist_paths, ['date', 'time', 'lat', 'lng', 'depth', 'ML']);
+
+
+
+        data = Promise.all([getXYData(), azPromise, distPromise, TaxisPromise, eventlistPromise]).then(success => {
             // console.debug(success);
             var xyData = success[0];
             var sta_az = success[1];
             var sta_dist = success[2];
             var Taxis = success[3];
+            var eventlist = success[4];
 
             console.log("xyData = ");
             console.log(xyData);
@@ -344,34 +351,80 @@ function waveXdist() {
             compositeData.yAxisName = dataKey_Taxis[0];
             compositeData.column = dataKey;
 
-            // console.debug(xyData);
+            Object.assign(compositeData, eventlist.data[0]);
+            // console.debug();
             // console.debug(compositeData);
 
             return compositeData;
         });
 
+
         // console.debug(data)
         // data.then(s => console.debug(s))
         return chart;
-    }
+    };
     chart.string = (value) => {
         stringObj = value;
         return chart;
-    }
+    };
 
     function chart() {
 
         const chartContainerJQ = $(selector);
         const chartContainerD3 = d3.select(selector);
 
+        //===loadingEffect
+        let hideLoading_flag = true;
+        let hideLoading_timeOut = null;
+        function loadingEffect(action = 'hide') {
+            const loadingGroup = chartContainerD3.selectAll('#loading');
+            // console.debug(loadingGroup);
+            const transitionDuration = 200;
+
+            if (!hideLoading_flag)
+                hideLoading_timeOut.stop();
+
+            switch (action) {
+                case 'show':
+                    d3.timeout(() => {
+                        loadingGroup
+                            .style('opacity', 1)
+                            .style('display', 'inline');
+                    }, 0);
+                    break;
+                case 'hide':
+
+                    hideLoading_timeOut = d3.timeout(() => {
+                        loadingGroup
+                            .transition().duration(transitionDuration)
+                            .style('opacity', 0);
+                        d3.timeout(() => loadingGroup.style('display', 'none'), transitionDuration);
+                        hideLoading_flag = true;
+                    }, transitionDuration);
+
+                    hideLoading_flag = false;
+                    break;
+            }
+
+        };
+
         //===append chart options
         function init() {
-
             chartContainerJQ.append(`
                 <form id="form-chart">
                 <div class="form-group" id="chartsOptions" style="display: inline;">
                 <div class="row">
                 
+                <!-- ... catalog ... -->
+                <div class="form-group col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start">
+                    <label for="catalog" class="col-form-label col-4" >Catalog</label>
+                    <div class="form-group col-8">
+                         <select class="form-control" id="catalog">
+                     
+                         </select>
+                    </div>
+                </div>
+
                 <!-- ... network selector ... -->    
                 <div class="form-group col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start">
                     <label for="networkSelectButton" class="col-form-label col-5" >Network</label>
@@ -740,6 +793,75 @@ function waveXdist() {
             let normalizeScale_html = normalizeScale.map((d, i) => `<option value="${i}">${d}</option>`).join('');
             chartContainerJQ.find('#NSList').append(normalizeScale_html);
 
+
+            //====================catalog
+
+
+            // readData(getPaths(catalogSelectValue));
+
+            function getFileData() {
+                //===get floder name(catalog) to make option
+                var catalogArr;
+                const dataPath = "../data/";
+                const folderStr = 'xy_';
+
+                // const staAz_fileName = 'sta_az.txt';
+                // const staDist_fileName = 'sta_dist.txt';
+
+                const pathsKey = ['data', 'az', 'dist', 'Taxis', 'eventlist'];
+                const fileExtension = '.txt';
+
+                $.ajax({
+                    url: "../src/php/getFile.php",
+                    data: { path: dataPath, folderStr: folderStr },
+                    method: 'POST',
+                    dataType: 'json',
+                    async: false,
+                    success: function (result) {
+                        catalogArr = result;
+                        console.log("catalogArr = ");
+                        console.log(catalogArr);
+                        catalogArr.forEach((r, i) => {
+                            let catalog = r.catalog;
+                            // console.debug(catalog);
+                            $("#catalog").append($("<option></option>").attr("value", i).text(catalog));
+                        });
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        // console.error(jqXHR, textStatus, errorThrown);
+                        console.error(jqXHR.responseText);
+
+                    },
+                });
+
+                var getPaths = (optionValue) => {
+                    let event = catalogArr[optionValue];
+                    let catalog = event.catalog;
+
+                    let pathObj = {};
+                    pathsKey.forEach((key, i) => {
+                        pathObj[key] = i === 0 ?
+                            event.fileXY.map(file => dataPath + catalog + "/" + event.folder + "/" + file) :
+                            dataPath + catalog + "/" + key + fileExtension;
+                    });
+
+                    return pathObj;
+                };
+
+                // console.debug(catalogArr.length);
+                let catalogSelectValue = catalogArr.length - 1;
+                chartContainerJQ.find('#catalog')
+                    .val(catalogSelectValue)  //===show first data charts when onload
+                    .change(e => {
+                        // console.debug(e.target.value);
+                        loadingEffect('show');
+                        let paths = getPaths(e.target.value);
+                        chart.dataPath(paths)();
+                    });
+                chart.dataPath(getPaths(catalogSelectValue));
+            };
+
+            getFileData();
         };
         function WD_Charts(xAxisScale = 'linear', xAxisName = 'dist') {
             console.debug(data);
@@ -760,8 +882,9 @@ function waveXdist() {
             const timeArr = data.timeArr;
             console.debug(groupData);
 
-            // console.debug(timeArr);
-            var referenceTime = '2000-01-01T00:00:00', title = referenceTime;
+            // console.debug(data);
+            var referenceTime = `時間：${data.date}T${data.time}(UTC)  經緯度：${data.lng},${data.lat}  深度：${data.depth}  規模：${data.ML}`,
+                title = referenceTime;
             if (stringObj) {
                 referenceTime = stringObj.referenceTime ? stringObj.referenceTime : referenceTime;
                 title = stringObj.title ?
@@ -854,8 +977,7 @@ function waveXdist() {
             const xAxis = svg.append("g").attr("class", "xAxis");
             const yAxis = svg.append("g").attr("class", "yAxis");
             const pathGroup = svg.append("g").attr('class', 'paths').attr("clip-path", "url(#clip)");
-            const loadingGroup = chartContainerD3.selectAll('#loading');
-            // console.debug(loadingGroup);
+
 
             var margin, x, y, path_x;
             var newDataObj;
@@ -1193,11 +1315,20 @@ function waveXdist() {
                         };
 
                         //===dist是所有分量裡最大的
-                        dist_domain = get_niceDomain([0,
-                            d3.max([].concat(...networkKey.map(net => [].concat(...groupData[net].map(d => d)))
-                            ), d => d[dataKeys[4]])]);
-                        az_domain = [0, 360];//方位角最大360
+                        // dist_domain = get_niceDomain([0,
+                        //     d3.max([].concat(...networkKey.map(net => [].concat(...groupData[net].map(d => d)))
+                        //     ), d => d[dataKeys[4]])]);
+                        dist_domain = get_niceDomain(
+                            d3.extent([].concat(...networkKey.map(net => [].concat(...groupData[net].map(d => d)))
+                            ), d => d[dataKeys[4]])
+                        );
 
+                        // az_domain = [0, 360];//方位角最大360
+                        az_domain = get_niceDomain(
+                            d3.extent([].concat(...networkKey.map(net => [].concat(...groupData[net].map(d => d)))
+                            ), d => d[dataKeys[5]])
+                        );
+                        // console.debug(dataKeys);
                         // console.debug(newData)
                         // console.debug(dist_domain, az_domain)
 
@@ -1471,38 +1602,7 @@ function waveXdist() {
                 loadingEffect('hide');
             };
 
-            let hideLoading_flag = true;
-            let hideLoading_timeOut = null;
 
-            function loadingEffect(action = 'hide') {
-                const transitionDuration = 200;
-
-                if (!hideLoading_flag)
-                    hideLoading_timeOut.stop();
-
-                switch (action) {
-                    case 'show':
-                        d3.timeout(() => {
-                            loadingGroup
-                                .style('opacity', 1)
-                                .style('display', 'inline');
-                        }, 0);
-                        break;
-                    case 'hide':
-
-                        hideLoading_timeOut = d3.timeout(() => {
-                            loadingGroup
-                                .transition().duration(transitionDuration)
-                                .style('opacity', 0);
-                            d3.timeout(() => loadingGroup.style('display', 'none'), transitionDuration);
-                            hideLoading_flag = true;
-                        }, transitionDuration);
-
-                        hideLoading_flag = false;
-                        break;
-                }
-
-            };
             updateChart();
 
             function events() {
@@ -2489,13 +2589,17 @@ function waveXdist() {
 
 
             return svg.node();
-        }
+        };
         async function printChart() {
             chartContainerJQ.find('#distRange_slider').remove();
             chartContainerJQ.find('#azRange_slider').remove();
+            chartContainerJQ.find('#networkDropDownMenu').children().remove();
+            chartContainerJQ.find('#channelDropDownMenu').children().remove();
             chartContainerJQ.find('#displayDropDownMenu>.stations').children().remove();
             chartContainerJQ.find('#normalize').prop("checked", true);
             chartContainerJQ.find('#normalizeScale').prop('disabled', false);
+            chartContainerJQ.find('sub.dist').text('');
+            chartContainerJQ.find('sub.az').text('');
             chartContainerJQ.find('#charts').children().remove();
 
             var i = 1;
@@ -2749,6 +2853,6 @@ function waveXdist() {
             init();
         };
         printChart();
-    }
+    };
     return chart;
 }

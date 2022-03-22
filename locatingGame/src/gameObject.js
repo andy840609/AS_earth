@@ -64,12 +64,12 @@ const GameObjectStats = {
             movementSpeed: 400,
             jumpingPower: 320,
             attackSpeed: 800,//一發持續300ms
-            attackPower: 80,
+            attackPower: 60,
             attackRange: 1000,
-            bulletSize: [30, 30],
+            bulletSize: [40, 40],
             knockBackSpeed: 10,//==擊退時間固定200ms,這個速度越大擊退越遠
-            manaCost: 15,
-            manaRegen: 10,//per 10 ms(game update per 10ms)0.1
+            manaCost: 20,
+            manaRegen: 0.15,//per 10 ms(game update per 10ms)0.1
             HP: 80,
             maxHP: 80,
             MP: 150,
@@ -478,7 +478,7 @@ const Bullet = new Phaser.Class({
         }
         else {
             if (this.attacker.name === 'player') this.angle += 10;
-
+            // console.debug(this.attacker.name);
             let outOfRange = this.attackRange ?
                 Phaser.Math.Distance.BetweenPoints(this.attacker, this) > this.attackRange : false;
             let outOfWindow = !this.scene.cameras.main.worldView.contains(this.x, this.y);
@@ -987,8 +987,10 @@ const Enemy = new Phaser.Class({
                                     this.bulletCallback = scene.time.delayedCall(Phaser.Math.Between(800, 1600), () => {
                                         let bullet = this.bullets.get();
                                         if (bullet) {
-                                            bullet.body.setSize(20, 20);
-                                            bullet.play('dove_Attack1', true);
+                                            bullet
+                                                .play('dove_Attack1', true)
+                                                .body.setSize(20, 20);
+
                                             bullet.fire(this, 0, false, false);
                                         };
                                         this.bulletCallback = null;
@@ -1423,10 +1425,14 @@ const Player = new Phaser.Class({
             var bullet = this.bullets.get();
             // console.debug(this.stats);
             if (bullet) {
-                bullet.body.setSize(...this.stats.bulletSize);
-                bullet.fire(this, this.stats.attackSpeed, this.stats.attackRange);
                 if (this.stats.class)
-                    bullet.play(isRuning ? 'player_bullet2' : 'player_bullet1', true);
+                    bullet
+                        .play(isRuning ? 'player_bullet2' : 'player_bullet1', true)
+                        .body.setAllowGravity(!isRuning);
+
+                bullet.body.setSize(...this.stats.bulletSize, true);
+                bullet.fire(this, this.stats.attackSpeed, this.stats.attackRange);
+
                 this.statsChangeHandler({ MP: - this.stats.manaCost }, this);
                 // console.debug(bullet);
             };
@@ -2322,7 +2328,7 @@ class RexDialog extends RexPlugins.UI.Dialog {
         const padding = {
             left: 3,
             right: 3,
-            top: 3,
+            top: 5,
             bottom: 3,
         };
 
@@ -2677,8 +2683,8 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
         const padding = {
             left: 3,
             right: 3,
-            top: 3,
-            bottom: 3,
+            top: 5,
+            bottom: 5,
         };
 
         var createPanel = (scene, data) => {
@@ -2909,7 +2915,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                             if (key == 'control')
                                 gridItem
                                     .add(
-                                        scene.add.text(0, 0, localeJSON.UI[item.name]), // child
+                                        scene.add.text(0, 0, localeJSON.UI[item.name], { padding: padding }), // child
                                         { padding: { left: 10 }, });
 
 
@@ -3077,6 +3083,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                         new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 5, COLOR_LIGHT)),
                     text: config.text ? scene.add.text(0, 0, config.text, {
                         color: '#000',
+                        padding: padding,
                     }).setOrigin(0.5) : false,
                     name: iconType,
                     align: 'center',
@@ -3297,7 +3304,8 @@ class RexForm extends RexPlugins.UI.Sizer {
                     background: scene.add.existing(
                         new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 15, COLOR_LIGHT)),
                     text: scene.add.text(0, 0, gameData.localeJSON.UI[text], {
-                        fontSize: 18
+                        fontSize: 18,
+                        padding: padding,
                     }),
                     align: 'center',
                     space: {
@@ -3717,6 +3725,7 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
             let keyWordIdx = keyWords.findIndex(w => w === str);
             let text = scene.add.text(0, 0, str, {
                 fontSize: 20,
+                padding: padding,
                 color: keyWordIdx >= 0 ? ['#005AB5', '#750000'][keyWordIdx] : '#000000',
             }).setOrigin(0.5);
 

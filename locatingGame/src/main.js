@@ -40,7 +40,7 @@ function locatingGame() {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 300 },
-                    debug: true,
+                    // debug: true,
                 },
             },
             dom: {//==for rexUI:rexTextEdit
@@ -280,10 +280,10 @@ function locatingGame() {
             };
 
             function initGameData() {
-                let playerRole = 'maleAdventurer';//==之後能選其他[femalePerson,maleAdventurer]
+                let playerRole = 'femalePerson';//==之後能選其他[femalePerson,maleAdventurer]
                 let sidekick = 'Dude';//=='Owlet,Dude,Pink'
 
-                let playerName = 'AA',
+                let playerName = '',
                     avatarIndex = 0,//==自選頭像
                     avatarBgColor = 0x5B5B5B;//
 
@@ -324,7 +324,7 @@ function locatingGame() {
                     },
                     sidekick: {
                         type: sidekick,
-                        lineStage: [0, 0],//==第2-0句
+                        lineStage: [1, 0],//==第2-0句
                         doneTalking: false,
                         stopHotkey: false,//==對話完空白鍵不再出現對話（只能滑鼠點）
                     },
@@ -367,7 +367,7 @@ function locatingGame() {
                     initMap();
 
                     //==test
-                    gameStart('defend');
+                    // gameStart('defend');
                     // gameStart('dig');
                     //==test
                 };
@@ -1131,7 +1131,7 @@ function locatingGame() {
                                 })
                                 .on('click', function (e) {
                                     //==速度參數要完成兩站才能調整
-                                    // if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
+                                    if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
 
                                     let button = $(this);
                                     let ckick = button.hasClass('clicked');
@@ -1288,7 +1288,7 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
-                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             let lat = e.latlng.lat,
                                 lng = e.latlng.lng
 
@@ -1987,7 +1987,7 @@ function locatingGame() {
                         updateMapUI(playerInfo, 1000);
 
                         //==通關
-                        if (1) {//gameResult.bossDefeated
+                        if (gameResult.bossDefeated) {//gameResult.bossDefeated
                             // console.debug('通關');
                             initEndScene(true);
                             return;
@@ -2125,7 +2125,7 @@ function locatingGame() {
                 var updateAxis = () => {
 
                     var makeXAxis = g => g
-                        .attr("transform", `translate(0,${height - margin.bottom * (stationData.isTutorial ? 2.5 : 1)})`)
+                        .attr("transform", `translate(0,${height - margin.bottom * (stationData.isTutorial && !overview ? 2.5 : 1)})`)
                         .style('font', 'small-caps bold 20px/1 sans-serif')
                         .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0))
                         .call(g => g.append('text')

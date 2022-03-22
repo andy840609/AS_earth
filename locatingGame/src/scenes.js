@@ -1692,6 +1692,10 @@ class UIScene extends Phaser.Scene {
                             let text = this.add.text(0, 0, `${UItextJSON['bossName']}\n                      `,
                                 {
                                     fontSize: '32px', fill: '#fff', align: 'center',
+                                    padding: {
+                                        top: 5,
+                                        bottom: 5,
+                                    },
                                     stroke: '#003e4f',
                                     strokeThickness: 2,
                                     shadow: {
@@ -2197,8 +2201,8 @@ class UIScene extends Phaser.Scene {
                                     fill: true
                                 },
                                 padding: {
-                                    top: 3,
-                                    bottom: 3,
+                                    top: 5,
+                                    bottom: 5,
                                 },
                             })
                             .setOrigin(0.5)
@@ -2636,8 +2640,8 @@ class UIScene extends Phaser.Scene {
                                         fill: true
                                     },
                                     padding: {
-                                        top: 3,
-                                        bottom: 3,
+                                        top: 5,
+                                        bottom: 5,
                                     },
                                 })
                                 .setOrigin(0.5)
@@ -2674,8 +2678,8 @@ class UIScene extends Phaser.Scene {
                                         fill: true
                                     },
                                     padding: {
-                                        top: 3,
-                                        bottom: 3,
+                                        top: 50,
+                                        bottom: 50,
                                     },
                                 })
                                 .setOrigin(0.5)
@@ -2962,6 +2966,7 @@ class UIScene extends Phaser.Scene {
                         this.player = this.physics.add.sprite(this.physics.world.bounds.left, tutorialY + tutorialH * 0.5, 'player_idle')
                             .setDepth(10)
                             .setCollideWorldBounds(true)
+                            .setName('player')
                             .play('player_idle');
 
                         this.player.body.setGravityY(500);
@@ -3124,12 +3129,17 @@ class UIScene extends Phaser.Scene {
                                     //==bullet
                                     var bullet = this.bullets.get();
                                     if (bullet) {
+                                        if (this.stats.class)
+                                            bullet
+                                                .play(isRuning ? 'player_bullet2' : 'player_bullet1', true)
+                                                .body.setAllowGravity(!isRuning);
+
                                         bullet
                                             .setDepth(15)
                                             .body.setSize(...this.stats.bulletSize);
                                         bullet.fire(this, this.stats.attackSpeed, this.stats.attackRange);
-                                        if (this.stats.class)
-                                            bullet.play(isRuning ? 'player_bullet2' : 'player_bullet1', true);
+
+
                                         // console.debug(bullet.depth);
                                     };
 
@@ -5603,12 +5613,11 @@ class DigScene extends Phaser.Scene {
                     player.stopCursorsFlag = true;
                     // console.debug(tile.attribute.hardness);
 
-                    //
-                    // console.debug();
+
                     // let touching = tile.body.touching;
                     // console.debug(`left:${touching.left},right:${touching.right},up:${touching.up},down:${touching.down}`);
 
-                    this.time.delayedCall(player.stats.attackSpeed, () => {
+                    this.time.delayedCall(player.anims.duration, () => {
                         player.diggingFlag = false;
 
                         //==出現裂痕

@@ -591,6 +591,7 @@ class UIScene extends Phaser.Scene {
 
                                 button.setInteractive({ cursor: 'pointer' })
                                     .on('pointerover', function () {
+                                        // button.setScale();
                                         tooltipHandler(true, {
                                             obj: this,
                                             dy: dy,
@@ -677,7 +678,7 @@ class UIScene extends Phaser.Scene {
                     };
                 }
                 else if (gameScene.name == 'defend') {
-                    let detectorButtons;
+                    let detectorButtons = [];
                     this.orbs = gameScene.orbGroup.getChildren();
                     preload = () => { };
                     create = () => {
@@ -719,6 +720,7 @@ class UIScene extends Phaser.Scene {
                                 .setAlpha(.5);
                             // console.debug(brushHandle1);
 
+
                             var dragBehavior = (brush) => {
                                 brush.setInteractive({ draggable: true, cursor: 'col-resize' })
                                     .on('drag', function (pointer, dragX, dragY) {
@@ -735,7 +737,7 @@ class UIScene extends Phaser.Scene {
                                         let domain = [scaleFun.invert(brushHandle1.x), scaleFun.invert(brushHandle2.x)]
                                             .sort((a, b) => a - b);
 
-                                        updateWave(domain);
+                                        updateWave(domain, scaleText.ampScale);
                                         gameScene.waveForm.domain = domain;
 
                                     });
@@ -745,11 +747,11 @@ class UIScene extends Phaser.Scene {
                                 brushRect.x = Math.min(brushHandle1.x, brushHandle2.x) + handleW * 0.5;
                                 brushRect.width = newRectW;
                             };
-                            var updateWave = (domain = null) => {
+                            var updateWave = (domain = null, scaleY = 1) => {
                                 var action = () => {
                                     const key = 'waveForm';
-                                    // console.debug(domain)
-                                    gameScene.waveForm.getWaveImg(stationData, domain).then(success => {
+                                    // console.debug(scaleY);
+                                    gameScene.waveForm.getWaveImg(stationData, domain, false, scaleY).then(success => {
                                         // console.debug(success)
                                         //==避免波形沒更新到
                                         new Promise((resolve, reject) => {
@@ -780,7 +782,9 @@ class UIScene extends Phaser.Scene {
                                         });
 
                                     });
+
                                 };
+
                                 updateHandler(action, waveUpdateObj);
                             };
 
@@ -812,21 +816,38 @@ class UIScene extends Phaser.Scene {
                             };
 
                             //===按鈕
+                            const buttonScale = 0.22;
                             var buttonBehavior = (button) => {
-                                let dy = 0, burshMove = null;
+                                let dy = 0, btnFun = null, brushFlag = false;
+                                const btnAction = (brushFlag) => {
+                                    btnFun();
+                                    if (brushFlag) {
+                                        updateBrushRect();
+                                        let domain = [scaleFun.invert(brushHandle1.x), scaleFun.invert(brushHandle2.x)]
+                                            .sort((a, b) => a - b);
+                                        gameScene.waveForm.domain = domain;
+                                    };
+                                    updateWave(gameScene.waveForm.domain, scaleText.ampScale);
+                                };
+
                                 switch (button.name) {
                                     case 'reset':
                                         dy = 0;
-                                        burshMove = () => {
+                                        btnFun = () => {
                                             brushHandle1.x = handleXMin;
                                             brushHandle2.x = handleXMax;
                                             brushHandle1.dir = 1;
                                             brushHandle2.dir = -1;
+                                            scaleText.ampScale = 1;
+                                            scaleText.setText(1);
                                         };
+                                        brushFlag = true;
                                         break;
-                                    default:
-                                        dy = 13;
-                                        burshMove = () => {
+                                    case 'shiftLeft':
+                                    case 'shiftRight':
+                                    case 'functionKey':
+                                        dy = 0;
+                                        btnFun = () => {
                                             if (button.name == 'functionKey') {
                                                 let nowIdx = button.block.nowIdx++,
                                                     gap = button.block.gap;
@@ -857,11 +878,23 @@ class UIScene extends Phaser.Scene {
                                                 brushHandle.x = newX;
                                             };
                                         };
+                                        brushFlag = true;
+                                        break;
+                                    case 'shiftUp':
+                                    case 'shiftDown':
+                                        let isUP = button.name === 'shiftUp';
+                                        dy = isUP ? 10 : -10;
+                                        btnFun = () => {
+                                            scaleText.ampScale += (isUP ? 1 : -1) * 0.5;
+                                            scaleText.setText(scaleText.ampScale);
+                                        };
+                                        brushFlag = false;
                                         break;
                                 };
 
                                 button.setInteractive({ cursor: 'pointer' })
                                     .on('pointerover', function () {
+                                        this.setScale(buttonScale * 1.3);
                                         tooltipHandler(true, {
                                             obj: this,
                                             dy: dy,
@@ -869,33 +902,21 @@ class UIScene extends Phaser.Scene {
                                         });
                                     })
                                     .on('pointerout', function () {
+                                        this.setScale(buttonScale);
                                         tooltipHandler(false);
                                     })
                                     .on('pointerdown', function () {
-                                        burshMove();
-                                        updateBrushRect();
-                                        let domain = [scaleFun.invert(brushHandle1.x), scaleFun.invert(brushHandle2.x)]
-                                            .sort((a, b) => a - b);
-                                        updateWave(domain);
-                                        gameScene.waveForm.domain = domain;
+                                        btnAction(brushFlag);
                                     });
                             };
 
-                            let resetButton = this.add.circle(x + 60, y + 74, 18, 0xffffff)
-                                .setDepth(Depth.detector + 3)
-                                .setOrigin(0)
-                                .setAlpha(.01)
-                                .setName('reset');
-
-                            detectorButtons = [resetButton];
-
+                            //===邊界控制按鈕
                             const handleButtonName = ['shiftLeft', 'functionKey', 'shiftRight'];
                             const handle1BtnX = x - 91, handle1BtnY = y + 86;
                             handleButtonName.forEach((d, i) => {
-                                let handleButton = this.add.rectangle(handle1BtnX + i * 51, handle1BtnY, 32, 11, 0xffffff)
-                                    .setDepth(Depth.detector + 3)
-                                    .setOrigin(0)
-                                    .setAlpha(.01)
+                                let handleButton = this.add.image(handle1BtnX + i * 45, handle1BtnY, d)
+                                    .setScale(buttonScale)
+                                    .setDepth(Depth.detector + 5)
                                     .setName(d);
 
                                 if (d == 'shiftLeft') brushHandle1.dir = 1;
@@ -912,8 +933,34 @@ class UIScene extends Phaser.Scene {
                                 detectorButtons.push(handleButton);
                             });
 
-                            detectorButtons.forEach(button => buttonBehavior(button));
+                            //===振幅縮放按鈕
+                            const scaleButtonName = ['shiftUp', 'shiftDown'];
+                            const scaleBtn1X = x + 45, scaleBtn1Y = handle1BtnY - 20;
+                            scaleButtonName.forEach((d, i) => {
+                                let scaleButton = this.add.image(scaleBtn1X, scaleBtn1Y + i * 45, d)
+                                    .setScale(buttonScale)
+                                    .setDepth(Depth.detector + 5)
+                                    .setName(d);
 
+                                detectorButtons.push(scaleButton);
+                            });
+                            //===振幅倍率
+                            let scaleText = this.add.text(scaleBtn1X, scaleBtn1Y + 20, '1',
+                                { font: 'bold 20px sans-serif', fill: '#000', })
+                                .setOrigin(0.5)
+                                .setDepth(Depth.detector + 5);
+                            scaleText.ampScale = 1;
+
+                            //===重置按鈕
+                            let resetButton = this.add.image(x + 90, handle1BtnY, 'resetButton')
+                                .setScale(buttonScale)
+                                .setDepth(Depth.detector + 5)
+                                .setName('reset');
+                            detectorButtons.push(resetButton);
+
+
+
+                            detectorButtons.forEach(button => buttonBehavior(button));
                         };
                         var initUpdateListener = () => {
                             this.load.on('filecomplete', (key) => {
@@ -975,9 +1022,10 @@ class UIScene extends Phaser.Scene {
                         var updateButton = () => {
                             let cursors = gameScene.cursors;
                             detectorButtons.forEach(button => {
-                                let condition = button.name == 'functionKey' ?
-                                    Phaser.Input.Keyboard.JustDown(cursors[gameData.controllCursor[button.name]]) :
-                                    cursors[gameData.controllCursor[button.name]].isDown;
+
+                                let condition = button.name == 'shiftLeft' || button.name == 'shiftRight' ?
+                                    cursors[gameData.controllCursor[button.name]].isDown :
+                                    Phaser.Input.Keyboard.JustDown(cursors[gameData.controllCursor[button.name]]);
 
                                 if (condition) button.emit('pointerdown');
                             });
@@ -4288,6 +4336,12 @@ class LoadingScene extends Phaser.Scene {
                 const dir = assetsDir + 'gameObj/environment/overview/';
                 this.load.image('detector', dir + 'detector.png');
                 this.load.image('detectorScreen', dir + 'detectorScreen.png');
+                this.load.image('shiftLeft', dir + 'shiftLeft.png');
+                this.load.image('shiftRight', dir + 'shiftRight.png');
+                this.load.image('functionKey', dir + 'functionKey.png');
+                this.load.image('resetButton', dir + 'resetButton.png');
+                this.load.image('shiftUp', dir + 'shiftUp.png');
+                this.load.image('shiftDown', dir + 'shiftDown.png');
             };
             var tooltip = () => {
                 this.load.image('tooltipButton', uiDir + 'tooltipButton.png');

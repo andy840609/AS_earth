@@ -1,6 +1,24 @@
 const assetsDir = 'data/assets/';
 const datafileDir = 'data/datafile/';
 
+const defaultControllCursor = {
+    up: 'W',
+    down: 'S',
+    left: 'A',
+    right: 'D',
+    attack: 'SPACE',
+    //==UI controll
+    pause: 'P',
+    backpack: 'I',
+    detector: 'O',
+    shiftLeft: 'Q',
+    shiftRight: 'E',
+    shiftUp: 'Z',
+    shiftDown: 'X',
+    functionKey: 'C',
+    reset: 'R',
+    exit: 'ESC',
+};
 //載入字型
 // function loadFont(name, url) {
 //     var newStyle = document.createElement('style');
@@ -2596,21 +2614,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                 data = {
                     name: panelName,
                     category: {
-                        'control': [
-                            { name: 'up' },
-                            { name: 'down' },
-                            { name: 'left' },
-                            { name: 'right' },
-                            { name: 'attack' },
-                            { name: 'pause' },
-                            { name: 'backpack' },
-                            { name: 'detector' },
-                            { name: 'shiftLeft' },
-                            { name: 'shiftRight' },
-                            { name: 'functionKey' },
-                            { name: 'reset' },
-                            { name: 'exit' },
-                        ],
+                        'control': Object.keys(tmp.controllCursor).map(key => new Object({ name: key })),
                     },
                 };
                 if (!config.noLocleSetting) data.category.language = [{ name: tmp.locale }];
@@ -2786,24 +2790,26 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                                         tmp.controllCursor[item.name] = keyPressed;
                                     };
                                     sizer.on('resetControl', () => {
-                                        Object.assign(tmp, {
-                                            controllCursor: {
-                                                up: 'W',
-                                                down: 'S',
-                                                left: 'A',
-                                                right: 'D',
-                                                attack: 'SPACE',
-                                                //==UI controll
-                                                pause: 'P',
-                                                backpack: 'I',
-                                                detector: 'O',
-                                                shiftLeft: 'Q',
-                                                shiftRight: 'E',
-                                                functionKey: 'C',
-                                                reset: 'R',
-                                                exit: 'ESC',
-                                            },
-                                        });
+                                        // Object.assign(tmp, {
+                                        //     controllCursor: {
+                                        //         up: 'W',
+                                        //         down: 'S',
+                                        //         left: 'A',
+                                        //         right: 'D',
+                                        //         attack: 'SPACE',
+                                        //         //==UI controll
+                                        //         pause: 'P',
+                                        //         backpack: 'I',
+                                        //         detector: 'O',
+                                        //         shiftLeft: 'Q',
+                                        //         shiftRight: 'E',
+                                        //         functionKey: 'C',
+                                        //         reset: 'R',
+                                        //         exit: 'ESC',
+                                        //     },
+                                        // });
+                                        tmp.controllCursor = { ...defaultControllCursor };
+
                                         let tables = this.getElement('panel').getElement('items');
                                         //==chidren=['category name','items grid']
                                         let chidren = tables[0].getElement('items');
@@ -3721,6 +3727,55 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
         const content = UItextJSON[config.text];
         const lines = content.split('\n');
 
+        //==箭頭動畫
+        var arrowTweens = [];
+        var arrowAnime = (arrowIdx, show = true) => {
+            let hintGroup = [
+                this.getElement('arrow' + arrowIdx),
+                this.getElement('label' + arrowIdx),
+                this.getElement('line' + arrowIdx)];
+
+            if (show) {
+                let pic = this.getElement('pic');
+                let arrowPos = arrowIdx === 0 ?
+                    [pic.x - pic.displayWidth * 0.27, pic.y + pic.displayHeight * 0.18] :
+                    [pic.x - pic.displayWidth * 0.09, pic.y - pic.displayHeight * 0.4];
+                // console.debug([arrowPos[0] + 46, pic.y - pic.displayHeight * 0.5 - 10]);
+                // console.debug(0, 0, 0, pic.displayHeight + 20);
+
+                let tweens1 = scene.tweens.add({
+                    targets: hintGroup,
+                    alpha: { start: 0, to: 1 },
+                    ease: 'Cubic.easeIn', // 'Cubic', 'Elastic', 'Bounce', 'Back'
+                    duration: 500,
+                    onStart: (tween, targets) => {
+                        hintGroup[1].setPosition(arrowPos[0] - 60, arrowPos[1] - 50);
+                        hintGroup[2]
+                            .setPosition(arrowPos[0] + 46, pic.y - pic.displayHeight * 0.5 - 10)
+                            .setTo(0, 0, 0, pic.displayHeight + 20);
+                    },
+                });
+
+                let tweens2 = scene.tweens.add({
+                    targets: hintGroup[0],
+                    x: { start: arrowPos[0], to: arrowPos[0] + 10 },
+                    y: { start: arrowPos[1], to: arrowPos[1] + 10 },
+                    ease: 'Cubic.easeIn', // 'Cubic', 'Elastic', 'Bounce', 'Back'
+                    duration: 300,
+                    repeat: -1,
+                    yoyo: true,
+                });
+
+                arrowTweens[arrowIdx] = [tweens1, tweens2];
+            }
+            else {
+                arrowTweens[arrowIdx].forEach(t => t.remove());//remove
+                arrowTweens[arrowIdx].length = 0;
+                hintGroup.forEach(ele => ele.setAlpha(0));
+            };
+        };
+
+
         var getText = (str) => {
             let keyWordIdx = keyWords.findIndex(w => w === str);
             let text = scene.add.text(0, 0, str, {
@@ -3734,52 +3789,16 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
                     .setInteractive({ cursor: 'pointer' })
                     .on('pointerover', () => {
                         text.setScale(1.5);
-                        let hintGroup = [
-                            this.getElement('arrow' + keyWordIdx),
-                            this.getElement('label' + keyWordIdx),
-                            this.getElement('line' + keyWordIdx)];
+                        //==取消預設出現動畫
+                        // console.debug(arrowTweens[0].length);
+                        keyWords.forEach((key, i) =>
+                            arrowTweens[i].length !== 0 ? arrowAnime(i, false) : false);
 
-                        let pic = this.getElement('pic');
-                        let arrowPos = keyWordIdx === 0 ?
-                            [pic.x - pic.displayWidth * 0.27, pic.y + pic.displayHeight * 0.18] :
-                            [pic.x - pic.displayWidth * 0.09, pic.y - pic.displayHeight * 0.4];
-                        // console.debug(hintGroup[2].getCenter());
-
-                        let tweens1 = scene.tweens.add({
-                            targets: hintGroup,
-                            alpha: { start: 0, to: 1 },
-                            ease: 'Cubic.easeIn', // 'Cubic', 'Elastic', 'Bounce', 'Back'
-                            duration: 500,
-                            onStart: (tween, targets) => {
-                                hintGroup[1].setPosition(arrowPos[0] - 60, arrowPos[1] - 50);
-                                hintGroup[2]
-                                    .setPosition(arrowPos[0] + 46, pic.y - pic.displayHeight * 0.5 - 10)
-                                    .setTo(0, 0, 0, pic.displayHeight + 20);
-                            },
-                        });
-
-                        let tweens2 = scene.tweens.add({
-                            targets: hintGroup[0],
-                            x: { start: arrowPos[0], to: arrowPos[0] + 10 },
-                            y: { start: arrowPos[1], to: arrowPos[1] + 10 },
-                            ease: 'Cubic.easeIn', // 'Cubic', 'Elastic', 'Bounce', 'Back'
-                            duration: 300,
-                            repeat: -1,
-                            yoyo: true,
-                        });
-
-                        text.tweens = [tweens1, tweens2];
+                        arrowAnime(keyWordIdx, true);
                     })
                     .on('pointerout', () => {
                         text.setScale(1);
-                        text.tweens.forEach(t => t.remove());//remove
-
-                        let hintGroup = [
-                            this.getElement('arrow' + keyWordIdx),
-                            this.getElement('label' + keyWordIdx),
-                            this.getElement('line' + keyWordIdx)];
-                        hintGroup.forEach(ele => ele.setAlpha(0));
-
+                        arrowAnime(keyWordIdx, false);
                     });
 
             return text;
@@ -3831,18 +3850,19 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
         };
         var getLine = () => {
             return scene.add.line(0, 0, 0, 0, 0, 0, 0xEA7500)
-            // .setAlpha(0);
+                .setAlpha(0);
         };
 
-        keyWords.forEach((key, i) =>
+        keyWords.forEach((key, i) => {
             this
                 .add(getArrow(), { key: 'arrow' + i })
                 .add(getLabel(key, i), { key: 'label' + i })
-                .add(getLine(), { key: 'line' + i })
-        );
-
+                .add(getLine(), { key: 'line' + i });
+        });
 
         this.layout();
 
+        //===動畫500ms後就出現
+        scene.time.delayedCall(500, () => keyWords.forEach((key, i) => arrowAnime(i, true)), [], scene);
     };
 };

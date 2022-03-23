@@ -117,8 +117,8 @@ function locatingGame() {
         };
 
         const eventArr = ajaxReadFile({ url: datafileDir + 'event/eventList.txt', async: false }).responseText.split('\n');
-        // const event = eventArr[2];//之後能選
-        const event = eventArr[getRandom(eventArr.length)];
+        const event = eventArr[2];//之後能選
+        // const event = eventArr[getRandom(eventArr.length)];
         const eventCatlog = (value ? value : datafileDir + 'event/') + event + '/';
         const channel = ['BHE', 'BHN', 'BHZ'];//不一定BH的話還要有檔案得到
         const fileExtension = '.xy';
@@ -283,7 +283,7 @@ function locatingGame() {
                 let playerRole = 'femalePerson';//==之後能選其他[femalePerson,maleAdventurer]
                 let sidekick = 'Dude';//=='Owlet,Dude,Pink'
 
-                let playerName = '',
+                let playerName = 'ㄇㄇㄇ',
                     avatarIndex = 0,//==自選頭像
                     avatarBgColor = 0x5B5B5B;//
 
@@ -293,22 +293,7 @@ function locatingGame() {
                     timeMultiplier: 300,//real 1 ms = game x ms;
                     velocity: 7.5,//==速度參數預設7.5
                     playerEpicenter: null,
-                    controllCursor: {
-                        up: 'W',
-                        down: 'S',
-                        left: 'A',
-                        right: 'D',
-                        attack: 'SPACE',
-                        //==UI controll
-                        pause: 'P',
-                        backpack: 'I',
-                        detector: 'O',
-                        shiftLeft: 'Q',
-                        shiftRight: 'E',
-                        functionKey: 'C',
-                        reset: 'R',
-                        exit: 'ESC',
-                    },
+                    controllCursor: { ...defaultControllCursor },
                     locale: 'zh-TW',
                     playerRole: playerRole,
                     playerStats: GameObjectStats.player[playerRole],
@@ -324,7 +309,7 @@ function locatingGame() {
                     },
                     sidekick: {
                         type: sidekick,
-                        lineStage: [1, 0],//==第2-0句
+                        lineStage: [0, 0],//==第2-0句
                         doneTalking: false,
                         stopHotkey: false,//==對話完空白鍵不再出現對話（只能滑鼠點）
                     },
@@ -367,7 +352,7 @@ function locatingGame() {
                     initMap();
 
                     //==test
-                    // gameStart('defend');
+                    gameStart('defend');
                     // gameStart('dig');
                     //==test
                 };
@@ -1288,7 +1273,7 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
-                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             let lat = e.latlng.lat,
                                 lng = e.latlng.lng
 
@@ -2018,7 +2003,7 @@ function locatingGame() {
     };
     //==================d3 chart================================================
     //==取得波形svg圖
-    async function getWaveImg(stationData, timeDomain = null, overview = false) {
+    async function getWaveImg(stationData, timeDomain = null, overview = false, scaleY = 1) {
         // console.debug(stationData, timeDomain);
         let waveData = await (stationData.waveData ? stationData.waveData : data.tutorialData);
         // console.debug(waveData);
@@ -2149,7 +2134,14 @@ function locatingGame() {
                     xAxis.call(makeXAxis);
 
                 }
+
                 var updatePaths = () => {
+                    //波形第一點離中心點偏移位置修正(sclae變大會歪)
+                    const domainMean = yAxisDomain.reduce((p, c) => p + c) * 0.5;
+                    var getShiftY = (firstPoint) => {
+                        let shiftMean = y(domainMean) - y(firstPoint);
+                        return shiftMean;
+                    };
 
                     let eachHeight = overview ?
                         (height - margin.bottom) * 0.8 / 3 :
@@ -2157,20 +2149,19 @@ function locatingGame() {
 
                     let y = d3.scaleLinear()
                         .domain(yAxisDomain)
-                        .range([eachHeight, 0]);
+                        .range([0.5 * (1 + scaleY) * eachHeight, 0.5 * (1 - scaleY) * eachHeight]);
 
                     let line = d3.line()
                         .defined(d => !isNaN(d.x))
                         .x(d => x(d.x))
                         .y(d => y(d.y));
 
-
                     var makePaths = pathGroup => pathGroup
                         .attr("filter", overview ? null : "url(#pathShadow)")
                         .selectAll('g')
                         .data(newData)
                         .join("g")
-                        .attr("transform", (d, i) => `translate(0,${eachHeight * i + margin.top})`)
+                        .attr("transform", (d, i) => `translate(0,${eachHeight * i + margin.top + getShiftY(d.data[0].y)})`)
                         .call(gCollection =>
                             gCollection.each(function (d, i) {
                                 let g = d3.select(this),

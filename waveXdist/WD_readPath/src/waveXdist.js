@@ -883,15 +883,17 @@ function waveXdist() {
             console.debug(groupData);
 
             // console.debug(data);
-            var referenceTime = `時間：${data.date}T${data.time}(UTC)  經緯度：${data.lng},${data.lat}  深度：${data.depth}  規模：${data.ML}`,
-                title = referenceTime;
+            var referenceTime = `${data.date}T${data.time}`,
+                title = `${referenceTime}(UTC)  M${data.ML}`;
             if (stringObj) {
                 referenceTime = stringObj.referenceTime ? stringObj.referenceTime : referenceTime;
                 title = stringObj.title ?
                     stringObj.title :
                     (referenceTime.includes('.') ?
                         referenceTime.substring(0, referenceTime.lastIndexOf('.')) : referenceTime) + " (UTC)";
-            };
+            } else
+                stringObj = { referenceTime: referenceTime };
+
 
             const getMargin = (yAxisDomain = null) => {
                 // console.debug(yAxisDomain);
@@ -2845,8 +2847,10 @@ function waveXdist() {
             getChartMenu();
 
             data = await data;//等data處理完才能畫圖
-            chartContainerJQ.find('#chart' + i).append(WD_Charts(xAxisScale, xAxisName));
-            MenuEvents();
+            if (chartContainerJQ.find('#chart1>svg').length === 0) {
+                chartContainerJQ.find('#chart' + i).append(WD_Charts(xAxisScale, xAxisName));
+                MenuEvents();
+            };
         };
         //===init once
         if (!(chartContainerJQ.find('#form-chart').length >= 1)) {

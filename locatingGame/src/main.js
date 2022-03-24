@@ -283,7 +283,7 @@ function locatingGame() {
                 let playerRole = 'femalePerson';//==之後能選其他[femalePerson,maleAdventurer]
                 let sidekick = 'Dude';//=='Owlet,Dude,Pink'
 
-                let playerName = 'ㄇㄇㄇ',
+                let playerName = 'aaa',
                     avatarIndex = 0,//==自選頭像
                     avatarBgColor = 0x5B5B5B;//
 
@@ -309,7 +309,7 @@ function locatingGame() {
                     },
                     sidekick: {
                         type: sidekick,
-                        lineStage: [0, 0],//==第2-0句
+                        lineStage: [1, 0],//==第2-0句
                         doneTalking: false,
                         stopHotkey: false,//==對話完空白鍵不再出現對話（只能滑鼠點）
                     },
@@ -352,7 +352,7 @@ function locatingGame() {
                     initMap();
 
                     //==test
-                    gameStart('defend');
+                    // gameStart('defend');
                     // gameStart('dig');
                     //==test
                 };
@@ -628,7 +628,7 @@ function locatingGame() {
                     // console.debug(enemyArr);
                     data.forEach((d, i) => {
                         // console.debug(d);
-                        // let enemy = ['dog', 'cat'];//==之後隨機抽敵人組
+                        // let enemy = ['dog', 'cat', 'dove'];//==之後隨機抽敵人組
                         // let enemy = ['dove'];//==之後隨機抽敵人組
                         let enemy = [enemyArr[getRandom(enemyArr.length)]];
                         let enemyStats = {};

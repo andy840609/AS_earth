@@ -1467,6 +1467,11 @@ const Player = new Phaser.Class({
 
         this.anims.play('player_hurt', true);
 
+        //==取消攻擊動畫
+        let ATK_anims = this.attackEffect.anims;
+        if (ATK_anims.isPlaying)
+            ATK_anims.setCurrentFrame(ATK_anims.currentAnim.frames[ATK_anims.currentAnim.frames.length - 1]);
+
         //無敵動畫
         scene.tweens.add({
             targets: this,

@@ -2,20 +2,20 @@ const assetsDir = 'data/assets/';
 const datafileDir = 'data/datafile/';
 
 const defaultControllCursor = {
-    up: 'W',
-    down: 'S',
-    left: 'A',
-    right: 'D',
+    up: 'UP',
+    down: 'DOWN',
+    left: 'LEFT',
+    right: 'RIGHT',
     attack: 'SPACE',
     //==UI controll
     pause: 'P',
     backpack: 'I',
     detector: 'O',
-    shiftLeft: 'Q',
-    shiftRight: 'E',
-    shiftUp: 'Z',
-    shiftDown: 'X',
-    functionKey: 'C',
+    shiftLeft: 'A',
+    shiftRight: 'D',
+    shiftUp: 'W',
+    shiftDown: 'S',
+    functionKey: 'E',
     reset: 'R',
     exit: 'ESC',
 };
@@ -2225,10 +2225,11 @@ class RexTextBox extends RexPlugins.UI.TextBox {
 
         //==頭像調整爲150*150
         let icon = null;
+        // console.debug(character)
         if (!tips) {
             const imgW = 150;
             let gameData = config.gameData;
-            let isPlayer = character == 'player';
+            let isPlayer = character == 'player' || character == 'sidekick';
             let BgColor = isPlayer ? gameData.playerCustom.avatarBgColor : undefined;
             let img = new Phaser.GameObjects.Image(scene, 0, 0, character + 'Avatar');
 
@@ -3405,10 +3406,11 @@ class RexForm extends RexPlugins.UI.Sizer {
 
             return buttons;
         };
+        //===頭像名子助手區塊
         var createID = (scene) => {
-            var label = () => {
+            var label = (text) => {
                 return new RexPlugins.UI.Label(scene, {
-                    text: scene.add.text(0, 0, gameData.localeJSON.UI['characterName'], {
+                    text: scene.add.text(0, 0, text, {
                         fontSize: '24px',
                         padding: padding,
                     }),
@@ -3458,8 +3460,49 @@ class RexForm extends RexPlugins.UI.Sizer {
                     },
                 });
             };
+            var sideKickIcon = (key) => {
+                return new RexPlugins.UI.Label(scene, {
+                    background: scene.add.existing(
+                        new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 5)),
+                    icon: scene.add.image(0, 0, key + '_avatar'),
+                    name: key,
+                    space: {
+                        left: 10,
+                        right: 10,
+                        top: 10,
+                        bottom: 10
+                    },
+                })
+                    .setInteractive()
+                    .on('pointerdown', function () {
+                        let name = this.name;
+                        //==找到頭像預覽框
+                        let avatarSelect = form.getElement('#avatarSelect', true);
+                        if (isTexture) {
+                            avatarSelect.getElement('icon').setTexture(character + '_avatar' + name);
+                            avatarIndex = name;
+                        }
+                        else {
+                            avatarSelect.getElement('background').setFillStyle(name);
+                            avatarBgColor = name;
+                        };
+                    })
+                    .on('pointerout', function () {
+                        this.getElement('background').setStrokeStyle();
+                    })
+                    .on('pointerover', function () {
+                        this.getElement('background').setStrokeStyle(5, 0xffffff);
+                    });
+            };
 
+            let nameBox = new RexPlugins.UI.Sizer(scene, { orientation: 0, })
+                .add(label(gameData.localeJSON.UI['characterName']))
+                .add(textBox());
 
+            let sidekickBox = new RexPlugins.UI.Sizer(scene, { orientation: 0, })
+                .add(label(gameData.localeJSON.UI['chooseSidekick']));
+            console.debug(scene)
+            // sideKickIcon
             return new RexPlugins.UI.Sizer(scene, {
                 orientation: 0,
                 width: config.width,
@@ -3469,23 +3512,17 @@ class RexForm extends RexPlugins.UI.Sizer {
                 .add(avatar(),
                     {
                         proportion: 0,
-                        align: 'center',
                         padding: { top: 10, bottom: 10, left: 50, right: 50 },
                         expand: false,
                     })
-                .add(label(),
+                .add(
+                    new RexPlugins.UI.Sizer(scene, { orientation: 1, })
+                        .add(nameBox, { proportion: 1 })
+                        .add(sidekickBox, { proportion: 1 }),
                     {
                         proportion: 0,
-                        align: 'right',
-                        padding: { top: 10, bottom: 10, left: 10, right: 10 },
-                        expand: false,
-                    })
-                .add(textBox(),
-                    {
-                        proportion: 0,
-                        align: 'right',
-                        padding: { top: 10, bottom: 10, left: 10, right: 10 },
-                        expand: false,
+                        padding: { top: 10, bottom: 10, right: 10 },
+                        expand: true,
                     });
 
         };

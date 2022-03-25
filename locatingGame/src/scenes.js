@@ -23,7 +23,7 @@ class UIScene extends Phaser.Scene {
                     let obj = data.obj;
                     let x = obj.x + obj.displayWidth * (0.5 - obj.originX) + (data.dx ? data.dx : 0);
                     let y = obj.y + obj.displayHeight * (1 - obj.originY) + 18 + (data.dy ? data.dy : 0);
-                    let hotKeyString = data.text ? false : gameData.controllCursor[obj.name];
+                    let hotKeyString = gameData.controllCursor[obj.name] ? gameData.controllCursor[obj.name] : false;
                     let text = UItextJSON[data.text ? data.text : obj.name] + (hotKeyString ? `(${hotKeyString})` : '');
                     let tweensDuration = 200;
 
@@ -1081,7 +1081,7 @@ class UIScene extends Phaser.Scene {
                     };
                 }
                 else {
-                    let detectorButtons;
+                    let detectorButtons = [];
                     let mainCameras = gameScene.cameras.main;
                     preload = () => { };
                     create = () => {
@@ -1104,6 +1104,7 @@ class UIScene extends Phaser.Scene {
                                 // this.minimap.fixedScrollY = rectH / mapZoom * 0.5 + mainCameras.getBounds().y * mapZoom;
                                 this.minimap.fixedScrollY = rectH / mapZoom / 2 - 64.5;//- 65
                                 this.minimap.updateFlag = true;//==miniMap被關掉後再開啓要update位置一次
+                                // this.minimap.panFlag = false;//==相機視角平滑移動
 
                                 this.events.on('destroy', () => {
                                     if (gameScene.gameOver.flag) return;
@@ -1158,6 +1159,7 @@ class UIScene extends Phaser.Scene {
                                 dragBehavior(this.screenRect);
 
                                 //===按鈕
+                                const buttonScale = 0.22;
                                 var buttonBehavior = (button) => {
                                     button.setInteractive({ cursor: 'pointer' })
                                         .on('pointerover', function () {
@@ -1180,11 +1182,14 @@ class UIScene extends Phaser.Scene {
                                                 case 'shiftLeft':
                                                     dragX = -1;
                                                     break;
-                                                case 'functionKey':
-                                                    dragY = 1;
-                                                    break;
                                                 case 'shiftRight':
                                                     dragX = 1;
+                                                    break;
+                                                case 'shiftUp':
+                                                    dragY = -1;
+                                                    break;
+                                                case 'shiftDown':
+                                                    dragY = 1;
                                                     break;
                                             };
 
@@ -1198,25 +1203,32 @@ class UIScene extends Phaser.Scene {
                                         });
                                 };
 
-                                let resetButton = this.add.circle(x + 60, y + 74, 18, 0xffffff)
-                                    .setDepth(Depth.detector + 3)
-                                    .setOrigin(0)
-                                    .setAlpha(.01)
-                                    .setName('reset');
 
-                                detectorButtons = [resetButton];
-
-                                const buttonName = ['shiftLeft', 'functionKey', 'shiftRight'];
-                                const btnX = x - 91, btnY = y + 86;
+                                //===視角控制按鈕
+                                const buttonName = ['shiftLeft', 'shiftUp', 'shiftDown', 'shiftRight'];
+                                const btnX = x - 80, btnY = y + 86;
                                 buttonName.forEach((d, i) => {
-                                    let handleButton = this.add.rectangle(btnX + i * 51, btnY, 32, 11, 0xffffff)
-                                        .setDepth(Depth.detector + 3)
-                                        .setOrigin(0)
-                                        .setAlpha(.01)
+                                    let
+                                        x = btnX + (i - (i >= 2 ? 1 : 0)) * 30,
+                                        y = i === 1 ? btnY - 25 :
+                                            i === 2 ? btnY + 25 : btnY;
+
+                                    let handleButton = this.add.image(x, y, d)
+                                        .setScale(buttonScale)
+                                        .setDepth(Depth.detector + 5)
                                         .setName(d);
 
                                     detectorButtons.push(handleButton);
                                 });
+
+
+                                //===重置按鈕
+                                let resetButton = this.add.image(x + 50, btnY, 'resetButton')
+                                    .setScale(buttonScale)
+                                    .setDepth(Depth.detector + 5)
+                                    .setName('reset');
+                                detectorButtons.push(resetButton);
+
                                 detectorButtons.forEach(button => buttonBehavior(button));
 
                             };
@@ -1239,7 +1251,18 @@ class UIScene extends Phaser.Scene {
                             if (speed) minimap.updateFlag = true;
                             if (!player || !minimap.updateFlag) return;
 
+                            // console.debug(minimap.updateFlag);
                             mainCameras.startFollow(player);
+                            // if (!minimap.panFlag) {
+                            //     mainCameras.pan(player.x, player.y, 1000);
+                            //     this.time.delayedCall(1000, () => {
+                            //         minimap.panFlag = false;
+                            //         // mainCameras.startFollow(player);
+                            //     }, [], this);
+                            //     minimap.panFlag = true;
+                            // };
+
+
                             minimap.scrollY = mainCameras.scrollY + minimap.fixedScrollY;
                             // minimap.scrollY = mainCameras.scrollY;
                             this.screenRect.setPosition(
@@ -2840,6 +2863,11 @@ class UIScene extends Phaser.Scene {
                                         let upKey = gameData.controllCursor['up'],
                                             leftKey = gameData.controllCursor['left'],
                                             rightKey = gameData.controllCursor['right'];
+
+                                        upKey = UItextJSON[upKey] ? UItextJSON[upKey] : upKey;
+                                        leftKey = UItextJSON[leftKey] ? UItextJSON[leftKey] : leftKey;
+                                        rightKey = UItextJSON[rightKey] ? UItextJSON[rightKey] : rightKey;
+
                                         titleText = titleText.replace('\t', `${leftKey},${rightKey},${upKey}`);
 
                                         this.buttonGroups['previous'].setVisible(false);
@@ -2863,6 +2891,8 @@ class UIScene extends Phaser.Scene {
                                         break;
                                     case 3:
                                         let downKey = gameData.controllCursor['down'];
+                                        downKey = UItextJSON[downKey] ? UItextJSON[downKey] : downKey;
+
                                         titleText = titleText.replace('\t', downKey);
 
                                         this.orbGroup.getChildren()[0]
@@ -3748,6 +3778,7 @@ class GameStartScene extends Phaser.Scene {
             creatorObj: {
                 background: 'castle_2',
                 characters: Object.keys(GameObjectStats.player),
+                sidekicks: Object.keys(GameObjectStats.sidekick),
             },
             waveForm: {
                 getWaveImg: other.getWaveImg,
@@ -3778,6 +3809,7 @@ class GameStartScene extends Phaser.Scene {
         };
         var character = () => {
             const characters = this.creatorObj.characters;// ['maleAdventurer']
+            const sidekicks = this.creatorObj.sidekicks;
 
             var sprite = () => {
                 const playerDir = assetsDir + 'gameObj/player/';
@@ -3799,15 +3831,23 @@ class GameStartScene extends Phaser.Scene {
             };
             var avatar = () => {
                 const AvatarDir = assetsDir + 'avatar/';
-                const AvatarCount = 4;
+                var player = () => {
+                    const AvatarCount = 4;
 
-                characters.forEach(chara => {
-                    let dir = AvatarDir + chara + '/';
-                    [...Array(AvatarCount).keys()].forEach(i =>
-                        this.load.image(chara + '_avatar' + i, dir + i + '.png'));
+                    characters.forEach(chara => {
+                        let dir = AvatarDir + chara + '/';
+                        [...Array(AvatarCount).keys()].forEach(i =>
+                            this.load.image(chara + '_avatar' + i, dir + i + '.png'));
 
-                });
+                    });
+                };
+                var sidekick = () => {
+                    sidekicks.forEach(side =>
+                        this.load.image(side + '_avatar', AvatarDir + side + '.png'));
+                };
 
+                player();
+                sidekick();
             };
             sprite();
             avatar();
@@ -4355,14 +4395,14 @@ class LoadingScene extends Phaser.Scene {
                 const iconDir = assetsDir + 'icon/';
 
                 let UIButtonArr;
-                switch (gameScene.name) {
-                    case 'defend':
+                switch (packNum) {
+                    case 1:
                         UIButtonArr = ['detector', 'backpack', 'pause', 'exit'];
                         break;
-                    case 'dig':
+                    case 2:
                         UIButtonArr = ['detector', 'backpack', 'pause', 'exit'];
                         break;
-                    case 'boss':
+                    case 3:
                         UIButtonArr = ['backpack', 'pause'];
                         break;
                     default:
@@ -4381,15 +4421,17 @@ class LoadingScene extends Phaser.Scene {
                 // this.load.spritesheet('menuButton', uiDir + 'menuButton.png');
             };
             var detector = () => {
+                if (packNum === 3) return;
+
                 const dir = assetsDir + 'gameObj/environment/overview/';
                 this.load.image('detector', dir + 'detector.png');
                 this.load.image('detectorScreen', dir + 'detectorScreen.png');
-                this.load.image('shiftLeft', dir + 'shiftLeft.png');
-                this.load.image('shiftRight', dir + 'shiftRight.png');
                 this.load.image('functionKey', dir + 'functionKey.png');
                 this.load.image('resetButton', dir + 'resetButton.png');
                 this.load.image('shiftUp', dir + 'shiftUp.png');
                 this.load.image('shiftDown', dir + 'shiftDown.png');
+                this.load.image('shiftLeft', dir + `shiftLeft${packNum === 2 ? '_dig' : ''}.png`);
+                this.load.image('shiftRight', dir + `shiftRight${packNum === 2 ? '_dig' : ''}.png`);
             };
             var tooltip = () => {
                 this.load.image('tooltipButton', uiDir + 'tooltipButton.png');
@@ -5904,7 +5946,7 @@ class DigScene extends Phaser.Scene {
                 camera.preScrollX = camera.scrollX;
                 camera.preScrollY = camera.scrollY;
 
-                camera.startFollow(this.player);
+                // camera.startFollow(this.player);
 
                 //===礦坑背景隨相機移動
                 camera.on('followupdate', (camera, b) => {

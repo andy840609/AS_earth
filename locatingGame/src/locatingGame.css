@@ -18,7 +18,7 @@ h3,
 }
 
 #bigMap {
-    height: 95vh;
+    height: 100vh;
     padding: 0px;
 }
 
@@ -144,6 +144,7 @@ svg {
     border-width: 10px;
     border-radius: 5px;
     padding: 10px 10px;
+    margin: 10px 10px;
 }
 
 #gameUI .UIbar {
@@ -169,6 +170,7 @@ svg {
     opacity: .9;
     background-image: url(../data/assets/ui/map/mapTooltipBG.jpg);
     background-size: 150%;
+    white-space: nowrap;
     display: none;
     pointer-events: none;
 }

@@ -117,8 +117,8 @@ function locatingGame() {
         };
 
         const eventArr = ajaxReadFile({ url: datafileDir + 'event/eventList.txt', async: false }).responseText.split('\n');
-        const event = eventArr[2];//之後能選
-        // const event = eventArr[getRandom(eventArr.length)];
+        // const event = eventArr[2];//之後能選
+        const event = eventArr[getRandom(eventArr.length)];
         const eventCatlog = (value ? value : datafileDir + 'event/') + event + '/';
         const channel = ['BHE', 'BHN', 'BHZ'];//不一定BH的話還要有檔案得到
         const fileExtension = '.xy';
@@ -220,23 +220,20 @@ function locatingGame() {
 
         //===append map,gameInnerDiv..etc
         function initForm() {
-            chartContainerJQ.append(`
-                <form id="form-game">
-
-                <div class="form-group row" id="gameGroup">
-                  
+            chartContainerJQ.append(`       
+                <div class="row" id="gameGroup">
+                
                     <div id="bigMap" class="col-12">
                         <div id="blackout" class="col-12"></div>   
                     </div>
-                                   
+                                
                     <div id="gameOuter">
                         <div id="gameMain"></div>                 
                     </div>
-   
-                    <div class="form-group" id="gameUI"></div>
 
-                </div> 
-                </form>
+                    <div id="gameUI"></div>
+
+                </div>            
                 `);
 
             if (data === undefined)
@@ -805,9 +802,11 @@ function locatingGame() {
                             .children('.tooltipText')
                             .text(GameData.localeJSON.UI[target.id] + (hotKey ? ` (${hotKey}) ` : ''));
 
+                        // console.debug(targetDOMRect)
                         // UItooltip
                         let top = targetDOMRect.top - bigMapDOMRect.top - imgNode.offsetHeight * 0.7,
-                            left = targetDOMRect.left - bigMapDOMRect.left - 0.5 * (UItooltip.get(0).offsetWidth - imgNode.offsetWidth);
+                            left = targetDOMRect.left + 60;//==加icon寬
+                        // left = targetDOMRect.left - bigMapDOMRect.left - 0.5 * (UItooltip.get(0).offsetWidth - imgNode.offsetWidth);
 
                         UItooltip.css({ top: top, left: left, });
 
@@ -1912,48 +1911,48 @@ function locatingGame() {
                 }
                 else if (gameMode == 'dig') {
                     // console.debug(siteData);
-                    {
-                        const backgroundArr = Object.keys(BackGroundResources.dig);
+                    // {
+                    //     const backgroundArr = Object.keys(BackGroundResources.dig);
 
-                        let coordinate = siteData.coordinate;
-                        // let background = 'halloween_4';//==之後經緯度判斷？
-                        let background = backgroundArr[getRandom(backgroundArr.length)];
-                        let mineBGindex = 0;//==之後經緯度判斷？
+                    //     let coordinate = siteData.coordinate;
+                    //     // let background = 'halloween_4';//==之後經緯度判斷？
+                    //     let background = backgroundArr[getRandom(backgroundArr.length)];
+                    //     let mineBGindex = 0;//==之後經緯度判斷？
 
-                        let placeData = {
-                            coordinate: coordinate,
-                            background: background,
-                            mineBGindex: mineBGindex,
-                            depth: siteData.depth ? siteData.depth : null,
-                        };
+                    //     let placeData = {
+                    //         coordinate: coordinate,
+                    //         background: background,
+                    //         mineBGindex: mineBGindex,
+                    //         depth: siteData.depth ? siteData.depth : null,
+                    //     };
 
-                        //==顯示假設點
-                        assumedEpicenter
-                            .setLatLng(coordinate)
-                            .getTooltip()
-                            .setContent(`${GameData.localeJSON.UI['assumedEpicenter']} : ${coordinate.join(' , ')}`)
-                        assumedEpicenter.getElement().style.display = 'inline';
+                    //     //==顯示假設點
+                    //     assumedEpicenter
+                    //         .setLatLng(coordinate)
+                    //         .getTooltip()
+                    //         .setContent(`${GameData.localeJSON.UI['assumedEpicenter']} : ${coordinate.join(' , ')}`)
+                    //     assumedEpicenter.getElement().style.display = 'inline';
 
-                        GameData.playerEpicenter = coordinate;
+                    //     GameData.playerEpicenter = coordinate;
 
-                        gameResult = await new Promise((resolve, reject) => {
-                            const config = Object.assign(getPhaserConfig(width, height), {
-                                scene: new DigScene(placeData, GameData, {
-                                    resolve: resolve,
-                                }),
-                            });
-                            new Phaser.Game(config);
-                        });
+                    //     gameResult = await new Promise((resolve, reject) => {
+                    //         const config = Object.assign(getPhaserConfig(width, height), {
+                    //             scene: new DigScene(placeData, GameData, {
+                    //                 resolve: resolve,
+                    //             }),
+                    //         });
+                    //         new Phaser.Game(config);
+                    //     });
 
-                        console.debug(gameResult);
-                        let playerInfo = gameResult.playerInfo;
+                    //     console.debug(gameResult);
+                    //     let playerInfo = gameResult.playerInfo;
 
-                        //===更新人物資料
-                        updateMapUI(playerInfo, 1000);
-                    }
+                    //     //===更新人物資料
+                    //     updateMapUI(playerInfo, 1000);
+                    // }
 
                     //=== 進王關
-                    if (gameResult.bossRoom) {//gameResult.bossRoom
+                    if (1) {//gameResult.bossRoom
                         const backgroundArr = Object.keys(BackGroundResources.boss);
                         let background = backgroundArr[getRandom(backgroundArr.length)];
 
@@ -1972,7 +1971,7 @@ function locatingGame() {
                         updateMapUI(playerInfo, 1000);
 
                         //==通關
-                        if (gameResult.bossDefeated) {//gameResult.bossDefeated
+                        if (1) {//gameResult.bossDefeated
                             // console.debug('通關');
                             initEndScene(true);
                             return;
@@ -1993,9 +1992,10 @@ function locatingGame() {
         };
 
         //===init once
-        if (!(chartContainerJQ.find('#form-game').length >= 1)) {
-            initForm();
-        };
+        // if (!(chartContainerJQ.find('#form-game').length >= 1)) {
+        //     initForm();
+        // };
+        initForm();
         data = await data;
         console.log(data);
         gameGenerate();

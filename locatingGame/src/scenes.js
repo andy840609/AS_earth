@@ -2064,6 +2064,7 @@ class UIScene extends Phaser.Scene {
                                 sceneHeight: height,
                                 gameData: gameScene.gameData,
                                 character: character,
+                                sidekicks: gameScene.creatorObj.sidekicks,
                             }, resolve)
                                 .setDepth(Depth.UI)
                                 .popUp(500);
@@ -2242,6 +2243,7 @@ class UIScene extends Phaser.Scene {
                                     let RexUIscene = gameScene.RexUI;
                                     scene.form = RexUIscene.newForm(chara);
                                     RexUIscene.scene.bringToTop();
+                                    // console.debug(gameScene);
 
                                     scene.form
                                         .setPosition(width - scene.form.width * 1.1, height * 0.5)
@@ -2347,11 +2349,39 @@ class UIScene extends Phaser.Scene {
                 update = () => { };
                 break;
             case 'tutorial'://==教學關
+                //===Depth
+                Object.assign(Depth, {
+                    laserObj: 5,
+                    wave: 8,
+                    orbs: 9,
+                    pickUpObj: 11,
+                    dummy: 9,
+                    player: 10,
+                    tips: 6,
+                    playerAttack: 9,
+                    bullet: 15,
+                });
+
+
+                Object.assign(this, {
+                    name: 'tutorial',
+                    Depth: Depth,//==gameObject.js用到
+                    gameData: gameData,
+                });
+
+
                 const
                     tutorialX = width * 0.5,
                     tutorialY = height * 0.15,
                     tutorialW = width * 0.8 > 750 ? 750 : width * 0.8,
                     tutorialH = height * 0.6;
+
+                //角色等物件原點
+                const ObjOrigin = {
+                    x: tutorialX - 0.5 * tutorialW,
+                    y: tutorialY,
+                };
+
                 const tutorialBG = 'tutorial';
                 const pauseUI = gameScene.name != 'GameStart' ? gameScene.game.scene.getScene('pauseUI') : null;
                 const iconBar = gameScene.name != 'GameStart' ? gameScene.game.scene.getScene('iconBar') : null;
@@ -2389,7 +2419,7 @@ class UIScene extends Phaser.Scene {
                         if (gameScene.name != 'GameStart') return;
                         const gameObjDir = assetsDir + 'gameObj/';
                         var sprite = () => {
-                            const playerRole = gameScene.gameData.playerRole;
+                            const playerRole = gameData.playerRole;
                             const dir = gameObjDir + 'player/' + playerRole + '/';
                             const playerFrame = GameObjectFrame[playerRole];
                             const frameObj = playerFrame.frameObj;
@@ -2415,7 +2445,7 @@ class UIScene extends Phaser.Scene {
                                 { frameWidth: effectFrameObj.jump[0], frameHeight: effectFrameObj.jump[1] });
                             this.load.spritesheet('player_runAttackEffect', dir + 'runAttackEffect.png',
                                 { frameWidth: effectFrameObj.run[0], frameHeight: effectFrameObj.run[1] });
-                            if (gameScene.gameData.playerStats.class)//遠程子彈
+                            if (gameData.playerStats.class)//遠程子彈
                             {
                                 this.load.spritesheet('player_bullet1', dir + 'bullet1.png',
                                     { frameWidth: effectFrameObj.bullet[0], frameHeight: effectFrameObj.bullet[1] });
@@ -2424,6 +2454,20 @@ class UIScene extends Phaser.Scene {
                             };
                         };
                         sprite();
+                    };
+                    var sidekick = () => {
+                        const sidekick = gameData.sidekick.type;
+                        const dir = assetsDir + 'gameObj/sidekick/' + sidekick + '/';
+                        const frameObj = { frameWidth: 32, frameHeight: 32 };
+
+                        //==action
+                        this.load.spritesheet('sidekick_idle', dir + sidekick + '_Monster_Idle_4.png', frameObj);
+                        this.load.spritesheet('sidekick_run', dir + sidekick + '_Monster_Run_6.png', frameObj);
+                        this.load.spritesheet('sidekick_jump', dir + sidekick + '_Monster_Jump_8.png', frameObj);
+                        this.load.spritesheet('sidekick_attack', dir + sidekick + '_Monster_Attack2_6.png', frameObj);
+                        //==dust
+                        this.load.spritesheet('sidekick_jumpDust', dir + 'Double_Jump_Dust_5.png', frameObj);
+                        this.load.spritesheet('sidekick_runDust', dir + 'Walk_Run_Push_Dust_6.png', frameObj);
                     };
                     var dummy = () => {
                         const dummyDir = assetsDir + 'gameObj/enemy/zombie/';
@@ -2500,6 +2544,7 @@ class UIScene extends Phaser.Scene {
                     dummy();
                     orb();
                     detector();
+                    sidekick();
                 };
                 create = () => {
                     var backgroundImg = () => {
@@ -2622,7 +2667,7 @@ class UIScene extends Phaser.Scene {
                                         switch (name) {
                                             case 'skip':
                                                 gameScene.game.destroy(true, false);
-                                                gameScene.resolve(gameScene.gameData);
+                                                gameScene.resolve(gameData);
                                                 break;
                                             case 'close':
                                                 this.scene.remove();
@@ -2658,7 +2703,7 @@ class UIScene extends Phaser.Scene {
                                                             img: 'sheet',
                                                             text: 'info1_detail',
                                                             pic: 'wf_plot',
-                                                            gameData: gameScene.gameData,
+                                                            gameData: gameData,
                                                             x: width * 0.5,
                                                             y: height * 0.5,
                                                             width: 700,
@@ -2830,11 +2875,19 @@ class UIScene extends Phaser.Scene {
                                     this.clearText.setVisible(false);
                                     this.cameras.main.flashHandler();
                                     this.player.attackEffect.anims.remove();
-                                    this.player.enableBody(true, this.physics.world.bounds.left, height * 0.5, true, true);
+                                    this.player.enableBody(true, ObjOrigin.x + tutorialW * 0.2, ObjOrigin.y + tutorialH * 0.5, true, true);
                                     if (this.player.pickUpObj) {  //==有減光球就放下
                                         this.player.pickUpObj.statusHadler(this.player, false, false);
                                         this.player.pickUpObj = null;
                                     };
+                                    this.sidekick.enableBody(true, ObjOrigin.x + tutorialW * 0.1, ObjOrigin.y + tutorialH * 0.6, true, true);
+                                    if (this.sidekick.talkingCallback) {
+                                        if (this.sidekick.talkingTween) this.sidekick.talkingTween.remove();
+                                        this.sidekick.talkingCallback.remove();
+                                        this.sidekick.talkingCallback = null;
+                                    };
+                                    this.sidekick.dialog.setAlpha(0);
+                                    this.sidekick.dust.setAlpha(0);
 
                                     this.buttonGroups.buttonWobble(this.buttonGroups['next'], false);
                                     if (this.dummy.deadTweens) this.dummy.deadTweens.remove();//==會造成隱形
@@ -2881,7 +2934,7 @@ class UIScene extends Phaser.Scene {
                                         this.buttonGroups['previous'].setVisible(true);
 
                                         this.dummy
-                                            .enableBody(true, width * 0.7, tutorialY + tutorialH * 0.5, true, true)
+                                            .enableBody(true, ObjOrigin.x + tutorialW * 0.8, ObjOrigin.y + tutorialH * 0.6, true, true)
                                             .setAlpha(1)//死過會alpha0
                                             .play('dummy_idle');
 
@@ -2896,7 +2949,7 @@ class UIScene extends Phaser.Scene {
                                         titleText = titleText.replace('\t', downKey);
 
                                         this.orbGroup.getChildren()[0]
-                                            .enableBody(true, width * 0.7, height * 0.6, true, true)
+                                            .enableBody(true, ObjOrigin.x + tutorialW * 0.8, ObjOrigin.y + tutorialH * 0.6, true, true)
                                             .statusHadler(null, false, false);
 
                                         this.stepClear = false;
@@ -2925,6 +2978,7 @@ class UIScene extends Phaser.Scene {
                                         });
 
                                         this.player.disableBody(true, true);
+                                        this.sidekick.disableBody(true, true);
                                         this.detectorUI.scene.wake();
                                         this.waveForm.gameObjs.setVisible(true);
 
@@ -2936,7 +2990,7 @@ class UIScene extends Phaser.Scene {
 
                                         this.waveForm.gameObjs.setVisible(true);
                                         this.orbGroup.children.iterate(child => {
-                                            child.enableBody(true, width * 0.7, height * 0.6, true, true)
+                                            child.enableBody(true, ObjOrigin.x + tutorialW * 0.8, ObjOrigin.y + tutorialH * 0.6, true, true)
                                                 .statusHadler(null, false, false);
                                         });
                                         this.stepClear = [false, false];//==PS波是否放對
@@ -2990,7 +3044,7 @@ class UIScene extends Phaser.Scene {
                         //==anims
                         var animsCreate = () => {
                             if (gameScene.name != 'GameStart') return;
-                            let frameRate = GameObjectFrame[gameScene.gameData.playerRole].frameRate;
+                            let frameRate = GameObjectFrame[gameData.playerRole].frameRate;
 
                             this.anims.create({
                                 key: 'player_idle',
@@ -3064,7 +3118,7 @@ class UIScene extends Phaser.Scene {
                                 repeat: 0,
                             });
 
-                            if (gameScene.gameData.playerStats.class)//遠程子彈
+                            if (gameData.playerStats.class)//遠程子彈
                             {
                                 this.anims.create({
                                     key: 'player_bullet1',
@@ -3084,8 +3138,8 @@ class UIScene extends Phaser.Scene {
                         };
                         animsCreate();
 
-                        this.player = this.physics.add.sprite(this.physics.world.bounds.left, tutorialY + tutorialH * 0.5, 'player_idle')
-                            .setDepth(10)
+                        this.player = this.physics.add.sprite(ObjOrigin.x + tutorialW * 0.2, ObjOrigin.y + tutorialH * 0.5, 'player_idle')
+                            .setDepth(Depth.player)
                             .setCollideWorldBounds(true)
                             .setName('player')
                             .play('player_idle');
@@ -3094,7 +3148,7 @@ class UIScene extends Phaser.Scene {
 
                         // console.debug(this.physics.world.setBoundsCollision(false, true, true, true));
                         Object.assign(this.player, {
-                            stats: { ...GameObjectStats.player[gameScene.gameData.playerRole] },
+                            stats: { ...GameObjectStats.player[gameData.playerRole] },
                             //=處理轉向
                             filpHandler: function (filp) {
                                 this.setFlipX(filp);
@@ -3227,11 +3281,6 @@ class UIScene extends Phaser.Scene {
                                         && this.anims.isPlaying;
 
                                     if (attacking) return;
-                                    if (this.stats.MP < this.stats.manaCost) {
-                                        this.talkingHandler(scene, scene.gameData.localeJSON.UI['oom']);
-                                        return;
-                                    };
-
 
                                     //==anims
                                     // console.debug(this.anims);
@@ -3247,6 +3296,7 @@ class UIScene extends Phaser.Scene {
                                     if (currentAnims === 'player_attack' && this.anims.isPlaying) return;
                                     this.anims.play(attackAnims);
 
+
                                     //==bullet
                                     var bullet = this.bullets.get();
                                     if (bullet) {
@@ -3255,13 +3305,8 @@ class UIScene extends Phaser.Scene {
                                                 .play(isRuning ? 'player_bullet2' : 'player_bullet1', true)
                                                 .body.setAllowGravity(!isRuning);
 
-                                        bullet
-                                            .setDepth(15)
-                                            .body.setSize(...this.stats.bulletSize);
+                                        bullet.body.setSize(...this.stats.bulletSize);
                                         bullet.fire(this, this.stats.attackSpeed, this.stats.attackRange);
-
-
-                                        // console.debug(bullet.depth);
                                     };
 
                                 };
@@ -3283,19 +3328,23 @@ class UIScene extends Phaser.Scene {
                             classType: Bullet,
                             maxSize: this.player.stats.class == 0 ? 1 : 5,
                             runChildUpdate: true,
-                            // setDepth: { value: 15 },
                             // maxVelocityY: 0,
                         }).setOrigin(1, 0);
 
                         this.player.attackEffect = this.add.sprite(0, 0)
                             .setScale(2)
                             .setOrigin(0.5, 0.4)
-                            .setDepth(9);
+                            .setDepth(Depth.playerAttack);
 
                         this.physics.add.collider(this.player, this.platforms);
                         //==敵人玩家相關碰撞
                         this.physics.add.overlap(this.player.bullets, this.dummy, this.player.playerAttack, null, this);
 
+                    };
+                    var initSidekick = () => {
+                        this.sidekick = this.add.existing(new Sidekick(this, gameData.sidekick.type))
+                            .setPosition(ObjOrigin.x + tutorialW * 0.1, ObjOrigin.y + tutorialH * 0.6);
+                        this.physics.add.collider(this.sidekick, this.platforms);
                     };
                     var initDummy = () => {
                         var animsCreate = () => {
@@ -3321,7 +3370,7 @@ class UIScene extends Phaser.Scene {
                         animsCreate();
 
                         this.dummy = this.physics.add.sprite(0, 0, 'dummy_idle')
-                            .setDepth(9)
+                            .setDepth(Depth.dummy)
                             .setFlipX(1)
                             .setName('dummy')
                             .disableBody(true, true);
@@ -3503,7 +3552,7 @@ class UIScene extends Phaser.Scene {
                                 repeat: 1,
                                 randomFrame: true,
                                 setScale: { x: orbScale, y: orbScale },
-                                setDepth: { value: 9 },
+                                setDepth: { value: Depth.orbs },
                                 // maxVelocityY: 0,
                                 gravityY: 500,
                                 visible: false,
@@ -3517,7 +3566,7 @@ class UIScene extends Phaser.Scene {
                                 //=laser
                                 child.laserObj = this.physics.add.sprite(child.x, child.y + 20, 'laser')
                                     .setOrigin(0.5, 1)
-                                    .setDepth(5)
+                                    .setDepth(Depth.laserObj)
                                     .setVisible(false);
 
                                 child.laserObj
@@ -3536,12 +3585,12 @@ class UIScene extends Phaser.Scene {
                                         //===改變被撿放寶珠屬性
                                         if (beholding) {//pick up                         
                                             this.body.setMaxVelocityY(0);
-                                            this.setDepth(11)
+                                            this.setDepth(Depth.pickUpObj)
                                                 .anims.play('orb_holded', true);
                                         }
                                         else {//put down
                                             this.body.setMaxVelocityY(1000);
-                                            this.setDepth(9)
+                                            this.setDepth(Depth.orbs)
                                                 .anims.play(activate ? 'orb_activate' : 'orb_inactive', true);
                                             this.laserUpdateFlag = true;
                                         };
@@ -3559,7 +3608,7 @@ class UIScene extends Phaser.Scene {
                                             }
                                             else {
                                                 //==放下後角色屬性恢復
-                                                let originStas = GameObjectStats.player[gameScene.gameData.playerRole];
+                                                let originStas = GameObjectStats.player[gameData.playerRole];
                                                 newCharacterStats = {
                                                     movementSpeed: originStas.movementSpeed,
                                                     jumpingPower: originStas.jumpingPower,
@@ -3593,7 +3642,7 @@ class UIScene extends Phaser.Scene {
                         };
                         var initWave = async () => {
                             let wave = this.add.image(tutorialX, tutorialY + tutorialH * 0.6)
-                                .setDepth(8)
+                                .setDepth(Depth.wave)
                                 .setAlpha(.7)
                                 .setVisible(false);
 
@@ -3637,6 +3686,7 @@ class UIScene extends Phaser.Scene {
                     tutorialWindow();
                     initDummy();
                     initPlayer();
+                    initSidekick();
 
                     console.debug(this);
                 };
@@ -3645,6 +3695,10 @@ class UIScene extends Phaser.Scene {
                         this.player.movingHadler(this);
                         this.player.pickingHadler(this);
                         this.player.attackHandler(this);
+                    };
+                    var updateSidekick = () => {
+                        this.sidekick.behaviorHandler(this.player, this);
+                        // console.debug(this.sidekick.alpha);
                     };
                     var updateOrb = () => {
                         let pickUpObj = this.player.pickUpObj;
@@ -3713,6 +3767,7 @@ class UIScene extends Phaser.Scene {
                     };
                     updatePlayer();
                     updateOrb();
+                    updateSidekick();
                 };
                 break;
             case 'b':

@@ -1,20 +1,38 @@
 const assetsDir = 'data/assets/';
 const datafileDir = 'data/datafile/';
 
+// const defaultControllCursor = {
+//     up: 'UP',
+//     down: 'DOWN',
+//     left: 'LEFT',
+//     right: 'RIGHT',
+//     attack: 'SPACE',
+//     //==UI controll
+//     pause: 'P',
+//     backpack: 'I',
+//     detector: 'O',
+//     shiftLeft: 'A',
+//     shiftRight: 'D',
+//     shiftUp: 'W',
+//     shiftDown: 'S',
+//     functionKey: 'E',
+//     reset: 'R',
+//     exit: 'ESC',
+// };
 const defaultControllCursor = {
-    up: 'UP',
-    down: 'DOWN',
-    left: 'LEFT',
-    right: 'RIGHT',
+    up: 'W',
+    down: 'S',
+    left: 'A',
+    right: 'D',
     attack: 'SPACE',
     //==UI controll
     pause: 'P',
     backpack: 'I',
     detector: 'O',
-    shiftLeft: 'A',
-    shiftRight: 'D',
-    shiftUp: 'W',
-    shiftDown: 'S',
+    shiftUp: 'UP',
+    shiftDown: 'DOWN',
+    shiftLeft: 'LEFT',
+    shiftRight: 'RIGHT',
     functionKey: 'E',
     reset: 'R',
     exit: 'ESC',
@@ -1572,7 +1590,7 @@ const Sidekick = new Phaser.Class({
     initialize:
         function Sidekick(scene, key) {
             // console.debug(RexPlugins);
-            // console.debug(key);
+            // console.debug(scene.name);
             Phaser.Physics.Arcade.Sprite.call(this, scene);
             scene.physics.world.enableBody(this, 0);
 
@@ -1668,6 +1686,7 @@ const Sidekick = new Phaser.Class({
             this.dialog.preHintType = 1;//用來判斷上次對話是否閒聊（閒聊不連續說）
 
             this.hints = scene.gameData.localeJSON.Hints[scene.name];
+            // console.debug(scene.name);
             this.hintAmount = [//==hints總數量 0:提示 1:閒聊
                 Object.keys(this.hints[0]).length - 1,
                 Object.keys(this.hints[1]).length - 1
@@ -1711,6 +1730,7 @@ const Sidekick = new Phaser.Class({
     },
     behavior: null,
     behaviorHandler: function (player, scene) {
+        if (!this.active) return;
         // console.debug(this.body.speed);
 
         //==離玩家太遠才移動
@@ -1818,6 +1838,12 @@ const Sidekick = new Phaser.Class({
                     break;
                 case 'boss':
                     hint = this.hints[hintType][hintIdx];
+                    break;
+                case 'tutorial':
+                    if (!hintType && !hintIdx)
+                        hint = this.hints[hintType][hintIdx].replace(replaceStr, this.name);
+                    else
+                        hint = this.hints[hintType][hintIdx];
                     break;
             };
 
@@ -3290,7 +3316,8 @@ class RexForm extends RexPlugins.UI.Sizer {
 
         var playerName = playerCustom.name,
             avatarIndex = playerCustom.avatarIndex,
-            avatarBgColor = playerCustom.avatarBgColor;
+            avatarBgColor = playerCustom.avatarBgColor,
+            sidekickType = gameData.sidekick.type;
 
         var createHeader = (scene, text, backgroundColor) => {
             return new RexPlugins.UI.Label(scene, {
@@ -3376,6 +3403,7 @@ class RexForm extends RexPlugins.UI.Sizer {
                             // console.debug(playerName, avatarIndex, avatarBgColor);
 
                             gameData.playerRole = character;
+                            gameData.sidekick.type = sidekickType;
                             gameData.playerStats = { ...GameObjectStats.player[character] };
                             Object.assign(gameData.playerCustom, {
                                 avatarIndex: avatarIndex,
@@ -3461,38 +3489,36 @@ class RexForm extends RexPlugins.UI.Sizer {
                 });
             };
             var sideKickIcon = (key) => {
+                const iconW = 30;
+
+                let icon = new Phaser.GameObjects.Image(scene, 0, 0, key + '_avatar');
+                icon.setScale(iconW / icon.width, iconW / icon.height);
+
                 return new RexPlugins.UI.Label(scene, {
                     background: scene.add.existing(
                         new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 5)),
-                    icon: scene.add.image(0, 0, key + '_avatar'),
+                    icon: scene.add.existing(icon),
                     name: key,
                     space: {
-                        left: 10,
-                        right: 10,
-                        top: 10,
-                        bottom: 10
+                        left: 5,
+                        right: 5,
+                        top: 5,
+                        bottom: 5
                     },
                 })
-                    .setInteractive()
+                    .setInteractive({ cursor: 'pointer' })
                     .on('pointerdown', function () {
                         let name = this.name;
-                        //==找到頭像預覽框
-                        let avatarSelect = form.getElement('#avatarSelect', true);
-                        if (isTexture) {
-                            avatarSelect.getElement('icon').setTexture(character + '_avatar' + name);
-                            avatarIndex = name;
-                        }
-                        else {
-                            avatarSelect.getElement('background').setFillStyle(name);
-                            avatarBgColor = name;
-                        };
-                    })
-                    .on('pointerout', function () {
-                        this.getElement('background').setStrokeStyle();
-                    })
-                    .on('pointerover', function () {
-                        this.getElement('background').setStrokeStyle(5, 0xffffff);
+
+                        //==取消所有框線
+                        config.sidekicks.forEach(sidekick =>
+                            sidekickBox.getElement('#' + sidekick).getElement('background').setStrokeStyle());
+
+                        //==點選的框線
+                        this.getElement('background').setStrokeStyle(5, COLOR_LIGHT);
+                        sidekickType = name;
                     });
+
             };
 
             let nameBox = new RexPlugins.UI.Sizer(scene, { orientation: 0, })
@@ -3501,7 +3527,13 @@ class RexForm extends RexPlugins.UI.Sizer {
 
             let sidekickBox = new RexPlugins.UI.Sizer(scene, { orientation: 0, })
                 .add(label(gameData.localeJSON.UI['chooseSidekick']));
-            console.debug(scene)
+            config.sidekicks.forEach((sidekick, i) => {
+                let icon = sideKickIcon(sidekick);
+                if (i === 0) icon.getElement('background').setStrokeStyle(5, COLOR_LIGHT);
+                sidekickBox.add(icon);
+            });
+
+
             // sideKickIcon
             return new RexPlugins.UI.Sizer(scene, {
                 orientation: 0,
@@ -3517,8 +3549,8 @@ class RexForm extends RexPlugins.UI.Sizer {
                     })
                 .add(
                     new RexPlugins.UI.Sizer(scene, { orientation: 1, })
-                        .add(nameBox, { proportion: 1 })
-                        .add(sidekickBox, { proportion: 1 }),
+                        .add(nameBox, { proportion: 1, expand: true })
+                        .add(sidekickBox, { proportion: 1, expand: true }),
                     {
                         proportion: 0,
                         padding: { top: 10, bottom: 10, right: 10 },

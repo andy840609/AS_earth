@@ -40,7 +40,7 @@ function locatingGame() {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 300 },
-                    // debug: true,
+                    debug: true,
                 },
             },
             dom: {//==for rexUI:rexTextEdit
@@ -330,20 +330,20 @@ function locatingGame() {
                     GameData.getLanguageJSON = getLanguageJSON;
 
                     //==test
-                    gameDisplay(true);
-                    let newGameData = await new Promise((resolve, reject) => {
-                        const config = Object.assign(getPhaserConfig(width, height), {
-                            scene: new GameStartScene(GameData, {
-                                getWaveImg: getWaveImg,
-                                tutorialData: data.tutorialData,
-                                resolve: resolve,
-                                getLanguageJSON: getLanguageJSON,
-                            }),
-                        });
-                        new Phaser.Game(config);
-                    });
+                    // gameDisplay(true);
+                    // let newGameData = await new Promise((resolve, reject) => {
+                    //     const config = Object.assign(getPhaserConfig(width, height), {
+                    //         scene: new GameStartScene(GameData, {
+                    //             getWaveImg: getWaveImg,
+                    //             tutorialData: data.tutorialData,
+                    //             resolve: resolve,
+                    //             getLanguageJSON: getLanguageJSON,
+                    //         }),
+                    //     });
+                    //     new Phaser.Game(config);
+                    // });
 
-                    gameDisplay(false);
+                    // gameDisplay(false);
                     //==test
 
                     initMap();
@@ -622,12 +622,15 @@ function locatingGame() {
                     // console.debug(data);
                     const backgroundArr = Object.keys(BackGroundResources.defend);
                     const enemyArr = Object.keys(GameObjectStats.creature).filter(c => c != 'boss' && c != 'zombie');
-                    // console.debug(enemyArr);
+                    let copyEnemyArr = [...enemyArr].sort(() => 0.5 - Math.random());//===確保每種敵人出現一次
+
+                    console.debug(enemyArr, copyEnemyArr);
                     data.forEach((d, i) => {
                         // console.debug(d);
                         // let enemy = ['dog', 'cat', 'dove'];//==之後隨機抽敵人組
                         // let enemy = ['dove'];//==之後隨機抽敵人組
-                        let enemy = [enemyArr[getRandom(enemyArr.length)]];
+                        let enemy =
+                            [enemyArr[getRandom(enemyArr.length)]];
                         let enemyStats = {};
 
                         enemy.forEach((key) => {

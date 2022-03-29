@@ -1,6 +1,7 @@
 function locatingGame() {
     var selector = 'body';
     var data;
+    var rankingData;
     var GameData = null;
 
     //Append to the object constructor function so you can only make static calls
@@ -40,7 +41,7 @@ function locatingGame() {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 300 },
-                    debug: true,
+                    // debug: true,
                 },
             },
             dom: {//==for rexUI:rexTextEdit
@@ -158,19 +159,11 @@ function locatingGame() {
             ajaxReadFile({ url: eventCatlog + "epicenter.csv" }).then(success => {
                 // console.debug(success);
                 let data;
-                // const datakey = ['lat', 'lng', 'depth'];
-                // let tmp = {};
-                // success.split(',').map((d, i) => tmp[datakey[i]] = !isNaN(d) ? parseFloat(d) : d);
-                // data = {
-                //     coordinate: [tmp.lat, tmp.lng],
-                //     depth: tmp.depth,
-                // }
-
                 let col = success.split(',');
                 data = {
                     coordinate: [parseFloat(col[0]), parseFloat(col[1])],
                     depth: parseFloat(col[2]),
-                }
+                };
 
                 resolve(data);
             })
@@ -201,6 +194,23 @@ function locatingGame() {
             resolve(Object.assign(tutorialData, { waveData: data, }));
 
         });
+
+        //===D.排名資料
+        rankingData = new Promise((resolve, reject) =>
+            ajaxReadFile({ url: datafileDir + "rank/records.txt" }).then(success => {
+                let data;
+                data = success.split("\n").filter(d => d !== '').map(row => {
+                    let col = row.split(' ');
+                    return {
+                        player: col[0],
+                        timeUse: parseFloat(col[1]),
+                    };
+                });
+                // console.debug(data);
+                resolve(data);
+            })
+        );
+
 
         data = Promise.all([stationData, epicenterData, tutorialData]).then(sucess => {
             // console.debug(sucess);
@@ -248,7 +258,6 @@ function locatingGame() {
             var mapObj;
             var geoJSON;//===location data
             var assumedEpicenter;
-            var rankingData;
 
             //===遊戲相關
             const clearStationToUnlock = 3;//==完成幾個解鎖第二關
@@ -330,20 +339,21 @@ function locatingGame() {
                     GameData.getLanguageJSON = getLanguageJSON;
 
                     //==test
-                    // gameDisplay(true);
-                    // let newGameData = await new Promise((resolve, reject) => {
-                    //     const config = Object.assign(getPhaserConfig(width, height), {
-                    //         scene: new GameStartScene(GameData, {
-                    //             getWaveImg: getWaveImg,
-                    //             tutorialData: data.tutorialData,
-                    //             resolve: resolve,
-                    //             getLanguageJSON: getLanguageJSON,
-                    //         }),
-                    //     });
-                    //     new Phaser.Game(config);
-                    // });
+                    gameDisplay(true);
+                    let newGameData = await new Promise((resolve, reject) => {
+                        const config = Object.assign(getPhaserConfig(width, height), {
+                            scene: new GameStartScene(GameData, {
+                                getWaveImg: getWaveImg,
+                                tutorialData: data.tutorialData,
+                                resolve: resolve,
+                                getLanguageJSON: getLanguageJSON,
+                                rankingData: rankingData,//排行榜
+                            }),
+                        });
+                        new Phaser.Game(config);
+                    });
 
-                    // gameDisplay(false);
+                    gameDisplay(false);
                     //==test
 
                     initMap();
@@ -383,27 +393,14 @@ function locatingGame() {
                 var congratsScene = async () => {
                     let congrats = chartContainerJQ.find('#gameGroup .Congrats');
 
-                    var getRKData = (rankingData) => {//==之後改讀json?不用處理
-                        let newData = [];
-                        var rows = rankingData.split("\n");
-                        rows.forEach(row => {
-                            if (row.trim() == '') return;
-                            let col = row.split(' ');
-                            newData.push({
-                                player: col[0],
-                                timeUse: parseFloat(col[1]),
-                            });
-                        });
-                        return newData
-                    };
                     var initRankChart = () => {
                         let svg = getRankChart(rankingData);
-                        let svgBox = svg.viewBox.baseVal;
+                        // let svgBox = svg.viewBox.baseVal;
 
                         congrats
                             .find('.rankChart')
                             .append(svg)
-                            .find('svg')
+                            .find('svg');
                         // .height(height)
                         // .width(svgBox.width * (height / svgBox.height));
 
@@ -514,8 +511,6 @@ function locatingGame() {
                             });
                     };
 
-                    rankingData = getRKData(await rankingData);
-
                     congrats.fadeIn();
                     initRankChart();
                     initShareSocial();
@@ -624,14 +619,16 @@ function locatingGame() {
                     const enemyArr = Object.keys(GameObjectStats.creature).filter(c => c != 'boss' && c != 'zombie');
                     let copyEnemyArr = [...enemyArr].sort(() => 0.5 - Math.random());//===確保每種敵人出現一次
 
-                    console.debug(enemyArr, copyEnemyArr);
                     data.forEach((d, i) => {
                         // console.debug(d);
                         // let enemy = ['dog', 'cat', 'dove'];//==之後隨機抽敵人組
                         // let enemy = ['dove'];//==之後隨機抽敵人組
-                        let enemy =
+                        let enemy = copyEnemyArr.length !== 0 ?//===拷貝的陣列抽完才全隨機
+                            [copyEnemyArr.pop()] :
                             [enemyArr[getRandom(enemyArr.length)]];
+
                         let enemyStats = {};
+
 
                         enemy.forEach((key) => {
                             let gameObj = GameObjectStats.creature[key];
@@ -715,15 +712,15 @@ function locatingGame() {
 
                     let size = 40;
                     //==test 震央
-                    L.marker(data.epicenter['coordinate'], {
-                        icon: L.icon({
-                            iconUrl: assetsDir + 'icon/star.png',
-                            iconSize: [size, size],
-                            iconAnchor: [size / 2, size / 2],
-                        }),
-                        pane: 'markerPane',
-                        data: data.epicenter,
-                    }).addTo(mapObj);
+                    // L.marker(data.epicenter['coordinate'], {
+                    //     icon: L.icon({
+                    //         iconUrl: assetsDir + 'icon/star.png',
+                    //         iconSize: [size, size],
+                    //         iconAnchor: [size / 2, size / 2],
+                    //     }),
+                    //     pane: 'markerPane',
+                    //     data: data.epicenter,
+                    // }).addTo(mapObj);
                     //==test 震央
 
                     assumedEpicenter = L.marker(data.epicenter['coordinate'], {
@@ -1196,20 +1193,6 @@ function locatingGame() {
                                     </div>
                                 </div>
                             `);
-
-
-                        rankingData = $.ajax({
-                            url: datafileDir + "rank/records.txt",
-                            dataType: "text",
-                            async: true,
-                            // success: function (d) { },
-                            error: function (jqXHR, textStatus, errorThrown) {
-                                console.error(jqXHR, textStatus, errorThrown);
-                            },
-                        });
-
-
-
                     };
                     var sidekick = () => {
                         const sidekickDir = assetsDir + 'ui/map/sidekick/';
@@ -1955,35 +1938,35 @@ function locatingGame() {
                     // }
 
                     //=== 進王關
-                    if (1) {//gameResult.bossRoom
-                        const backgroundArr = Object.keys(BackGroundResources.boss);
-                        let background = backgroundArr[getRandom(backgroundArr.length)];
+                    // if (gameResult.bossRoom) {//gameResult.bossRoom
+                    //     const backgroundArr = Object.keys(BackGroundResources.boss);
+                    //     let background = backgroundArr[getRandom(backgroundArr.length)];
 
-                        gameResult = await new Promise((resolve, reject) => {
-                            const config = Object.assign(getPhaserConfig(width, height), {
-                                scene: new BossScene(GameData, background, {
-                                    resolve: resolve,
-                                }),
-                            });
-                            new Phaser.Game(config);
-                        });
-                        console.debug(gameResult);
-                        let playerInfo = gameResult.playerInfo;
+                    //     gameResult = await new Promise((resolve, reject) => {
+                    //         const config = Object.assign(getPhaserConfig(width, height), {
+                    //             scene: new BossScene(GameData, background, {
+                    //                 resolve: resolve,
+                    //             }),
+                    //         });
+                    //         new Phaser.Game(config);
+                    //     });
+                    //     console.debug(gameResult);
+                    //     let playerInfo = gameResult.playerInfo;
 
-                        //===更新人物資料
-                        updateMapUI(playerInfo, 1000);
+                    //     //===更新人物資料
+                    //     updateMapUI(playerInfo, 1000);
 
-                        //==通關
-                        if (1) {//gameResult.bossDefeated
-                            // console.debug('通關');
-                            initEndScene(true);
-                            return;
-                        };
-
-                    }
-                    else { //=== 沒找到
-                        updateSidekick(5, 0);
+                    //     //==通關
+                    if (1) {//gameResult.bossDefeated
+                        // console.debug('通關');
+                        initEndScene(true);
+                        return;
                     };
+
+                    // }
+                    // else { //=== 沒找到
+                    //     updateSidekick(5, 0);
+                    // };
 
                 };
                 gameDisplay(false);
@@ -2000,7 +1983,9 @@ function locatingGame() {
         // };
         initForm();
         data = await data;
+        rankingData = await rankingData;
         console.log(data);
+        console.log(rankingData);
         gameGenerate();
 
     };

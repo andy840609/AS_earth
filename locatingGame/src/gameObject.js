@@ -2622,6 +2622,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                 'setting': 1,
                 'links': 2,
                 'rank': 3,
+                'item': 4,
             }[config.panelType],
             x = config.x, y = config.y;
         // console.debug(scene);
@@ -2762,11 +2763,13 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                     return BBCodeText;
                 };
 
-                const Sizer = new RexPlugins.UI.Sizer(scene, {
+                let table = new RexPlugins.UI.Sizer(scene, {
                     orientation: scrollMode,
                     space: { left: 10, right: 10, top: 10, bottom: 10, item: 10 }
                 })
-                    .addBackground(scene.add.existing(
+
+                if (panelType !== 3)
+                    table.addBackground(scene.add.existing(
                         new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 0, undefined).setStrokeStyle(2, COLOR_LIGHT, 1)
                     ));
 
@@ -2776,7 +2779,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                         columns = 2,
                         rows = Math.ceil(items.length / columns);
 
-                    let table = new RexPlugins.UI.GridSizer(scene, {
+                    let grid = new RexPlugins.UI.GridSizer(scene, {
                         column: columns,
                         row: rows,
                         // rowProportions: 0,
@@ -2821,25 +2824,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                                         icon.getElement('text').setText(keyPressed);
                                         tmp.controllCursor[item.name] = keyPressed;
                                     };
-                                    sizer.on('resetControl', () => {
-                                        // Object.assign(tmp, {
-                                        //     controllCursor: {
-                                        //         up: 'W',
-                                        //         down: 'S',
-                                        //         left: 'A',
-                                        //         right: 'D',
-                                        //         attack: 'SPACE',
-                                        //         //==UI controll
-                                        //         pause: 'P',
-                                        //         backpack: 'I',
-                                        //         detector: 'O',
-                                        //         shiftLeft: 'Q',
-                                        //         shiftRight: 'E',
-                                        //         functionKey: 'C',
-                                        //         reset: 'R',
-                                        //         exit: 'ESC',
-                                        //     },
-                                        // });
+                                    Panel.on('resetControl', () => {
                                         tmp.controllCursor = { ...defaultControllCursor };
 
                                         let tables = this.getElement('panel').getElement('items');
@@ -2896,7 +2881,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
 
                                         };
                                     };
-                                    sizer.on('resetLanguage', () => keyPressAction(icon, 0, true));
+                                    Panel.on('resetLanguage', () => keyPressAction(icon, 0, true));
                                     break;
                                 default:
                                     iconText = false;
@@ -2962,9 +2947,8 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                         }
                     });
 
-                    Sizer
-                        .add(
-                            getText(localeJSON.UI[key]), // child
+                    table
+                        .add(getText(localeJSON.UI[key]), // child
                             {
                                 proportion: 1,
                                 align: 'left',
@@ -2972,7 +2956,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                                 expand: true,
                             }
                         )
-                        .add(table, // child
+                        .add(grid, // child
                             {
                                 proportion: 2,
                                 align: 'center',
@@ -3038,7 +3022,6 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                                     );
 
                             });
-
                             break;
                         case 2://==連結
                             const
@@ -3054,7 +3037,6 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                             const
                                 columns = 2,
                                 rows = sites.length;
-                            const iconSize = 40;
 
                             content = new RexPlugins.UI.GridSizer(scene, {
                                 column: columns,
@@ -3100,21 +3082,103 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                                 }
                             });
                             break;
-                    };
-                    Sizer.add(content);
+                        case 3://==排行
+                            let createButton = (text) => {
+                                let radius = {
+                                    tr: 20,
+                                    tl: 20,
+                                };
+                                return new RexPlugins.UI.Label(scene, {
+                                    width: 50,
+                                    height: 40,
+                                    background: scene.add.existing(
+                                        new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, radius, COLOR_DARK)),
+                                    text: scene.add.text(0, 0, text, {
+                                        fontSize: 18,
+                                        color: '#000',
+                                        padding: padding,
+                                    }),
+                                    space: {
+                                        left: 10
+                                    }
+                                });
+                            };
+                            let rankingBoard = () => {
+                                const rankingData = scene.rankingData;
+                                const colKeys = Object.keys(rankingData[0]);
+                                // console.debug(colKeys);
 
+                                const
+                                    rankColumns = 2,
+                                    rankRows = rankingData.length;
+
+                                let content = new RexPlugins.UI.GridSizer(scene, {
+                                    column: rankColumns,
+                                    row: rankRows,
+                                    // rowProportions: 2,
+                                    // columnProportions: 20,// [0, 1, 2]
+                                    space: {
+                                        top: 10,
+                                        bottom: 10,
+                                        left: 10,
+                                        right: 10,
+                                        column: 10,
+                                    },
+                                    createCellContainerCallback: function (scene, col, row, config) {
+
+                                        Object.assign(config, {
+                                            align: 'top',
+                                            padding: {
+                                                left: 10,
+                                                right: 10,
+                                                top: 0,
+                                                bottom: 0
+                                            },
+                                            expand: true,
+                                        });
+                                        let cell = getText(rankingData[row][colKeys[col]]);
+
+
+                                        return cell;
+                                    }
+                                }).addBackground(scene.add.existing(
+                                    new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 0, undefined).setStrokeStyle(2, COLOR_LIGHT, 1)
+                                ));
+
+                                return content;
+                            };
+
+                            content = new RexPlugins.UI.Tabs(scene, {
+                                panel: rankingBoard(),
+                                topButtons: [
+                                    createButton('+666666666'),
+                                    createButton('-'),
+                                ],
+                                space: {
+                                    topButtonsOffset: 10,
+                                    topButton: 1,
+                                },
+                            });
+
+                            break;
+                    };
+
+                    table.add(content, { expand: true });
                 };
 
-                return Sizer;
+
+
+
+                return table;
             };
             var createIcon = (scene, iconType, config = {}) => {
-                //===panelType暫定: 0:緣由 1:設定 2:連結 3:道具
+                //===panelType暫定: 0:緣由 1:設定 2:連結 3:排行榜 4.道具
                 //===iconType: controll,language
 
                 return new RexPlugins.UI.Label(scene, {
                     // orientation: scrollMode,
-                    icon: panelType == 3 ? scene.add.existing(
-                        new RexPlugins.UI.RoundRectangle(scene, 0, 0, iconWidth, iconHeight, 5, COLOR_LIGHT)) : false,
+                    icon: panelType == 4 ? scene.add.existing(
+                        new RexPlugins.UI.RoundRectangle(scene, 0, 0, 50, 50, 5, COLOR_LIGHT)) : false,
                     width: config.width ? config.width : false,
                     height: config.height ? config.height : false,
                     background: scene.add.existing(
@@ -3128,27 +3192,27 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                     space: { icon: config.iconSpace ? config.iconSpace : 0 }
                 });
             };
-            var sizer = new RexPlugins.UI.Sizer(scene, {
+            const Panel = new RexPlugins.UI.Sizer(scene, {
                 orientation: !scrollMode,
                 space: { item: 10 }
             });
 
             //==緣由等文字內容
-            if (panelType == 0 || panelType == 2)
-                sizer.add(
+            if (panelType === 0 || panelType === 2 || panelType === 3)
+                Panel.add(
                     createTable(scene), // child
                     { expand: true },
                 );
 
             //==設定中物品
             categoryArray.forEach(category => {
-                sizer.add(
+                Panel.add(
                     createTable(scene, category), // child
                     { expand: true },
                 );
             })
 
-            return sizer;
+            return Panel;
         };
         var createLabel = (scene, text, backgroundColor) => {
             return new RexPlugins.UI.Label(scene, {
@@ -3703,7 +3767,7 @@ class RexForm extends RexPlugins.UI.Sizer {
     };
 };
 
-//===sheet
+//===互動說明sheet
 class RexSheet extends RexPlugins.UI.FixWidthSizer {
     constructor(scene, config, resolve) {
 
@@ -3771,7 +3835,7 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
             .add(header,
                 { padding: { top: 20, bottom: 10, left: config.width * 0.7 } })
             .addNewLine()
-            .on('postlayout', function (children, sizer) {
+            .on('postlayout', function (children) {
                 children.filter(child => child.type === "Text" || (child.type === "Image" && child.name === "pic"))
                     .forEach(child => {
                         let duration, delay;

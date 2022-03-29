@@ -19,26 +19,6 @@
 ddd 8.82
  5.17
 ss 3.99
- 0
- 0
- 0
- 0
- 0
-d 1.2
-AA 1.45
-AA 1.35
-aaa 0
-aaa 0.21
-aaa 0
-aaa 0
-aaa 0
-aaa 0
-aaa 0
-aaa 0
-aaa 0
-aaa 0
-aaa 0
-aaa 0
 aaa 0
 aaa 0
 aaa 0

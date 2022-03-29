@@ -2662,12 +2662,42 @@ class UIScene extends Phaser.Scene {
                                             .setScale(1)
                                             .setColor('#000000');
                                     })
-                                    .on('pointerdown', () => {
+                                    .on('pointerdown', async () => {
                                         // console.debug(name);
                                         switch (name) {
                                             case 'skip':
-                                                gameScene.game.destroy(true, false);
-                                                gameScene.resolve(gameData);
+                                                //===二次確認
+                                                let questionData = {
+                                                    question: UItextJSON['skipConfirm'],
+                                                    options: [UItextJSON['ok'], UItextJSON['cancel']],
+                                                };
+
+                                                let confirmIdx = await new Promise(resolve => {
+                                                    let confirmScene = this.scene.add(null, new Phaser.Scene("confirmScene"), true);
+                                                    //==暫停formUI在的scene，所以確認視窗放在gameScene
+                                                    new RexDialog(confirmScene, {
+                                                        x: width * 0.5,
+                                                        y: height * 0.5,
+                                                        data: questionData,
+                                                        quizType: 1,
+                                                    }, resolve)
+                                                        .popUp(500);
+
+                                                    this.scene.pause();
+                                                    this.detectorUI.scene.pause();
+                                                });
+                                                // // console.debug(questionData.options[confirmIdx]);
+                                                this.scene.resume();
+                                                this.detectorUI.scene.resume();
+                                                this.scene.remove("confirmScene");
+
+                                                //==確認跳過
+                                                if (questionData.options[confirmIdx] == UItextJSON['ok']) {
+                                                    gameScene.game.destroy(true, false);
+                                                    gameScene.resolve(gameData);
+                                                }
+                                                else return;
+
                                                 break;
                                             case 'close':
                                                 this.scene.remove();
@@ -2677,8 +2707,11 @@ class UIScene extends Phaser.Scene {
                                                 if (iconBar) iconBar.scene.resume();
                                                 break;
                                             case 'next':
-                                                if (this.stepObj.nowStep == this.stepObj.maxStep)
-                                                    this.buttonGroups[buttons[0]].getChildren().find(c => c.type === "Image").emit('pointerdown');
+                                                if (this.stepObj.nowStep == this.stepObj.maxStep) {
+                                                    // this.buttonGroups[buttons[0]].getChildren().find(c => c.type === "Image").emit('pointerdown');
+                                                    gameScene.game.destroy(true, false);
+                                                    gameScene.resolve(gameData);
+                                                }
                                                 else {
                                                     this.stepObj.nowStep++;
                                                     this.stepHandler();
@@ -3839,6 +3872,7 @@ class GameStartScene extends Phaser.Scene {
                 getWaveImg: other.getWaveImg,
                 tutorialData: other.tutorialData,
             },//==tutorial
+            rankingData: other.rankingData,
             resolve: other.resolve,
         });
 
@@ -3958,7 +3992,7 @@ class GameStartScene extends Phaser.Scene {
         };
         var initButton = () => {
             //== menu buttons
-            const buttons = ['startGame', 'setting', 'intro', 'links', 'rank'];
+            const buttons = ['startGame', 'setting', 'intro', 'links', 'rank', 'item'];
             const header = height * 0.2;//==預留空間
             const buttonGap = (height - header) / (buttons.length + 1);
             const x = width * 0.8;
@@ -4068,6 +4102,7 @@ class GameStartScene extends Phaser.Scene {
         var initRexUI = () => {
             this.scene.add(null, new UIScene('RexUI', this), true);
             this.scene.add(null, new UIScene('blackOut', this), true);
+            this.RexUI.rankingData = this.rankingData;
         };
 
         initBackground();

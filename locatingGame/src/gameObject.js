@@ -2764,7 +2764,8 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                 };
 
                 let table = new RexPlugins.UI.Sizer(scene, {
-                    orientation: scrollMode,
+                    orientation: panelType === 1 || panelType === 4 ?
+                        scrollMode : !scrollMode,
                     space: { left: 10, right: 10, top: 10, bottom: 10, item: 10 }
                 })
 
@@ -3083,6 +3084,8 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                             });
                             break;
                         case 3://==排行
+                            const rankType = ['speedRank', 'scoreRank'];
+
                             let createButton = (text) => {
                                 let radius = {
                                     tr: 20,
@@ -3093,82 +3096,127 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                                     height: 40,
                                     background: scene.add.existing(
                                         new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, radius, COLOR_DARK)),
-                                    text: scene.add.text(0, 0, text, {
-                                        fontSize: 18,
-                                        color: '#000',
+                                    text: scene.add.text(0, 0, localeJSON.UI[text], {
+                                        fontSize: 24,
                                         padding: padding,
                                     }),
-                                    space: {
-                                        left: 10
-                                    }
+                                    space: padding
                                 });
                             };
-                            let rankingBoard = () => {
-                                const rankingData = scene.rankingData;
-                                const colKeys = Object.keys(rankingData[0]);
-                                // console.debug(colKeys);
+                            let getRankData = (rankType = 0) => {
+                                let rankingData = scene.rankingData;
+                                let column = ['ranking', 'player'];
+                                let rankCol = rankType ? 'score' : 'timeUse';
+                                column.push(rankCol);
 
-                                const
-                                    rankColumns = 2,
-                                    rankRows = rankingData.length;
-
-                                let content = new RexPlugins.UI.GridSizer(scene, {
-                                    column: rankColumns,
-                                    row: rankRows,
-                                    // rowProportions: 2,
-                                    // columnProportions: 20,// [0, 1, 2]
-                                    space: {
-                                        top: 10,
-                                        bottom: 10,
-                                        left: 10,
-                                        right: 10,
-                                        column: 10,
-                                    },
-                                    createCellContainerCallback: function (scene, col, row, config) {
-
-                                        Object.assign(config, {
-                                            align: 'top',
-                                            padding: {
-                                                left: 10,
-                                                right: 10,
-                                                top: 0,
-                                                bottom: 0
-                                            },
-                                            expand: true,
-                                        });
-                                        let cell = getText(rankingData[row][colKeys[col]]);
-
-
-                                        return cell;
-                                    }
-                                }).addBackground(scene.add.existing(
-                                    new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 0, undefined).setStrokeStyle(2, COLOR_LIGHT, 1)
-                                ));
-
-                                return content;
+                                let newData = rankingData.sort((a, b) => a[rankCol] - b[rankCol]);
+                                newData.column = column;
+                                console.debug(newData);
+                                return newData;
                             };
 
+                            class rankingBoard extends RexPlugins.UI.GridSizer {
+                                constructor(rankingData) {
+                                    const boardColor = [0x4F9D9D, 0x336666];
+                                    const colKeys = rankingData.column;
+                                    const
+                                        rankColumns = colKeys.length,
+                                        rankRows = rankingData.length;
+
+                                    const
+                                        part = [1, 2, 2],
+                                        eachWidth = config.width * 0.8 / part.reduce((p, c) => p + c),
+                                        colWidth = part.map(p => p * eachWidth);
+
+
+                                    let RKconfig = {
+                                        column: rankColumns,
+                                        row: rankRows,
+                                        space: {
+                                            top: 20,
+                                            bottom: 30,
+                                            left: 20,
+                                            right: 20,
+                                            column: 3,
+                                            row: 5
+                                        },
+                                        createCellContainerCallback: function (scene, col, row, config) {
+                                            // console.debug(config)
+                                            let text = row === 0 ?
+                                                localeJSON.UI[rankingData.column[col]] : col === 0 ?
+                                                    row : rankingData[row - 1][colKeys[col]];
+
+                                            let cell = new RexPlugins.UI.Label(scene, {
+                                                width: colWidth[col],
+                                                background: row === 0 ? false : scene.add.existing(
+                                                    new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 0, row % 2 ? boardColor[0] : boardColor[1])),
+                                                text: scene.add.text(0, 0, text, {
+                                                    fontSize: 36,
+                                                    padding: padding,
+                                                }).setOrigin(0.5),
+                                                align: 'center',
+                                            });
+
+                                            return cell;
+                                        }
+                                    };
+
+                                    super(scene, RKconfig);
+
+                                    this.addBackground(scene.add.existing(
+                                        new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 0, undefined).setStrokeStyle(2, COLOR_LIGHT, 1)
+                                    ));
+
+                                };
+                                update = (rankingData) => {
+                                    console.debug(this);
+                                    let cols = this.columnCount;
+                                    this.childrenMap.items.forEach((label, i) => {
+                                        let row = parseInt(i / cols),
+                                            col = i % cols;
+                                        // console.debug(label.getElement('text'));
+                                        if (row === 0) {
+                                            if (col === 2)
+                                                label.getElement('text').text = 'AAA';
+                                        }
+                                        else {
+                                            if (col === 1)
+                                                label.getElement('text').text = 'BBB';
+                                            if (col === 2)
+                                                label.getElement('text').text = 'CCC';
+                                        };
+
+                                    });
+                                };
+                            };
+                            let board = new rankingBoard(getRankData());
+
                             content = new RexPlugins.UI.Tabs(scene, {
-                                panel: rankingBoard(),
-                                topButtons: [
-                                    createButton('+666666666'),
-                                    createButton('-'),
-                                ],
+                                panel: board,
+                                topButtons: rankType.map(type => createButton(type)),
                                 space: {
                                     topButtonsOffset: 10,
-                                    topButton: 1,
+                                    topButton: 5,
                                 },
-                            });
+                            })
+                                .on('button.click', function (button, groupName, index) {
 
+                                    if (this._prevSortButton) {
+                                        this._prevSortButton.getElement('background').setFillStyle(COLOR_DARK);
+                                        // update
+                                        this.getElement('panel').update(getRankData());
+                                    };
+                                    // Highlight button
+                                    button.getElement('background').setFillStyle(COLOR_LIGHT);
+                                    this._prevSortButton = button;
+                                })
+                                .emitButtonClick('top', 0);
                             break;
                     };
 
-                    table.add(content, { expand: true });
+                    table.add(content);
                 };
-
-
-
-
+                // console.debug(table);
                 return table;
             };
             var createIcon = (scene, iconType, config = {}) => {
@@ -3424,7 +3472,6 @@ class RexForm extends RexPlugins.UI.Sizer {
                 space: { right: 50, item: 50 },
                 align: 'right',
             })
-                .setDepth(1)
                 .on('button.click', async (button, index) => {
                     let ok = footerItem[index] == 'ok';
 
@@ -3525,7 +3572,6 @@ class RexForm extends RexPlugins.UI.Sizer {
                             { fixedWidth: config.width * 0.4, fixedHeight: 36, valign: 'center' })),
                     space: { top: 5, bottom: 5, left: 5, right: 5, icon: 10, }
                 })
-                    .setDepth(1)
                     .setInteractive()
                     .on('pointerdown', function () {
                         var config = {
@@ -3708,7 +3754,8 @@ class RexForm extends RexPlugins.UI.Sizer {
 
         super(scene, formConfig);
         var background = scene.add.existing(
-            new RexPlugins.UI.RoundRectangle(scene, 0, 0, 10, 10, 10, COLOR_PRIMARY)).setDepth(0);
+            new RexPlugins.UI.RoundRectangle(scene, 0, 0, 10, 10, 10, COLOR_PRIMARY));
+
 
         this
             .addBackground(background)
@@ -3827,7 +3874,7 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
             sizerEvents: true,
         };
         super(scene, sheetConfig);
-        var background = scene.add.image(0, 0, config.img).setDepth(0);
+        var background = scene.add.image(0, 0, config.img);
         var header = createHeader(scene, UItextJSON['closeInfo'], COLOR_DARK);
 
         this

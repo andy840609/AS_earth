@@ -2035,7 +2035,7 @@ class UIScene extends Phaser.Scene {
                                 data: data,
                                 quizType: quizType,
                             }, resolve)
-                                .setDepth(Depth.UI)
+                                // .setDepth(Depth.UI)
                                 .popUp(500);
                         };
 
@@ -2049,7 +2049,7 @@ class UIScene extends Phaser.Scene {
                                 panelType: panelType,
                                 gameData: gameScene.gameData,
                             }, resolve)
-                                .setDepth(Depth.UI)
+                                // .setDepth(Depth.UI)
                                 .popUp(500);
 
                         };
@@ -2066,7 +2066,7 @@ class UIScene extends Phaser.Scene {
                                 character: character,
                                 sidekicks: gameScene.creatorObj.sidekicks,
                             }, resolve)
-                                .setDepth(Depth.UI)
+                                // .setDepth(Depth.UI)
                                 .popUp(500);
 
                         };

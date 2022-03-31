@@ -2041,6 +2041,9 @@ class UIScene extends Phaser.Scene {
 
                         //==可拉動內容框
                         this.newPanel = (panelType = 0, resolve = null) => {
+                            //==新設定
+                            // if (config) Object.assign(DLconfig, config);
+
                             return new RexScrollablePanel(this, {
                                 x: DLconfig.dialogX,
                                 y: DLconfig.dialogY * 0.5,
@@ -2362,13 +2365,11 @@ class UIScene extends Phaser.Scene {
                     bullet: 15,
                 });
 
-
                 Object.assign(this, {
                     name: 'tutorial',
                     Depth: Depth,//==gameObject.js用到
                     gameData: gameData,
                 });
-
 
                 const
                     tutorialX = width * 0.5,
@@ -3803,6 +3804,470 @@ class UIScene extends Phaser.Scene {
                     updateSidekick();
                 };
                 break;
+            case 'backpackUI'://===道具
+                preload = () => { };
+                create = () => {
+                    const COLOR_PRIMARY = 0x4e342e;
+                    const COLOR_LIGHT = 0x7b5e57;
+                    const COLOR_DARK = 0x260e04;
+                    const padding = {
+                        left: 3,
+                        right: 3,
+                        top: 5,
+                        bottom: 5,
+                    };
+
+
+                    const x = width - 20, y = 80;
+                    // const backpackW, backpackH = 0.2;
+                    this.backpack = new RexPlugins.UI.Sizer(this, {
+                        x: x,
+                        y: y,
+                        orientation: 1,
+                        space: {
+                            left: 50,
+                            right: 50,
+                            top: 50,
+                            bottom: 50,
+                            item: 10,
+                        },
+                    }).addBackground(this.add.existing(
+                        new RexPlugins.UI.RoundRectangle(this, 0, 0, 0, 0, 0, COLOR_PRIMARY).setStrokeStyle(2, COLOR_LIGHT, 1)
+                    ))
+                        .setOrigin(1, 0);
+
+                    var createLabel = (scene, text, backgroundColor = undefined) => {
+                        return new RexPlugins.UI.Label(scene, {
+                            background: scene.add.existing(new RexPlugins.UI.RoundRectangle(scene, 0, 0, 100, 40, 20, backgroundColor)),
+                            text: scene.add.text(0, 0, text, {
+                                fontSize: '24px',
+                                padding: padding,
+                            }).setOrigin(0.5),
+                            space: {
+                                left: 10,
+                                right: 10,
+                                top: 10,
+                                bottom: 10
+                            },
+                            align: 'center',
+                        });
+                    };
+                    var createIcon = (scene, config) => {
+                        return new RexPlugins.UI.Label(scene, {
+                            icon: false,
+                            width: config.width,
+                            height: config.height,
+                            background: scene.add.existing(
+                                new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 5, COLOR_LIGHT)),
+                            text: false,
+                            space: {
+                                left: 10,
+                                right: 10,
+                                top: 10,
+                                bottom: 10
+                            },
+                            align: 'center',
+                        });
+                    };
+                    var hotkeyBlock = () => {
+                        const hotkeyAmount = 3;
+
+                        let grid = new RexPlugins.UI.GridSizer(this, {
+                            column: hotkeyAmount,
+                            row: 1,
+                            space: {
+                                top: 5,
+                                bottom: 5,
+                                left: 10,
+                                right: 10,
+                                column: 10,
+                            },
+                            createCellContainerCallback: (scene, col, row, config) => {
+                                // let itemIndex = row * columns + col,
+                                //     item = items[itemIndex];
+                                // if (!item) return;
+
+                                Object.assign(config, {
+                                    align: 'center',
+                                    padding: padding,
+                                    // expand: true,
+                                });
+
+                                // console.debug(gameData.controllCursor[item.name]);
+
+                                let itemW = 35, itemH = 35;
+                                let icon = createIcon(this, {
+                                    width: itemW,
+                                    height: itemH,
+                                })
+                                    .setInteractive({ cursor: 'pointer' })
+                                    .on('pointerdown', function () {
+                                    })
+                                    .on('pointerout', function () {
+                                        this.getElement('background').setStrokeStyle();
+                                    })
+                                    .on('pointerover', function () {
+                                        this.getElement('background').setStrokeStyle(5, 0xffffff);
+                                    });
+
+                                return icon.setDepth(999);
+                            }
+                        });
+                        const hotkeyBlock = new RexPlugins.UI.Sizer(this, {
+                            orientation: 0,
+                            space: { left: 10, right: 10, top: 10, bottom: 10, item: 10 }
+                        })
+                            .addBackground(this.add.existing(
+                                new RexPlugins.UI.RoundRectangle(this, 0, 0, 0, 0, 0, COLOR_DARK).setStrokeStyle(2, COLOR_LIGHT, 1)
+                            ))
+                            .add(createLabel(this, UItextJSON['hotkey']))
+                            .add(grid);
+
+                        this.backpack.add(hotkeyBlock);
+                    };
+                    var itemBlock = () => {
+                        const hotkeyAmount = 5;
+
+                        const itemBlock = new RexPlugins.UI.GridTable(this, {
+                            width: width * 0.25,
+                            height: height * 0.25,
+                            scrollMode: 0,
+                            background: this.add.existing(
+                                new RexPlugins.UI.RoundRectangle(this, 0, 0, 0, 0, 0, COLOR_DARK).setStrokeStyle(2, COLOR_LIGHT, 1)),
+                            table: {
+                                // cellWidth: 60,
+                                // cellHeight: 60,
+                                columns: 5,
+                                // mask: {
+                                //     padding: 2,
+                                // },
+                                // reuseCellContainer: true,
+                            },
+                            slider: {
+                                track: this.add.existing(
+                                    new RexPlugins.UI.RoundRectangle(this, 0, 0, 20, 10, 10, COLOR_PRIMARY)),
+                                thumb: this.add.existing(
+                                    new RexPlugins.UI.RoundRectangle(this, 0, 0, 0, 0, 13, COLOR_LIGHT)),
+                            },
+                            mouseWheelScroller: {
+                                focus: false,
+                                speed: 0.1
+                            },
+
+                            // header: this.rexUI.add.label({
+                            //     width: (scrollMode === 0) ? undefined : 30,
+                            //     height: (scrollMode === 0) ? 30 : undefined,
+
+                            //     orientation: scrollMode,
+                            //     background: this.rexUI.add.roundRectangle(0, 0, 20, 20, 0, COLOR_DARK),
+                            //     text: this.add.text(0, 0, 'Header'),
+                            // }),
+
+                            // footer: GetFooterSizer(this, scrollMode),
+
+                            space: {
+                                left: 5,
+                                right: 5,
+                                top: 5,
+                                bottom: 5,
+
+                                table: 5,
+                                // header: 10,
+                                // footer: 10,
+                            },
+                            createCellContainerCallback: function (cell, cellContainer) {
+                                var scene = cell.scene,
+                                    width = cell.width,
+                                    height = cell.height,
+                                    item = cell.item,
+                                    index = cell.index;
+
+                                // Object.assign(config, {
+                                //     align: 'center',
+                                //     padding: padding,
+                                //     // expand: true,
+                                // });
+
+                                // console.debug(gameData.controllCursor[item.name]);
+
+                                let itemW = 35, itemH = 35;
+                                let icon = createIcon(scene, {
+                                    width: itemW,
+                                    height: itemH,
+                                })
+                                // .setInteractive({ cursor: 'pointer' })
+                                // .on('pointerdown', function () {
+                                // })
+                                // .on('pointerout', function () {
+                                //     this.getElement('background').setStrokeStyle();
+                                // })
+                                // .on('pointerover', function () {
+                                //     this.getElement('background').setStrokeStyle(5, 0xffffff);
+                                // });
+
+                                return icon;
+                            },
+                            items: new Array(50)
+                        })
+                            .on('cell.over', function (cellContainer, cellIndex, pointer) {
+                                cellContainer.getElement('background')
+                                    .setStrokeStyle(5, 0xffffff)
+                                    .setDepth(1);
+                            }, this)
+                            .on('cell.out', function (cellContainer, cellIndex, pointer) {
+                                cellContainer.getElement('background')
+                                    .setStrokeStyle()
+                                    .setDepth(0);
+                            }, this)
+                            .on('cell.click', function (cellContainer, cellIndex, pointer) {
+
+
+
+                            }, this);
+
+
+                        this.backpack.add(itemBlock, { expand: true });
+                    };
+                    var infoBlock = () => { };
+
+                    // hotkeyBlock();
+                    itemBlock();
+
+                    this.backpack.layout();
+                    console.debug(this)
+                    return
+                    {
+                        data = {
+                            name: panelName,
+                            category: {
+                                'hotkey': [
+                                    { name: '1' },
+                                    { name: '2' },
+                                    { name: '3' },
+                                ],
+                                'backpack': [
+                                    { name: 'A' },
+                                    { name: 'B' },
+                                    { name: 'C' },
+                                    { name: 'D' },
+                                    { name: 'E' },
+                                    { name: 'A' },
+                                    { name: 'B' },
+                                    { name: 'C' },
+                                    { name: 'D' },
+                                    { name: 'E' },
+                                    { name: 'A' },
+                                    { name: 'B' },
+                                    { name: 'C' },
+                                    { name: 'D' },
+                                    { name: 'E' },
+                                ],
+                            },
+                        };
+                    }
+
+                    let items = data.category[key];
+                    // console.debug(key);
+                    const
+                        columns = categoryType === 2 ? items.length :
+                            categoryType === 3 ? 5 : 2,
+                        rows = Math.ceil(items.length / columns);
+
+                    let grid = new RexPlugins.UI.GridSizer(scene, {
+                        column: columns,
+                        row: rows,
+                        // rowProportions: 0,
+                        columnProportions: categoryType === 2 || categoryType === 3 ? 0 : 1,
+                        space: {
+                            top: 0,
+                            bottom: 0,
+                            left: 10,
+                            right: 10,
+                            column: categoryType === 3 ? 0 : 10,
+                            row: 10
+                        },
+                        name: key, // Search this name to get table back
+                        createCellContainerCallback: (scene, col, row, config) => {
+                            let itemIndex = row * columns + col,
+                                item = items[itemIndex];
+                            if (!item) return;
+
+                            Object.assign(config, {
+                                align: 'top',
+                                padding: padding,
+                                expand: true,
+                            });
+
+                            // console.debug(gameData.controllCursor[item.name]);
+
+                            let itemText, itemW = 35, itemH = 35;
+                            let questionData, quizType, tmpData, keyPressAction;
+                            switch (key) {
+                                case 'control':
+                                    itemText = gameData.controllCursor[item.name];
+                                    itemW = 70, itemH = 35;
+                                    questionData = { question: 'controlHint', options: ['cancel'], };
+                                    quizType = 2;
+                                    tmpData = tmp.controllCursor;
+                                    keyPressAction = (icon, keyPressed) => {
+                                        if (!keyPressed) return;
+                                        icon.getElement('text').setText(keyPressed);
+                                        tmp.controllCursor[item.name] = keyPressed;
+                                    };
+                                    Panel.on('resetControl', () => {
+                                        tmp.controllCursor = { ...defaultControllCursor };
+
+                                        let tables = this.getElement('panel').getElement('items');
+                                        //==chidren=['category name','items grid']
+                                        let chidren = tables[0].getElement('items');
+                                        chidren[1].getElement('items').forEach((grid, i) => {
+                                            if (grid) {
+                                                let child = grid.getElement('items');
+                                                child[0].setText(tmp.controllCursor[data.category[key][i].name]);
+                                            };
+                                        });
+
+                                    });
+                                    break;
+                                case 'language':
+                                    let languages = ['zh-TW', 'en-US'];
+                                    itemText = localeJSON.UI[item.name];
+                                    itemW = 120, itemH = 40;
+                                    questionData = { options: languages };
+                                    quizType = 3;
+                                    tmpData = tmp.locale;
+                                    keyPressAction = async (icon, keyPressed) => {
+                                        let newData = languages[keyPressed];
+                                        if (newData !== tmp.locale) {
+                                            Object.assign(tmp, {
+                                                locale: newData,
+                                                localeJSON: await gameData.getLanguageJSON(newData),
+                                            });
+
+                                            // console.debug(tmp.controllCursor);
+
+                                            //===改目前的字語言
+                                            let localeJSON = tmp.localeJSON;
+                                            // console.debug(this);
+                                            this.getElement('header').setText(localeJSON.UI[data.name]);
+                                            this.getElement('footer').getElement('buttons').forEach((b, i) =>
+                                                b.setText(localeJSON.UI[footerItem[i]]));
+
+                                            let tables = this.getElement('panel').getElement('items');
+                                            Object.keys(data.category).forEach((key, i) => {
+                                                //==chidren=['category name','items grid']
+                                                let chidren = tables[i].getElement('items');
+                                                chidren[0].setText(localeJSON.UI[key]);
+                                                chidren[1].getElement('items').forEach((grid, i) => {
+                                                    if (grid) {
+                                                        let child = grid.getElement('items');
+                                                        if (key == 'control')
+                                                            child[1].setText(localeJSON.UI[data.category[key][i].name]);
+                                                        else if (key == 'language')
+                                                            child[0].setText(localeJSON.UI[newData]);
+                                                    };
+                                                });
+                                            });
+
+                                        };
+                                    };
+                                    Panel.on('resetLanguage', () => keyPressAction(icon, 0, true));
+                                    break;
+                                case 'hotkey':
+
+                                    break;
+                                case 'backpack':
+
+                                    break;
+                                default:
+                                    itemText = false;
+                                    break;
+                            };
+
+                            let icon = createIcon(scene, key, {
+                                text: itemText,
+                                width: itemW,
+                                height: itemH,
+                            })
+                                .setInteractive({ cursor: 'pointer' })
+                                .on('pointerdown', async function () {
+                                    let keyPressed = await new Promise(resolve => {
+
+                                        //==避免跳出視窗沒更新語言
+                                        let newQuestionData = {};
+                                        Object.keys(questionData).forEach(key =>
+                                            key == 'question' ?
+                                                newQuestionData[key] = tmp.localeJSON.UI[questionData[key]] :
+                                                newQuestionData[key] = questionData[key].map(k => tmp.localeJSON.UI[k])
+                                        );
+                                        // console.debug(questionData)
+                                        let confirmScene = scene.scene.add(null, new Phaser.Scene("confirmScene"), true);
+                                        //==暫停UI在的scene，所以確認視窗放在gameScene                                  
+                                        new RexDialog(confirmScene, {
+                                            x: x,
+                                            y: y,
+                                            data: newQuestionData,
+                                            tmpData: tmpData,
+                                            quizType: quizType,
+                                            localeJSON: tmp.localeJSON.UI,
+                                        }, resolve).popUp(500);
+                                        scene.scene.pause();
+                                    });
+                                    scene.scene.resume();
+                                    scene.scene.remove("confirmScene");
+
+                                    keyPressAction(this, keyPressed);
+
+                                })
+                                .on('pointerout', function () {
+                                    this.getElement('background').setStrokeStyle();
+                                })
+                                .on('pointerover', function () {
+                                    this.getElement('background').setStrokeStyle(5, 0xffffff);
+                                });
+
+
+                            let gridItem = new RexPlugins.UI.Sizer(scene, {
+                                // space: { left: 10, right: 10, top: 10, bottom: 10, item: 10 }
+                            }).add(icon);
+
+                            if (categoryType === 0)
+                                gridItem
+                                    .add(
+                                        scene.add.text(0, 0, localeJSON.UI[item.name], { padding: padding }), // child
+                                        { padding: { left: 10 }, });
+
+
+
+                            return gridItem;
+                        }
+                    });
+
+                    //==左標標籤
+                    if (categoryType !== 3)
+                        table.add(getText(localeJSON.UI[key]), // child
+                            {
+                                proportion: 1,
+                                align: 'left',
+                                padding: { left: 0, right: 0, top: 5, bottom: 0 },
+                                expand: true,
+                            }
+                        );
+
+                    //==格子
+                    table.add(grid, // child
+                        {
+                            proportion: categoryType == 3 ? 0 : 2,
+                            align: 'center',
+                            padding: { left: 0, right: 0, top: 10, bottom: 10 },
+                            expand: false,
+                        }
+                    );
+
+
+                };
+                update = () => { };
+                break;
             case 'b':
                 preload = () => { };
                 create = () => { };
@@ -3992,7 +4457,7 @@ class GameStartScene extends Phaser.Scene {
         };
         var initButton = () => {
             //== menu buttons
-            const buttons = ['startGame', 'setting', 'intro', 'links', 'rank', 'item'];
+            const buttons = ['startGame', 'setting', 'intro', 'links', 'rank'];
             const header = height * 0.2;//==預留空間
             const buttonGap = (height - header) / (buttons.length + 1);
             const x = width * 0.8;

@@ -204,6 +204,7 @@ function locatingGame() {
                     return {
                         player: col[0],
                         timeUse: parseFloat(col[1]),
+                        score: parseInt(col[2])
                     };
                 });
                 // console.debug(data);
@@ -339,27 +340,27 @@ function locatingGame() {
                     GameData.getLanguageJSON = getLanguageJSON;
 
                     //==test
-                    gameDisplay(true);
-                    let newGameData = await new Promise((resolve, reject) => {
-                        const config = Object.assign(getPhaserConfig(width, height), {
-                            scene: new GameStartScene(GameData, {
-                                getWaveImg: getWaveImg,
-                                tutorialData: data.tutorialData,
-                                resolve: resolve,
-                                getLanguageJSON: getLanguageJSON,
-                                rankingData: rankingData,//排行榜
-                            }),
-                        });
-                        new Phaser.Game(config);
-                    });
+                    // gameDisplay(true);
+                    // let newGameData = await new Promise((resolve, reject) => {
+                    //     const config = Object.assign(getPhaserConfig(width, height), {
+                    //         scene: new GameStartScene(GameData, {
+                    //             getWaveImg: getWaveImg,
+                    //             tutorialData: data.tutorialData,
+                    //             resolve: resolve,
+                    //             getLanguageJSON: getLanguageJSON,
+                    //             rankingData: rankingData,//排行榜
+                    //         }),
+                    //     });
+                    //     new Phaser.Game(config);
+                    // });
 
-                    gameDisplay(false);
+                    // gameDisplay(false);
                     //==test
 
                     initMap();
 
                     //==test
-                    // gameStart('defend');
+                    gameStart('defend');
                     // gameStart('dig');
                     //==test
                 };

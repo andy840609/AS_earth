@@ -69,6 +69,8 @@
         "exit": "退出",
         "pause": "暫停",
         "backpack": "道具",
+        "item": "消耗道具",
+        "equip": "裝備道具",
         "hotkey": "快捷鍵",
         "detector": "探測器",
         "timeRemain": "剩餘時間",

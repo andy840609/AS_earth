@@ -4096,19 +4096,52 @@ class UIScene extends Phaser.Scene {
                                 bottom: 10
                             }
                         });
+                        let getCharaPic = () => {
 
-                        let charaPic = new RexPlugins.UI.Label(this, {
-                            icon: this.add.image(0, 0, 'player_idle'),
-                            background: this.add.existing(
-                                new RexPlugins.UI.RoundRectangle(this, 0, 0, 0, 0, 10).setStrokeStyle(2, COLOR_LIGHT, 1)),
-                            space: {
-                                left: 10,
-                                right: 10,
-                                top: 10,
-                                bottom: 10
-                            },
-                            align: 'center',
-                        });
+
+
+                            // const rect = new RexPlugins.UI.RoundRectangle(this, 0, 0, 0, 0, 10);
+                            // const shape = this.make.graphics()
+                            // shape.fillStyle(0xffffff);
+                            // shape.beginPath();
+                            // shape.moveTo(-240, 0);
+                            // shape.arc(-240, 0, 250, 0, Math.PI * 2);
+                            // shape.moveTo(240, 0);
+                            // shape.arc(240, 0, 250, 0, Math.PI * 2);
+                            // shape.fillPath();
+                            // console.debug(rect, shape)
+                            // const mask = shape.createGeometryMask();
+                            // console.debug(mask, RexPlugins)
+
+
+                            //==邊角要變圓不然超出框線
+                            let backGround = new RexPlugins.UI.CircleMaskImage(this, 100, 100, 'staticBG_1', {
+                                maskType: 'roundRectangle',
+                                radius: 1
+                            }).setDepth(999);
+
+                            let charaPic = new RexPlugins.UI.Label(this, {
+                                icon: this.add.image(0, 0, 'player_idle'),
+                                // background: this.add.existing(backGround).setDepth(999),
+                                space: {
+                                    left: 10,
+                                    right: 10,
+                                    top: 10,
+                                    bottom: 10
+                                },
+                                align: 'center',
+                            });
+
+
+                            let block = new RexPlugins.UI.Label(this, {
+                                icon: charaPic,
+                                background: this.add.existing(
+                                    new RexPlugins.UI.RoundRectangle(this, 0, 0, 0, 0, 10).setStrokeStyle(2, COLOR_LIGHT, 1)),
+                            });
+
+                            return block;
+                        };
+
                         let charaName = new RexPlugins.UI.Label(this, {
                             text: this.add.text(0, 0, gameData.playerCustom.name, {
                                 fontSize: '24px',
@@ -4125,7 +4158,7 @@ class UIScene extends Phaser.Scene {
                             // align: 'center',
                         });
                         charaTable
-                            .add(charaPic)
+                            .add(getCharaPic())
                             .add(charaName);
 
                         table
@@ -4135,27 +4168,38 @@ class UIScene extends Phaser.Scene {
                         pannel.add(table, { expand: true });
                     };
                     var statusBlock = (pannel) => {
-                        let table = new RexPlugins.UI.Sizer(this, { orientation: 1, });
+                        const status = ['attackPower', 'defense', 'movementSpeed', 'jumpingPower'];
 
-
-                        let status = new RexPlugins.UI.Label(this, {
-                            background: this.add.existing(
-                                new RexPlugins.UI.RoundRectangle(this, 0, 0, 0, 0, 10, COLOR_DARK).setStrokeStyle(2, COLOR_LIGHT, 1)),
-                            text: this.add.text(0, 0, 'name', {
-                                fontSize: '24px',
-                                padding: padding,
-                            }).setOrigin(0.5),
+                        let table = new RexPlugins.UI.GridSizer(this, {
+                            column: 2,
+                            row: status.length,
+                            columnProportions: 1,
                             space: {
-                                left: 10,
-                                right: 10,
-                                top: 10,
-                                bottom: 10
+                                top: 5,
+                                bottom: 5,
+                                row: 2
                             },
-                            align: 'center',
-                        });
-                        table.add(status, { expand: true });
+                            createCellContainerCallback: (scene, col, row, config) => {
+                                // console.debug(col, row)
+                                let stat = status[row];
+                                let text = col ?
+                                    gameData.playerStats[stat] :
+                                    UItextJSON[stat];
 
-                        pannel.add(table, { expand: true });
+                                config.key = col ? stat : undefined;
+
+                                return scene.add.text(0, 0, text, {
+                                    fontSize: '15px',
+                                    color: '#000',
+                                }).setOrigin(0.5)
+                                    .setDepth(1);
+
+                            },
+                        }).addBackground(this.add.image(0, 0, 'backpackStatus'));
+
+
+
+                        pannel.add(table, { expand: true, key: 'statusBlock' });
                     };
                     var hotkeyBlock = (pannel) => {
                         const hotkeyAmount = 3;
@@ -4227,6 +4271,9 @@ class UIScene extends Phaser.Scene {
                         .layout();
 
                     console.debug(this);
+                    let aaa = leftPannel.getElement('statusBlock').getElement('jumpingPower');
+                    console.debug(aaa);
+
                 };
                 update = () => { };
                 break;
@@ -4955,6 +5002,8 @@ class LoadingScene extends Phaser.Scene {
                 this.load.image('backpackBlock', dir + 'block.png');
                 this.load.image('backpackInfo', dir + 'info.png');
                 this.load.image('backpackBanner', dir + 'banner.png');
+                this.load.image('backpackStatus', dir + 'status.png');
+
             };
             var tooltip = () => {
                 this.load.image('tooltipButton', uiDir + 'tooltipButton.png');

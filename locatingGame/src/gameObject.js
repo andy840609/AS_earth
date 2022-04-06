@@ -83,6 +83,7 @@ const GameObjectStats = {
             class: 0,//==近戰
             movementSpeed: 300,
             jumpingPower: 400,
+            defense: 0,
             attackSpeed: 400,//一發持續300ms
             attackPower: 120,
             attackRange: 55,
@@ -99,6 +100,7 @@ const GameObjectStats = {
             class: 1,
             movementSpeed: 400,
             jumpingPower: 320,
+            defense: 0,
             attackSpeed: 800,//一發持續300ms
             attackPower: 60,
             attackRange: 1000,

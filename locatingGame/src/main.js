@@ -339,7 +339,7 @@ function locatingGame() {
                     GameData.localeJSON = await getLanguageJSON();
                     GameData.getLanguageJSON = getLanguageJSON;
 
-                    //==test
+                    // //==test
                     // gameDisplay(true);
                     // let newGameData = await new Promise((resolve, reject) => {
                     //     const config = Object.assign(getPhaserConfig(width, height), {
@@ -355,7 +355,7 @@ function locatingGame() {
                     // });
 
                     // gameDisplay(false);
-                    //==test
+                    // //==test
 
                     initMap();
 
@@ -1898,76 +1898,75 @@ function locatingGame() {
                 }
                 else if (gameMode == 'dig') {
                     // console.debug(siteData);
-                    // {
-                    //     const backgroundArr = Object.keys(BackGroundResources.dig);
+                    {
+                        const backgroundArr = Object.keys(BackGroundResources.dig);
 
-                    //     let coordinate = siteData.coordinate;
-                    //     // let background = 'halloween_4';//==之後經緯度判斷？
-                    //     let background = backgroundArr[getRandom(backgroundArr.length)];
-                    //     let mineBGindex = 0;//==之後經緯度判斷？
+                        let coordinate = siteData.coordinate;
+                        // let background = 'halloween_4';//==之後經緯度判斷？
+                        let background = backgroundArr[getRandom(backgroundArr.length)];
+                        let mineBGindex = 0;//==之後經緯度判斷？
 
-                    //     let placeData = {
-                    //         coordinate: coordinate,
-                    //         background: background,
-                    //         mineBGindex: mineBGindex,
-                    //         depth: siteData.depth ? siteData.depth : null,
-                    //     };
+                        let placeData = {
+                            coordinate: coordinate,
+                            background: background,
+                            mineBGindex: mineBGindex,
+                            depth: siteData.depth ? siteData.depth : null,
+                        };
 
-                    //     //==顯示假設點
-                    //     assumedEpicenter
-                    //         .setLatLng(coordinate)
-                    //         .getTooltip()
-                    //         .setContent(`${GameData.localeJSON.UI['assumedEpicenter']} : ${coordinate.join(' , ')}`)
-                    //     assumedEpicenter.getElement().style.display = 'inline';
+                        //==顯示假設點
+                        assumedEpicenter
+                            .setLatLng(coordinate)
+                            .getTooltip()
+                            .setContent(`${GameData.localeJSON.UI['assumedEpicenter']} : ${coordinate.join(' , ')}`)
+                        assumedEpicenter.getElement().style.display = 'inline';
 
-                    //     GameData.playerEpicenter = coordinate;
+                        GameData.playerEpicenter = coordinate;
 
-                    //     gameResult = await new Promise((resolve, reject) => {
-                    //         const config = Object.assign(getPhaserConfig(width, height), {
-                    //             scene: new DigScene(placeData, GameData, {
-                    //                 resolve: resolve,
-                    //             }),
-                    //         });
-                    //         new Phaser.Game(config);
-                    //     });
+                        gameResult = await new Promise((resolve, reject) => {
+                            const config = Object.assign(getPhaserConfig(width, height), {
+                                scene: new DigScene(placeData, GameData, {
+                                    resolve: resolve,
+                                }),
+                            });
+                            new Phaser.Game(config);
+                        });
 
-                    //     console.debug(gameResult);
-                    //     let playerInfo = gameResult.playerInfo;
+                        console.debug(gameResult);
+                        let playerInfo = gameResult.playerInfo;
 
-                    //     //===更新人物資料
-                    //     updateMapUI(playerInfo, 1000);
-                    // }
+                        //===更新人物資料
+                        updateMapUI(playerInfo, 1000);
+                    }
 
                     //=== 進王關
-                    // if (gameResult.bossRoom) {//gameResult.bossRoom
-                    //     const backgroundArr = Object.keys(BackGroundResources.boss);
-                    //     let background = backgroundArr[getRandom(backgroundArr.length)];
+                    if (gameResult.bossRoom) {//gameResult.bossRoom
+                        const backgroundArr = Object.keys(BackGroundResources.boss);
+                        let background = backgroundArr[getRandom(backgroundArr.length)];
 
-                    //     gameResult = await new Promise((resolve, reject) => {
-                    //         const config = Object.assign(getPhaserConfig(width, height), {
-                    //             scene: new BossScene(GameData, background, {
-                    //                 resolve: resolve,
-                    //             }),
-                    //         });
-                    //         new Phaser.Game(config);
-                    //     });
-                    //     console.debug(gameResult);
-                    //     let playerInfo = gameResult.playerInfo;
+                        gameResult = await new Promise((resolve, reject) => {
+                            const config = Object.assign(getPhaserConfig(width, height), {
+                                scene: new BossScene(GameData, background, {
+                                    resolve: resolve,
+                                }),
+                            });
+                            new Phaser.Game(config);
+                        });
+                        console.debug(gameResult);
+                        let playerInfo = gameResult.playerInfo;
 
-                    //     //===更新人物資料
-                    //     updateMapUI(playerInfo, 1000);
+                        //===更新人物資料
+                        updateMapUI(playerInfo, 1000);
 
-                    //     //==通關
-                    if (1) {//gameResult.bossDefeated
-                        // console.debug('通關');
-                        initEndScene(true);
-                        return;
+                        //==通關
+                        if (gameResult.bossDefeated) {//gameResult.bossDefeated
+                            // console.debug('通關');
+                            initEndScene(true);
+                            return;
+                        };
+                    }
+                    else { //=== 沒找到
+                        updateSidekick(5, 0);
                     };
-
-                    // }
-                    // else { //=== 沒找到
-                    //     updateSidekick(5, 0);
-                    // };
 
                 };
                 gameDisplay(false);

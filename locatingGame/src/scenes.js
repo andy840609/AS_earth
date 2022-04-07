@@ -3805,6 +3805,13 @@ class UIScene extends Phaser.Scene {
                 };
                 break;
             case 'backpackUI'://===道具
+                //==不觸發探測器事件
+                if (gameScene.scene.isActive('detectorUI'))
+                    gameScene.scene.pause('detectorUI');
+
+                const backpackData = gameData.backpack;
+                console.debug(backpackData);
+
                 preload = () => { };
                 create = () => {
                     const COLOR_PRIMARY = 0x141414;
@@ -3817,7 +3824,6 @@ class UIScene extends Phaser.Scene {
                         top: 5,
                         bottom: 5,
                     };
-
 
                     const x = width - 20, y = 80;
                     const space = 30;
@@ -3841,31 +3847,144 @@ class UIScene extends Phaser.Scene {
                         leftPannel = new RexPlugins.UI.Sizer(this, { orientation: 1, space: { item: 10, } }),
                         rightPannel = new RexPlugins.UI.Sizer(this, { orientation: 1, space: { item: 10, } });
 
-                    var createLabel = (scene, text, backgroundColor = undefined) => {
-                        return new RexPlugins.UI.Label(scene, {
-                            background: scene.add.existing(new RexPlugins.UI.RoundRectangle(scene, 0, 0, 100, 40, 20, backgroundColor)),
-                            text: scene.add.text(0, 0, text, {
-                                fontSize: '24px',
-                                padding: padding,
-                            }).setOrigin(0.5),
-                            space: {
-                                left: 10,
-                                right: 10,
-                                top: 10,
-                                bottom: 10
+
+                    let preClickItem = null;
+                    const createMenu = (scene, gameObject, itemType = 0) => {
+                        //==itemType:0消耗品 1:裝備 2:已穿戴裝備
+                        // console.debug(gameObject);
+                        //==新創一個下拉選單的scene並暫停背包的scene(不然事件會互相引響)
+                        let menuScene = scene.scene.add(null, new Phaser.Scene("menuScene"), true);
+                        scene.scene.pause();
+
+                        let options = null;
+                        switch (itemType) {
+                            case 0:
+                                const hotKeyAmount = 3;
+                                options = [
+                                    { name: 'use' },
+                                    {
+                                        name: 'hotkey',
+                                        children: [...Array(hotKeyAmount).keys()].map(i =>
+                                            new Object({ name: 'setHotkey' })),
+                                    },
+                                ];
+
+                                break;
+                            case 1:
+                                options = [
+                                    { name: 'equip', },
+                                ];
+                                break;
+                            case 2:
+                                options = [
+                                    { name: 'unequip' },
+                                ];
+                                break;
+                        };
+
+                        let menu = new RexPlugins.UI.Menu(menuScene, {
+                            x: gameObject.x + gameObject.displayWidth,
+                            y: gameObject.y,
+                            orientation: 1,
+                            subMenuSide: 'right',
+                            items: options,
+                            createButtonCallback: function (option, i) {
+                                let text = option.name === 'setHotkey' ?
+                                    UItextJSON['hotkey'] + (i + 1) :
+                                    UItextJSON[option.name];
+
+
+                                return new RexPlugins.UI.Label(menuScene, {
+                                    background: menuScene.add.existing(
+                                        new RexPlugins.UI.RoundRectangle(menuScene, 0, 0, 0, 0, 3, COLOR_PRIMARY).setStrokeStyle(3, COLOR_LIGHT)),
+                                    text: menuScene.add.text(0, 0, text, {
+                                        fontSize: '20px'
+                                    }).setDepth(2),
+                                    space: padding,
+                                    name: option.name,
+                                    align: 'center',
+                                })
                             },
-                            align: 'center',
+                            easeIn: {
+                                duration: 300,
+                                orientation: 1
+                            },
+                            easeOut: {
+                                duration: 100,
+                                orientation: 1
+                            }
+
+                            // expandEvent: 'button.over'
                         });
+
+                        menu
+                            .on('button.over', function (button) {
+                                button.getElement('background').setStrokeStyle(3, 0xffffff).setDepth(1);
+                            }, menuScene)
+                            .on('button.out', function (button) {
+                                button.getElement('background').setStrokeStyle(3, COLOR_LIGHT).setDepth(0);
+                            }, menuScene)
+                            .on('button.click', function (button, index, pointer, event) {
+                                switch (button.name) {
+                                    case 'use':
+                                        break;
+                                    case 'equip':
+                                        let charaBlock = leftPannel.getElement('charaBlock');
+                                        gameData.onEquip = [gameObject.name];
+                                        charaBlock.updateOnEquip(gameData.onEquip);
+                                        // console.debug(aaa.getElement('icon'))
+                                        break;
+                                    case 'unequip':
+                                        break;
+                                    case 'setHotkey':
+                                        break;
+                                };
+
+                                console.debug(button.name, index)
+                                console.debug(gameObject.name)
+                                if (button.name !== 'hotkey') {
+                                    scene.scene.resume();
+                                    scene.scene.remove('menuScene');
+                                };
+
+                            }, menuScene)
+                            .on('popup.complete', function (subMenu) {
+                                console.log('popup.complete')
+                            })
+                            .on('scaledown.complete', function () {
+                                console.log('scaledown.complete')
+                            });
+
+
+
+                        menuScene.input.on('pointerdown', function (pointer) {
+                            if (!menu.isInTouching(pointer)) {
+                                scene.scene.resume();
+                                scene.scene.remove('menuScene');
+
+                                // menu.collapse();
+                                // menu = undefined;
+                            };
+                            // && !menu.isInTouching(pointer)
+                        }, menuScene);
+                        return menu;
                     };
-                    var createIcon = (scene, config) => {
-                        let block = scene.add.image(0, 0, 'backpackBlock');
-                        let item = scene.add.image(0, 0, 'dude');
+                    const createIcon = (scene, config) => {
+                        let block = config.item ?
+                            scene.add.image(0, 0, 'backpackBlock') :
+                            new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 10, COLOR_DARK).setStrokeStyle(2, COLOR_LIGHT, 1);
+                        let item = config.item ?
+                            scene.add.image(0, 0, 'dude') : false;
+
+                        // console.debug(config.item)
+                        // !backpackData.equip[index] ?
+                        //     new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 10, COLOR_DARK).setStrokeStyle(2, COLOR_LIGHT, 1) :
 
                         let badgeW = config.width - 5;
                         var badgeLabel = new RexPlugins.UI.BadgeLabel(scene, {
                             width: badgeW,
                             height: badgeW,
-                            background: block,
+                            background: scene.add.existing(block),
                             main: item,
                             rightBottom: config.isEquip ? false : scene.add.text(0, 0, '5', {
                                 color: 'yellow',
@@ -3873,21 +3992,25 @@ class UIScene extends Phaser.Scene {
                                 backgroundColor: COLOR_LIGHT,
                                 padding: { left: 3, right: 3, top: 3, bottom: 3 }
                             }),
+                            name: config.item ? config.item : '',
+                            align: 'center',
                         });
 
                         return new RexPlugins.UI.Label(scene, {
                             icon: badgeLabel,
                             width: config.width,
                             height: config.height,
+                            name: config.item ? config.item : '',
                             background: scene.add.existing(
                                 new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 8)),
                             align: 'center',
                         });
                     };
 
-                    var itemBlock = (pannel) => {
+                    let itemBlock = (pannel) => {
                         const itemCol = 5;
                         const itemW = 60;
+                        const itemData = backpackData.item;
 
                         const table = new RexPlugins.UI.GridTable(this, {
                             width: itemW * itemCol,
@@ -3949,23 +4072,22 @@ class UIScene extends Phaser.Scene {
                             },
                             createCellContainerCallback: function (cell, cellContainer) {
                                 // console.debug(cell, cellContainer, a, b)
-                                var scene = cell.scene,
+                                let scene = cell.scene,
                                     width = cell.width,
-                                    height = cell.height,
-                                    item = cell.item,
                                     index = cell.index;
 
                                 if (cellContainer === null) {
                                     cellContainer = createIcon(scene, {
                                         width: width,
                                         height: width,
+                                        item: itemData[index]
                                     });
 
                                 };
 
                                 return cellContainer;
                             },
-                            items: new Array(50)
+                            items: itemData,
                         })
                             .on('cell.over', function (cellContainer, cellIndex, pointer) {
                                 cellContainer.getElement('background').setStrokeStyle(3, COLOR_SELECT);
@@ -3975,18 +4097,20 @@ class UIScene extends Phaser.Scene {
                                 cellContainer.getElement('background').setStrokeStyle();
                             }, this)
                             .on('cell.click', function (cellContainer, cellIndex, pointer) {
-
-
-
+                                if (preClickItem) preClickItem.getElement('background').setStrokeStyle();
+                                preClickItem = cellContainer;
+                                cellContainer.getElement('background').setStrokeStyle(3, COLOR_SELECT);
+                                createMenu(this, cellContainer, 0);
                             }, this);
 
 
                         pannel.add(table, { expand: true });
                     };
-                    var equipBlock = (pannel) => {
+                    let equipBlock = (pannel) => {
                         const equipCol = 5;
                         const itemW = 60;
                         const headerH = 30;
+                        const equipData = backpackData.equip;
 
                         const table = new RexPlugins.UI.GridTable(this, {
                             width: itemW * equipCol,
@@ -4000,24 +4124,27 @@ class UIScene extends Phaser.Scene {
                             },
                             header: new RexPlugins.UI.Label(this, {
                                 height: headerH,
-                                text: this.add.text(0, 0, UItextJSON['equip'], {
+                                text: this.add.text(0, 0, UItextJSON['equipment'], {
                                     fontSize: '24px',
                                     padding: padding,
                                 }),
                                 align: 'left',
                             }),
                             createCellContainerCallback: function (cell, cellContainer) {
-                                var scene = cell.scene,
+                                let scene = cell.scene,
                                     width = cell.width,
-                                    height = cell.height,
-                                    item = cell.item,
                                     index = cell.index;
+                                let item = equipData[index];
+
+                                // console.debug(item)
 
                                 if (cellContainer === null) {
+
                                     cellContainer = createIcon(scene, {
                                         width: width,
                                         height: width,
                                         isEquip: true,
+                                        item: item,
                                     });
                                 };
 
@@ -4036,56 +4163,87 @@ class UIScene extends Phaser.Scene {
                                 bottom: 5,
                                 table: 5,
                             },
-                            items: new Array(4)
+                            items: new Array(equipCol - 1)
                         })
-                            .on('cell.over', function (cellContainer, cellIndex, pointer) {
+                            .on('cell.over', function (cellContainer, cellIndex, pointer, e) {
+                                if (cellContainer.name === '') return;
                                 cellContainer.getElement('background').setStrokeStyle(3, COLOR_SELECT);
-
-                            }, this)
+                            })
                             .on('cell.out', function (cellContainer, cellIndex, pointer) {
+                                if (cellContainer.name === '') return;
                                 cellContainer.getElement('background').setStrokeStyle();
                             }, this)
-                            .on('cell.click', function (cellContainer, cellIndex, pointer) {
-
+                            .on('cell.click', function (cellContainer, cellIndex, pointer, e) {
+                                if (cellContainer.name === '') return;
+                                if (preClickItem) preClickItem.getElement('background').setStrokeStyle();
+                                preClickItem = cellContainer;
+                                cellContainer.getElement('background').setStrokeStyle(3, COLOR_SELECT);
+                                createMenu(this, cellContainer, 1);
                             }, this);
 
                         pannel.add(table, { expand: true });
                     };
-                    var charaBlock = (pannel) => {
-                        const equipAmount = 1;
-                        const itemW = 55;
+                    let charaBlock = (pannel) => {
 
                         const table = new RexPlugins.UI.Sizer(this, { orientation: 0, })
                             .addBackground(this.add.existing(
                                 new RexPlugins.UI.RoundRectangle(this, 0, 0, 0, 0, 10, COLOR_DARK).setStrokeStyle(2, COLOR_LIGHT, 1)));
 
-                        let equipGrid = new RexPlugins.UI.GridSizer(this, {
-                            column: 1,
-                            row: equipAmount,
-                            createCellContainerCallback: (scene, col, row, config) => {
-                                Object.assign(config, {
-                                    align: 'center',
-                                    padding: { top: 5, left: 5 },
-                                });
+                        let updateOnEquip = (onEquipData) => {
+                            const equipType = ['weapon'];
+                            const itemW = 55;
 
-                                let icon = createIcon(this, {
-                                    width: itemW,
-                                    height: itemW,
-                                    isEquip: true,
-                                })
-                                    .setInteractive({ cursor: 'pointer' })
-                                    .on('pointerdown', function () {
-                                    })
-                                    .on('pointerout', function () {
-                                        this.getElement('background').setStrokeStyle();
-                                    })
-                                    .on('pointerover', function () {
-                                        this.getElement('background').setStrokeStyle(3, COLOR_SELECT);
+                            let onEquipBlock = new RexPlugins.UI.GridSizer(this, {
+                                column: 1,
+                                row: equipType.length,
+                                createCellContainerCallback: (scene, col, row, config) => {
+                                    Object.assign(config, {
+                                        align: 'center',
+                                        padding: { top: 5, left: 5 },
                                     });
 
-                                return icon.setDepth(1);
-                            },
-                        });
+                                    let item = onEquipData[row];
+
+                                    let icon = createIcon(this, {
+                                        width: itemW,
+                                        height: itemW,
+                                        isEquip: true,
+                                        item: item,
+                                    }).setOrigin(0)
+                                        .setInteractive()
+                                        .on('pointerout', function () {
+                                            if (!item) return;
+                                            this.getElement('background').setStrokeStyle();
+                                        })
+                                        .on('pointerover', function () {
+                                            if (!item) return;
+                                            this.getElement('background').setStrokeStyle(3, COLOR_SELECT);
+                                        })
+                                        .on('pointerdown', function () {
+                                            if (!item) return;
+                                            if (preClickItem) preClickItem.getElement('background').setStrokeStyle();
+                                            preClickItem = this;
+                                            this.getElement('background').setStrokeStyle(3, COLOR_SELECT);
+                                            createMenu(scene, this, 2);
+                                        });
+
+                                    return icon.setDepth(1);
+                                },
+                            });
+
+
+                            let pre_onEquip = table.getElement('onEquip');
+                            if (pre_onEquip) table.remove(pre_onEquip, true);
+
+                            table
+                                .insert(0, onEquipBlock, { expand: true, key: 'onEquip' })
+                                .layout();
+
+                        };
+                        let updateCharaPic = (onEquipData) => {
+
+                        };
+
 
                         const charaTable = new RexPlugins.UI.Sizer(this, {
                             orientation: 1,
@@ -4097,44 +4255,33 @@ class UIScene extends Phaser.Scene {
                             }
                         });
                         let getCharaPic = () => {
+                            let background_idx = Phaser.Math.Between(1, 3);
+                            //==主角照片
+                            let charaPic = this.add.image(0, 0, 'player_idle').setDepth(1);
+                            //==裝備圖片
+                            let equipPic = this.add.image(0, 0).setDepth(2);
 
-
-
-                            // const rect = new RexPlugins.UI.RoundRectangle(this, 0, 0, 0, 0, 10);
-                            // const shape = this.make.graphics()
-                            // shape.fillStyle(0xffffff);
-                            // shape.beginPath();
-                            // shape.moveTo(-240, 0);
-                            // shape.arc(-240, 0, 250, 0, Math.PI * 2);
-                            // shape.moveTo(240, 0);
-                            // shape.arc(240, 0, 250, 0, Math.PI * 2);
-                            // shape.fillPath();
-                            // console.debug(rect, shape)
-                            // const mask = shape.createGeometryMask();
-                            // console.debug(mask, RexPlugins)
-
-
-                            //==邊角要變圓不然超出框線
-                            let backGround = new RexPlugins.UI.CircleMaskImage(this, 100, 100, 'staticBG_1', {
+                            //==照片背景(邊角要變圓不然超出框線）
+                            let backGround = new RexPlugins.UI.CircleMaskImage(this, 0, 0, 'charaBG' + background_idx, {
                                 maskType: 'roundRectangle',
-                                radius: 1
-                            }).setDepth(999);
+                                radius: 60
+                            });
+                            backGround.setScale(charaPic.width / backGround.width, charaPic.height / backGround.height);
 
-                            let charaPic = new RexPlugins.UI.Label(this, {
-                                icon: this.add.image(0, 0, 'player_idle'),
-                                // background: this.add.existing(backGround).setDepth(999),
+                            let photo = new RexPlugins.UI.BadgeLabel(this, {
+                                main: this.add.existing(charaPic),
+                                background: this.add.existing(backGround),
+                                centerTop: this.add.existing(equipPic),
                                 space: {
                                     left: 10,
                                     right: 10,
                                     top: 10,
                                     bottom: 10
                                 },
-                                align: 'center',
                             });
 
-
                             let block = new RexPlugins.UI.Label(this, {
-                                icon: charaPic,
+                                icon: photo,
                                 background: this.add.existing(
                                     new RexPlugins.UI.RoundRectangle(this, 0, 0, 0, 0, 10).setStrokeStyle(2, COLOR_LIGHT, 1)),
                             });
@@ -4161,13 +4308,13 @@ class UIScene extends Phaser.Scene {
                             .add(getCharaPic())
                             .add(charaName);
 
-                        table
-                            .add(equipGrid, { expand: true })
-                            .add(charaTable);
+                        updateOnEquip(backpackData.onEquip);
+                        table.add(charaTable, { key: 'charaPic' });
 
-                        pannel.add(table, { expand: true });
+                        pannel.add(table, { expand: true, key: 'charaBlock' });
+                        table.updateOnEquip = updateOnEquip;
                     };
-                    var statusBlock = (pannel) => {
+                    let statusBlock = (pannel) => {
                         const status = ['attackPower', 'defense', 'movementSpeed', 'jumpingPower'];
 
                         let table = new RexPlugins.UI.GridSizer(this, {
@@ -4201,69 +4348,11 @@ class UIScene extends Phaser.Scene {
 
                         pannel.add(table, { expand: true, key: 'statusBlock' });
                     };
-                    var hotkeyBlock = (pannel) => {
-                        const hotkeyAmount = 3;
 
-                        let grid = new RexPlugins.UI.GridSizer(this, {
-                            column: hotkeyAmount,
-                            row: 1,
-                            space: {
-                                top: 5,
-                                bottom: 5,
-                                left: 10,
-                                right: 10,
-                                column: 10,
-                            },
-                            createCellContainerCallback: (scene, col, row, config) => {
-                                // let itemIndex = row * columns + col,
-                                //     item = items[itemIndex];
-                                // if (!item) return;
-
-                                Object.assign(config, {
-                                    align: 'center',
-                                    padding: padding,
-                                    // expand: true,
-                                });
-
-                                // console.debug(gameData.controllCursor[item.name]);
-
-                                let itemW = 35, itemH = 35;
-                                let icon = createIcon(this, {
-                                    width: itemW,
-                                    height: itemH,
-
-                                })
-                                    .setInteractive({ cursor: 'pointer' })
-                                    .on('pointerdown', function () {
-                                    })
-                                    .on('pointerout', function () {
-                                        this.getElement('background').setStrokeStyle();
-                                    })
-                                    .on('pointerover', function () {
-                                        this.getElement('background').setStrokeStyle(3, COLOR_SELECT);
-                                    });
-
-                                return icon.setDepth(1);
-                            }
-                        });
-                        const hotkeyBlock = new RexPlugins.UI.Sizer(this, {
-                            orientation: 0,
-                            space: { left: 10, right: 10, top: 10, bottom: 10, item: 10 }
-                        })
-                            .addBackground(this.add.existing(
-                                new RexPlugins.UI.RoundRectangle(this, 0, 0, 0, 0, 0, COLOR_DARK).setStrokeStyle(2, COLOR_LIGHT, 1)
-                            ))
-                            .add(createLabel(this, UItextJSON['hotkey']))
-                            .add(grid);
-
-                        this.backpack.add(hotkeyBlock);
-                    };
-                    // hotkeyBlock();
                     charaBlock(leftPannel);
                     statusBlock(leftPannel);
                     itemBlock(rightPannel);
                     equipBlock(rightPannel);
-                    // charaBlock(rightPannel);
 
                     this.backpack
                         .add(leftPannel, { expand: true })
@@ -4274,12 +4363,83 @@ class UIScene extends Phaser.Scene {
                     let aaa = leftPannel.getElement('statusBlock').getElement('jumpingPower');
                     console.debug(aaa);
 
+                    //==關閉背包下拉選單同時移除
+                    this.events.on('destroy', () => {
+                        gameScene.scene.remove('menuScene');
+                        if (gameScene.scene.get('detectorUI'))
+                            gameScene.scene.resume('detectorUI');
+                    });
+
                 };
                 update = () => { };
                 break;
-            case 'b':
+            case 'hotKeyUI'://==道具快捷鍵
+                const hotKeyAmount = 3;
+                const COLOR_PRIMARY = 0x141414;
+                const COLOR_LIGHT = 0x474747;
+                const COLOR_DARK = 0x292929;
+                const COLOR_SELECT = 0x43B7C7;
+
                 preload = () => { };
-                create = () => { };
+                create = () => {
+
+                    this.hotKey = new RexPlugins.UI.Sizer(this, {
+                        x: width - 10,
+                        y: height - 5,
+                        orientation: 0,
+                        space: {
+                            left: 10,
+                            right: 10,
+                            top: 5,
+                            bottom: 5,
+                            item: 10,
+                        },
+                    }).addBackground(this.add.existing(
+                        new RexPlugins.UI.RoundRectangle(this, 0, 0, 0, 0, 10, COLOR_PRIMARY, 0.95).setStrokeStyle(2, COLOR_LIGHT, 1)
+                    )).setOrigin(1);
+
+                    let hotkeyBlock = () => {
+                        const blockW = 50;
+                        const hotKeyData = gameData.backpack.hotKey;
+                        hotKeyData.push(1);
+
+                        [...Array(hotKeyAmount).keys()].forEach(i => {
+                            let block = hotKeyData[i] ?
+                                this.add.image(0, 0, 'backpackBlock') :
+                                new RexPlugins.UI.RoundRectangle(this, 0, 0, 0, 0, 10, COLOR_DARK).setStrokeStyle(2, COLOR_LIGHT, 1);
+                            let hotkey = gameData.controllCursor['hotkey' + (i + 1)];
+                            let item = hotKeyData[i] ?
+                                this.add.image(0, 0, 'dude') : false;
+                            let durability = hotKeyData[i] ?
+                                '100%' : false;
+
+                            let badgeLabel = new RexPlugins.UI.BadgeLabel(this, {
+                                width: blockW,
+                                height: blockW,
+                                background: this.add.existing(block),
+                                main: item,
+                                space: { left: -5, right: -5, top: -5, bottom: -5 },
+                                leftTop: this.add.text(0, 0, hotkey, {
+                                    fontSize: '24px',
+                                    color: COLOR_DARK,
+                                    align: 'center',
+                                    padding: { left: 8, top: 5 }
+                                }),
+                                rightBottom: durability ? this.add.text(0, 0, durability, {
+                                    color: 'yellow',
+                                    align: 'right',
+                                    backgroundColor: COLOR_LIGHT,
+                                    padding: { left: 3, right: 3, top: 3, bottom: 3 }
+                                }) : false,
+                            });
+                            this.hotKey.add(badgeLabel, { expand: true });
+                        });
+
+                        this.hotKey.layout();
+                    };
+
+                    hotkeyBlock();
+                };
                 update = () => { };
                 break;
             default:
@@ -5003,7 +5163,9 @@ class LoadingScene extends Phaser.Scene {
                 this.load.image('backpackInfo', dir + 'info.png');
                 this.load.image('backpackBanner', dir + 'banner.png');
                 this.load.image('backpackStatus', dir + 'status.png');
-
+                this.load.image('charaBG1', dir + 'background1.png');
+                this.load.image('charaBG2', dir + 'background2.png');
+                this.load.image('charaBG3', dir + 'background3.png');
             };
             var tooltip = () => {
                 this.load.image('tooltipButton', uiDir + 'tooltipButton.png');
@@ -5826,6 +5988,10 @@ class DefendScene extends Phaser.Scene {
             if (this.firstTimeEvent.isFirstTime)
                 this.scene.add(null, new UIScene('blackOut', this), true);
         };
+        var initHotKey = () => {
+            this.scene.add(null, new UIScene('hotKeyUI', this), true);
+        };
+
         //==gameScene
         initEnvironment();
         initEnemy();
@@ -5836,6 +6002,7 @@ class DefendScene extends Phaser.Scene {
         initCursors();
         initIconBar();
         initTimer();
+        initHotKey();
         initCamera();
         initRexUI();
 

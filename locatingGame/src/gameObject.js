@@ -36,6 +36,10 @@ const defaultControllCursor = {
     functionKey: 'E',
     reset: 'R',
     exit: 'ESC',
+    //==道具快捷鍵
+    hotkey1: '1',
+    hotkey2: '2',
+    hotkey3: '3',
 };
 //載入字型
 // function loadFont(name, url) {

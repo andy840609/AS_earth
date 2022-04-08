@@ -3926,15 +3926,42 @@ class UIScene extends Phaser.Scene {
                             }, menuScene)
                             .on('button.click', function (button, index, pointer, event) {
                                 switch (button.name) {
-                                    case 'use':
-                                        break;
                                     case 'equip':
-                                        let charaBlock = leftPannel.getElement('charaBlock');
-                                        gameData.onEquip = [gameObject.name];
-                                        charaBlock.updateOnEquip(gameData.onEquip);
-                                        // console.debug(aaa.getElement('icon'))
-                                        break;
                                     case 'unequip':
+                                        let isEquip = button.name === 'equip',
+                                            equipItem = gameObject.name;
+
+                                        let player = gameScene.player;
+                                        //==顯示裝備圖片
+                                        player.equip
+                                            .setVisible(isEquip)
+                                            .setTexture(equipItem);
+
+                                        let statChangeHandler = (item, isEquip = true) => {
+                                            //==改變角色能力
+                                            let buffAbility = { ...GameItemData[item].buff };
+                                            let tmp = {};
+                                            //算裝備或脫下要加還減
+                                            Object.keys(buffAbility).forEach(key =>
+                                                tmp[key] = buffAbility[key] * (isEquip ? 1 : -1));
+                                            //更新playerstats和buff
+                                            player.buffHandler(tmp);
+                                        };
+
+                                        //==替換裝備要先扣掉前一件屬性
+                                        if (isEquip && backpackData.onEquip.length !== 0)
+                                            statChangeHandler(backpackData.onEquip[0], false);
+                                        statChangeHandler(equipItem, isEquip);
+
+                                        backpackData.onEquip = isEquip ? [equipItem] : [];
+                                        console.debug(player.stats);
+
+                                        let charaBlock = leftPannel.getElement('charaBlock');
+                                        charaBlock.updateOnEquip(backpackData.onEquip);
+                                        charaBlock.updateCharaPic(backpackData.onEquip);
+
+                                        break;
+                                    case 'use':
                                         break;
                                     case 'setHotkey':
                                         break;
@@ -3942,6 +3969,7 @@ class UIScene extends Phaser.Scene {
 
                                 console.debug(button.name, index)
                                 console.debug(gameObject.name)
+
                                 if (button.name !== 'hotkey') {
                                     scene.scene.resume();
                                     scene.scene.remove('menuScene');
@@ -4097,7 +4125,7 @@ class UIScene extends Phaser.Scene {
                                 cellContainer.getElement('background').setStrokeStyle();
                             }, this)
                             .on('cell.click', function (cellContainer, cellIndex, pointer) {
-                                if (preClickItem) preClickItem.getElement('background').setStrokeStyle();
+                                if (preClickItem && preClickItem._active) preClickItem.getElement('background').setStrokeStyle();
                                 preClickItem = cellContainer;
                                 cellContainer.getElement('background').setStrokeStyle(3, COLOR_SELECT);
                                 createMenu(this, cellContainer, 0);
@@ -4175,7 +4203,8 @@ class UIScene extends Phaser.Scene {
                             }, this)
                             .on('cell.click', function (cellContainer, cellIndex, pointer, e) {
                                 if (cellContainer.name === '') return;
-                                if (preClickItem) preClickItem.getElement('background').setStrokeStyle();
+                                // console.debug(preClickItem)
+                                if (preClickItem && preClickItem._active) preClickItem.getElement('background').setStrokeStyle();
                                 preClickItem = cellContainer;
                                 cellContainer.getElement('background').setStrokeStyle(3, COLOR_SELECT);
                                 createMenu(this, cellContainer, 1);
@@ -4221,7 +4250,7 @@ class UIScene extends Phaser.Scene {
                                         })
                                         .on('pointerdown', function () {
                                             if (!item) return;
-                                            if (preClickItem) preClickItem.getElement('background').setStrokeStyle();
+                                            if (preClickItem && preClickItem._active) preClickItem.getElement('background').setStrokeStyle();
                                             preClickItem = this;
                                             this.getElement('background').setStrokeStyle(3, COLOR_SELECT);
                                             createMenu(scene, this, 2);
@@ -4241,83 +4270,108 @@ class UIScene extends Phaser.Scene {
 
                         };
                         let updateCharaPic = (onEquipData) => {
-
+                            let equipImage = table.getElement('charaPic').getElement('items')[0].getElement('icon').getElement('centerTop');
+                            let equip = onEquipData[0];
+                            if (equip) equipImage.setTexture(equip).setVisible(true);
+                            else equipImage.setVisible(false);
                         };
 
-
-                        const charaTable = new RexPlugins.UI.Sizer(this, {
-                            orientation: 1,
-                            space: {
-                                left: 10,
-                                right: 10,
-                                top: 10,
-                                bottom: 10
-                            }
-                        });
-                        let getCharaPic = () => {
-                            let background_idx = Phaser.Math.Between(1, 3);
-                            //==主角照片
-                            let charaPic = this.add.image(0, 0, 'player_idle').setDepth(1);
-                            //==裝備圖片
-                            let equipPic = this.add.image(0, 0).setDepth(2);
-
-                            //==照片背景(邊角要變圓不然超出框線）
-                            let backGround = new RexPlugins.UI.CircleMaskImage(this, 0, 0, 'charaBG' + background_idx, {
-                                maskType: 'roundRectangle',
-                                radius: 60
+                        let initCharaTable = () => {
+                            const charaTable = new RexPlugins.UI.Sizer(this, {
+                                orientation: 1,
+                                space: {
+                                    left: 10,
+                                    right: 10,
+                                    top: 10,
+                                    bottom: 10
+                                }
                             });
-                            backGround.setScale(charaPic.width / backGround.width, charaPic.height / backGround.height);
+                            let getCharaPic = () => {
+                                let background_idx = Phaser.Math.Between(1, 3);
+                                //==主角照片
+                                let charaPic = this.add.image(0, 0, 'player_idle').setDepth(1);
+                                //==裝備圖片
+                                let equipPic = this.add.image(0, 0).setDepth(2);
 
-                            let photo = new RexPlugins.UI.BadgeLabel(this, {
-                                main: this.add.existing(charaPic),
-                                background: this.add.existing(backGround),
-                                centerTop: this.add.existing(equipPic),
+                                //==照片背景(邊角要變圓不然超出框線）
+                                let backGround = new RexPlugins.UI.CircleMaskImage(this, 0, 0, 'charaBG' + background_idx, {
+                                    maskType: 'roundRectangle',
+                                    radius: 60
+                                });
+                                backGround.setScale(charaPic.width / backGround.width, charaPic.height / backGround.height);
+
+                                let photo = new RexPlugins.UI.BadgeLabel(this, {
+                                    main: this.add.existing(charaPic),
+                                    background: this.add.existing(backGround),
+                                    centerTop: this.add.existing(equipPic),
+                                    space: {
+                                        left: 10,
+                                        right: 10,
+                                        top: 10,
+                                        bottom: 10
+                                    },
+                                });
+
+                                let block = new RexPlugins.UI.Label(this, {
+                                    icon: photo,
+                                    background: this.add.existing(
+                                        new RexPlugins.UI.RoundRectangle(this, 0, 0, 0, 0, 10).setStrokeStyle(2, COLOR_LIGHT, 1)),
+                                });
+
+                                return block;
+                            };
+
+                            let charaName = new RexPlugins.UI.Label(this, {
+                                text: this.add.text(0, 0, gameData.playerCustom.name, {
+                                    fontSize: '24px',
+                                    fixedWidth: 100,
+                                    align: 'center',
+                                    padding: padding,
+                                }).setOrigin(0.5),
                                 space: {
                                     left: 10,
                                     right: 10,
                                     top: 10,
                                     bottom: 10
                                 },
+                                // align: 'center',
                             });
+                            charaTable
+                                .add(getCharaPic())
+                                .add(charaName);
 
-                            let block = new RexPlugins.UI.Label(this, {
-                                icon: photo,
-                                background: this.add.existing(
-                                    new RexPlugins.UI.RoundRectangle(this, 0, 0, 0, 0, 10).setStrokeStyle(2, COLOR_LIGHT, 1)),
-                            });
-
-                            return block;
+                            table.add(charaTable, { key: 'charaPic' });
                         };
 
-                        let charaName = new RexPlugins.UI.Label(this, {
-                            text: this.add.text(0, 0, gameData.playerCustom.name, {
-                                fontSize: '24px',
-                                fixedWidth: 100,
-                                align: 'center',
-                                padding: padding,
-                            }).setOrigin(0.5),
-                            space: {
-                                left: 10,
-                                right: 10,
-                                top: 10,
-                                bottom: 10
-                            },
-                            // align: 'center',
-                        });
-                        charaTable
-                            .add(getCharaPic())
-                            .add(charaName);
-
                         updateOnEquip(backpackData.onEquip);
-                        table.add(charaTable, { key: 'charaPic' });
+                        initCharaTable();
+                        updateCharaPic(backpackData.onEquip);
 
                         pannel.add(table, { expand: true, key: 'charaBlock' });
-                        table.updateOnEquip = updateOnEquip;
+
+                        Object.assign(table, {
+                            updateOnEquip: updateOnEquip,
+                            updateCharaPic: updateCharaPic,
+                        });
+
                     };
                     let statusBlock = (pannel) => {
-                        const status = ['attackPower', 'defense', 'movementSpeed', 'jumpingPower'];
+                        // console.debug();
+                        const playerStats = gameScene.player.stats;
+                        const status = Object.keys(playerStats.buff);
 
-                        let table = new RexPlugins.UI.GridSizer(this, {
+                        //==括號標記變化量、字體顏色
+                        let getBuffEffect = (key) => {
+                            let buffVal = playerStats.buff[key];
+                            let buffString = buffVal === 0 ?
+                                '' : `(${gameData.playerStats[key]}${buffVal > 0 ? '+' : ''}${buffVal})`;
+                            let color = buffVal === 0 ? 'black' :
+                                buffVal < 0 ? 'red' : 'blue';
+
+                            return { string: buffString, color: color };
+                        };
+
+                        const table = new RexPlugins.UI.GridSizer(this, {
                             column: 2,
                             row: status.length,
                             columnProportions: 1,
@@ -4327,17 +4381,18 @@ class UIScene extends Phaser.Scene {
                                 row: 2
                             },
                             createCellContainerCallback: (scene, col, row, config) => {
-                                // console.debug(col, row)
                                 let stat = status[row];
+                                let buffEffect = getBuffEffect(stat);
                                 let text = col ?
-                                    gameData.playerStats[stat] :
+                                    playerStats[stat] + buffEffect.string :
                                     UItextJSON[stat];
+                                // console.debug(stat + ': ' + playerStats[stat]);
 
-                                config.key = col ? stat : undefined;
+                                config.key = col ? stat + '_val' : stat;
 
                                 return scene.add.text(0, 0, text, {
                                     fontSize: '15px',
-                                    color: '#000',
+                                    color: buffEffect.color,
                                 }).setOrigin(0.5)
                                     .setDepth(1);
 
@@ -4345,7 +4400,16 @@ class UIScene extends Phaser.Scene {
                         }).addBackground(this.add.image(0, 0, 'backpackStatus'));
 
 
+                        this.updateStatus = () => {
+                            status.forEach(key => {
+                                let buffEffect = getBuffEffect(key);
+                                let text = `${playerStats[key]}${buffEffect.string}`;
 
+                                //==改變數值
+                                table.getElement(key + '_val').setText(text).setColor(buffEffect.color);
+                                table.getElement(key).setColor(buffEffect.color);
+                            });
+                        };
                         pannel.add(table, { expand: true, key: 'statusBlock' });
                     };
 
@@ -4360,11 +4424,9 @@ class UIScene extends Phaser.Scene {
                         .layout();
 
                     console.debug(this);
-                    let aaa = leftPannel.getElement('statusBlock').getElement('jumpingPower');
-                    console.debug(aaa);
-
                     //==關閉背包下拉選單同時移除
                     this.events.on('destroy', () => {
+                        if (gameScene.gameOver.flag) return;
                         gameScene.scene.remove('menuScene');
                         if (gameScene.scene.get('detectorUI'))
                             gameScene.scene.resume('detectorUI');
@@ -5713,6 +5775,12 @@ class DefendScene extends Phaser.Scene {
                         .add(hintOrb)
                         .setAlpha(0);
 
+                    //==撿起改變屬性量
+                    child.changeStats = {
+                        movementSpeed: 150,
+                        jumpingPower: 20,
+                    };
+
                     Object.assign(child, {
                         originTime: (orbStats ? this.getTimePoint(width * 0.85) : child.orbStats).time.toFixed(2),//==用來判斷是否通關(位置要移動過)
                         beholdingFlag: false,
@@ -5737,24 +5805,22 @@ class DefendScene extends Phaser.Scene {
 
                             //===改變撿起者屬性
                             if (pickUper) {
-                                let newCharacterStats;
+                                let changeStats = {};
                                 if (beholding) {
-                                    //==撿起後角色屬性改變                      
-                                    newCharacterStats = {
-                                        movementSpeed: 150,
-                                        jumpingPower: 300,
-                                    };
+                                    //==撿起後角色屬性改變     
+                                    Object.keys(child.changeStats).forEach(key =>
+                                        changeStats[key] = -child.changeStats[key]);
                                 }
                                 else {
                                     //==放下後角色屬性恢復
-                                    let originStas = GameObjectStats.player[this.scene.gameData.playerRole];//==之後改
-                                    newCharacterStats = {
-                                        movementSpeed: originStas.movementSpeed,
-                                        jumpingPower: originStas.jumpingPower,
-                                    };
-                                }
+                                    changeStats = { ...child.changeStats };
+                                };
 
-                                pickUper.stats = Object.assign(pickUper.stats, newCharacterStats);
+                                if (pickUper.name === 'player')
+                                    this.scene.player.buffHandler(changeStats);
+                                else
+                                    Object.keys(pickUper.stats).forEach(key =>
+                                        pickUper.stats[key] += changeStats[key]);
                             };
 
 
@@ -5830,7 +5896,7 @@ class DefendScene extends Phaser.Scene {
 
         };
         var initPlayer = () => {
-            this.player = this.add.existing(new Player(this, this.gameData.playerRole, this.gameData.playerStats))
+            this.player = this.add.existing(new Player(this))
                 .setPosition(100, 450)
                 .setDepth(Depth.player);
 
@@ -5925,34 +5991,50 @@ class DefendScene extends Phaser.Scene {
 
             //==丟雞蛋
             this.enemy.children.iterate(child => {
-                if (child.bullets) {
 
+                if (child.bullets && child.bullets.name === "eggs") {
+                    // console.debug(child.bullets);
                     child.bulletAttack = (player, bullet) => {
-                        // console.debug(player, bullet)
+
                         bullet.disableBody(true, true);
 
-                        const knockBackDuration = 400;
-                        const knockBackSpeed = 200;
+                        //==有特殊裝備阻擋攻擊
+                        if (this.gameData.backpack.onEquip.includes('dude')) {
+                            let sunny = this.add.existing(new Item(this, 'dude', bullet.x, bullet.y, true));
+                            // console.debug(sunny);
+                            sunny.colliderArray = [//==方便移除
+                                this.physics.add.collider(sunny, this.platforms),
+                                this.physics.add.collider(sunny, this.player, sunny.collectHandler)];
 
-                        if (!player.invincibleFlag) {
-                            //==暫停人物操作(一直往前走不會有擊退效果)
-                            player.stopCursorsFlag = true;
-                            player.statsChangeHandler({ HP: -child.stats.attackPower }, this);
-                            if (player.stats.HP <= 0) return;
+                        }
+                        //==沒有則受到攻擊
+                        else {
+                            const knockBackDuration = 400;
+                            const knockBackSpeed = 200;
 
-                            player.invincibleFlag = true;
-                            // player.setTint(0xff0000);
+                            if (!player.invincibleFlag) {
+                                //==暫停人物操作(一直往前走不會有擊退效果)
+                                player.stopCursorsFlag = true;
+                                player.statsChangeHandler({ HP: -child.stats.attackPower }, this);
+                                if (player.stats.HP <= 0) return;
 
-                            player.body.setVelocityX(knockBackSpeed * (child.x < player.x ? 1 : -1));
+                                player.invincibleFlag = true;
+                                // player.setTint(0xff0000);
 
-                            this.time.delayedCall(knockBackDuration, () => {
-                                player.body.reset(player.x, player.y);//==停下
-                                player.stopCursorsFlag = false;
-                            }, [], this);
+                                player.body.setVelocityX(knockBackSpeed * (child.x < player.x ? 1 : -1));
 
-                        };
+                                this.time.delayedCall(knockBackDuration, () => {
+                                    player.body.reset(player.x, player.y);//==停下
+                                    player.stopCursorsFlag = false;
+                                }, [], this);
+
+                            };
+                        }
+
                     };
 
+
+                    //==蛋打在地上
                     this.physics.add.collider(child.bullets, this.platforms,
                         (bullet, platform) => {
                             let anim = child.name + '_Attack2';
@@ -6178,8 +6260,8 @@ class DefendScene extends Phaser.Scene {
 
         };
 
-        firstTimeEvent();
-        if (!this.firstTimeEvent.eventComplete && !this.gameOver.flag) return;
+        // firstTimeEvent();
+        // if (!this.firstTimeEvent.eventComplete && !this.gameOver.flag) return;
 
         updatePlayer();
         updateSidekick();
@@ -6487,7 +6569,7 @@ class DigScene extends Phaser.Scene {
             this.scene.add(null, new UIScene('cursors', this), true);
         };
         var initPlayer = () => {
-            this.player = this.add.existing(new Player(this, this.gameData.playerRole, this.gameData.playerStats))
+            this.player = this.add.existing(new Player(this))
                 .setPosition(width * 0.5, 0)
                 .setDepth(Depth.player);
 
@@ -7135,7 +7217,7 @@ class BossScene extends Phaser.Scene {
             this.scene.add(null, new UIScene('cursors', this), true);
         };
         var initPlayer = () => {
-            this.player = this.add.existing(new Player(this, this.gameData.playerRole, this.gameData.playerStats))
+            this.player = this.add.existing(new Player(this))
                 .setPosition(width * 0.15, height * 0.65)
                 .setDepth(Depth.player);
 

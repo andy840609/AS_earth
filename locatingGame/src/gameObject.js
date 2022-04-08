@@ -1,478 +1,3 @@
-const assetsDir = 'data/assets/';
-const datafileDir = 'data/datafile/';
-
-// const defaultControllCursor = {
-//     up: 'UP',
-//     down: 'DOWN',
-//     left: 'LEFT',
-//     right: 'RIGHT',
-//     attack: 'SPACE',
-//     //==UI controll
-//     pause: 'P',
-//     backpack: 'I',
-//     detector: 'O',
-//     shiftLeft: 'A',
-//     shiftRight: 'D',
-//     shiftUp: 'W',
-//     shiftDown: 'S',
-//     functionKey: 'E',
-//     reset: 'R',
-//     exit: 'ESC',
-// };
-const defaultControllCursor = {
-    up: 'W',
-    down: 'S',
-    left: 'A',
-    right: 'D',
-    attack: 'SPACE',
-    //==UI controll
-    pause: 'P',
-    backpack: 'I',
-    detector: 'O',
-    shiftUp: 'UP',
-    shiftDown: 'DOWN',
-    shiftLeft: 'LEFT',
-    shiftRight: 'RIGHT',
-    functionKey: 'E',
-    reset: 'R',
-    exit: 'ESC',
-    //==道具快捷鍵
-    hotkey1: '1',
-    hotkey2: '2',
-    hotkey3: '3',
-};
-//載入字型
-// function loadFont(name, url) {
-//     var newStyle = document.createElement('style');
-//     newStyle.appendChild(document.createTextNode('@font-face{font-family: ' + name + '; src: url(' + url + ');}'));
-//     document.body.appendChild(newStyle);
-// };
-// loadFont('Pigmo', '../data/font/Pigmo-00.otf');
-
-const GameObjectStats = {
-    creature: {
-        dog: {
-            HP: 1000,
-            attackPower: 8,
-            movementSpeed: 200,
-            jumpingPower: 0,
-        },
-        cat: {
-            HP: 800,
-            attackPower: 10,
-            movementSpeed: 200,
-            jumpingPower: 200,
-        },
-        dove: {
-            HP: 500,
-            attackPower: 5,
-            movementSpeed: 400,
-            jumpingPower: 0,
-        },
-        zombie: {
-            HP: 800,
-            attackPower: 10,
-            movementSpeed: 200,
-            jumpingPower: 200,
-        },
-        boss: {
-            HP: 1000,
-            attackPower: 30,
-            movementSpeed: 500,
-            jumpingPower: 0,
-        },
-    },
-    player: {//==class: 0:'melee近戰',1:'ranged遠程'
-        maleAdventurer: {
-            class: 0,//==近戰
-            movementSpeed: 300,
-            jumpingPower: 400,
-            defense: 0,
-            attackSpeed: 400,//一發持續300ms
-            attackPower: 120,
-            attackRange: 55,
-            bulletSize: [120, 130],
-            knockBackSpeed: 250,//==擊退時間固定200ms,這個速度越大擊退越遠
-            manaCost: 10,
-            manaRegen: 0.1,//per 10 ms(game update per 10ms)0.1
-            HP: 150,
-            maxHP: 150,
-            MP: 60,
-            maxMP: 60,
-        },
-        femalePerson: {
-            class: 1,
-            movementSpeed: 400,
-            jumpingPower: 320,
-            defense: 0,
-            attackSpeed: 800,//一發持續300ms
-            attackPower: 60,
-            attackRange: 1000,
-            bulletSize: [40, 40],
-            knockBackSpeed: 10,//==擊退時間固定200ms,這個速度越大擊退越遠
-            manaCost: 20,
-            manaRegen: 0.15,//per 10 ms(game update per 10ms)0.1
-            HP: 80,
-            maxHP: 80,
-            MP: 150,
-            maxMP: 150,
-        },
-    },
-    sidekick: {
-        Dude: {
-            movementSpeed: 300,
-            jumpingPower: 300,
-            attackSpeed: 800,
-            attackPower: 100,
-            knockBackSpeed: 200,//==擊退時間固定200ms,這個速度越大擊退越遠
-            manaCost: 10,
-            manaRegen: 10,//per 10 ms(game update per 10ms)0.1
-            HP: 100,
-            maxHP: 100,
-            MP: 150,
-            maxMP: 150,
-        },
-        Owlet: {
-            movementSpeed: 300,
-            jumpingPower: 300,
-            attackSpeed: 800,
-            attackPower: 100,
-            knockBackSpeed: 200,//==擊退時間固定200ms,這個速度越大擊退越遠
-            manaCost: 10,
-            manaRegen: 10,//per 10 ms(game update per 10ms)0.1
-            HP: 100,
-            maxHP: 100,
-            MP: 150,
-            maxMP: 150,
-        },
-        Pink: {
-            movementSpeed: 300,
-            jumpingPower: 300,
-            attackSpeed: 800,
-            attackPower: 100,
-            knockBackSpeed: 200,//==擊退時間固定200ms,這個速度越大擊退越遠
-            manaCost: 10,
-            manaRegen: 10,//per 10 ms(game update per 10ms)0.1
-            HP: 100,
-            maxHP: 100,
-            MP: 150,
-            maxMP: 150,
-        },
-    },
-    tile: {//==破壞需要的攻擊次數
-        groundTile: {//第一層地板
-            hardness: 1,
-        },
-        terrain1: {//沉積岩
-            hardness: 1,
-        },
-        terrain2: {//火成岩
-            hardness: 1,
-        },
-        terrain3: {//花崗岩
-            hardness: 2,
-        },
-        // sprSand: {
-        //     hardness: 1,
-        // },
-        // sprWater: {
-        //     hardness: 1,
-        // },
-        gateStone: {
-            hardness: 999,
-        },
-
-    },
-};
-//==動畫相關(素材寬高,播放速度)
-const GameObjectFrame = {
-    maleAdventurer: {
-        frameObj: {
-            frameWidth: 96,
-            frameHeight: 128
-        },
-        frameRate: {
-            idle: 5,
-            run: 8,
-            runAttack: 8,
-            attack: 10,
-            specialAttack: 15,
-            hurt: 8,
-            death: 6,
-            jump: 4,
-            doubleJump: 8,
-            jumpAttack: 8,
-            timesUp: 4,
-            cheer: 4,
-            jumpDust: 15,
-            attackEffect: 10,
-            jumpAttackEffect: 15,
-            runAttackEffect: 8,
-            ultAttackEffect: 7,
-            pickSwing: 15,
-        },
-        effect: {
-            attack: [120, 130],
-            jump: [150, 100],
-            run: [150, 100],
-            ult: [300, 150],
-            pick: [120, 130],
-        },
-    },
-    femalePerson: {
-        frameObj: {
-            frameWidth: 96,
-            frameHeight: 128
-        },
-        frameRate: {
-            idle: 3,
-            run: 10,
-            runAttack: 10,
-            attack: 10,
-            specialAttack: 15,
-            hurt: 8,
-            death: 4,
-            jump: 4,
-            doubleJump: 5,
-            jumpAttack: 15,
-            timesUp: 4,
-            cheer: 4,
-            jumpDust: 15,
-            attackEffect: 10,
-            jumpAttackEffect: 15,
-            runAttackEffect: 15,
-            ultAttackEffect: 7,
-            pickSwing: 15,
-        },
-        effect: {
-            attack: [120, 130],
-            jump: [96, 128],
-            run: [96, 128],
-            ult: [300, 150],
-            pick: [120, 130],
-            bullet: [60, 60],
-        },
-    },
-};
-
-//==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
-const BackGroundResources = {
-    GameStart: {
-        castle_2: {
-            static: ['p1.png', 'p2.png', '0.png', '1.png'],
-            dynamic: ['2.png'],
-            depth: {
-                static: [1, 1, 0, 0],
-                dynamic: [0],
-            },
-            animType: [1],
-        },
-        tutorial: {
-            static: ['background1.png', 'background2.png', 'trees.png', 'ground.png'],
-            dynamic: ['birds.png'],
-            depth: {
-                static: [0, 0, 2, 3],
-                dynamic: [1],
-            },
-            animType: [3],
-        },
-
-    },
-    defend: {
-        desert_1: {
-            static: ['2Layer2.png', '1Layer1.png', '9Background.png', '6Sun.png', '5Mountains.png', '4Layer4.png', '3Layer3.png', 'ground.png'],
-            dynamic: ['8Stars2.png', '7Clouds2.png'],
-            depth: {
-                static: [2, 2, 0, 0, 1, 1, 1, 3],
-                dynamic: [0, 0],
-            },
-            animType: [2, 1],
-        },
-        desert_2: {
-            static: ['p1.png', 'p2.png', '0.png', '2.png', 'ground.png'],
-            dynamic: ['1.png'],
-            depth: {
-                static: [1, 2, 0, 1, 3],
-                dynamic: [0],
-            },
-            animType: [1],
-        },
-        plain_1: {
-            static: ['p1.png', 'p2.png', '0.png', 'ground.png'],
-            dynamic: ['1.png'],
-            depth: {
-                static: [1, 1, 0, 3],
-                dynamic: [0],
-            },
-            animType: [1],
-        },
-        town_1: {
-            static: ['p1.png', 'p2.png', '0.png', '2.png', 'ground.png'],
-            dynamic: ['1.png'],
-            depth: {
-                static: [2, 2, 0, 1, 3],
-                dynamic: [0],
-            },
-            animType: [1],
-        },
-        castle_2: {
-            static: ['p1.png', 'p2.png', '0.png', '1.png', 'ground.png'],
-            dynamic: ['2.png'],
-            depth: {
-                static: [1, 1, 0, 0, 3],
-                dynamic: [0],
-            },
-            animType: [1],
-        },
-        forest_1: {
-            static: ['rocks_1.png', 'rocks_2.png', 'sky.png', 'clouds_1.png', 'ground.png'],
-            dynamic: ['clouds_2.png', 'clouds_3.png', 'clouds_4.png'],
-            depth: {
-                static: [1, 2, 0, 0, 3],
-                dynamic: [0, 1, 2],
-            },
-            animType: [1, 1, 1],
-        },
-        forest_2: {
-            static: ['rocks_2.png', 'rocks_1.png', 'sky.png', 'rocks_3.png', 'pines.png', 'clouds_2.png', 'ground.png'],
-            dynamic: ['clouds_1.png', 'clouds_3.png', 'birds.png'],
-            depth: {
-                static: [1, 1, 0, 0, 0, 0, 3],
-                dynamic: [1, 1, 1],
-            },
-            animType: [1, 1, 3],
-        },
-        forest_3: {
-            static: ['ground_2.png', 'ground_3.png', 'sky.png', 'rocks.png', 'ground_1.png', 'plant.png', 'ground.png'],
-            dynamic: ['clouds_1.png', 'clouds_2.png'],
-            depth: {
-                static: [1, 1, 0, 0, 0, 2, 3],
-                dynamic: [0, 1],
-            },
-            animType: [1, 1],
-        },
-        forest_4: {
-            static: ['rocks.png', 'ground_1.png', 'sky.png', 'ground.png'],
-            dynamic: ['clouds_1.png', 'clouds_2.png'],
-            depth: {
-                static: [1, 2, 0, 3],
-                dynamic: [0, 1],
-            },
-            animType: [1, 1],
-        },
-
-        //==不用
-        // candy_1: {
-        //     static: ['layer06_sky.png', 'layer05_rocks.png', 'layer03_trees.png', 'layer02_cake.png', 'layer01_ground.png',],
-        //     dynamic: ['layer04_clouds.png',],
-        //     depth: {
-        //         static: [0, 0, 0, 0, 0,],
-        //         dynamic: [1],
-        //     },
-        //     animType: [1],
-        // },
-        // candy_2: {
-        //     static: ['layer09_Sky.png', 'layer05_Castle.png', 'layer02_Clouds_2.png', 'layer01_Clouds_1.png'],
-        //     dynamic: ['layer06_Stars_3.png', 'layer07_Stars_2.png', 'layer08_Stars_1.png', 'layer04_Path.png', 'layer03_Clouds_3.png',],
-        //     depth: {
-        //         static: [0, 0, 0, 0, 0, 0, 0],
-        //         dynamic: [1, 1, 1, 1, 1],
-        //     },
-        //     animType: [2, 2, 2, 1, 1]
-        // },
-        // candy_3: {
-        //     static: ['layer07_Sky.png', 'layer06_Rocks.png', 'layer04_Hills_2.png', 'layer03_Hills_1.png', 'layer02_Trees.png', 'layer01_Ground.png'],
-        //     dynamic: ['layer05_Clouds.png',],
-        //     depth: {
-        //         static: [0, 0, 0, 0, 0, 0, 0],
-        //         dynamic: [1],
-        //     },
-        //     animType: [1],
-        // },
-        // candy_4: {
-        //     static: ['layer07_Sky.png', 'layer06_Rocks.png', 'layer05_Hills.png', 'layer03_Hills_Castle.png', 'layer02_Trees_rocks.png', 'layer01_Ground.png'],
-        //     dynamic: ['layer04_Clouds.png'],
-        //     depth: {
-        //         static: [0, 0, 0, 0, 0, 0],
-        //         dynamic: [1],
-        //     },
-        //     animType: [1],
-        // },
-
-    },
-    dig: {
-        halloween_1: {
-            static: ['1.png', '3.png', '4.png', '5.png', '6.png'],
-            dynamic: ['2.png'],
-            depth: {
-                static: [1, 1, 1, 3, 3],
-                dynamic: [2],
-            },
-            animType: [1],
-        },
-        halloween_2: {
-            static: ['1.png', '2.png', '3.png'],
-            dynamic: ['4.png'],
-            depth: {
-                static: [1, 1, 1, 1],
-                dynamic: [1],
-            },
-            animType: [2],
-        },
-        halloween_3: {
-            static: ['1.png', '3.png', '4.png', '5.png', '6.png', '7.png'],
-            dynamic: ['2_1.png', '2_2.png', '8.png'],
-            depth: {
-                static: [1, 1, 2, 2, 2, 2],
-                dynamic: [2, 1, 2],
-            },
-            animType: [3, 1, 2],
-        },
-        halloween_4: {
-            static: ['1.png', '2.png', '3.png', '4.png', '6.png', '7.png'],
-            dynamic: ['5.png'],
-            depth: {
-                static: [1, 1, 1, 1, 1, 3],
-                dynamic: [1],
-            },
-            animType: [2, 3],
-        },
-
-        // apocalypce_1: {
-        //     static: ['houses&trees_bg.png', 'houses.png', 'car_trees_etc.png', 'fence.png', 'road.png'],
-        //     dynamic: ['sky.png', 'bird2.png', 'bird3.png'],
-        //     depth: {
-        //         static: [2, 2, 2, 2, 2, 2, 3],
-        //         dynamic: [1, 3, 3],
-        //     },
-        //     animType: [1, 3, 3],
-        // },
-
-    },
-    mine: {
-        mineBackground: {
-            static: ['2.jpg',],
-            dynamic: [],
-            depth: {
-                static: [0, 0, 0,],
-                dynamic: [],
-            },
-        }
-    },
-    boss: {
-        castle_1: {
-            static: ['bg.png', 'windows.png', 'columns&falgs.png', 'floor.png', 'dragon.png'],
-            dynamic: ['mountaims.png',],
-            depth: {
-                static: [1, 2, 2, 2, 2, 2, 3],
-                dynamic: [1,],
-            },
-            animType: [1],
-        },
-    },
-
-};
-
 const Bullet = new Phaser.Class({
 
     Extends: Phaser.Physics.Arcade.Sprite,
@@ -531,6 +56,52 @@ const Bullet = new Phaser.Class({
 
     },
 
+});
+
+const Item = new Phaser.Class({
+
+    Extends: Phaser.Physics.Arcade.Sprite,
+
+    initialize:
+        function Item(scene, key, x, y, flyAnims = false) {
+
+            Phaser.Physics.Arcade.Sprite.call(this, scene);
+
+            this
+                .setTexture(key)
+                .setPosition(x, y)
+                .setDepth(scene.Depth.player)
+                .setName(key);
+
+            // this.onWorldBounds = true;
+            // let bodySize = (key === 'dove') ? [15, 15] : [25, 18];
+
+            // this.body
+            //     .setSize(...bodySize)
+            //     .setGravityY(5000);
+
+            // this.body.collideWorldBounds = true;
+
+            if (flyAnims)//往上飛
+            {
+                let flyY = Phaser.Math.Between(80, 200);
+                scene.tweens.add({
+                    targets: this,
+                    y: { start: this.y, to: this.y - flyY },
+                    duration: 600,
+                    repeat: 0,
+                    ease: 'Expo.Out',
+                    onComplete: () => scene.physics.world.enableBody(this, 0),
+                });
+            }
+            else scene.physics.world.enableBody(this, 0);
+        },
+
+    collectHandler: function (item, player) {
+        // console.debug(player, item);
+        item.colliderArray.forEach(collider => collider.destroy());
+        item.destroy();
+    },
 });
 
 const Enemy = new Phaser.Class({
@@ -652,6 +223,7 @@ const Enemy = new Phaser.Class({
                     classType: Bullet,
                     maxSize: 5,
                     runChildUpdate: true,
+                    name: 'eggs',
                     // maxVelocityY: 0,
                 });
         },
@@ -1078,11 +650,14 @@ const Player = new Phaser.Class({
     Extends: Phaser.Physics.Arcade.Sprite,
 
     initialize:
-        function Player(scene, key, stats) {
-            // scene.input.keyboard.on('keyup', (e) => { console.debug(e); });
-            // console.debug(key);
+        function Player(scene) {
             Phaser.Physics.Arcade.Sprite.call(this, scene);
             scene.physics.world.enableBody(this, 0);
+
+            let gameData = scene.gameData;
+            let key = gameData.playerRole,
+                stats = gameData.playerStats,
+                onEquip = gameData.backpack.onEquip;
 
             //==anims
             var animsCreate = () => {
@@ -1258,6 +833,11 @@ const Player = new Phaser.Class({
                 // maxVelocityY: 0,
             }).setOrigin(1, 0);
 
+            //====init equip
+            this.equip = scene.add.image(0, 0, onEquip[0])
+                .setOrigin(0.5)
+                .setVisible(onEquip.length !== 0)
+                .setDepth(scene.Depth.player + 1);
 
             //===init effect sprite
             this.dust = scene.add.sprite(0, 0)
@@ -1292,7 +872,10 @@ const Player = new Phaser.Class({
                 .setDepth(scene.Depth.player - 1);
 
             //======custom
-            this.stats = Object.assign({}, stats);
+            this.stats = JSON.parse(JSON.stringify(stats));//buff物件不會繼承上次的
+            //計算裝備屬性
+            if (onEquip.length !== 0)
+                onEquip.forEach(equip => this.buffHandler(GameItemData[equip].buff));
 
             //==get HP/MP statsBar
             scene.scene.add(null, new UIScene('statsBar', scene, this), true);
@@ -1313,10 +896,13 @@ const Player = new Phaser.Class({
         // this.attackEffect.originX = filp;//1;
 
         this.bullets.originX = filp;
+        this.equip.setFlipX(filp);
     },
     doublejumpFlag: false,
     //==移動
     movingHadler: function (scene) {
+        this.equip.setPosition(this.x, this.y - this.height * 0.4);
+
         if (this.stopCursorsFlag) return;
 
         let cursors = scene.cursors;
@@ -1385,6 +971,7 @@ const Player = new Phaser.Class({
         //         this.anims.play('player_jump', true);
         //     };
         //     break;
+
 
     },
     //==撿起
@@ -1532,33 +1119,38 @@ const Player = new Phaser.Class({
     //==HP/MP
     statsChangeHandler: function (statsObj) {
         Object.keys(statsObj).forEach(stat => {
-            this.stats[stat] += statsObj[stat];
-            this[stat + 'bar'].updateFlag = true;
-            if (stat == 'HP') {
-                if (this.stats.HP > 0)
-                    this.gotHurtHandler(this.scene, statsObj[stat]);
-                //==死
+            let changeVal = statsObj[stat];
+            if (stat === 'HP' && changeVal < 0) {//==受到傷害扣掉防禦
+                let tmpVal = changeVal + this.stats.defense;
+                changeVal = tmpVal >= 0 ? -1 : tmpVal;//==最少受到1點傷害
+            };
+            this.stats[stat] += changeVal;
+            if (stat == 'HP' || stat == 'MP') {
+                if (stat == 'HP') {
+                    if (this.stats.HP > 0)
+                        this.gotHurtHandler(this.scene, changeVal);
+                    //==死
+                    else {
+                        this.invincibleFlag = true;
+                        this.body.reset(this.x, this.y);
+
+                        this.stats.HP = 0;
+                        this.scene.gameOver.flag = true;
+                        this.scene.gameOver.status = 2;
+
+                        const dieDuration = 600;
+                        this.anims.play('player_hurt');
+                        this.scene.time.delayedCall(dieDuration, () => this.anims.play('player_death', true), [], this);
+                    };
+                }
                 else {
-                    this.invincibleFlag = true;
-                    this.body.reset(this.x, this.y);
-
-                    this.stats.HP = 0;
-                    this.scene.gameOver.flag = true;
-                    this.scene.gameOver.status = 2;
-
-                    const dieDuration = 600;
-                    this.anims.play('player_hurt');
-                    this.scene.time.delayedCall(dieDuration, () => this.anims.play('player_death', true), [], this);
+                    //==不溢回
+                    if (this.stats.MP > this.stats.maxMP)
+                        this.stats.MP = this.stats.maxMP;
                 };
+                this[stat + 'bar'].updateFlag = true;
             };
         });
-
-        //==不溢回
-        if (this.stats.MP > this.stats.maxMP)
-            this.stats.MP = this.stats.maxMP;
-        // this.stats = Object.assign(this.stats, statsObj);
-        // console.debug(statsObj);
-
     },
     //==oom,death
     talkingTween: null,
@@ -1584,6 +1176,17 @@ const Player = new Phaser.Class({
             onStart: () => this.dialog.start(hint, 50),//==(text,typeSpeed(ms per word))
             onComplete: () => this.talkingTween = null,
         });
+    },
+    //==裝備、buff屬性改變
+    buffHandler: function (statsObj) {
+        Object.keys(statsObj).forEach(key => {
+            this.stats[key] += statsObj[key];
+            this.stats.buff[key] += statsObj[key];
+        });
+
+        //==包包開啟時改變屬性顯示
+        let backpackUI = this.scene.scene.get('backpackUI');
+        if (backpackUI) backpackUI.updateStatus();
     },
 
 

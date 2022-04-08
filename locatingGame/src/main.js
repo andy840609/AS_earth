@@ -316,14 +316,14 @@ function locatingGame() {
                     },
                     sidekick: {
                         type: sidekick,
-                        lineStage: [5, 0],//==第2-0句
+                        lineStage: [1, 0],//==第2-0句
                         doneTalking: false,
                         stopHotkey: false,//==對話完空白鍵不再出現對話（只能滑鼠點）
                     },
                     backpack: {//==道具裝備相關
                         hotKey: [],//快捷鍵
                         item: ['potion'],//消耗品
-                        equip: ['pot', 'shoe'],//背包中裝備
+                        equip: ['dude', 'shoe'],//背包中裝備
                         onEquip: [],//人物裝備中
                     },
                 };
@@ -366,7 +366,7 @@ function locatingGame() {
                     initMap();
 
                     //==test
-                    gameStart('defend');
+                    // gameStart('defend');
                     // gameStart('dig');
                     //==test
                 };

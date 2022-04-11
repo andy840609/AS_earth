@@ -1942,7 +1942,6 @@ class UIScene extends Phaser.Scene {
                     // console.debug(gameData.controllCursor, this.cursors);
                 };
                 update = () => {
-
                     //==update orb(when pause gameScene wont do update funtion)
                     var updateOrb = () => {
                         if (gameScene.name != 'defend') return;
@@ -3898,7 +3897,8 @@ class UIScene extends Phaser.Scene {
                                     background: menuScene.add.existing(
                                         new RexPlugins.UI.RoundRectangle(menuScene, 0, 0, 0, 0, 3, COLOR_PRIMARY).setStrokeStyle(3, COLOR_LIGHT)),
                                     text: menuScene.add.text(0, 0, text, {
-                                        fontSize: '20px'
+                                        fontSize: '20px',
+                                        padding: { top: 2, bottom: 2 }
                                     }).setDepth(2),
                                     space: padding,
                                     name: option.name,
@@ -3935,7 +3935,8 @@ class UIScene extends Phaser.Scene {
                                         //==顯示裝備圖片
                                         player.equip
                                             .setVisible(isEquip)
-                                            .setTexture(equipItem);
+                                            .setTexture('onEquip_' + equipItem)
+                                            .setScale(player.displayWidth * 1.5 / player.equip.width);
 
                                         let statChangeHandler = (item, isEquip = true) => {
                                             //==改變角色能力
@@ -4002,19 +4003,17 @@ class UIScene extends Phaser.Scene {
                             scene.add.image(0, 0, 'backpackBlock') :
                             new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 10, COLOR_DARK).setStrokeStyle(2, COLOR_LIGHT, 1);
                         let item = config.item ?
-                            scene.add.image(0, 0, 'dude') : false;
-
-                        // console.debug(config.item)
-                        // !backpackData.equip[index] ?
-                        //     new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 10, COLOR_DARK).setStrokeStyle(2, COLOR_LIGHT, 1) :
-
+                            scene.add.image(0, 0, 'item_' + config.item) : false;
                         let badgeW = config.width - 5;
+
+                        if (item) item.setScale(badgeW / item.width, badgeW / item.height);
+
                         var badgeLabel = new RexPlugins.UI.BadgeLabel(scene, {
                             width: badgeW,
                             height: badgeW,
                             background: scene.add.existing(block),
                             main: item,
-                            rightBottom: config.isEquip ? false : scene.add.text(0, 0, '5', {
+                            rightBottom: config.isEquip ? false : scene.add.text(0, 0, config.amount, {
                                 color: 'yellow',
                                 align: 'right',
                                 backgroundColor: COLOR_LIGHT,
@@ -4040,6 +4039,10 @@ class UIScene extends Phaser.Scene {
                         const itemW = 60;
                         const itemData = backpackData.item;
 
+                        this.updateItems = () => {
+                            console.debug('updateItems');
+
+                        };
                         const table = new RexPlugins.UI.GridTable(this, {
                             width: itemW * itemCol,
                             height: height * 0.25,
@@ -4108,7 +4111,8 @@ class UIScene extends Phaser.Scene {
                                     cellContainer = createIcon(scene, {
                                         width: width,
                                         height: width,
-                                        item: itemData[index]
+                                        item: itemData[index].name,
+                                        amount: itemData[index].amount
                                     });
 
                                 };
@@ -4130,7 +4134,7 @@ class UIScene extends Phaser.Scene {
                                 cellContainer.getElement('background').setStrokeStyle(3, COLOR_SELECT);
                                 createMenu(this, cellContainer, 0);
                             }, this);
-
+                        // table.getCellContainer(cellIndex);
 
                         pannel.add(table, { expand: true });
                     };
@@ -4270,9 +4274,18 @@ class UIScene extends Phaser.Scene {
 
                         };
                         let updateCharaPic = (onEquipData) => {
-                            let equipImage = table.getElement('charaPic').getElement('items')[0].getElement('icon').getElement('centerTop');
+                            let badgeIcon = table.getElement('charaPic').getElement('items')[0].getElement('icon');
+                            let equipImage = badgeIcon.getElement('centerTop');
                             let equip = onEquipData[0];
-                            if (equip) equipImage.setTexture(equip).setVisible(true);
+                            if (equip) {
+                                let charaPic = badgeIcon.getElement('main');
+                                equipImage
+                                    .setTexture('onEquip_' + equip)
+                                    .setVisible(true);
+
+                                // console.debug(charaPic.displayWidth, equipImage.width)
+                                equipImage.setScale((charaPic.displayWidth) / equipImage.width);
+                            }
                             else equipImage.setVisible(false);
                         };
 
@@ -4299,7 +4312,7 @@ class UIScene extends Phaser.Scene {
                                     radius: 60
                                 });
                                 backGround.setScale(charaPic.width / backGround.width, charaPic.height / backGround.height);
-
+                                // console.debug(backGround.displayWidth)
                                 let photo = new RexPlugins.UI.BadgeLabel(this, {
                                     main: this.add.existing(charaPic),
                                     background: this.add.existing(backGround),
@@ -4393,6 +4406,7 @@ class UIScene extends Phaser.Scene {
                                 return scene.add.text(0, 0, text, {
                                     fontSize: '15px',
                                     color: buffEffect.color,
+                                    padding: { top: 1, bottom: 1 },
                                 }).setOrigin(0.5)
                                     .setDepth(1);
 
@@ -5221,13 +5235,25 @@ class LoadingScene extends Phaser.Scene {
             };
             var backpack = () => {
                 const dir = uiDir + 'backpack/';
-                this.load.image('backpackBlock', dir + 'block.png');
-                this.load.image('backpackInfo', dir + 'info.png');
-                this.load.image('backpackBanner', dir + 'banner.png');
-                this.load.image('backpackStatus', dir + 'status.png');
-                this.load.image('charaBG1', dir + 'background1.png');
-                this.load.image('charaBG2', dir + 'background2.png');
-                this.load.image('charaBG3', dir + 'background3.png');
+                var UI = () => {
+                    this.load.image('backpackBlock', dir + 'block.png');
+                    this.load.image('backpackInfo', dir + 'info.png');
+                    this.load.image('backpackBanner', dir + 'banner.png');
+                    this.load.image('backpackStatus', dir + 'status.png');
+                    this.load.image('charaBG1', dir + 'background1.png');
+                    this.load.image('charaBG2', dir + 'background2.png');
+                    this.load.image('charaBG3', dir + 'background3.png');
+                };
+                var items = () => {
+                    const itemsDir = dir + 'items/';
+                    this.load.image('item_pan', itemsDir + 'pan.png');
+                    this.load.image('onEquip_pan', itemsDir + 'onEquip_pan.png');
+                    this.load.image('item_sunny', itemsDir + 'sunny.png');
+
+                };
+
+                UI();
+                items();
             };
             var tooltip = () => {
                 this.load.image('tooltipButton', uiDir + 'tooltipButton.png');
@@ -5928,7 +5954,6 @@ class DefendScene extends Phaser.Scene {
 
         };
         var initSidekick = () => {
-
             var sidekick = () => {
                 this.sidekick = this.add.existing(new Sidekick(this, this.gameData.sidekick.type))
                     .setPosition(40, 500);
@@ -5999,8 +6024,8 @@ class DefendScene extends Phaser.Scene {
                         bullet.disableBody(true, true);
 
                         //==有特殊裝備阻擋攻擊
-                        if (this.gameData.backpack.onEquip.includes('dude')) {
-                            let sunny = this.add.existing(new Item(this, 'dude', bullet.x, bullet.y, true));
+                        if (this.gameData.backpack.onEquip.includes('pan')) {
+                            let sunny = this.add.existing(new Item(this, 'sunny', bullet.x, bullet.y, true));
                             // console.debug(sunny);
                             sunny.colliderArray = [//==方便移除
                                 this.physics.add.collider(sunny, this.platforms),

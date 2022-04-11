@@ -486,10 +486,17 @@ const BackGroundResources = {
 //==道具設定(屬性、增加能力、道具說明)
 //==item type: 0:藥水類(喝) 1:丟擲類 2:裝備類
 const GameItemData = {
-    dude: {
+    pan: {
         type: 2,
         buff: {
             defense: 5,
+        },
+        detail: 'aaa'
+    },
+    sunny: {
+        type: 0,
+        buff: {
+            HP: 1,
         },
         detail: 'aaa'
     },

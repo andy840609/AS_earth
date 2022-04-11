@@ -322,9 +322,9 @@ function locatingGame() {
                     },
                     backpack: {//==道具裝備相關
                         hotKey: [],//快捷鍵
-                        item: ['potion'],//消耗品
-                        equip: ['dude', 'shoe'],//背包中裝備
-                        onEquip: [],//人物裝備中
+                        item: [{ name: 'sunny', amount: 5 }],//消耗品
+                        equip: ['pan',],//背包中裝備
+                        onEquip: ['pan'],//人物裝備中
                     },
                 };
             };
@@ -366,7 +366,7 @@ function locatingGame() {
                     initMap();
 
                     //==test
-                    // gameStart('defend');
+                    gameStart('defend');
                     // gameStart('dig');
                     //==test
                 };
@@ -412,12 +412,12 @@ function locatingGame() {
                         // .width(svgBox.width * (height / svgBox.height));
 
                     };
-                    var initShareSocial = () => {
-                        let shareSocial = congrats.find('.shareSocial');
+                    var initMenu = () => {
+                        let endMenu = congrats.find('.endMenu');
 
-                        shareSocial
+                        endMenu
                             .append(`
-                            <div class="shareButtons">
+                            <div class="buttonGroup">
 
                                 <button type="button" class="btn btn-primary rounded-pill" id="fbButton">
                                     <div class="d-flex align-items-center">
@@ -432,18 +432,25 @@ function locatingGame() {
                                         <text class="text-nowrap p-1 pt-2">${GameData.localeJSON.UI['downloadCert']}</text>
                                     </div>
                                 </button>
-                              
+
+                                <button type="button" class="btn btn-primary rounded-pill" id="surveyButton">
+                                <div class="d-flex align-items-center">
+                                    <i class="fa-solid fa-thumbs-up fa-2x"></i>
+                                    <text class="text-nowrap p-1 pt-2">${GameData.localeJSON.UI['survey']}</text>
+                                </div>
+                                </button>
+     
                             </div>
                             `);
 
                         //==按鈕一個一個出現                       
-                        shareSocial.find('.shareButtons>button').each(function (i) {
+                        endMenu.find('.buttonGroup>button').each(function (i) {
                             let button = $(this);
                             button.css('top', height * (0.4 + 0.1 * i));
                             setTimeout(() => button.show(), 5400 + i * 1000);//==5400是動畫時間
                         });
 
-                        shareSocial.find('#fbButton')
+                        endMenu.find('#fbButton')
                             .on('click', () => {
                                 var getProfile = () => {
                                     const pictureW = 100;
@@ -511,16 +518,20 @@ function locatingGame() {
 
 
                             });
-                        shareSocial.find('#downloadButton')
+                        endMenu.find('#downloadButton')
                             .on('click', () => {
                                 getSharingImg();
                                 // console.debug(imgName);
+                            });
+                        endMenu.find('#surveyButton')
+                            .on('click', () => {
+                                window.open('https://forms.gle/UZjB2T6fvY27PE5y8');
                             });
                     };
 
                     congrats.fadeIn();
                     initRankChart();
-                    initShareSocial();
+                    initMenu();
                 };
                 win ? congratsScene() : gameOverScene();
 
@@ -629,10 +640,10 @@ function locatingGame() {
                     data.forEach((d, i) => {
                         // console.debug(d);
                         // let enemy = ['dog', 'cat', 'dove'];//==之後隨機抽敵人組
-                        // let enemy = ['dove'];//==之後隨機抽敵人組
-                        let enemy = copyEnemyArr.length !== 0 ?//===拷貝的陣列抽完才全隨機
-                            [copyEnemyArr.pop()] :
-                            [enemyArr[getRandom(enemyArr.length)]];
+                        let enemy = ['dove'];//==之後隨機抽敵人組
+                        // let enemy = copyEnemyArr.length !== 0 ?//===拷貝的陣列抽完才全隨機
+                        //     [copyEnemyArr.pop()] :
+                        //     [enemyArr[getRandom(enemyArr.length)]];
 
                         let enemyStats = {};
 
@@ -1196,7 +1207,7 @@ function locatingGame() {
                                 <div class="Congrats">
                                     <div class="d-flex justify-content-center ">
                                         <div class="rankChart col-9"></div>
-                                        <div class="shareSocial col-3 d-flex align-items-center"></div>
+                                        <div class="endMenu col-3 d-flex align-items-center"></div>
                                     </div>
                                 </div>
                             `);
@@ -1903,76 +1914,76 @@ function locatingGame() {
                     updateMapUI(playerInfo, 1000);
                 }
                 else if (gameMode == 'dig') {
-                    // console.debug(siteData);
-                    {
-                        const backgroundArr = Object.keys(BackGroundResources.dig);
+                    // // console.debug(siteData);
+                    // {
+                    //     const backgroundArr = Object.keys(BackGroundResources.dig);
 
-                        let coordinate = siteData.coordinate;
-                        // let background = 'halloween_4';//==之後經緯度判斷？
-                        let background = backgroundArr[getRandom(backgroundArr.length)];
-                        let mineBGindex = 0;//==之後經緯度判斷？
+                    //     let coordinate = siteData.coordinate;
+                    //     // let background = 'halloween_4';//==之後經緯度判斷？
+                    //     let background = backgroundArr[getRandom(backgroundArr.length)];
+                    //     let mineBGindex = 0;//==之後經緯度判斷？
 
-                        let placeData = {
-                            coordinate: coordinate,
-                            background: background,
-                            mineBGindex: mineBGindex,
-                            depth: siteData.depth ? siteData.depth : null,
-                        };
+                    //     let placeData = {
+                    //         coordinate: coordinate,
+                    //         background: background,
+                    //         mineBGindex: mineBGindex,
+                    //         depth: siteData.depth ? siteData.depth : null,
+                    //     };
 
-                        //==顯示假設點
-                        assumedEpicenter
-                            .setLatLng(coordinate)
-                            .getTooltip()
-                            .setContent(`${GameData.localeJSON.UI['assumedEpicenter']} : ${coordinate.join(' , ')}`)
-                        assumedEpicenter.getElement().style.display = 'inline';
+                    //     //==顯示假設點
+                    //     assumedEpicenter
+                    //         .setLatLng(coordinate)
+                    //         .getTooltip()
+                    //         .setContent(`${GameData.localeJSON.UI['assumedEpicenter']} : ${coordinate.join(' , ')}`)
+                    //     assumedEpicenter.getElement().style.display = 'inline';
 
-                        GameData.playerEpicenter = coordinate;
+                    //     GameData.playerEpicenter = coordinate;
 
-                        gameResult = await new Promise((resolve, reject) => {
-                            const config = Object.assign(getPhaserConfig(width, height), {
-                                scene: new DigScene(placeData, GameData, {
-                                    resolve: resolve,
-                                }),
-                            });
-                            new Phaser.Game(config);
-                        });
+                    //     gameResult = await new Promise((resolve, reject) => {
+                    //         const config = Object.assign(getPhaserConfig(width, height), {
+                    //             scene: new DigScene(placeData, GameData, {
+                    //                 resolve: resolve,
+                    //             }),
+                    //         });
+                    //         new Phaser.Game(config);
+                    //     });
 
-                        console.debug(gameResult);
-                        let playerInfo = gameResult.playerInfo;
+                    //     console.debug(gameResult);
+                    //     let playerInfo = gameResult.playerInfo;
 
-                        //===更新人物資料
-                        updateMapUI(playerInfo, 1000);
-                    }
+                    //     //===更新人物資料
+                    //     updateMapUI(playerInfo, 1000);
+                    // }
 
                     //=== 進王關
-                    if (gameResult.bossRoom) {//gameResult.bossRoom
-                        const backgroundArr = Object.keys(BackGroundResources.boss);
-                        let background = backgroundArr[getRandom(backgroundArr.length)];
+                    // if (gameResult.bossRoom) {//gameResult.bossRoom
+                    //     const backgroundArr = Object.keys(BackGroundResources.boss);
+                    //     let background = backgroundArr[getRandom(backgroundArr.length)];
 
-                        gameResult = await new Promise((resolve, reject) => {
-                            const config = Object.assign(getPhaserConfig(width, height), {
-                                scene: new BossScene(GameData, background, {
-                                    resolve: resolve,
-                                }),
-                            });
-                            new Phaser.Game(config);
-                        });
-                        console.debug(gameResult);
-                        let playerInfo = gameResult.playerInfo;
+                    //     gameResult = await new Promise((resolve, reject) => {
+                    //         const config = Object.assign(getPhaserConfig(width, height), {
+                    //             scene: new BossScene(GameData, background, {
+                    //                 resolve: resolve,
+                    //             }),
+                    //         });
+                    //         new Phaser.Game(config);
+                    //     });
+                    //     console.debug(gameResult);
+                    //     let playerInfo = gameResult.playerInfo;
 
-                        //===更新人物資料
-                        updateMapUI(playerInfo, 1000);
+                    //     //===更新人物資料
+                    //     updateMapUI(playerInfo, 1000);
 
-                        //==通關
-                        if (gameResult.bossDefeated) {//gameResult.bossDefeated
-                            // console.debug('通關');
-                            initEndScene(true);
-                            return;
-                        };
-                    }
-                    else { //=== 沒找到
-                        updateSidekick(5, 0);
+                    //     //==通關
+                    if (1) {//gameResult.bossDefeated
+                        // console.debug('通關');
+                        initEndScene(true);
+                        return;
                     };
+                    // }
+                    // else { //=== 沒找到
+                    //     updateSidekick(5, 0);
+                    // };
 
                 };
                 gameDisplay(false);
@@ -2669,7 +2680,7 @@ function locatingGame() {
             let playerObj = {
                 player: GameData.playerCustom.name,
                 timeUse: parseFloat((GameData.playerTimeUse / 60000).toFixed(2)),
-                // timeUse: 1.62,//test
+                score: 0,
             };
 
             var getGapGroupData = () => {
@@ -3014,7 +3025,7 @@ function locatingGame() {
                                     };
 
                                     d3.timeout(() => replayFlag = true, bossT1 + bossT2 + bossT3);
-                                    // chartContainerJQ.find('#gameGroup .Congrats .shareSocial').show();
+                                    // chartContainerJQ.find('#gameGroup .Congrats .endMenu').show();
 
                                 }, attackDuration);
                             });

@@ -67,12 +67,13 @@ const Item = new Phaser.Class({
 
             Phaser.Physics.Arcade.Sprite.call(this, scene);
 
+            const itemW = 60;
             this
-                .setTexture(key)
+                .setTexture('item_' + key)
+                .setScale(itemW / this.width)
                 .setPosition(x, y)
                 .setDepth(scene.Depth.player)
                 .setName(key);
-
             // this.onWorldBounds = true;
             // let bodySize = (key === 'dove') ? [15, 15] : [25, 18];
 
@@ -99,8 +100,22 @@ const Item = new Phaser.Class({
 
     collectHandler: function (item, player) {
         // console.debug(player, item);
+
+        //==刪除與玩家和地面的碰撞器
         item.colliderArray.forEach(collider => collider.destroy());
         item.destroy();
+
+        let scene = player.scene;
+        //==更新資料中道具數量
+        let itemArray = scene.gameData.backpack.item;
+        let backpackItem = itemArray.find(stuff => stuff.name === item.name);
+        if (backpackItem) backpackItem.amount += 1;
+        else itemArray.push({ name: item.name, amount: 1 });
+        // console.debug(isInBackpack ? true : false)git clone https://github.com/ccoenraets/olympic-dashboard-d3.gitgit clone https://github.com/ccoenraets/olympic-dashboard-d3.git
+
+        //==包包開啟時改變道具顯示數量
+        let backpackUI = scene.scene.get('backpackUI');
+        if (backpackUI) backpackUI.updateItems();
     },
 });
 
@@ -834,10 +849,11 @@ const Player = new Phaser.Class({
             }).setOrigin(1, 0);
 
             //====init equip
-            this.equip = scene.add.image(0, 0, onEquip[0])
+            this.equip = scene.add.image(0, 0, 'onEquip_' + onEquip[0])
                 .setOrigin(0.5)
                 .setVisible(onEquip.length !== 0)
                 .setDepth(scene.Depth.player + 1);
+            if (onEquip.length !== 0) this.equip.setScale(this.displayWidth * 1.5 / this.equip.width);
 
             //===init effect sprite
             this.dust = scene.add.sprite(0, 0)
@@ -901,7 +917,7 @@ const Player = new Phaser.Class({
     doublejumpFlag: false,
     //==移動
     movingHadler: function (scene) {
-        this.equip.setPosition(this.x, this.y - this.height * 0.4);
+        this.equip.setPosition(this.x, this.y - this.height * 0.35);
 
         if (this.stopCursorsFlag) return;
 

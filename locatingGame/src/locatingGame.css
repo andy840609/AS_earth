@@ -482,16 +482,16 @@ svg {
     height: 100%;
 }
 
-#gameGroup .Congrats .shareSocial {
+#gameGroup .Congrats .endMenu {
     pointer-events: none;
 }
 
-#gameGroup .Congrats .shareSocial button {
+#gameGroup .Congrats .endMenu button {
     pointer-events: auto;
 }
 
 /* fb Button */
-.shareButtons>button {
+.buttonGroup>button {
     opacity: 0;
     position: absolute;
     animation: showButton 1.5s ease-in 0s forwards;

@@ -232,16 +232,19 @@ class UIScene extends Phaser.Scene {
                 // =When the pause button is pressed, we pause the game and time scene
                 const timerUI = gameScene.game.scene.getScene('timerUI');
                 const RexUI = gameScene.game.scene.getScene('RexUI');
+                const hotKeyUI = gameScene.game.scene.getScene('hotKeyUI');
+                // const backpackUI = gameScene.game.scene.getScene('backpackUI');
                 const doctorUI = gameScene.name != 'boss' ? gameScene.game.scene.getScene('doctorUI') : null;
                 const detectorUI = gameScene.name != 'boss' ? gameScene.game.scene.getScene('detectorUI') : null;
 
                 timerUI.gameTimer.paused = true;
                 timerUI.scene.pause();
                 RexUI.scene.pause();
-
+                hotKeyUI.scene.pause();
                 gameScene.scene.pause();
                 if (doctorUI) doctorUI.scene.pause();
                 if (detectorUI) detectorUI.scene.pause();
+
 
                 preload = () => { };
                 create = () => {
@@ -300,6 +303,7 @@ class UIScene extends Phaser.Scene {
                                         timerUI.scene.resume();
                                         timerUI.gameTimer.paused = false;
                                         RexUI.scene.resume();
+                                        hotKeyUI.scene.resume();
                                         if (doctorUI) doctorUI.scene.resume();
                                         if (detectorUI) detectorUI.scene.resume();
                                         this.scene.remove();
@@ -382,6 +386,7 @@ class UIScene extends Phaser.Scene {
                         timerUI.scene.resume();
                         timerUI.gameTimer.paused = false;
                         RexUI.scene.resume();
+                        hotKeyUI.scene.resume();
                         if (doctorUI) doctorUI.scene.resume();
                         if (detectorUI) detectorUI.scene.resume();
                     });
@@ -3848,7 +3853,7 @@ class UIScene extends Phaser.Scene {
 
 
                     let preClickItem = null;
-                    const createMenu = (scene, gameObject, itemType = 0) => {
+                    const createMenu = (scene, gameObject, itemType = 0, itemIdx = 0) => {
                         //==itemType:0消耗品 1:裝備 2:已穿戴裝備
                         // console.debug(gameObject);
                         //==新創一個下拉選單的scene並暫停背包的scene(不然事件會互相引響)
@@ -3866,17 +3871,20 @@ class UIScene extends Phaser.Scene {
                                         children: [...Array(hotKeyAmount).keys()].map(i =>
                                             new Object({ name: 'setHotkey' })),
                                     },
+                                    { name: 'detail' },
                                 ];
 
                                 break;
                             case 1:
                                 options = [
                                     { name: 'equip', },
+                                    { name: 'detail' },
                                 ];
                                 break;
                             case 2:
                                 options = [
                                     { name: 'unequip' },
+                                    { name: 'detail' },
                                 ];
                                 break;
                         };
@@ -3898,7 +3906,7 @@ class UIScene extends Phaser.Scene {
                                         new RexPlugins.UI.RoundRectangle(menuScene, 0, 0, 0, 0, 3, COLOR_PRIMARY).setStrokeStyle(3, COLOR_LIGHT)),
                                     text: menuScene.add.text(0, 0, text, {
                                         fontSize: '20px',
-                                        padding: { top: 2, bottom: 2 }
+                                        padding: { top: 2, bottom: 2, left: 5, right: 5 }
                                     }).setDepth(2),
                                     space: padding,
                                     name: option.name,
@@ -3912,7 +3920,7 @@ class UIScene extends Phaser.Scene {
                             easeOut: {
                                 duration: 100,
                                 orientation: 1
-                            }
+                            },
 
                             // expandEvent: 'button.over'
                         });
@@ -3963,13 +3971,15 @@ class UIScene extends Phaser.Scene {
 
                                         break;
                                     case 'use':
+                                        gameScene.hotKeyUI.useItemHandler(itemIdx);
                                         break;
                                     case 'setHotkey':
+                                        gameScene.hotKeyUI.updateHotKey(gameObject.name, index);
                                         break;
                                 };
 
-                                console.debug(button.name, index)
-                                console.debug(gameObject.name)
+                                console.debug(button.name, index, gameObject.name);
+
 
                                 if (button.name !== 'hotkey') {
                                     scene.scene.resume();
@@ -3983,8 +3993,6 @@ class UIScene extends Phaser.Scene {
                             .on('scaledown.complete', function () {
                                 console.log('scaledown.complete')
                             });
-
-
 
                         menuScene.input.on('pointerdown', function (pointer) {
                             if (!menu.isInTouching(pointer)) {
@@ -4014,11 +4022,11 @@ class UIScene extends Phaser.Scene {
                             background: scene.add.existing(block),
                             main: item,
                             rightBottom: config.isEquip ? false : scene.add.text(0, 0, config.amount, {
-                                color: 'yellow',
+                                color: '#fff',
                                 align: 'right',
-                                backgroundColor: COLOR_LIGHT,
-                                padding: { left: 3, right: 3, top: 3, bottom: 3 }
-                            }),
+                                backgroundColor: '#474747',
+                                padding: { left: 1, right: 1, top: 2, bottom: 0 }
+                            }).setOrigin(0.5),
                             name: config.item ? config.item : '',
                             align: 'center',
                         });
@@ -4040,8 +4048,30 @@ class UIScene extends Phaser.Scene {
                         const itemData = backpackData.item;
 
                         this.updateItems = () => {
-                            console.debug('updateItems');
+                            table.setItems(itemData);
+                            return;
+                            if (itemIndex === -1) {//==沒有這個道具要加造道具icon
+                                Phaser.Utils.Array.Add(table.items, itemData[itemData.length - 1]);
+                                table.refresh();
+                            }
+                            else {//==有的話改變badge text的數量
+                                let amount = itemData[itemIndex].amount;
+                                //==數量大於0改變數字
+                                if (amount > 0) {
+                                    let amountText = table.getCellContainer(itemIndex)
+                                        .getElement('icon')
+                                        .getElement('rightBottom');
+                                    amountText.setText(amount);
+                                }
+                                //==小於0從包包刪除
+                                else {
+                                    console.debug(itemIndex, table.items[itemIndex]);
+                                    Phaser.Utils.Array.Remove(table.items, table.items[itemIndex]);
+                                    table.refresh();
+                                    console.debug(table);
+                                };
 
+                            };
                         };
                         const table = new RexPlugins.UI.GridTable(this, {
                             width: itemW * itemCol,
@@ -4056,7 +4086,7 @@ class UIScene extends Phaser.Scene {
                                 // mask: {
                                 //     padding: 2,
                                 // },
-                                // reuseCellContainer: true,
+                                // reuseCellContainer: false,
                             },
                             slider: {
                                 track: this.add.existing(
@@ -4102,12 +4132,12 @@ class UIScene extends Phaser.Scene {
                                 footer: 5,
                             },
                             createCellContainerCallback: function (cell, cellContainer) {
-                                // console.debug(cell, cellContainer, a, b)
                                 let scene = cell.scene,
                                     width = cell.width,
                                     index = cell.index;
-
-                                if (cellContainer === null) {
+                                // console.debug(cell)
+                                // console.debug(itemData[index])
+                                if (cellContainer === null && itemData[index]) {
                                     cellContainer = createIcon(scene, {
                                         width: width,
                                         height: width,
@@ -4132,9 +4162,9 @@ class UIScene extends Phaser.Scene {
                                 if (preClickItem && preClickItem._active) preClickItem.getElement('background').setStrokeStyle();
                                 preClickItem = cellContainer;
                                 cellContainer.getElement('background').setStrokeStyle(3, COLOR_SELECT);
-                                createMenu(this, cellContainer, 0);
+                                createMenu(this, cellContainer, 0, cellIndex);
                             }, this);
-                        // table.getCellContainer(cellIndex);
+
 
                         pannel.add(table, { expand: true });
                     };
@@ -4226,52 +4256,59 @@ class UIScene extends Phaser.Scene {
                             const equipType = ['weapon'];
                             const itemW = 55;
 
-                            let onEquipBlock = new RexPlugins.UI.GridSizer(this, {
-                                column: 1,
-                                row: equipType.length,
-                                createCellContainerCallback: (scene, col, row, config) => {
-                                    Object.assign(config, {
-                                        align: 'center',
-                                        padding: { top: 5, left: 5 },
+                            let getCellContainer = (scene, item) => {
+                                return createIcon(this, {
+                                    width: itemW,
+                                    height: itemW,
+                                    isEquip: true,
+                                    item: item,
+                                })
+                                    .setOrigin(0)
+                                    .setDepth(1)
+                                    .setInteractive()
+                                    .on('pointerout', function () {
+                                        if (!item) return;
+                                        this.getElement('background').setStrokeStyle();
+                                    })
+                                    .on('pointerover', function () {
+                                        if (!item) return;
+                                        this.getElement('background').setStrokeStyle(3, COLOR_SELECT);
+                                    })
+                                    .on('pointerdown', function () {
+                                        if (!item) return;
+                                        if (preClickItem && preClickItem._active) preClickItem.getElement('background').setStrokeStyle();
+                                        preClickItem = this;
+                                        this.getElement('background').setStrokeStyle(3, COLOR_SELECT);
+                                        createMenu(scene, this, 2);
                                     });
-
-                                    let item = onEquipData[row];
-
-                                    let icon = createIcon(this, {
-                                        width: itemW,
-                                        height: itemW,
-                                        isEquip: true,
-                                        item: item,
-                                    }).setOrigin(0)
-                                        .setInteractive()
-                                        .on('pointerout', function () {
-                                            if (!item) return;
-                                            this.getElement('background').setStrokeStyle();
-                                        })
-                                        .on('pointerover', function () {
-                                            if (!item) return;
-                                            this.getElement('background').setStrokeStyle(3, COLOR_SELECT);
-                                        })
-                                        .on('pointerdown', function () {
-                                            if (!item) return;
-                                            if (preClickItem && preClickItem._active) preClickItem.getElement('background').setStrokeStyle();
-                                            preClickItem = this;
-                                            this.getElement('background').setStrokeStyle(3, COLOR_SELECT);
-                                            createMenu(scene, this, 2);
-                                        });
-
-                                    return icon.setDepth(1);
-                                },
-                            });
-
-
+                            };
                             let pre_onEquip = table.getElement('onEquip');
-                            if (pre_onEquip) table.remove(pre_onEquip, true);
+                            let onEquipBlock = pre_onEquip ? pre_onEquip :
+                                new RexPlugins.UI.GridSizer(this, {
+                                    column: 1,
+                                    row: equipType.length,
+                                    createCellContainerCallback: (scene, col, row) => {
+                                        return getCellContainer(scene, onEquipData[row]);
+                                    },
+                                });
 
-                            table
-                                .insert(0, onEquipBlock, { expand: true, key: 'onEquip' })
-                                .layout();
+                            if (pre_onEquip) {
+                                equipType.forEach((type, i) => {
+                                    onEquipBlock.removeAt(0, i, true);
+                                    let child = getCellContainer(this, onEquipData[i]);
+                                    onEquipBlock.add(child, 0, i);
+                                });
+                                // console.debug(onEquipBlock);
+                            }
+                            else
+                                table.add(onEquipBlock, {
+                                    expand: true,
+                                    key: 'onEquip',
+                                    align: 'center',
+                                    padding: { left: 5, top: 5, },
+                                });
 
+                            table.layout();
                         };
                         let updateCharaPic = (onEquipData) => {
                             let badgeIcon = table.getElement('charaPic').getElement('items')[0].getElement('icon');
@@ -4450,16 +4487,21 @@ class UIScene extends Phaser.Scene {
                 update = () => { };
                 break;
             case 'hotKeyUI'://==道具快捷鍵
-                const hotKeyAmount = 3;
+
                 const COLOR_PRIMARY = 0x141414;
                 const COLOR_LIGHT = 0x474747;
                 const COLOR_DARK = 0x292929;
                 const COLOR_SELECT = 0x43B7C7;
 
+                const hotKeyAmount = 3,
+                    hotKeyButtons = [...Array(hotKeyAmount).keys()].map(i => 'hotkey' + (i + 1));
+                const blockW = 50;
+                const hotKeyData = gameData.backpack.hotKey;
+                const itemData = gameData.backpack.item;
+
                 preload = () => { };
                 create = () => {
-
-                    this.hotKey = new RexPlugins.UI.Sizer(this, {
+                    let hotKeyBar = new RexPlugins.UI.Sizer(this, {
                         x: width - 10,
                         y: height - 5,
                         orientation: 0,
@@ -4474,49 +4516,106 @@ class UIScene extends Phaser.Scene {
                         new RexPlugins.UI.RoundRectangle(this, 0, 0, 0, 0, 10, COLOR_PRIMARY, 0.95).setStrokeStyle(2, COLOR_LIGHT, 1)
                     )).setOrigin(1);
 
-                    let hotkeyBlock = () => {
-                        const blockW = 50;
-                        const hotKeyData = gameData.backpack.hotKey;
-                        hotKeyData.push(1);
+                    let createIcon = (hotkeyIdx) => {
+                        let item = hotKeyData[hotkeyIdx] ? hotKeyData[hotkeyIdx] : false;
+                        let hotkey = gameData.controllCursor['hotkey' + (hotkeyIdx + 1)];
 
-                        [...Array(hotKeyAmount).keys()].forEach(i => {
-                            let block = hotKeyData[i] ?
-                                this.add.image(0, 0, 'backpackBlock') :
-                                new RexPlugins.UI.RoundRectangle(this, 0, 0, 0, 0, 10, COLOR_DARK).setStrokeStyle(2, COLOR_LIGHT, 1);
-                            let hotkey = gameData.controllCursor['hotkey' + (i + 1)];
-                            let item = hotKeyData[i] ?
-                                this.add.image(0, 0, 'dude') : false;
-                            let durability = hotKeyData[i] ?
-                                '100%' : false;
+                        let block = item ?
+                            this.add.image(0, 0, 'backpackBlock') :
+                            new RexPlugins.UI.RoundRectangle(this, 0, 0, 0, 0, 10, COLOR_DARK).setStrokeStyle(2, COLOR_LIGHT, 1);
+                        let main = item ? this.add.image(0, 0, 'item_' + item) : false;
+                        if (item) main.setScale(blockW / main.width, blockW / main.height);
 
-                            let badgeLabel = new RexPlugins.UI.BadgeLabel(this, {
-                                width: blockW,
-                                height: blockW,
-                                background: this.add.existing(block),
-                                main: item,
-                                space: { left: -5, right: -5, top: -5, bottom: -5 },
-                                leftTop: this.add.text(0, 0, hotkey, {
-                                    fontSize: '24px',
-                                    color: COLOR_DARK,
-                                    align: 'center',
-                                    padding: { left: 8, top: 5 }
-                                }),
-                                rightBottom: durability ? this.add.text(0, 0, durability, {
-                                    color: 'yellow',
+                        return new RexPlugins.UI.BadgeLabel(this, {
+                            width: blockW,
+                            height: blockW,
+                            background: this.add.existing(block),
+                            main: main,
+                            // space: { left: -5, right: -5, top: -5, bottom: -5 },
+                            leftTop: this.add.text(0, 0, UItextJSON[hotkey], {
+                                fontSize: '24px',
+                                color: COLOR_DARK,
+                                align: 'center',
+                                padding: { left: 3, top: 0 }
+                            }).setOrigin(0.5),
+                            rightBottom: item ? this.add.text(0, 0,
+                                itemData.find(backpackItem => backpackItem.name === item).amount,
+                                {
+                                    color: '#fff',
                                     align: 'right',
-                                    backgroundColor: COLOR_LIGHT,
-                                    padding: { left: 3, right: 3, top: 3, bottom: 3 }
-                                }) : false,
-                            });
-                            this.hotKey.add(badgeLabel, { expand: true });
+                                    backgroundColor: '#474747',
+                                    padding: { left: 1, right: 1, top: 2, bottom: 0 }
+                                }).setOrigin(0.5) : false,
                         });
+                    };
+                    let hotkeyBlock = () => {
+                        hotKeyButtons.forEach((hotKey, i) => {
+                            let badgeLabel = createIcon(i);
+                            hotKeyBar.add(badgeLabel, { expand: true, });
+                        });
+                        hotKeyBar.layout();
+                    };
+                    hotkeyBlock();
 
-                        this.hotKey.layout();
+                    this.updateHotKey = (itemName, hotkeyIdx = undefined) => {
+                        let hotkeys = hotKeyBar.getElement('items');
+
+                        //==設定快捷鍵
+                        if (hotkeyIdx !== undefined) {
+                            hotKeyData[hotkeyIdx] = itemName;
+                            hotKeyBar
+                                .remove(hotkeys[hotkeyIdx], true)
+                                .insert(hotkeyIdx, createIcon(hotkeyIdx), { expand: true })
+                                .layout();
+                        }
+                        //==道具數量變化同時改變快捷鍵顯示
+                        else {
+                            hotKeyData.forEach((hotkeyItem, hotkeyIdx) => {
+                                if (hotkeyItem === itemName) {
+                                    let backpackItem = itemData.find(backpackItem => backpackItem.name === itemName);
+                                    // console.debug(backpackItem);
+                                    hotkeys[hotkeyIdx].getElement('rightBottom')
+                                        .setText(backpackItem ? backpackItem.amount : 0);
+                                };
+                            });
+
+                        };
+                        // console.debug(hotKeyBar);
+                    };
+                    this.useItemHandler = (itemIdx) => {
+                        let itemName = itemData[itemIdx].name;
+
+                        //==物品效果
+                        let itemData = GameItemData[itemName];
+                        if (itemData.type === 0)//是消耗品
+                        {
+
+                        }
+
+                        //==數量用完就刪除
+                        if ((itemData[itemIdx].amount -= 1) <= 0) itemData.splice(itemIdx, 1);
+                        this.updateHotKey(itemName);
+
+                        //==包包開啟時改變道具顯示數量
+                        let backpackUI = this.scene.get('backpackUI');
+                        if (backpackUI) backpackUI.updateItems();
+                    };
+                    gameScene.hotKeyUI = this;
+                };
+                update = () => {
+                    var updateButton = () => {
+                        let cursors = gameScene.cursors;
+                        hotKeyButtons.forEach((hotKey, i) => {
+                            if (Phaser.Input.Keyboard.JustDown(cursors[gameData.controllCursor[hotKey]])) {
+                                // console.debug(hotKey);
+                                let itemIdx = itemData.findIndex(backpackItem => backpackItem.name === hotKeyData[i]);
+                                if (itemIdx !== -1) this.useItemHandler(itemIdx);
+                            };
+                        });
                     };
 
-                    hotkeyBlock();
+                    updateButton();
                 };
-                update = () => { };
                 break;
             default:
                 preload = () => { };

@@ -322,7 +322,10 @@ function locatingGame() {
                     },
                     backpack: {//==道具裝備相關
                         hotKey: [],//快捷鍵
-                        item: [{ name: 'sunny', amount: 5 }],//消耗品
+                        item: [//消耗品
+                            { name: 'dude', amount: 1 },
+                            { name: 'sunny', amount: 50 },
+                        ],
                         equip: ['pan',],//背包中裝備
                         onEquip: ['pan'],//人物裝備中
                     },

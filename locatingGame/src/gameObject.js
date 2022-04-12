@@ -105,13 +105,20 @@ const Item = new Phaser.Class({
         item.colliderArray.forEach(collider => collider.destroy());
         item.destroy();
 
-        let scene = player.scene;
+        const scene = player.scene;
+        const backpackData = scene.gameData.backpack;
         //==更新資料中道具數量
-        let itemArray = scene.gameData.backpack.item;
-        let backpackItem = itemArray.find(stuff => stuff.name === item.name);
-        if (backpackItem) backpackItem.amount += 1;
-        else itemArray.push({ name: item.name, amount: 1 });
-        // console.debug(isInBackpack ? true : false)git clone https://github.com/ccoenraets/olympic-dashboard-d3.gitgit clone https://github.com/ccoenraets/olympic-dashboard-d3.git
+        let itemArray = backpackData.item;
+        let itemIndex = itemArray.findIndex(stuff => stuff.name === item.name);
+
+        //==沒有就在道具陣列新增
+        if (itemIndex === -1) itemArray.push({ name: item.name, amount: 1 });
+        //==有增加數量屬性
+        else {
+            itemArray[itemIndex].amount += 1;
+            //===有在快捷鍵中更新顯示數量
+            scene.hotKeyUI.updateHotKey(item.name);
+        };
 
         //==包包開啟時改變道具顯示數量
         let backpackUI = scene.scene.get('backpackUI');
@@ -2205,15 +2212,16 @@ class RexDialog extends RexPlugins.UI.Dialog {
             let content = this.getElement('content');
             // console.debug(config.tmpData);
             //==監聽鍵盤按鍵
+            let clearKeyName = (key) => config.localeJSON[key] ? config.localeJSON[key] : key;
             scene.input.keyboard.on('keyup', (e) => {
                 let key = Object.keys(keyCode).find(key => keyCode[key] === e.keyCode),
                     isKeyExisted = Object.values(config.tmpData).indexOf(key) !== -1;
 
                 if (isKeyExisted) {
-                    content.setText(`[size=40][color=red][b]${key}[/b][/color][/size]\n${config.localeJSON['keyRepeat']}`);
+                    content.setText(`[size=40][color=red][b]${clearKeyName(key)}[/b][/color][/size]\n${config.localeJSON['keyRepeat']}`);
                 }
                 else {
-                    content.setText(`[size=40][color=green][b]${key}[/b][/color][/size]`);
+                    content.setText(`[size=40][color=green][b]${clearKeyName(key)}[/b][/color][/size]`);
 
                     scene.tweens.add({
                         targets: this,
@@ -2396,14 +2404,15 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                             let questionData, quizType, tmpData, keyPressAction;
                             switch (key) {
                                 case 'control':
-                                    itemText = gameData.controllCursor[item.name];
+                                    let clearKeyName = (key) => localeJSON.UI[key] ? localeJSON.UI[key] : key;
+                                    itemText = clearKeyName(gameData.controllCursor[item.name]);
                                     itemW = 70, itemH = 35;
                                     questionData = { question: 'controlHint', options: ['cancel'], };
                                     quizType = 2;
                                     tmpData = tmp.controllCursor;
                                     keyPressAction = (icon, keyPressed) => {
                                         if (!keyPressed) return;
-                                        icon.getElement('text').setText(keyPressed);
+                                        icon.getElement('text').setText(clearKeyName(keyPressed));
                                         tmp.controllCursor[item.name] = keyPressed;
                                     };
                                     Panel.on('resetControl', () => {
@@ -2415,7 +2424,8 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                                         chidren[1].getElement('items').forEach((grid, i) => {
                                             if (grid) {
                                                 let child = grid.getElement('items');
-                                                child[0].setText(tmp.controllCursor[data.category[key][i].name]);
+                                                let keyName = tmp.controllCursor[data.category[key][i].name];
+                                                child[0].setText(clearKeyName(keyName));
                                             };
                                         });
 

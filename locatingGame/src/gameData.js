@@ -37,9 +37,9 @@ const defaultControllCursor = {
     reset: 'R',
     exit: 'ESC',
     //==道具快捷鍵
-    hotkey1: '1',
-    hotkey2: '2',
-    hotkey3: '3',
+    hotkey1: 'ONE',
+    hotkey2: 'TWO',
+    hotkey3: 'THREE',
 };
 //載入字型
 // function loadFont(name, url) {

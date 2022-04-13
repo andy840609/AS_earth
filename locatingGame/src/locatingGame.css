@@ -223,7 +223,7 @@ svg {
     right: 0px;
     bottom: 0px;
     z-index: 1100;
-    /* display: none; */
+    display: none;
 }
 
 #gameUI .sidekickUI .sidekick {
@@ -514,4 +514,57 @@ svg {
         left: 0px;
         opacity: 1;
     }
+}
+
+
+/* ======================================人物屬性、包包============================================= */
+
+#playerStats>div {
+    margin-top: 5px;
+    font: small-caps bold 24px sans-serif;
+}
+
+/* #backpackUI {
+    width: 100%;
+} */
+
+#backpackUI .block {
+    /* overflow: auto; */
+    border-style: groove;
+    border: 3px solid #DC682E;
+    background: #F9E577;
+    border-radius: 5px;
+    padding: 5px;
+    margin-bottom: 5px;
+    /* width: 100%; */
+    /* height: 30%; */
+}
+
+#onEquip {
+    height: 100%;
+}
+
+#item {
+    height: 70%;
+}
+
+
+#equip {
+    height: 30%;
+}
+
+
+#backpackUI td {
+    border: 3px solid #DC682E;
+    border-radius: 5px;
+    background: #8C3E18;
+    width: 60px;
+    height: 60px;
+}
+
+#backpackUI table {
+    /* table-layout: fixed; */
+    /* width: 100%; */
+    border-collapse: separate;
+    border-spacing: 5px;
 }

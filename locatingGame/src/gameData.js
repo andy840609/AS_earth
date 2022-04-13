@@ -491,14 +491,17 @@ const GameItemData = {
         buff: {
             defense: 5,
         },
-        detail: 'aaa'
     },
     sunny: {
         type: 0,
         buff: {
             HP: 1,
-        },
-        detail: 'aaa'
+            MP: 10,
+        }
+    },
+    bone: {
+        type: 1,
+        buff: {}
     },
 };
 

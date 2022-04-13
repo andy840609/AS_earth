@@ -320,11 +320,19 @@ function locatingGame() {
                         doneTalking: false,
                         stopHotkey: false,//==對話完空白鍵不再出現對話（只能滑鼠點）
                     },
+                    // backpack: {//==道具裝備相關
+                    //     hotKey: [],//快捷鍵
+                    //     item: [//消耗品
+
+                    //     ],
+                    //     equip: [],//背包中裝備
+                    //     onEquip: [],//人物裝備中
+                    // },
                     backpack: {//==道具裝備相關
-                        hotKey: [],//快捷鍵
+                        hotKey: ['sunny'],//快捷鍵
                         item: [//消耗品
-                            { name: 'dude', amount: 1 },
-                            { name: 'sunny', amount: 50 },
+                            { name: 'bone', amount: 1 },
+                            { name: 'sunny', amount: 12 },
                         ],
                         equip: ['pan',],//背包中裝備
                         onEquip: ['pan'],//人物裝備中
@@ -350,7 +358,7 @@ function locatingGame() {
 
                     // //==test
                     // gameDisplay(true);
-                    // let newGameData = await new Promise((resolve, reject) => {
+                    // let doneTutorial = await new Promise((resolve, reject) => {
                     //     const config = Object.assign(getPhaserConfig(width, height), {
                     //         scene: new GameStartScene(GameData, {
                     //             getWaveImg: getWaveImg,
@@ -362,14 +370,14 @@ function locatingGame() {
                     //     });
                     //     new Phaser.Game(config);
                     // });
-
+                    // console.debug(doneTutorial);
                     // gameDisplay(false);
                     // //==test
 
                     initMap();
 
                     //==test
-                    gameStart('defend');
+                    // gameStart('defend');
                     // gameStart('dig');
                     //==test
                 };
@@ -794,7 +802,7 @@ function locatingGame() {
                     const ctrlDir = assetsDir + 'ui/map/controller/';
 
                     //===UIBar
-                    const UIbuttons = ['playerStats', 'velocityChart', 'questInfo'];
+                    const UIbuttons = ['playerStats', 'backpack', 'velocityChart', 'questInfo',];
 
                     //===UItooltip
                     const UItooltip = gameUI
@@ -817,7 +825,9 @@ function locatingGame() {
                         let imgNode = target.children[0];
 
                         let UI_index = UIbuttons.indexOf(target.id),
-                            hotKey = (UI_index != -1 ? UIbuttons[UI_index][0].toUpperCase() : null);
+                            hotKey = UI_index != -1 ?
+                                target.id === 'backpack' ? 'I' :
+                                    UIbuttons[UI_index][0].toUpperCase() : null;
 
                         UItooltip.show()//==先show才能得到寬高
                             .children('.tooltipText')
@@ -832,7 +842,7 @@ function locatingGame() {
                         UItooltip.css({ top: top, left: left, });
 
 
-                        if (!GameData.stationClear.chartUnlock && target.id == UIbuttons[1]) {
+                        if (!GameData.stationClear.chartUnlock && target.id == 'velocityChart') {
 
                             UIhint
                                 .animate({ "opacity": "show" }, 500)
@@ -859,16 +869,16 @@ function locatingGame() {
                             let targetDOMRect = target.getBoundingClientRect();
                             // console.debug(target);
 
-                            let top = id == UIbuttons[2] ? height * 0.1 : targetDOMRect.top - bigMapDOMRect.top,
+                            let top = (id == 'questInfo' || id == 'velocityChart') ? height * 0.1 : targetDOMRect.top - bigMapDOMRect.top,
                                 left = targetDOMRect.left - bigMapDOMRect.left + 80;
 
                             UI.css({ top: top, left: left, });
 
 
-                            if (id == UIbuttons[1])  //==速度參數圖表更新
-                                d3.select(`#${UIbuttons[1]}UI>svg`).dispatch('updateEvt');
-                            else if (id == UIbuttons[0])  //==人物圖更新
-                                gameUI.find(`#${UIbuttons[0]}UI`).trigger('updateEvt');
+                            if (id == 'velocityChart')  //==速度參數圖表更新
+                                d3.select(`#velocityChartUI>svg`).dispatch('updateEvt');
+                            else if (id == 'playerStats')  //==人物圖更新
+                                gameUI.find(`#playerStatsUI`).trigger('updateEvt');
                         }
                         else UI.hide();
 
@@ -923,7 +933,7 @@ function locatingGame() {
                                         const avatarDir = `${assetsDir}avatar/${GameData.playerRole}/${GameData.playerCustom.avatarIndex}.png`;
                                         UI
                                             .width(height * 0.5)
-                                            .height(height * 0.5)
+                                            // .height(height * 0.5)
                                             .append(`
                                             <div class='black-tooltip'></div>
                                             <div class='row'>
@@ -944,6 +954,54 @@ function locatingGame() {
                                                 </div>
 
                                             </div>
+
+                                            <div class='row' id='playerStats'>
+                                                <div class='col-12 attackPower'>
+                                                    <div class='row'>
+                                                        <div class='text-center col-6'>
+                                                            ${GameData.localeJSON.UI['attackPower']}
+                                                        </div>
+                                                        <div class='text-center col-6 val'>
+                                                            ${GameData.playerStats.attackPower}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class='col-12 defense'>
+                                                    <div class='row'>
+                                                        <div class='text-center col-6'>
+                                                            ${GameData.localeJSON.UI['defense']}
+                                                        </div>
+                                                        <div class='text-center col-6 val'>
+                                                            ${GameData.playerStats.defense}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                              
+                                                <div class='col-12 movementSpeed'>
+                                                    <div class='row'>
+                                                        <div class='text-center col-6'>
+                                                            ${GameData.localeJSON.UI['movementSpeed']}
+                                                        </div>
+                                                        <div class='text-center col-6 val'>
+                                                            ${GameData.playerStats.movementSpeed}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class='col-12 jumpingPower'>
+                                                    <div class='row'>
+                                                        <div class='text-center col-6'>
+                                                            ${GameData.localeJSON.UI['jumpingPower']}
+                                                        </div>
+                                                        <div class='text-center col-6 val'>
+                                                            ${GameData.playerStats.jumpingPower}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                     
                                             `);
 
                                         UI.find('.barBox')
@@ -951,8 +1009,8 @@ function locatingGame() {
                                                 let isHP = this.children[0].classList.contains('HP');
                                                 let playerStats = GameData.playerStats;
                                                 let status = isHP ?
-                                                    playerStats.HP + ' / ' + playerStats.maxHP :
-                                                    playerStats.MP + ' / ' + playerStats.maxMP;
+                                                    parseInt(playerStats.HP) + ' / ' + playerStats.maxHP :
+                                                    parseInt(playerStats.MP) + ' / ' + playerStats.maxMP;
 
                                                 UI.find('.black-tooltip')
                                                     .text((isHP ? 'HP ' : 'MP ') + status)
@@ -969,7 +1027,15 @@ function locatingGame() {
                                             });
 
                                         UI.on('updateEvt', () => {
-                                            let playerStats = GameData.playerStats;
+                                            let playerStats = { ...GameData.playerStats };
+                                            let onEquip = GameData.backpack.onEquip;
+
+                                            //==加上裝備數值
+                                            if (onEquip.length !== 0)
+                                                onEquip.forEach(item => {
+                                                    let buffs = GameItemData[item].buff;
+                                                    Object.keys(buffs).forEach(stat => playerStats[stat] += buffs[stat]);
+                                                });
                                             // console.debug(UI);
                                             let hpPercent = parseFloat((playerStats.HP / playerStats.maxHP * 100).toFixed(1)) + '%',
                                                 mpPercent = parseFloat((playerStats.MP / playerStats.maxMP * 100).toFixed(1)) + '%';
@@ -980,6 +1046,13 @@ function locatingGame() {
                                             UI.find('.MP')
                                                 .width(mpPercent)
                                                 .text(mpPercent);
+
+
+                                            let statDiv = UI.find('#playerStats');
+                                            Object.keys(playerStats.buff).forEach(stat =>
+                                                statDiv.find(`.${stat} .val`).text(playerStats[stat])
+                                            );
+
                                         });
 
 
@@ -1069,6 +1142,53 @@ function locatingGame() {
                                         UI.find('#infoContent').append(infoContentHTML);
 
                                         break;
+                                    case 'backpack':
+                                        const itemsDir = assetsDir + 'ui/game/backpack/items/';
+                                        const blocks = ['onEquip', 'item', 'equip'];
+                                        const blockSize = {//==[row,colum]
+                                            onEquip: [1, 1],
+                                            equip: [1, 4],
+                                            item: [3, 4],
+                                        };
+
+                                        UI
+                                            .width(height * 0.6)
+                                            // .height(height * 0.5)
+                                            .append(`
+                                                <div class='row'>
+                                                    <div class='-5' style="padding:0px 0px 0px 10px">
+                                                        <div class="block" align="left" id="onEquip"></div>
+                                                    </div>
+                                                    <div class='-7' style="padding:0px 10px 0px 5px">
+                                                        <div class="block" align="center" id="item"></div>
+                                                        <div class="block" align="center" id="equip"></div>
+                                                    </div>
+                                                </div>
+                                            `);
+
+                                        let getItemImg = (idx, key) => {
+                                            let item = GameData.backpack[key][idx];
+                                            let imgHtml = item ?
+                                                `<img src="${itemsDir + (key === 'item' ? item.name : item)}.png" width="${iconW} px" height="${iconW} px"></img>` : '';
+                                            return imgHtml;
+                                        };
+                                        let getTableHTML = (row, col, key) => {
+                                            let rowIdxs = [...Array(row).keys()],
+                                                colIdxs = [...Array(col).keys()];
+
+                                            let table = rowIdxs.map(row =>
+                                                `<tr> 
+                                                    ${colIdxs.map(col => `<td align='center'>${getItemImg(row * colIdxs.length + col, key)}</td>`).join('')}
+                                                </tr>`
+                                            ).join('');
+
+                                            // console.debug(table);
+                                            return `<table>${table}</table>`;
+                                        };
+
+                                        blocks.forEach(key =>
+                                            UI.find('#' + key).append(getTableHTML(...blockSize[key], key)));
+                                        break;
                                 };
 
                             });
@@ -1131,12 +1251,12 @@ function locatingGame() {
                                     });
 
                                     UItooltip.hide();
-                                    if (!GameData.stationClear.chartUnlock && e.target.parentNode.id == UIbuttons[1])
+                                    if (!GameData.stationClear.chartUnlock && e.target.parentNode.id == 'velocityChart')
                                         UIhint.hide();
                                 })
                                 .on('click', function (e) {
                                     //==速度參數要完成兩站才能調整
-                                    if (this.id == UIbuttons[1] && !GameData.stationClear.chartUnlock) return;
+                                    // if (this.id == 'velocityChart' && !GameData.stationClear.chartUnlock) return;
 
                                     let button = $(this);
                                     let ckick = button.hasClass('clicked');
@@ -1145,7 +1265,7 @@ function locatingGame() {
                                     updateUI(this, !ckick);
 
                                     //===第一次開速度圖
-                                    if (this.id == UIbuttons[1] && GameData.sidekick.lineStage[0] == 3) {
+                                    if (this.id == 'velocityChart' && GameData.sidekick.lineStage[0] == 3) {
                                         updateSidekick(4, 0, false);
                                     };
                                 });
@@ -1332,6 +1452,9 @@ function locatingGame() {
                                     break;
                                 case 'KeyQ':
                                     gameUI.find('#questInfo').trigger("click");
+                                    break;
+                                case 'KeyI':
+                                    gameUI.find('#backpack').trigger("click");
                                     break;
                                 case 'KeyY':
                                 case 'KeyN':

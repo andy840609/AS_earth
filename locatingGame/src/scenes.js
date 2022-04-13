@@ -2272,7 +2272,7 @@ class UIScene extends Phaser.Scene {
                                                     }
                                                     else {
                                                         gameScene.game.destroy(true, false);
-                                                        gameScene.resolve(gameScene.gameData);
+                                                        gameScene.resolve(false);
                                                     };
 
 
@@ -2699,7 +2699,7 @@ class UIScene extends Phaser.Scene {
                                                 //==確認跳過
                                                 if (questionData.options[confirmIdx] == UItextJSON['ok']) {
                                                     gameScene.game.destroy(true, false);
-                                                    gameScene.resolve(gameData);
+                                                    gameScene.resolve(false);
                                                 }
                                                 else return;
 
@@ -2714,8 +2714,12 @@ class UIScene extends Phaser.Scene {
                                             case 'next':
                                                 if (this.stepObj.nowStep == this.stepObj.maxStep) {
                                                     // this.buttonGroups[buttons[0]].getChildren().find(c => c.type === "Image").emit('pointerdown');
+                                                    if (gameScene.name == 'GameStart')
+                                                        gameData.backpack.equip.push('pan');
                                                     gameScene.game.destroy(true, false);
-                                                    gameScene.resolve(gameData);
+                                                    gameScene.resolve(true);
+                                                    //==完成教學拿到鍋子
+
                                                 }
                                                 else {
                                                     this.stepObj.nowStep++;
@@ -3976,6 +3980,9 @@ class UIScene extends Phaser.Scene {
                                     case 'setHotkey':
                                         gameScene.hotKeyUI.updateHotKey(gameObject.name, index);
                                         break;
+                                    case 'detail':
+
+                                        break;
                                 };
 
                                 console.debug(button.name, index, gameObject.name);
@@ -4021,6 +4028,7 @@ class UIScene extends Phaser.Scene {
                             height: badgeW,
                             background: scene.add.existing(block),
                             main: item,
+                            // space: { left: -5, right: -5, top: -5, bottom: -5 },
                             rightBottom: config.isEquip ? false : scene.add.text(0, 0, config.amount, {
                                 color: '#fff',
                                 align: 'right',
@@ -4112,7 +4120,7 @@ class UIScene extends Phaser.Scene {
                             footer: new RexPlugins.UI.Label(this, {
                                 height: 40,
                                 background: this.add.image(0, 0, 'backpackInfo'),
-                                text: this.add.text(0, 0, UItextJSON['item'], {
+                                text: this.add.text(0, 0, '', {
                                     color: '#000',
                                     fontSize: '18px',
                                     padding: { top: 10, bottom: 10, left: 10, right: 10 },
@@ -4153,10 +4161,29 @@ class UIScene extends Phaser.Scene {
                         })
                             .on('cell.over', function (cellContainer, cellIndex, pointer) {
                                 cellContainer.getElement('background').setStrokeStyle(3, COLOR_SELECT);
+                                let itemName = cellContainer.name;
+                                let itemGameData = GameItemData[itemName],
+                                    itemDetail = gameData.localeJSON.Item[itemName];
+
+                                let string = '';
+                                switch (itemGameData.type) {
+                                    case 0:
+                                        let buff = itemGameData.buff;
+                                        string = itemDetail.name + ': ';
+                                        string += Object.keys(buff).map(key =>
+                                            `${key + (buff[key] > 0 ? '+' : '') + buff[key]}`).join(', ');
+                                        break;
+                                    case 1:
+                                        string = itemDetail.name + ': ' + itemDetail.short;
+                                        break;
+                                };
+                                // console.debug(itemGameData)
+                                table.getElement('footer').getElement('text').setText(string);
 
                             }, this)
                             .on('cell.out', function (cellContainer, cellIndex, pointer) {
                                 cellContainer.getElement('background').setStrokeStyle();
+                                table.getElement('footer').getElement('text').setText('');
                             }, this)
                             .on('cell.click', function (cellContainer, cellIndex, pointer) {
                                 if (preClickItem && preClickItem._active) preClickItem.getElement('background').setStrokeStyle();
@@ -4531,12 +4558,12 @@ class UIScene extends Phaser.Scene {
                             height: blockW,
                             background: this.add.existing(block),
                             main: main,
-                            // space: { left: -5, right: -5, top: -5, bottom: -5 },
+                            space: { left: -5, right: -5, top: -5, bottom: -5 },
                             leftTop: this.add.text(0, 0, UItextJSON[hotkey], {
                                 fontSize: '24px',
                                 color: COLOR_DARK,
                                 align: 'center',
-                                padding: { left: 3, top: 0 }
+                                padding: { left: 8, top: 3 }
                             }).setOrigin(0.5),
                             rightBottom: item ? this.add.text(0, 0,
                                 itemData.find(backpackItem => backpackItem.name === item).amount,
@@ -4565,8 +4592,8 @@ class UIScene extends Phaser.Scene {
                             hotKeyData[hotkeyIdx] = itemName;
                             hotKeyBar
                                 .remove(hotkeys[hotkeyIdx], true)
-                                .insert(hotkeyIdx, createIcon(hotkeyIdx), { expand: true })
-                                .layout();
+                                .insert(hotkeyIdx, createIcon(hotkeyIdx), { expand: true });
+
                         }
                         //==道具數量變化同時改變快捷鍵顯示
                         else {
@@ -4580,17 +4607,18 @@ class UIScene extends Phaser.Scene {
                             });
 
                         };
-                        // console.debug(hotKeyBar);
+
+                        hotKeyBar.layout();
                     };
                     this.useItemHandler = (itemIdx) => {
                         let itemName = itemData[itemIdx].name;
 
                         //==物品效果
-                        let itemData = GameItemData[itemName];
-                        if (itemData.type === 0)//是消耗品
-                        {
-
-                        }
+                        let gameItemData = GameItemData[itemName];
+                        if (gameItemData.type === 0) {//是消耗品
+                            Object.keys(gameItemData.buff).forEach(key =>
+                                gameScene.player.statsChangeHandler({ [key]: gameItemData.buff[key] }));
+                        };
 
                         //==數量用完就刪除
                         if ((itemData[itemIdx].amount -= 1) <= 0) itemData.splice(itemIdx, 1);

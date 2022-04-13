@@ -114,11 +114,10 @@ const Item = new Phaser.Class({
         //==沒有就在道具陣列新增
         if (itemIndex === -1) itemArray.push({ name: item.name, amount: 1 });
         //==有增加數量屬性
-        else {
-            itemArray[itemIndex].amount += 1;
-            //===有在快捷鍵中更新顯示數量
-            scene.hotKeyUI.updateHotKey(item.name);
-        };
+        else itemArray[itemIndex].amount += 1;
+
+        //===有在快捷鍵中更新顯示數量
+        scene.hotKeyUI.updateHotKey(item.name);
 
         //==包包開啟時改變道具顯示數量
         let backpackUI = scene.scene.get('backpackUI');
@@ -882,7 +881,7 @@ const Player = new Phaser.Class({
             })
                 .setOrigin(0.5)
                 .setAlpha(0)
-                .setDepth(scene.Depth.player);
+                .setDepth(scene.Depth.player + 2);
 
             //===oom,death
             this.dialog = new RexTextBox(scene, {
@@ -1092,47 +1091,56 @@ const Player = new Phaser.Class({
         };
 
     },
-    //==受擊
+    //==hp改變動畫
     stopCursorsFlag: false,
     invincibleFlag: false,//無敵時間
-    gotHurtHandler: function (scene, hpReduced) {
+    changeHPTween: null,
+    changeHPHandler: function (scene, hpChange) {
         if (scene.gameOver.flag) return;
+
         const invincibleDuration = 800;
+        let isIncrease = hpChange >= 0;
 
-        this.anims.play('player_hurt', true);
+        if (!isIncrease) {
+            this.anims.play('player_hurt', true);
 
-        //==取消攻擊動畫
-        let ATK_anims = this.attackEffect.anims;
-        if (ATK_anims.isPlaying)
-            ATK_anims.setCurrentFrame(ATK_anims.currentAnim.frames[ATK_anims.currentAnim.frames.length - 1]);
+            //==取消攻擊動畫
+            let ATK_anims = this.attackEffect.anims;
+            if (ATK_anims.isPlaying)
+                ATK_anims.setCurrentFrame(ATK_anims.currentAnim.frames[ATK_anims.currentAnim.frames.length - 1]);
 
-        //無敵動畫
-        scene.tweens.add({
-            targets: this,
-            alpha: 0.5,
-            duration: invincibleDuration / 20, //== 20=repeat(10)*yoyo(=2)
-            yoyo: true,
-            repeat: 10,
-            ease: 'Sine.easeInOut',
-            onComplete: () => {
-                this.invincibleFlag = false;
-                this.play('player_idle', true);
-            },
-        });
+            //無敵動畫
+            scene.tweens.add({
+                targets: this,
+                alpha: 0.5,
+                duration: invincibleDuration / 20, //== 20=repeat(10)*yoyo(=2)
+                yoyo: true,
+                repeat: 10,
+                ease: 'Sine.easeInOut',
+                onComplete: () => {
+                    this.invincibleFlag = false;
+                    this.play('player_idle', true);
+                },
+            });
+        };
 
-        //扣血數字動畫
-        scene.tweens.add({
+        //數字動畫
+        if (this.changeHPTween) {
+            this.changeHPTween.remove();
+            this.changeHPTween = null;
+        };
+        this.changeHPTween = scene.tweens.add({
             targets: this.statusText,
-            y: this.y - this.height * 0.4,
+            y: this.y - this.height * 0.5,
             duration: invincibleDuration, //== 20=repeat(10)*yoyo(=2)
             repeat: 0,
             ease: 'Expo.easeOut',
             onStart: () => {
                 this.statusText
-                    .setPosition(this.x, this.y)
+                    .setPosition(this.x, this.y - this.height * 0.3)
                     .setAlpha(1)
-                    .setColor('red')
-                    .setText(hpReduced);
+                    .setColor(isIncrease ? 'green' : 'red')
+                    .setText((isIncrease ? '+' : '') + hpChange);
             },
             onComplete: () => this.statusText.setAlpha(0),
         });
@@ -1149,9 +1157,13 @@ const Player = new Phaser.Class({
             };
             this.stats[stat] += changeVal;
             if (stat == 'HP' || stat == 'MP') {
+                //==不溢回
+                if (this.stats[stat] > this.stats['max' + stat])
+                    this.stats[stat] = this.stats['max' + stat];
+
                 if (stat == 'HP') {
                     if (this.stats.HP > 0)
-                        this.gotHurtHandler(this.scene, changeVal);
+                        this.changeHPHandler(this.scene, changeVal);
                     //==死
                     else {
                         this.invincibleFlag = true;
@@ -1165,12 +1177,8 @@ const Player = new Phaser.Class({
                         this.anims.play('player_hurt');
                         this.scene.time.delayedCall(dieDuration, () => this.anims.play('player_death', true), [], this);
                     };
-                }
-                else {
-                    //==不溢回
-                    if (this.stats.MP > this.stats.maxMP)
-                        this.stats.MP = this.stats.maxMP;
                 };
+
                 this[stat + 'bar'].updateFlag = true;
             };
         });

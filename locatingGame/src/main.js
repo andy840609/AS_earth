@@ -256,9 +256,9 @@ function locatingGame() {
             const bigMap = document.querySelector('#bigMap');//==一些畫面位置計算用到
             const width = window.innerWidth, height = window.innerHeight;
 
-            var mapObj;
-            var geoJSON;//===location data
-            var assumedEpicenter;
+            let mapObj;
+            let geoJSON;//===location data
+            let assumedEpicenter;
 
             //===遊戲相關
             const clearStationToUnlock = 3;//==完成幾個解鎖第二關
@@ -266,7 +266,7 @@ function locatingGame() {
             let stopClickFlag = false;//==gameOver暫停點擊關卡
             let gameStartFlag = false;//==停止map快捷鍵
 
-            var gameDisplay = (display) => {
+            let gameDisplay = (display) => {
                 if (display) {
                     gameOuterDiv.fadeIn();
                     $(bigMap).hide();
@@ -284,6 +284,92 @@ function locatingGame() {
                     $(bigMap).show();
                 };
                 gameStartFlag = display;
+            };
+            let claimItemAnime = (items = [['pan', 0], ['pan', 0]], description = '') => {
+
+                let createHintGroup = () => {
+                    const itemsDir = assetsDir + 'ui/game/backpack/items/';
+                    const imgW = 60;
+
+                    let getItemImg = () => {
+                        return items.map(item =>
+                            `<img src="${itemsDir + item[0]}.png" width="${imgW}px"  height="${imgW}px">`).join('');
+                    };
+
+                    let itemHint = $(bigMap)
+                        .append(`
+                        <div class="itemHint d-flex flex-row  align-items-center">
+                            <div class="hint"></div>
+                            <div class="claimItem">
+                               ${getItemImg()}
+                            </div>
+                        </div>`)
+                        .find('.itemHint');
+
+                    $(bigMap).append(itemHint);
+                    return itemHint;
+                };
+                let itemFlyToBag = (hintGroup, duration = 500) => {
+                    let bag = $('#backpack'),
+                        bagImg = bag.children('img'),
+                        bagPos = bag.get(0).getBoundingClientRect();
+                    let items = hintGroup.find('.claimItem>img');
+
+                    let itemAnime = (item) => {
+                        let targetPos = item.get(0).getBoundingClientRect();
+                        let goalPos = [bagPos.left - targetPos.left, bagPos.top - targetPos.top];
+                        console.debug(targetPos, goalPos)
+                        item.animate({ left: goalPos[0], top: goalPos[1] }, duration, 'swing', () => bagAnime(item));
+                    };
+                    //==飛到包包後包包動畫
+                    let bagAnime = (item) => {
+
+                        const duration = 250;
+                        const
+                            originW = bagImg.prop("width"),
+                            bigW = originW * 2,
+                            fixPos = 0.5 * (originW - bigW);
+
+                        //==包包變大
+                        bagImg.animate({
+                            width: bigW,
+                            height: bigW,
+                            top: fixPos,
+                            left: fixPos,
+                        }, duration, 'swing', () => {
+                            //==包包變小
+                            bagImg.animate({
+                                width: originW,
+                                height: originW,
+                                top: 0,
+                                left: 0,
+                            }, duration);
+                        });
+
+                        //==道具淡出
+                        item.animate({ opacity: 0 }, duration * 2);
+                    };
+
+                    items.each((i, item) => setTimeout(() => itemAnime($(item)), i * 500));
+                };
+                let hintText = (hintGroup) => {
+                    const showDuration = 2000,
+                        fadeDuration = 2000;
+
+                    let hint = hintGroup.find('.hint');
+                    hint.text('AAAA');
+
+                    setTimeout(() => {
+                        hint.animate({ opacity: 0 }, fadeDuration);
+                        itemFlyToBag(hintGroup, showDuration / 2);
+                    }, showDuration);
+
+
+                };
+
+                let hintGroup = createHintGroup();
+                hintText(hintGroup);
+
             };
 
             function initGameData() {
@@ -333,6 +419,9 @@ function locatingGame() {
                         item: [//消耗品
                             { name: 'bone', amount: 1 },
                             { name: 'sunny', amount: 12 },
+                            // { name: 'sunny', amount: 12 },
+                            // { name: 'sunny', amount: 12 },
+                            // { name: 'sunny', amount: 12 },
                         ],
                         equip: ['pan',],//背包中裝備
                         onEquip: ['pan'],//人物裝備中
@@ -375,7 +464,7 @@ function locatingGame() {
                     // //==test
 
                     initMap();
-
+                    claimItemAnime();
                     //==test
                     // gameStart('defend');
                     // gameStart('dig');
@@ -871,17 +960,14 @@ function locatingGame() {
 
                             let top = (id == 'questInfo' || id == 'velocityChart') ? height * 0.1 : targetDOMRect.top - bigMapDOMRect.top,
                                 left = targetDOMRect.left - bigMapDOMRect.left + 80;
-
                             UI.css({ top: top, left: left, });
-
 
                             if (id == 'velocityChart')  //==速度參數圖表更新
                                 d3.select(`#velocityChartUI>svg`).dispatch('updateEvt');
-                            else if (id == 'playerStats')  //==人物圖更新
-                                gameUI.find(`#playerStatsUI`).trigger('updateEvt');
+                            else if (id == 'playerStats' || id == 'backpack')  //==人物圖更新
+                                UI.trigger('updateEvt');
                         }
                         else UI.hide();
-
                     };
 
                     var timeRemain = () => {
@@ -1027,6 +1113,7 @@ function locatingGame() {
                                             });
 
                                         UI.on('updateEvt', () => {
+                                            // console.debug('updateEvt');
                                             let playerStats = { ...GameData.playerStats };
                                             let onEquip = GameData.backpack.onEquip;
 
@@ -1148,23 +1235,23 @@ function locatingGame() {
                                         const blockSize = {//==[row,colum]
                                             onEquip: [1, 1],
                                             equip: [1, 4],
-                                            item: [3, 4],
+                                            item: [5, 4],
                                         };
 
                                         UI
-                                            .width(height * 0.6)
-                                            // .height(height * 0.5)
+                                            .width(500)
+                                            .height(300)
                                             .append(`
-                                                <div class='row'>
-                                                    <div class='-5' style="padding:0px 0px 0px 10px">
-                                                        <div class="block" align="left" id="onEquip"></div>
-                                                    </div>
-                                                    <div class='-7' style="padding:0px 10px 0px 5px">
-                                                        <div class="block" align="center" id="item"></div>
-                                                        <div class="block" align="center" id="equip"></div>
-                                                    </div>
+                                            <div class='row'>
+                                                <div class='col-5' style="padding:0px 0px 0px 10px">
+                                                    <div class="block" align="left" id="onEquip"></div>
                                                 </div>
-                                            `);
+                                                <div class='col-7' style="padding:0px 10px 0px 5px">
+                                                    <div class="block" align="center" id="item"></div>
+                                                    <div class="block" align="center" id="equip"></div>
+                                                </div>
+                                            </div>
+                                        `);
 
                                         let getItemImg = (idx, key) => {
                                             let item = GameData.backpack[key][idx];
@@ -1185,9 +1272,12 @@ function locatingGame() {
                                             // console.debug(table);
                                             return `<table>${table}</table>`;
                                         };
-
                                         blocks.forEach(key =>
                                             UI.find('#' + key).append(getTableHTML(...blockSize[key], key)));
+
+                                        UI.on('updateEvt', () => {
+
+                                        });
                                         break;
                                 };
 
@@ -1195,60 +1285,28 @@ function locatingGame() {
 
                         };
                         var iconEvent = () => {
-                            const iconW2 = iconW * 1.5;
-
+                            const iconW2 = iconW * 1.5,
+                                fixPos = 0.5 * (iconW - iconW2);//==至中要修正position
                             const duration = 50;
-                            const delay = 10;
-                            const eachPartStep = parseInt(duration / delay);
-                            const WChange = (iconW2 - iconW) / eachPartStep;
 
-                            let interval;
                             gameUI.find('.UIicon')
                                 .on('mouseover', (e) => {
-                                    // console.debug('mouseenter');
-
-                                    let newIconW = iconW, step = 0;
-                                    if (interval) clearInterval(interval);
-                                    interval = setInterval(() => {
-
-                                        let part = parseInt(step / eachPartStep);
-
-                                        switch (part) {
-                                            case 0:
-                                                newIconW += WChange;
-                                                break;
-                                            case 1:
-                                                newIconW = iconW2;
-                                                clearInterval(interval);
-                                                break;
-                                        };
-
-                                        //==改變長寬
-                                        Object.assign(e.target, {
-                                            width: newIconW,
-                                            height: newIconW,
-                                        });
-
-                                        //==至中
-                                        Object.assign(e.target.style, {
-                                            top: 0.5 * (iconW - newIconW) + 'px',
-                                            left: 0.5 * (iconW - newIconW) + 'px',
-                                        });
-                                        step++;
-                                    }, delay);
-
+                                    $(e.target).animate({
+                                        width: iconW2,
+                                        height: iconW2,
+                                        top: fixPos,
+                                        left: fixPos,
+                                    }, duration);
                                     updateTooltip(e.target.parentNode);
                                 })
                                 .on('mouseout', (e) => {
-                                    if (interval) clearInterval(interval);
-                                    Object.assign(e.target, {
-                                        width: iconW,
-                                        height: iconW,
-                                    });
-                                    Object.assign(e.target.style, {
-                                        top: '0px',
-                                        left: '0px',
-                                    });
+                                    $(e.target).stop(true)
+                                        .animate({
+                                            width: iconW,
+                                            height: iconW,
+                                            top: 0,
+                                            left: 0,
+                                        }, duration);
 
                                     UItooltip.hide();
                                     if (!GameData.stationClear.chartUnlock && e.target.parentNode.id == 'velocityChart')

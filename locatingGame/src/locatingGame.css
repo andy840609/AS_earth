@@ -271,6 +271,7 @@ svg {
 
 
 
+
 /* *******************playerStats******************* */
 
 #playerStatsUI .row {
@@ -524,20 +525,19 @@ svg {
     font: small-caps bold 24px sans-serif;
 }
 
-/* #backpackUI {
-    width: 100%;
-} */
+#backpackUI>.row {
+    flex-wrap: nowrap;
+    height: 100%;
+}
 
 #backpackUI .block {
-    /* overflow: auto; */
+    overflow: auto;
     border-style: groove;
     border: 3px solid #DC682E;
     background: #F9E577;
     border-radius: 5px;
     padding: 5px;
     margin-bottom: 5px;
-    /* width: 100%; */
-    /* height: 30%; */
 }
 
 #onEquip {
@@ -547,7 +547,6 @@ svg {
 #item {
     height: 70%;
 }
-
 
 #equip {
     height: 30%;
@@ -567,4 +566,25 @@ svg {
     /* width: 100%; */
     border-collapse: separate;
     border-spacing: 5px;
+}
+
+/* 得到道具提示 */
+.itemHint {
+    position: absolute;
+    z-index: 1200;
+    left: 50%;
+    top: 10%;
+    pointer-events: none;
+}
+
+.itemHint>.hint {
+    /* padding: 5px 20px; */
+    font: small-caps bold 32px sans-serif;
+    background: #8C3E18;
+    /* opacity: 0.2; */
+}
+
+.itemHint>.claimItem>img {
+    position: relative;
+    pointer-events: none;
 }

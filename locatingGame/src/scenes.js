@@ -133,10 +133,17 @@ class UIScene extends Phaser.Scene {
                             .on('pointerdown', () => {
                                 let key = button + 'UI';
                                 // console.debug();
-                                if (this.game.scene.getScene(key))//==remove UI
-                                    this.scene.remove(key);
-                                else//==create UI
+                                // if (this.game.scene.getScene(key))//==remove UI
+                                //     this.scene.remove(key);
+                                // else//==create UI
+                                //     this.scene.add(null, new UIScene(key, this), true);
+
+                                if (!this.game.scene.getScene(key))
                                     this.scene.add(null, new UIScene(key, this), true);
+                                else if (this.scene.isSleeping(key))
+                                    this.scene.wake(key);
+                                else
+                                    this.scene.sleep(key);
 
                                 this.scene.bringToTop();//==避免tooltip被擋
                             });
@@ -233,7 +240,7 @@ class UIScene extends Phaser.Scene {
                 const timerUI = gameScene.game.scene.getScene('timerUI');
                 const RexUI = gameScene.game.scene.getScene('RexUI');
                 const hotKeyUI = gameScene.game.scene.getScene('hotKeyUI');
-                // const backpackUI = gameScene.game.scene.getScene('backpackUI');
+                const iconBar = gameScene.game.scene.getScene('iconBar');
                 const doctorUI = gameScene.name != 'boss' ? gameScene.game.scene.getScene('doctorUI') : null;
                 const detectorUI = gameScene.name != 'boss' ? gameScene.game.scene.getScene('detectorUI') : null;
 
@@ -242,6 +249,7 @@ class UIScene extends Phaser.Scene {
                 RexUI.scene.pause();
                 hotKeyUI.scene.pause();
                 gameScene.scene.pause();
+                iconBar.scene.pause();
                 if (doctorUI) doctorUI.scene.pause();
                 if (detectorUI) detectorUI.scene.pause();
 
@@ -304,6 +312,7 @@ class UIScene extends Phaser.Scene {
                                         timerUI.gameTimer.paused = false;
                                         RexUI.scene.resume();
                                         hotKeyUI.scene.resume();
+                                        iconBar.scene.resume();
                                         if (doctorUI) doctorUI.scene.resume();
                                         if (detectorUI) detectorUI.scene.resume();
                                         this.scene.remove();
@@ -327,16 +336,13 @@ class UIScene extends Phaser.Scene {
                                         })
                                             .setDepth(Depth.UI)
                                             .popUp(500);
-                                        let iconBar = gameScene.game.scene.getScene('iconBar');
 
-                                        iconBar.scene.pause();
                                         this.scene.pause();
 
                                         panel.on('destroy', () => {
                                             this.scene.resume();
                                             iconBar.scene.resume();
                                             settingUI.scene.remove();
-
                                             gameScene.game.scene.getScene('cursors').updateFlag = true;
                                         });
                                         break;
@@ -387,6 +393,7 @@ class UIScene extends Phaser.Scene {
                         timerUI.gameTimer.paused = false;
                         RexUI.scene.resume();
                         hotKeyUI.scene.resume();
+                        iconBar.scene.resume();
                         if (doctorUI) doctorUI.scene.resume();
                         if (detectorUI) detectorUI.scene.resume();
                     });
@@ -791,7 +798,7 @@ class UIScene extends Phaser.Scene {
                                 brushRect.x = Math.min(brushHandle1.x, brushHandle2.x) + handleW * 0.5;
                                 brushRect.width = newRectW;
                             };
-                            var updateWave = (domain = null, scaleY = 1) => {
+                            var updateWave = (domain = null, scaleY = 1, mustDone = false) => {
                                 var action = () => {
                                     const key = 'waveForm';
                                     // console.debug(scaleY);
@@ -829,12 +836,12 @@ class UIScene extends Phaser.Scene {
 
                                 };
 
-                                updateHandler(action, waveUpdateObj);
+                                updateHandler(action, waveUpdateObj, mustDone);
                             };
 
                             //==避免頻繁刷新
                             var waveUpdateObj = { updateFlag: true, updateTimeOut: null, updateDelay: 20 };
-                            var updateHandler = (action, updateObj = waveUpdateObj, parameter = null, mustDone = false) => {
+                            var updateHandler = (action, updateObj = waveUpdateObj, mustDone = false, parameter = null) => {
 
                                 if (!updateObj.updateFlag)
                                     clearTimeout(updateObj.updateTimeOut);
@@ -842,9 +849,9 @@ class UIScene extends Phaser.Scene {
                                 updateObj.updateTimeOut = setTimeout(() => {
                                     parameter ? action(...parameter) : action();
                                     updateObj.updateFlag = true;
-                                }, updateObj.updateDelay);
+                                }, mustDone ? 10 : updateObj.updateDelay);
 
-                                updateObj.updateFlag = mustDone;
+                                updateObj.updateFlag = false;
 
                             };
 
@@ -1003,6 +1010,28 @@ class UIScene extends Phaser.Scene {
                             detectorButtons.push(resetButton);
 
                             detectorButtons.forEach(button => buttonBehavior(button));
+
+
+                            //==玩家在邊界移動時觸發範圍變化
+                            this.events.on('playerMove', () => {
+                                const moveX = 1;
+                                let checkInRange = (handleX) => {
+                                    let newX = handleX + moveX;
+                                    return (newX < handleXMin || newX > handleXMax) ? false : true;
+                                };
+
+                                //==沒超出螢幕範圍才更新
+                                if (checkInRange(brushHandle1.x) && checkInRange(brushHandle2.x)) {
+                                    brushHandle1.x += moveX;
+                                    brushHandle2.x += moveX;
+                                    brushRect.x += moveX;
+                                    let domain = [scaleFun.invert(brushHandle1.x), scaleFun.invert(brushHandle2.x)]
+                                        .sort((a, b) => a - b);
+                                    gameScene.waveForm.domain = domain;
+                                    updateWave(gameScene.waveForm.domain, scaleText.ampScale, true);
+                                };
+
+                            });
                         };
                         var initUpdateListener = () => {
                             this.load.on('filecomplete', (key) => {
@@ -1058,6 +1087,8 @@ class UIScene extends Phaser.Scene {
                         initBrushes();
                         initUpdateListener();
                         initMapIcon();
+
+
 
                     };
                     update = () => {
@@ -1293,6 +1324,7 @@ class UIScene extends Phaser.Scene {
                     };
                 };
 
+                gameScene.detectorUI = this;
                 break;
             case 'exitUI'://==升等結算畫面之後作
                 preload = () => { };
@@ -2389,9 +2421,9 @@ class UIScene extends Phaser.Scene {
 
                 const tutorialBG = 'tutorial';
                 const pauseUI = gameScene.name != 'GameStart' ? gameScene.game.scene.getScene('pauseUI') : null;
-                const iconBar = gameScene.name != 'GameStart' ? gameScene.game.scene.getScene('iconBar') : null;
+                // const iconBar = gameScene.name != 'GameStart' ? gameScene.game.scene.getScene('iconBar') : null;
                 if (pauseUI) pauseUI.scene.pause();
-                if (iconBar) iconBar.scene.pause();
+                // if (iconBar) iconBar.scene.pause();
 
                 preload = () => {
                     var tutorialWindow = () => {
@@ -2709,16 +2741,22 @@ class UIScene extends Phaser.Scene {
                                                 this.dummy.statsBarUI.scene.remove();
                                                 this.detectorUI.scene.remove();
                                                 if (pauseUI) pauseUI.scene.resume();
-                                                if (iconBar) iconBar.scene.resume();
+                                                // if (iconBar) iconBar.scene.resume();
                                                 break;
                                             case 'next':
                                                 if (this.stepObj.nowStep == this.stepObj.maxStep) {
                                                     // this.buttonGroups[buttons[0]].getChildren().find(c => c.type === "Image").emit('pointerdown');
-                                                    if (gameScene.name == 'GameStart')
-                                                        gameData.backpack.equip.push('pan');
-                                                    gameScene.game.destroy(true, false);
-                                                    gameScene.resolve(true);
-                                                    //==完成教學拿到鍋子
+                                                    if (gameScene.name === 'GameStart') {
+                                                        gameScene.game.destroy(true, false);
+                                                        gameScene.resolve(true);
+                                                    }
+                                                    else {
+                                                        this.scene.remove();
+                                                        this.dummy.statsBarUI.scene.remove();
+                                                        this.detectorUI.scene.remove();
+                                                        if (pauseUI) pauseUI.scene.resume();
+                                                        // if (iconBar) iconBar.scene.resume();
+                                                    };
 
                                                 }
                                                 else {
@@ -3745,7 +3783,7 @@ class UIScene extends Phaser.Scene {
                     var updateOrb = () => {
                         let pickUpObj = this.player.pickUpObj;
                         if (pickUpObj) {
-                            pickUpObj.setPosition(this.player.x + 20 * (this.player.flipX ? 1 : - 1), this.player.y + 30);
+                            pickUpObj.setPosition(this.player.x + 20, this.player.y + 30);
                         };
                         this.orbGroup.children.iterate((child, i) => {
                             if (child.beholdingFlag || (child.laserUpdateFlag || !child.body.touching.down)) {
@@ -3818,7 +3856,7 @@ class UIScene extends Phaser.Scene {
                     gameScene.scene.pause('detectorUI');
 
                 const backpackData = gameData.backpack;
-                console.debug(backpackData);
+                // console.debug(backpackData);
 
                 preload = () => { };
                 create = () => {
@@ -4510,6 +4548,7 @@ class UIScene extends Phaser.Scene {
                             gameScene.scene.resume('detectorUI');
                     });
 
+                    gameScene.backpackUI = this;
                 };
                 update = () => { };
                 break;
@@ -4553,6 +4592,8 @@ class UIScene extends Phaser.Scene {
                         let main = item ? this.add.image(0, 0, 'item_' + item) : false;
                         if (item) main.setScale(blockW / main.width, blockW / main.height);
 
+                        let backpackItem = item ? itemData.find(backpackItem => backpackItem.name === item) : false;
+
                         return new RexPlugins.UI.BadgeLabel(this, {
                             width: blockW,
                             height: blockW,
@@ -4566,7 +4607,7 @@ class UIScene extends Phaser.Scene {
                                 padding: { left: 8, top: 3 }
                             }).setOrigin(0.5),
                             rightBottom: item ? this.add.text(0, 0,
-                                itemData.find(backpackItem => backpackItem.name === item).amount,
+                                backpackItem ? backpackItem.amount : 0,
                                 {
                                     color: '#fff',
                                     align: 'right',
@@ -4626,7 +4667,12 @@ class UIScene extends Phaser.Scene {
 
                         //==包包開啟時改變道具顯示數量
                         let backpackUI = this.scene.get('backpackUI');
-                        if (backpackUI) backpackUI.updateItems();
+                        if (backpackUI) {
+                            backpackUI.updateItems();
+                            backpackUI.updateStatus();
+                        };
+
+
                     };
                     gameScene.hotKeyUI = this;
                 };
@@ -5373,10 +5419,10 @@ class LoadingScene extends Phaser.Scene {
                 };
                 var items = () => {
                     const itemsDir = dir + 'items/';
-                    this.load.image('item_pan', itemsDir + 'pan.png');
+                    Object.keys(GameItemData).forEach(key =>
+                        this.load.image('item_' + key, itemsDir + key + '.png')
+                    );
                     this.load.image('onEquip_pan', itemsDir + 'onEquip_pan.png');
-                    this.load.image('item_sunny', itemsDir + 'sunny.png');
-
                 };
 
                 UI();
@@ -5441,7 +5487,6 @@ class LoadingScene extends Phaser.Scene {
                     { frameWidth: 500, frameHeight: 200 });
 
             };
-
 
             UIButtons();
             pauseMenu();
@@ -6398,7 +6443,7 @@ class DefendScene extends Phaser.Scene {
             let pickUpObj = this.player.pickUpObj;
 
             if (pickUpObj)
-                pickUpObj.setPosition(this.player.x + 20 * (this.player.flipX ? 1 : - 1), this.player.y + 30);
+                pickUpObj.setPosition(this.player.x + 20, this.player.y + 30);
         };
         var updateEnemy = () => {
             if (this.gameData.stationData.stationStats.liberate) return;
@@ -6722,7 +6767,7 @@ class DigScene extends Phaser.Scene {
         };
         var initPlayer = () => {
             this.player = this.add.existing(new Player(this))
-                .setPosition(width * 0.5, 0)
+                .setPosition((parseInt((width / this.tileSize) * 0.5) - 0.5) * this.tileSize, 0)
                 .setDepth(Depth.player);
 
             Object.assign(this.player, {
@@ -7669,7 +7714,8 @@ class BossScene extends Phaser.Scene {
             };
             var gotHurtAnims = (duration) => {
                 let boss = this.boss;
-                let bossHP = boss.stats.HP - this.player.stats.attackPower * 4;
+                // let bossHP = boss.stats.HP - this.player.stats.attackPower * 4;
+                let bossHP = boss.stats.HP - 400;//3次死
 
                 this.tweens.addCounter({
                     from: boss.stats.HP,

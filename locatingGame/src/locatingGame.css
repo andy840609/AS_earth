@@ -223,7 +223,7 @@ svg {
     right: 0px;
     bottom: 0px;
     z-index: 1100;
-    display: none;
+    /* display: none; */
 }
 
 #gameUI .sidekickUI .sidekick {
@@ -575,16 +575,55 @@ svg {
     left: 50%;
     top: 10%;
     pointer-events: none;
+    transform: translateX(-40%);
 }
 
 .itemHint>.hint {
     /* padding: 5px 20px; */
     font: small-caps bold 32px sans-serif;
     background: #8C3E18;
-    /* opacity: 0.2; */
+    white-space: nowrap;
+
+}
+
+.itemHint>.claimItem {
+    display: flex;
+    flex-wrap: nowrap;
 }
 
 .itemHint>.claimItem>img {
     position: relative;
     pointer-events: none;
 }
+
+.questButton {
+    position: relative;
+    right: 0;
+}
+
+.quickQuestion {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    background-color: #ffffff;
+    /* transform: translate(-30%, -50%); */
+    border: 3px solid #000000;
+    padding: 25px 20px;
+    display: none;
+}
+
+/* .questColse {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 25px;
+    height: 25px;
+    right: 5px;
+    top: 5px;
+    border-radius: 5px;
+    text-align: center;
+    background-color: #fa1111;
+} */
+
+/* .questFooter {} */

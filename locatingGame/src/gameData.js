@@ -499,9 +499,50 @@ const GameItemData = {
             MP: 10,
         }
     },
-    bone: {
-        type: 1,
-        buff: {}
+    bread: {
+        type: 0,
+        buff: {
+            HP: 30,
+            MP: 50,
+        }
     },
+    greens: {
+        type: 0,
+        buff: {
+            HP: 30,
+            MP: 50,
+        }
+    },
+    okra: {
+        type: 0,
+        buff: {
+            HP: 30,
+            MP: 50,
+        }
+    },
+    croissant: {
+        type: 0,
+        buff: {
+            HP: 30,
+            MP: 50,
+        }
+    },
+    carrot: {
+        type: 0,
+        buff: {
+            attackPower: 100,
+        }
+    },
+    pumpkin: {
+        type: 0,
+        buff: {
+            HP: 30,
+            MP: 50,
+        }
+    },
+    // bone: {
+    //     type: 1,
+    //     buff: {}
+    // },
 };
 

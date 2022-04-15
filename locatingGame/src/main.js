@@ -41,7 +41,7 @@ function locatingGame() {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 300 },
-                    debug: true,
+                    // debug: true,
                 },
             },
             dom: {//==for rexUI:rexTextEdit
@@ -285,7 +285,7 @@ function locatingGame() {
                 };
                 gameStartFlag = display;
             };
-            let claimItemAnime = (items = [['pan', 0], ['pan', 0]], description = '') => {
+            let claimItemAnime = (items, description = 'itemGain1') => {
 
                 let createHintGroup = () => {
                     const itemsDir = assetsDir + 'ui/game/backpack/items/';
@@ -304,9 +304,9 @@ function locatingGame() {
                                ${getItemImg()}
                             </div>
                         </div>`)
-                        .find('.itemHint');
-
-                    $(bigMap).append(itemHint);
+                        .find('.itemHint').last();
+                    // console.debug(itemHint);
+                    // $(bigMap).append(itemHint);
                     return itemHint;
                 };
                 let itemFlyToBag = (hintGroup, duration = 500) => {
@@ -318,7 +318,7 @@ function locatingGame() {
                     let itemAnime = (item) => {
                         let targetPos = item.get(0).getBoundingClientRect();
                         let goalPos = [bagPos.left - targetPos.left, bagPos.top - targetPos.top];
-                        console.debug(targetPos, goalPos)
+                        // console.debug(targetPos, goalPos);
                         item.animate({ left: goalPos[0], top: goalPos[1] }, duration, 'swing', () => bagAnime(item));
                     };
                     //==飛到包包後包包動畫
@@ -331,19 +331,19 @@ function locatingGame() {
                             fixPos = 0.5 * (originW - bigW);
 
                         //==包包變大
-                        bagImg.animate({
+                        bagImg.stop(false, true).animate({
                             width: bigW,
                             height: bigW,
                             top: fixPos,
                             left: fixPos,
                         }, duration, 'swing', () => {
                             //==包包變小
-                            bagImg.animate({
+                            bagImg.stop(false, true).animate({
                                 width: originW,
                                 height: originW,
                                 top: 0,
                                 left: 0,
-                            }, duration);
+                            }, duration, 'swing', () => hintGroup.remove());
                         });
 
                         //==道具淡出
@@ -351,13 +351,16 @@ function locatingGame() {
                     };
 
                     items.each((i, item) => setTimeout(() => itemAnime($(item)), i * 500));
+
                 };
                 let hintText = (hintGroup) => {
                     const showDuration = 2000,
                         fadeDuration = 2000;
 
                     let hint = hintGroup.find('.hint');
-                    hint.text('AAAA');
+                    let string = `${GameData.localeJSON.UI[description] + GameData.localeJSON.UI['itemGain']} 
+                    ${items.map(item => GameData.localeJSON.Item[item[0]].name + (item[1] ? `x${item[1]}` : '')).join(', ')}`;
+                    hint.text(string);
 
                     setTimeout(() => {
                         hint.animate({ opacity: 0 }, fadeDuration);
@@ -370,13 +373,28 @@ function locatingGame() {
                 let hintGroup = createHintGroup();
                 hintText(hintGroup);
 
+                //==放入包包
+                items.forEach(item => {
+                    if (item[1] === 0)
+                        GameData.backpack.equip.push(item[0]);
+                    else {
+                        let itemName = item[0],
+                            itemAmount = item[1];
+                        let itemBackpack = GameData.backpack.item;
+                        let stuff = itemBackpack.find(stuff => stuff.name === itemName);
+                        if (stuff) stuff.amount += itemAmount;
+                        else itemBackpack.push({ name: itemName, amount: itemAmount });
+                    }
+                });
+
+                gameUI.find('#backpackUI').trigger('updateEvt');
             };
 
             function initGameData() {
                 let playerRole = 'femalePerson';//==之後能選其他[femalePerson,maleAdventurer]
                 let sidekick = 'Dude';//=='Owlet,Dude,Pink'
 
-                let playerName = 'aaa',
+                let playerName = '勇者',
                     avatarIndex = 0,//==自選頭像
                     avatarBgColor = 0x5B5B5B;//
 
@@ -417,14 +435,14 @@ function locatingGame() {
                     backpack: {//==道具裝備相關
                         hotKey: ['sunny'],//快捷鍵
                         item: [//消耗品
-                            { name: 'bone', amount: 1 },
+                            // { name: 'bone', amount: 1 },
                             { name: 'sunny', amount: 12 },
-                            // { name: 'sunny', amount: 12 },
+                            { name: 'carrot', amount: 12 },
                             // { name: 'sunny', amount: 12 },
                             // { name: 'sunny', amount: 12 },
                         ],
-                        equip: ['pan',],//背包中裝備
-                        onEquip: ['pan'],//人物裝備中
+                        equip: [],//背包中裝備
+                        onEquip: [],//人物裝備中
                     },
                 };
             };
@@ -459,14 +477,19 @@ function locatingGame() {
                     //     });
                     //     new Phaser.Game(config);
                     // });
-                    // console.debug(doneTutorial);
+                    // // console.debug(doneTutorial);
                     // gameDisplay(false);
                     // //==test
 
+
+
+                    // if (doneTutorial) {//doneTutorial     
+                    //     const gainItems = [['pan', 0], ['bread', 5]];
+                    //     claimItemAnime(gainItems, 'itemGain1');
+                    // };
                     initMap();
-                    claimItemAnime();
                     //==test
-                    // gameStart('defend');
+                    gameStart('defend');
                     // gameStart('dig');
                     //==test
                 };
@@ -740,7 +763,7 @@ function locatingGame() {
                     data.forEach((d, i) => {
                         // console.debug(d);
                         // let enemy = ['dog', 'cat', 'dove'];//==之後隨機抽敵人組
-                        let enemy = ['dove'];//==之後隨機抽敵人組
+                        let enemy = [];//==之後隨機抽敵人組
                         // let enemy = copyEnemyArr.length !== 0 ?//===拷貝的陣列抽完才全隨機
                         //     [copyEnemyArr.pop()] :
                         //     [enemyArr[getRandom(enemyArr.length)]];
@@ -1190,7 +1213,21 @@ function locatingGame() {
                                                     <!-- Tab panes -->
                                                     <div  class="tab-content scroll" id="infoContent"></div>
                                                 </div>
-                                            </div>                       
+                                            </div>    
+                                            <div class="quickQuestion">
+                                                
+                                                <div class="mb-2 quickTitle">Q0</div>
+                                                <div class='pl-2 mb-2 d-flex flex-column'>
+                                                    <label><input type="radio" name="quickSelection" value="0">A</label>
+                                                    <label><input type="radio" name="quickSelection" value="1">B</label>
+                                                    <label><input type="radio" name="quickSelection" value="2">C</label>
+                                                    <label><input type="radio" name="quickSelection" value="3">D</label>
+                                                </div>
+                                                <div class='questFooter d-flex justify-content-around'>
+                                                    <button type="button" class="btn btn-light quickOK">${GameData.localeJSON.UI['submit1']}</button>
+                                                    <button type="button" class="btn btn-light quickCancel">${GameData.localeJSON.UI['submit2']}</button>
+                                                </div>
+                                            </div>            
                                         `);
 
 
@@ -1221,12 +1258,56 @@ function locatingGame() {
                                                     break;
                                             };
 
-                                            return `<div class="tab-pane fade ${i === 0 ? 'show active' : ''}" id="questInfo${i}" role="tabpanel" style="white-space: pre-wrap">${content}</div>`;
+                                            return `<div class="tab-pane fade ${i === 0 ? 'show active' : ''}" id="questInfo${i}" role="tabpanel" style="white-space: pre-line">
+                                                <div>${content}</div>
+                                                <div class="d-flex justify-content-end"><button type="button" class="btn btn-primary questButton">${ GameData.localeJSON.UI['quickAnswer']}</button></div>
+                                            </div>`;
 
                                         });
 
                                         UI.find('#infoList').append(infoListHTML);
                                         UI.find('#infoContent').append(infoContentHTML);
+
+                                        //===問答題
+                                        let quickQuestion = $('.quickQuestion');
+                                        let quickTitle = $('.quickTitle');
+                                        let quickSelection = $('input[name=quickSelection]');
+                                        let questButton =
+                                            UI.find('.questButton').each((i, button) =>
+                                                $(button).on('click', () => {
+                                                    if (quickQuestion.css('display')) quickQuestion.hide();
+                                                    quickTitle.text('Q' + (i + 1) + ':');
+
+                                                    quickSelection.prop('checked', false);
+                                                    quickQuestion
+                                                        .prop('value', i)//紀錄第幾題
+                                                        .toggle("fold");
+
+                                                })
+                                            );
+                                        UI.find('.quickOK').on('click', (e) => {
+                                            let questionIdx = quickQuestion.prop('value');
+                                            let selectionIdx = quickSelection.filter(":checked").val();
+                                            // console.debug(questButton);
+
+
+
+                                            if (selectionIdx == undefined) {   //==全沒選
+                                                console.debug('全沒選');
+                                            }
+                                            else {
+                                                if (selectionIdx == 0) {
+                                                    console.debug('對');
+                                                    const gainItems = [['pumpkin', 5]];
+                                                    claimItemAnime(gainItems, 'itemGain2');
+                                                }
+                                                else console.debug('錯');
+                                                questButton.eq(questionIdx).prop('disabled', true);
+                                                quickQuestion.toggle("fold");
+                                            };
+
+                                        });
+                                        UI.find('.quickCancel').on('click', () => quickQuestion.toggle("fold"));
 
                                         break;
                                     case 'backpack':
@@ -1272,12 +1353,15 @@ function locatingGame() {
                                             // console.debug(table);
                                             return `<table>${table}</table>`;
                                         };
-                                        blocks.forEach(key =>
-                                            UI.find('#' + key).append(getTableHTML(...blockSize[key], key)));
 
                                         UI.on('updateEvt', () => {
-
+                                            blocks.forEach(key => {
+                                                let block = UI.find('#' + key);
+                                                block.children().remove();
+                                                block.append(getTableHTML(...blockSize[key], key));
+                                            });
                                         });
+
                                         break;
                                 };
 
@@ -2099,75 +2183,75 @@ function locatingGame() {
                 }
                 else if (gameMode == 'dig') {
                     // // console.debug(siteData);
-                    // {
-                    //     const backgroundArr = Object.keys(BackGroundResources.dig);
+                    {
+                        const backgroundArr = Object.keys(BackGroundResources.dig);
 
-                    //     let coordinate = siteData.coordinate;
-                    //     // let background = 'halloween_4';//==之後經緯度判斷？
-                    //     let background = backgroundArr[getRandom(backgroundArr.length)];
-                    //     let mineBGindex = 0;//==之後經緯度判斷？
+                        let coordinate = siteData.coordinate;
+                        // let background = 'halloween_4';//==之後經緯度判斷？
+                        let background = backgroundArr[getRandom(backgroundArr.length)];
+                        let mineBGindex = 0;//==之後經緯度判斷？
 
-                    //     let placeData = {
-                    //         coordinate: coordinate,
-                    //         background: background,
-                    //         mineBGindex: mineBGindex,
-                    //         depth: siteData.depth ? siteData.depth : null,
-                    //     };
+                        let placeData = {
+                            coordinate: coordinate,
+                            background: background,
+                            mineBGindex: mineBGindex,
+                            depth: siteData.depth ? siteData.depth : null,
+                        };
 
-                    //     //==顯示假設點
-                    //     assumedEpicenter
-                    //         .setLatLng(coordinate)
-                    //         .getTooltip()
-                    //         .setContent(`${GameData.localeJSON.UI['assumedEpicenter']} : ${coordinate.join(' , ')}`)
-                    //     assumedEpicenter.getElement().style.display = 'inline';
+                        //==顯示假設點
+                        assumedEpicenter
+                            .setLatLng(coordinate)
+                            .getTooltip()
+                            .setContent(`${GameData.localeJSON.UI['assumedEpicenter']} : ${coordinate.join(' , ')}`)
+                        assumedEpicenter.getElement().style.display = 'inline';
 
-                    //     GameData.playerEpicenter = coordinate;
+                        GameData.playerEpicenter = coordinate;
 
-                    //     gameResult = await new Promise((resolve, reject) => {
-                    //         const config = Object.assign(getPhaserConfig(width, height), {
-                    //             scene: new DigScene(placeData, GameData, {
-                    //                 resolve: resolve,
-                    //             }),
-                    //         });
-                    //         new Phaser.Game(config);
-                    //     });
+                        gameResult = await new Promise((resolve, reject) => {
+                            const config = Object.assign(getPhaserConfig(width, height), {
+                                scene: new DigScene(placeData, GameData, {
+                                    resolve: resolve,
+                                }),
+                            });
+                            new Phaser.Game(config);
+                        });
 
-                    //     console.debug(gameResult);
-                    //     let playerInfo = gameResult.playerInfo;
+                        console.debug(gameResult);
+                        let playerInfo = gameResult.playerInfo;
 
-                    //     //===更新人物資料
-                    //     updateMapUI(playerInfo, 1000);
-                    // }
+                        //===更新人物資料
+                        updateMapUI(playerInfo, 1000);
+                    }
 
-                    //=== 進王關
-                    // if (gameResult.bossRoom) {//gameResult.bossRoom
-                    //     const backgroundArr = Object.keys(BackGroundResources.boss);
-                    //     let background = backgroundArr[getRandom(backgroundArr.length)];
+                    // === 進王關
+                    if (gameResult.bossRoom) {//gameResult.bossRoom
+                        const backgroundArr = Object.keys(BackGroundResources.boss);
+                        let background = backgroundArr[getRandom(backgroundArr.length)];
 
-                    //     gameResult = await new Promise((resolve, reject) => {
-                    //         const config = Object.assign(getPhaserConfig(width, height), {
-                    //             scene: new BossScene(GameData, background, {
-                    //                 resolve: resolve,
-                    //             }),
-                    //         });
-                    //         new Phaser.Game(config);
-                    //     });
-                    //     console.debug(gameResult);
-                    //     let playerInfo = gameResult.playerInfo;
+                        gameResult = await new Promise((resolve, reject) => {
+                            const config = Object.assign(getPhaserConfig(width, height), {
+                                scene: new BossScene(GameData, background, {
+                                    resolve: resolve,
+                                }),
+                            });
+                            new Phaser.Game(config);
+                        });
+                        console.debug(gameResult);
+                        let playerInfo = gameResult.playerInfo;
 
-                    //     //===更新人物資料
-                    //     updateMapUI(playerInfo, 1000);
+                        //===更新人物資料
+                        updateMapUI(playerInfo, 1000);
 
-                    //     //==通關
-                    if (1) {//gameResult.bossDefeated
-                        // console.debug('通關');
-                        initEndScene(true);
-                        return;
+                        //==通關
+                        if (gameResult.bossDefeated) {//gameResult.bossDefeated
+                            // console.debug('通關');
+                            initEndScene(true);
+                            return;
+                        };
+                    }
+                    else { //=== 沒找到
+                        updateSidekick(5, 0);
                     };
-                    // }
-                    // else { //=== 沒找到
-                    //     updateSidekick(5, 0);
-                    // };
 
                 };
                 gameDisplay(false);
@@ -2892,7 +2976,7 @@ function locatingGame() {
                     }
                 };
 
-                return parseFloat(((playerIdx + 1) / rankingData.length * 100).toFixed(2));
+                return parseFloat(((playerIdx + 1) / rankingData.length * 100).toFixed(1));
             };
             var writeFile = () => {
                 $.ajax({

@@ -400,7 +400,7 @@ const Enemy = new Phaser.Class({
                 //==死亡
                 if (this.stats.HP <= 0) {
                     // console.debug('dog_Death');
-                    this.knockBackCallback.remove();
+                    if (this.knockBackCallback) this.knockBackCallback.remove();
                     this.behavior = 'Death';
                     this.body.reset(this.x, this.y);
                     this.body.enable = false;
@@ -536,7 +536,7 @@ const Enemy = new Phaser.Class({
                 //==死亡
                 if (this.stats.HP <= 0) {
                     // console.debug('cat_Death');
-                    this.knockBackCallback.remove();
+                    if (this.knockBackCallback) this.knockBackCallback.remove();
                     if (this.body.touching.down) {
                         this.behavior = 'Death';
                         this.body.reset(this.x, this.y);
@@ -643,7 +643,7 @@ const Enemy = new Phaser.Class({
                 // 
                 //==死亡
                 if (this.stats.HP <= 0) {
-                    this.knockBackCallback.remove();
+                    if (this.knockBackCallback) this.knockBackCallback.remove();
                     this.body.setAllowGravity(true);
                     // console.debug(this.body.touching.down);
                     if (this.body.touching.down) {
@@ -943,7 +943,10 @@ const Player = new Phaser.Class({
             this.anims.play(!this.body.touching.down ? 'player_jump' : 'player_run', true);
         }
         else if (cursors[controllCursor['right']].isDown) {
-            if (scene.name === 'defend' && !this.body.onWall()) scene.parallax.forEach((bg, i) => bg.tilePositionX += 0.3 * (i + 1));
+            // if (scene.name === 'defend' && !this.body.onWall()) scene.parallax.forEach((bg, i) => bg.tilePositionX += 0.3 * (i + 1));
+            if (scene.name === 'defend' && this.body.onWall())
+                scene.detectorUI.events.emit('playerMove');
+            scene.parallax.forEach((bg, i) => bg.tilePositionX += 0.3 * (i + 1));
             this.setVelocityX(this.stats.movementSpeed);
             if (this.flipX) this.filpHandler(false);
             if (isBusy) return;
@@ -1155,7 +1158,11 @@ const Player = new Phaser.Class({
                 let tmpVal = changeVal + this.stats.defense;
                 changeVal = tmpVal >= 0 ? -1 : tmpVal;//==最少受到1點傷害
             };
+
+            //==加攻擊力等buff要加
+            if (Object.keys(this.stats.buff).includes(stat)) this.stats.buff[stat] += changeVal;
             this.stats[stat] += changeVal;
+
             if (stat == 'HP' || stat == 'MP') {
                 //==不溢回
                 if (this.stats[stat] > this.stats['max' + stat])

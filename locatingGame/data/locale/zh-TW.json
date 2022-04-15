@@ -151,7 +151,13 @@
         "certLabel2": "任務耗時",
         "certLabel3": "完成日期",
         "certLabel4": "網站連結",
-        "certLabel5": "勇者可靠度"
+        "certLabel5": "勇者PR值",
+        "itemGain": "獲得",
+        "itemGain1": "完成教學",
+        "itemGain2": "答對問題",
+        "submit1": "確定回答",
+        "submit2": "我再想想",
+        "quickAnswer": "回答測驗"
     },
     "Load": {
         "loading": "讀取中",
@@ -442,6 +448,36 @@
         "sunny": {
             "name": "太陽蛋",
             "short": "a",
+            "long": "aaa"
+        },
+        "bread": {
+            "name": "麵包",
+            "short": "d",
+            "long": "aaa"
+        },
+        "greens": {
+            "name": "青菜",
+            "short": "d",
+            "long": "aaa"
+        },
+        "okra": {
+            "name": "麵包",
+            "short": "d",
+            "long": "aaa"
+        },
+        "croissant": {
+            "name": "麵包",
+            "short": "d",
+            "long": "aaa"
+        },
+        "carrot": {
+            "name": "紅蘿蔔",
+            "short": "d",
+            "long": "aaa"
+        },
+        "pumpkin": {
+            "name": "南瓜",
+            "short": "d",
             "long": "aaa"
         },
         "bone": {

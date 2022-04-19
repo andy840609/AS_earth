@@ -223,7 +223,7 @@ svg {
     right: 0px;
     bottom: 0px;
     z-index: 1100;
-    /* display: none; */
+    display: none;
 }
 
 #gameUI .sidekickUI .sidekick {
@@ -568,6 +568,10 @@ svg {
     border-spacing: 5px;
 }
 
+#backpackUI .block img {
+    cursor: pointer;
+}
+
 /* 得到道具提示 */
 .itemHint {
     position: absolute;
@@ -596,15 +600,22 @@ svg {
     pointer-events: none;
 }
 
-.questButton {
+.questButton,
+.questFooter {
     position: relative;
-    right: 0;
+}
+
+.questComplete {
+    position: absolute;
+    width: 100%;
+    pointer-events: none;
+    display: none;
 }
 
 .quickQuestion {
     position: absolute;
     left: 50%;
-    top: 50%;
+    top: 30%;
     background-color: #ffffff;
     /* transform: translate(-30%, -50%); */
     border: 3px solid #000000;

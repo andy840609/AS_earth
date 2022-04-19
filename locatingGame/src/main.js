@@ -285,24 +285,27 @@ function locatingGame() {
                 };
                 gameStartFlag = display;
             };
-            let claimItemAnime = (items, description = 'itemGain1') => {
+            let hintTextAnime = (description = 'itemGain1', items = null) => {
 
                 let createHintGroup = () => {
                     const itemsDir = assetsDir + 'ui/game/backpack/items/';
                     const imgW = 60;
 
                     let getItemImg = () => {
-                        return items.map(item =>
-                            `<img src="${itemsDir + item[0]}.png" width="${imgW}px"  height="${imgW}px">`).join('');
+                        let html = '';
+                        if (items) {
+                            let imgs = items.map(item =>
+                                `<img src="${itemsDir + item[0]}.png" width="${imgW}px"  height="${imgW}px">`).join('');
+                            html = `<div class="claimItem">${imgs}</div>`;
+                        }
+                        return html;
                     };
 
                     let itemHint = $(bigMap)
                         .append(`
                         <div class="itemHint d-flex flex-row  align-items-center">
-                            <div class="hint"></div>
-                            <div class="claimItem">
-                               ${getItemImg()}
-                            </div>
+                            <div class="hint"></div>                           
+                            ${getItemImg()}                            
                         </div>`)
                         .find('.itemHint').last();
                     // console.debug(itemHint);
@@ -358,15 +361,15 @@ function locatingGame() {
                         fadeDuration = 2000;
 
                     let hint = hintGroup.find('.hint');
-                    let string = `${GameData.localeJSON.UI[description] + GameData.localeJSON.UI['itemGain']} 
-                    ${items.map(item => GameData.localeJSON.Item[item[0]].name + (item[1] ? `x${item[1]}` : '')).join(', ')}`;
+                    let string = items ? `${GameData.localeJSON.UI[description] + GameData.localeJSON.UI['itemGain']} 
+                    ${items.map(item => GameData.localeJSON.Item[item[0]].name + (item[1] ? `x${item[1]}` : '')).join(', ')}` :
+                        GameData.localeJSON.UI[description];
                     hint.text(string);
 
                     setTimeout(() => {
                         hint.animate({ opacity: 0 }, fadeDuration);
-                        itemFlyToBag(hintGroup, showDuration / 2);
+                        if (items) itemFlyToBag(hintGroup, showDuration / 2);
                     }, showDuration);
-
 
                 };
 
@@ -374,20 +377,21 @@ function locatingGame() {
                 hintText(hintGroup);
 
                 //==放入包包
-                items.forEach(item => {
-                    if (item[1] === 0)
-                        GameData.backpack.equip.push(item[0]);
-                    else {
-                        let itemName = item[0],
-                            itemAmount = item[1];
-                        let itemBackpack = GameData.backpack.item;
-                        let stuff = itemBackpack.find(stuff => stuff.name === itemName);
-                        if (stuff) stuff.amount += itemAmount;
-                        else itemBackpack.push({ name: itemName, amount: itemAmount });
-                    }
-                });
-
-                gameUI.find('#backpackUI').trigger('updateEvt');
+                if (items) {
+                    items.forEach(item => {
+                        if (item[1] === 0)
+                            GameData.backpack.equip.push(item[0]);
+                        else {
+                            let itemName = item[0],
+                                itemAmount = item[1];
+                            let itemBackpack = GameData.backpack.item;
+                            let stuff = itemBackpack.find(stuff => stuff.name === itemName);
+                            if (stuff) stuff.amount += itemAmount;
+                            else itemBackpack.push({ name: itemName, amount: itemAmount });
+                        }
+                    });
+                    gameUI.find('#backpackUI').trigger('updateEvt');
+                };
             };
 
             function initGameData() {
@@ -464,29 +468,29 @@ function locatingGame() {
                     GameData.getLanguageJSON = getLanguageJSON;
 
                     //==test
-                    gameDisplay(true);
-                    let doneTutorial = await new Promise((resolve, reject) => {
-                        const config = Object.assign(getPhaserConfig(width, height), {
-                            scene: new GameStartScene(GameData, {
-                                getWaveImg: getWaveImg,
-                                tutorialData: data.tutorialData,
-                                resolve: resolve,
-                                getLanguageJSON: getLanguageJSON,
-                                rankingData: rankingData,//排行榜
-                            }),
-                        });
-                        new Phaser.Game(config);
-                    });
-                    // console.debug(doneTutorial);
-                    gameDisplay(false);
+                    // gameDisplay(true);
+                    // let doneTutorial = await new Promise((resolve, reject) => {
+                    //     const config = Object.assign(getPhaserConfig(width, height), {
+                    //         scene: new GameStartScene(GameData, {
+                    //             getWaveImg: getWaveImg,
+                    //             tutorialData: data.tutorialData,
+                    //             resolve: resolve,
+                    //             getLanguageJSON: getLanguageJSON,
+                    //             rankingData: rankingData,//排行榜
+                    //         }),
+                    //     });
+                    //     new Phaser.Game(config);
+                    // });
+                    // // console.debug(doneTutorial);
+                    // gameDisplay(false);
                     //==test
 
 
 
-                    if (doneTutorial) {//doneTutorial     
-                        const gainItems = [['pan', 0], ['bread', 5]];
-                        claimItemAnime(gainItems, 'itemGain1');
-                    };
+                    // if (doneTutorial) {//doneTutorial     
+                    //     const gainItems = [['pan', 0], ['bread', 5]];
+                    //     hintTextAnime('itemGain1',gainItems);
+                    // };
                     initMap();
                     //==test
                     // gameStart('defend');
@@ -1260,7 +1264,10 @@ function locatingGame() {
 
                                             return `<div class="tab-pane fade ${i === 0 ? 'show active' : ''}" id="questInfo${i}" role="tabpanel" style="white-space: pre-line">
                                                 <div>${content}</div>
-                                                <div class="d-flex justify-content-end"><button type="button" class="btn btn-primary questButton">${ GameData.localeJSON.UI['quickAnswer']}</button></div>
+                                                <div class="d-flex justify-content-end questFooter">
+                                                    <button type="button" class="btn btn-primary questButton">${ GameData.localeJSON.UI['quickAnswer']}</button>
+                                                    <img class="questComplete" src="${assetsDir}ui/map/missionAccomplished.png">
+                                                </div>
                                             </div>`;
 
                                         });
@@ -1272,6 +1279,7 @@ function locatingGame() {
                                         let quickQuestion = $('.quickQuestion');
                                         let quickTitle = $('.quickTitle');
                                         let quickSelection = $('input[name=quickSelection]');
+                                        let questComplete = UI.find('.questComplete');
                                         let questButton =
                                             UI.find('.questButton').each((i, button) =>
                                                 $(button).on('click', () => {
@@ -1293,16 +1301,18 @@ function locatingGame() {
 
 
                                             if (selectionIdx == undefined) {   //==全沒選
-                                                console.debug('全沒選');
+                                                hintTextAnime('quickUnselect');
                                             }
                                             else {
                                                 if (selectionIdx == 0) {
-                                                    console.debug('對');
                                                     const gainItems = [['pumpkin', 5]];
-                                                    claimItemAnime(gainItems, 'itemGain2');
+                                                    hintTextAnime('itemGain2', gainItems);
                                                 }
-                                                else console.debug('錯');
+                                                else {
+                                                    hintTextAnime('quickWrong');
+                                                };
                                                 questButton.eq(questionIdx).prop('disabled', true);
+                                                questComplete.eq(questionIdx).show();
                                                 quickQuestion.toggle("fold");
                                             };
 
@@ -1337,7 +1347,7 @@ function locatingGame() {
                                         let getItemImg = (idx, key) => {
                                             let item = GameData.backpack[key][idx];
                                             let imgHtml = item ?
-                                                `<img src="${itemsDir + (key === 'item' ? item.name : item)}.png" width="${iconW} px" height="${iconW} px"></img>` : '';
+                                                `<img src="${itemsDir + (key === 'item' ? item.name : item)}.png" width="${iconW}px" height="${iconW}px"></img>` : '';
                                             return imgHtml;
                                         };
                                         let getTableHTML = (row, col, key) => {
@@ -1359,6 +1369,16 @@ function locatingGame() {
                                                 let block = UI.find('#' + key);
                                                 block.children().remove();
                                                 block.append(getTableHTML(...blockSize[key], key));
+                                                block.find('img')
+                                                    .on('mouseover', e => {
+
+                                                    })
+                                                    .on('mouseout', e => {
+
+                                                    })
+                                                    .on('click', e => {
+                                                        console.dir(e.target);
+                                                    });
                                             });
                                         });
 

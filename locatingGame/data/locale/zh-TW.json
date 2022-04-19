@@ -157,7 +157,9 @@
         "itemGain2": "答對問題",
         "submit1": "確定回答",
         "submit2": "我再想想",
-        "quickAnswer": "回答測驗"
+        "quickAnswer": "回答測驗拿獎勵",
+        "quickUnselect": "請選擇一個答案",
+        "quickWrong": "可惜答錯了"
     },
     "Load": {
         "loading": "讀取中",

@@ -487,10 +487,10 @@ function locatingGame() {
 
 
 
-                    // if (doneTutorial) {//doneTutorial     
-                    //     const gainItems = [['pan', 0], ['bread', 5]];
-                    //     hintTextAnime('itemGain1',gainItems);
-                    // };
+                    if (1) {//doneTutorial     
+                        const gainItems = [['pan', 0], ['bread', 5]];
+                        hintTextAnime('itemGain1', gainItems);
+                    };
                     initMap();
                     //==test
                     // gameStart('defend');
@@ -1330,24 +1330,31 @@ function locatingGame() {
                                         };
 
                                         UI
-                                            .width(500)
-                                            .height(300)
+                                            .width(510)
+                                            .height(320)
                                             .append(`
                                             <div class='row'>
-                                                <div class='col-5' style="padding:0px 0px 0px 10px">
-                                                    <div class="block" align="left" id="onEquip"></div>
+                                                <div class='col-5'>
+                                                    <div class="block" id="onEquip"></div>
+                                                    <img src="${assetsDir + 'ui/map/player/' + GameData.playerRole}.png" width="80px">
                                                 </div>
-                                                <div class='col-7' style="padding:0px 10px 0px 5px">
-                                                    <div class="block" align="center" id="item"></div>
-                                                    <div class="block" align="center" id="equip"></div>
+                                                <div class='col-7'>
+                                                    <div class="block" id="item"></div>
+                                                    <div class="block" id="equip"></div>
                                                 </div>
+                                            </div>
+                                            <div class="backpackHint" >
+                                                <div class="itemTooltip"></div>
+                                                <div class="itemSelectBar">AAA</div>
                                             </div>
                                         `);
 
                                         let getItemImg = (idx, key) => {
                                             let item = GameData.backpack[key][idx];
                                             let imgHtml = item ?
-                                                `<img src="${itemsDir + (key === 'item' ? item.name : item)}.png" width="${iconW}px" height="${iconW}px"></img>` : '';
+                                                `<img class="item" src="${itemsDir + (key === 'item' ? item.name : item)}.png" width="${iconW}px" height="${iconW}px" value="${idx}">
+                                                ${key === 'item' ? `<div>x${item.amount}</div>` : ''}` : '';
+
                                             return imgHtml;
                                         };
                                         let getTableHTML = (row, col, key) => {
@@ -1361,7 +1368,74 @@ function locatingGame() {
                                             ).join('');
 
                                             // console.debug(table);
-                                            return `<table>${table}</table>`;
+                                            let html = `
+                                            <div class="blockLabel">${GameData.localeJSON.UI[key]}</div>
+                                            <div class="blockTable"><table>${table}</table></div>`;
+
+                                            return html;
+                                        };
+
+                                        let itemTooltip = UI.find('.itemTooltip');
+                                        let itemSelectBar = UI.find('.itemSelectBar');
+                                        let updateTooltip = (target, blockKey) => {
+                                            let UIDOMRect = UI.get(0).getBoundingClientRect();
+                                            let targetDOMRect = target.getBoundingClientRect();
+
+                                            let top = targetDOMRect.top - UIDOMRect.top - targetDOMRect.height * 0.5,
+                                                left = targetDOMRect.left - UIDOMRect.left + targetDOMRect.width;
+
+                                            let itemIdx = target.getAttribute('value'),
+                                                item = GameData.backpack[blockKey][itemIdx],
+                                                itemName = blockKey === 'item' ? item.name : item,
+                                                itemBuff = GameItemData[itemName].buff,
+                                                itemInfo = GameData.localeJSON.Item[itemName];
+
+                                            let blockText = {
+                                                itemName: itemInfo['name'],
+                                                itemBuff: Object.keys(itemBuff).map(key =>
+                                                    `${GameData.localeJSON.UI[key] + (itemBuff[key] > 0 ? ' +' : ' ') + itemBuff[key]}`).join('<br>'),
+                                                itemInfo: itemInfo['short'],
+                                            };
+
+                                            const tooltipBlock = ['itemName', 'itemBuff', 'itemInfo'];
+                                            let html = tooltipBlock.map(key => `<div class="tooltipText" id="${key}">${blockText[key]}</div>`).join('');
+
+                                            itemTooltip
+                                                .show()
+                                                .css({ top: top, left: left, })
+                                                .html(html);
+
+                                        };
+                                        let updateSelectBar = (target, blockKey) => {
+                                            let UIDOMRect = UI.get(0).getBoundingClientRect();
+                                            let targetDOMRect = target.getBoundingClientRect();
+
+                                            let top = targetDOMRect.top - UIDOMRect.top - targetDOMRect.height * 0.5,
+                                                left = targetDOMRect.left - UIDOMRect.left + targetDOMRect.width;
+
+                                            const selection = {
+                                                onEquip: ['unequip'],
+                                                item: ['use'],
+                                                equip: ['equip'],
+                                            }[blockKey];
+
+                                            let html = selection.map(key =>
+                                                `<div class="selection" option="${key}">${GameData.localeJSON.UI[key]}</div>`).join('');
+
+                                            let itemIdx = target.getAttribute('value'),
+                                                item = GameData.backpack[blockKey][itemIdx],
+                                                itemName = blockKey === 'item' ? item.name : item,
+                                                itemBuff = GameItemData[itemName].buff,
+                                                itemInfo = GameData.localeJSON.Item[itemName];
+
+                                            itemSelectBar
+                                                .show()
+                                                .css({ top: top, left: left, })
+                                                .html(html)
+                                                .data('item', {
+                                                    key: blockKey,
+                                                    idx: itemIdx,
+                                                });
                                         };
 
                                         UI.on('updateEvt', () => {
@@ -1371,17 +1445,57 @@ function locatingGame() {
                                                 block.append(getTableHTML(...blockSize[key], key));
                                                 block.find('img')
                                                     .on('mouseover', e => {
-
+                                                        updateTooltip(e.target, key);
                                                     })
                                                     .on('mouseout', e => {
-
+                                                        itemTooltip.hide();
                                                     })
                                                     .on('click', e => {
-                                                        console.dir(e.target);
+                                                        updateSelectBar(e.target, key);
                                                     });
                                             });
                                         });
 
+                                        itemSelectBar.on('click', e => {
+                                            let option = e.target.getAttribute('option');
+                                            let selectData = itemSelectBar.data('item');
+
+                                            let item;
+                                            switch (option) {
+                                                case 'unequip':
+                                                case 'equip':
+                                                    let isEquip = option === 'equip';
+                                                    item = GameData.backpack[selectData.key][selectData.idx];
+                                                    GameData.backpack.onEquip = isEquip ? [item] : [];
+                                                    break;
+                                                case 'use':
+                                                    item = GameData.backpack[selectData.key][selectData.idx];
+
+                                                    //==物品效果
+                                                    let gameItemData = GameItemData[item.name];
+                                                    //消耗品才能在大地圖用
+                                                    if (gameItemData.type === 0) {
+                                                        Object.keys(gameItemData.buff).forEach(key => {
+                                                            GameData.playerStats[key] += gameItemData.buff[key];
+                                                            if (key === 'HP' || key === 'MP')
+                                                                GameData.playerStats[key] = GameData.playerStats[key] > GameData.playerStats['max' + key] ?
+                                                                    GameData.playerStats['max' + key] : GameData.playerStats[key];
+                                                        });
+                                                        //==數量用完就刪除
+                                                        if ((item.amount -= 1) <= 0) GameData.backpack[selectData.key].splice(selectData.idx, 1);
+                                                    };
+
+                                            };
+
+                                            gameUI.find('#playerStatsUI').trigger('updateEvt');
+                                            UI.trigger('updateEvt');
+                                        });
+                                        console.debug(GameData);
+
+                                        $(window).on('click', e => {
+                                            if (!e.target.classList.contains('item'))
+                                                itemSelectBar.hide();
+                                        });
                                         break;
                                 };
 

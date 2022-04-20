@@ -496,14 +496,13 @@ const GameItemData = {
         type: 0,
         buff: {
             HP: 1,
-            MP: 10,
+            MP: 1,
         }
     },
     bread: {
         type: 0,
         buff: {
-            HP: 30,
-            MP: 50,
+            HP: 15,
         }
     },
     greens: {

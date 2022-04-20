@@ -4208,7 +4208,7 @@ class UIScene extends Phaser.Scene {
                                         let buff = itemGameData.buff;
                                         string = itemDetail.name + ': ';
                                         string += Object.keys(buff).map(key =>
-                                            `${key + (buff[key] > 0 ? '+' : '') + buff[key]}`).join(', ');
+                                            `${UItextJSON[key] + (buff[key] > 0 ? '+' : '') + buff[key]}`).join(', ');
                                         break;
                                     case 1:
                                         string = itemDetail.name + ': ' + itemDetail.short;

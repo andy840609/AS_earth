@@ -75,9 +75,12 @@
         "item": "消耗道具",
         "equipment": "裝備道具",
         "equip": "裝備",
+        "onEquip": "已裝備",
         "unequip": "脫下",
         "use": "使用",
         "detail": "說明",
+        "HP": "HP",
+        "MP": "MP",
         "attackPower": "攻擊力",
         "defense": "防禦力",
         "movementSpeed": "移動速度",
@@ -444,48 +447,48 @@
     "Item": {
         "pan": {
             "name": "平底鍋",
-            "short": "ddd",
-            "long": "aaa"
+            "short": "好像很適合用來煎蛋",
+            "long": "好像很適合用來煎蛋"
         },
         "sunny": {
             "name": "太陽蛋",
-            "short": "a",
-            "long": "aaa"
+            "short": "美好的一天從早晨開始",
+            "long": "美好的一天從早晨開始"
         },
         "bread": {
             "name": "麵包",
-            "short": "d",
-            "long": "aaa"
+            "short": "好吃的麵包",
+            "long": "好吃的麵包"
         },
         "greens": {
             "name": "青菜",
-            "short": "d",
-            "long": "aaa"
+            "short": "好吃的青菜",
+            "long": "好吃的青菜"
         },
         "okra": {
             "name": "麵包",
-            "short": "d",
-            "long": "aaa"
+            "short": "好吃的麵包",
+            "long": "好吃的麵包"
         },
         "croissant": {
-            "name": "麵包",
-            "short": "d",
-            "long": "aaa"
+            "name": "可頌",
+            "short": "好吃的可頌",
+            "long": "好吃的可頌"
         },
         "carrot": {
             "name": "紅蘿蔔",
-            "short": "d",
-            "long": "aaa"
+            "short": "好吃的紅蘿蔔",
+            "long": "好吃的紅蘿蔔"
         },
         "pumpkin": {
             "name": "南瓜",
-            "short": "d",
-            "long": "aaa"
+            "short": "好吃的南瓜",
+            "long": "好吃的南瓜"
         },
         "bone": {
             "name": "骨頭",
             "short": "骨頭骨頭骨頭",
-            "long": "aaa"
+            "long": "好吃的南瓜"
         }
     }
 }

@@ -530,7 +530,15 @@ svg {
     height: 100%;
 }
 
+#backpackUI>.row>div {
+    padding: 0px;
+}
+
 #backpackUI .block {
+    position: relative;
+}
+
+#backpackUI .blockTable {
     overflow: auto;
     border-style: groove;
     border: 3px solid #DC682E;
@@ -538,22 +546,32 @@ svg {
     border-radius: 5px;
     padding: 5px;
     margin-bottom: 5px;
+    height: 100%;
+}
+
+#backpackUI table {
+    border-collapse: separate;
+    border-spacing: 5px;
 }
 
 #onEquip {
     height: 100%;
+    padding: 8px 0px 0px 10px;
 }
 
 #item {
     height: 70%;
+    padding: 8px 10px 10px 10px;
 }
 
 #equip {
     height: 30%;
+    padding: 8px 10px 0px 10px;
 }
 
 
 #backpackUI td {
+    position: relative;
     border: 3px solid #DC682E;
     border-radius: 5px;
     background: #8C3E18;
@@ -561,15 +579,78 @@ svg {
     height: 60px;
 }
 
-#backpackUI table {
-    /* table-layout: fixed; */
-    /* width: 100%; */
-    border-collapse: separate;
-    border-spacing: 5px;
+
+#backpackUI .blockTable img {
+    cursor: pointer;
 }
 
-#backpackUI .block img {
-    cursor: pointer;
+#backpackUI .blockTable div {
+    position: absolute;
+    right: 3px;
+    bottom: 0px;
+    font: small-caps bold 18px sans-serif;
+    pointer-events: none;
+}
+
+#backpackUI .blockLabel {
+    position: absolute;
+    z-index: 1;
+    left: 18px;
+    top: -8px;
+    border-radius: 5px;
+    background: #DC682E;
+    font: small-caps bold 18px sans-serif;
+    padding: 0px 5px;
+}
+
+.backpackHint {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.itemTooltip {
+    position: absolute;
+    z-index: 2;
+    border-radius: 5px;
+    opacity: .95;
+    background-image: url(../data/assets/ui/map/itemBG.png);
+    padding: 10px 20px;
+    white-space: nowrap;
+    pointer-events: none;
+    transform: translateY(-25%);
+    display: none;
+}
+
+.tooltipText+.tooltipText {
+    margin-top: 20px;
+}
+
+.itemTooltip #itemName {
+    font: small-caps bold 28px sans-serif;
+    color: white;
+}
+
+.itemTooltip #itemBuff {
+    font: small-caps bold 24px sans-serif;
+    color: #BEBEBE;
+}
+
+.itemTooltip #itemInfo {
+    font: small-caps bold 18px sans-serif;
+    color: #EAC100;
+}
+
+.itemSelectBar {
+    position: absolute;
+    z-index: 3;
+    border-radius: 5px;
+    opacity: .9;
+    background-image: url(../data/assets/ui/map/mapTooltipBG.jpg);
+    background-size: 150%;
+    white-space: nowrap;
+    display: none;
+    /* pointer-events: none; */
 }
 
 /* 得到道具提示 */

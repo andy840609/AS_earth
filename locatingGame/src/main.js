@@ -1336,7 +1336,9 @@ function locatingGame() {
                                             <div class='row'>
                                                 <div class='col-5'>
                                                     <div class="block" id="onEquip"></div>
-                                                    <img src="${assetsDir + 'ui/map/player/' + GameData.playerRole}.png" width="80px">
+                                                    <div>
+                                                        <img src="${assetsDir + 'ui/map/player/' + GameData.playerRole}.png" width="80px">
+                                                    </div>
                                                 </div>
                                                 <div class='col-7'>
                                                     <div class="block" id="item"></div>

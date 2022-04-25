@@ -72,7 +72,7 @@ h3,
 
 .black-tooltip {
     position: absolute;
-    z-index: 1;
+    z-index: 10;
     padding: 6px;
     background-color: rgb(0, 0, 0);
     border: 5px solid rgb(255, 255, 255);
@@ -283,23 +283,24 @@ svg {
     font-weight: bold;
 }
 
-#playerStatsUI .barBox {
+#gameUI .barBox {
     background-color: rgb(192, 192, 192);
     border-radius: 15px;
+    width: 100%;
 }
 
-#playerStatsUI .bar {
+#gameUI .bar {
     color: white;
     text-align: right;
     font-size: 20px;
     border-radius: 15px;
 }
 
-#playerStatsUI .HP {
+#gameUI .HP {
     background-color: rgb(116, 194, 92);
 }
 
-#playerStatsUI .MP {
+#gameUI .MP {
     background-color: rgb(0, 17, 167);
 }
 
@@ -534,6 +535,36 @@ svg {
     padding: 0px;
 }
 
+#backpackUI .photo {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    pointer-events: none;
+}
+
+#backpackUI .photo>img {
+    position: relative;
+    top: 40%;
+    left: 55%;
+    transform: translate(-50%, -50%);
+}
+
+#backpackUI .photo>div {
+    position: relative;
+    top: 15%;
+    padding: 0px 20px;
+}
+
+#backpackUI .barGroup {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    margin-top: 10px;
+    font: small-caps bold 16px sans-serif;
+    pointer-events: auto;
+}
+
 #backpackUI .block {
     position: relative;
 }
@@ -646,11 +677,15 @@ svg {
     z-index: 3;
     border-radius: 5px;
     opacity: .9;
-    background-image: url(../data/assets/ui/map/mapTooltipBG.jpg);
-    background-size: 150%;
+    padding: 6px;
+    background-color: rgb(0, 0, 0);
+    border: 5px solid rgb(255, 255, 255);
+    border-radius: 10px;
+    color: rgb(255, 255, 255);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
     white-space: nowrap;
     display: none;
-    /* pointer-events: none; */
+    cursor: pointer;
 }
 
 /* 得到道具提示 */
@@ -666,9 +701,13 @@ svg {
 .itemHint>.hint {
     /* padding: 5px 20px; */
     font: small-caps bold 32px sans-serif;
-    background: #8C3E18;
     white-space: nowrap;
-
+    padding: 6px;
+    background-color: rgb(0, 0, 0);
+    border: 5px solid rgb(255, 255, 255);
+    border-radius: 10px;
+    color: rgb(255, 255, 255);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .itemHint>.claimItem {

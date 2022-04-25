@@ -118,7 +118,7 @@ const GameObjectStats = {
             knockBackSpeed: 10,//==擊退時間固定200ms,這個速度越大擊退越遠
             manaCost: 20,
             manaRegen: 0.15,//per 10 ms(game update per 10ms)0.1
-            HP: 80,
+            HP: 10,
             maxHP: 80,
             MP: 150,
             maxMP: 150,

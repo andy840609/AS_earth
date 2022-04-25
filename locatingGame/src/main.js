@@ -346,7 +346,7 @@ function locatingGame() {
                                 height: originW,
                                 top: 0,
                                 left: 0,
-                            }, duration, 'swing', () => hintGroup.remove());
+                            }, duration);
                         });
 
                         //==道具淡出
@@ -367,7 +367,7 @@ function locatingGame() {
                     hint.text(string);
 
                     setTimeout(() => {
-                        hint.animate({ opacity: 0 }, fadeDuration);
+                        hint.animate({ opacity: 0 }, fadeDuration, 'swing', () => hintGroup.remove());
                         if (items) itemFlyToBag(hintGroup, showDuration / 2);
                     }, showDuration);
 
@@ -441,7 +441,23 @@ function locatingGame() {
                         item: [//消耗品
                             // { name: 'bone', amount: 1 },
                             { name: 'sunny', amount: 12 },
-                            { name: 'carrot', amount: 12 },
+                            // { name: 'carrot', amount: 12 },
+                            // { name: 'sunny', amount: 12 },
+                            // { name: 'sunny', amount: 12 },
+                            // { name: 'sunny', amount: 12 },
+                            // { name: 'sunny', amount: 12 },
+                            // { name: 'sunny', amount: 12 },
+                            // { name: 'sunny', amount: 12 },
+                            // { name: 'sunny', amount: 12 },
+                            // { name: 'sunny', amount: 12 },
+                            // { name: 'sunny', amount: 12 },
+                            // { name: 'sunny', amount: 12 },
+                            // { name: 'sunny', amount: 12 },
+                            // { name: 'sunny', amount: 12 },
+                            // { name: 'sunny', amount: 12 },
+                            // { name: 'sunny', amount: 12 },
+                            // { name: 'sunny', amount: 12 },
+                            // { name: 'sunny', amount: 12 },
                             // { name: 'sunny', amount: 12 },
                             // { name: 'sunny', amount: 12 },
                         ],
@@ -484,8 +500,6 @@ function locatingGame() {
                     // // console.debug(doneTutorial);
                     // gameDisplay(false);
                     //==test
-
-
 
                     if (1) {//doneTutorial     
                         const gainItems = [['pan', 0], ['bread', 5]];
@@ -1162,6 +1176,7 @@ function locatingGame() {
                                                 .text(mpPercent);
 
 
+                                            //==角色屬性
                                             let statDiv = UI.find('#playerStats');
                                             Object.keys(playerStats.buff).forEach(stat =>
                                                 statDiv.find(`.${stat} .val`).text(playerStats[stat])
@@ -1218,20 +1233,32 @@ function locatingGame() {
                                                     <div  class="tab-content scroll" id="infoContent"></div>
                                                 </div>
                                             </div>    
-                                            <div class="quickQuestion">
+                                            <form class="quickQuestion">
                                                 
                                                 <div class="mb-2 quickTitle">Q0</div>
-                                                <div class='pl-2 mb-2 d-flex flex-column'>
-                                                    <label><input type="radio" name="quickSelection" value="0">A</label>
-                                                    <label><input type="radio" name="quickSelection" value="1">B</label>
-                                                    <label><input type="radio" name="quickSelection" value="2">C</label>
-                                                    <label><input type="radio" name="quickSelection" value="3">D</label>
+                                                <div class='pl-2'>
+                                                    <div class="form-check">
+                                                        <input type="radio" class="form-check-input" id="qs1" name="quickSelection" value="0">
+                                                        <label class="form-check-label" for="qs1">A</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input type="radio" class="form-check-input" id="qs2" name="quickSelection" value="1">
+                                                        <label class="form-check-label" for="qs2">A</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input type="radio" class="form-check-input" id="qs3" name="quickSelection" value="2">
+                                                        <label class="form-check-label" for="qs3">A</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input type="radio" class="form-check-input" id="qs4" name="quickSelection" value="4">
+                                                        <label class="form-check-label" for="qs4">A</label>
+                                                    </div>
                                                 </div>
                                                 <div class='questFooter d-flex justify-content-around'>
                                                     <button type="button" class="btn btn-light quickOK">${GameData.localeJSON.UI['submit1']}</button>
                                                     <button type="button" class="btn btn-light quickCancel">${GameData.localeJSON.UI['submit2']}</button>
                                                 </div>
-                                            </div>            
+                                            </form>            
                                         `);
 
 
@@ -1284,9 +1311,17 @@ function locatingGame() {
                                             UI.find('.questButton').each((i, button) =>
                                                 $(button).on('click', () => {
                                                     if (quickQuestion.css('display')) quickQuestion.hide();
-                                                    quickTitle.text('Q' + (i + 1) + ':');
+
+                                                    let questionObj = GameData.localeJSON.quickQuestion[i],
+                                                        choices = [...questionObj.choices].sort(() => 0.5 - Math.random());
+
+                                                    quickTitle.text('Q' + (i + 1) + ': ' + questionObj.content);
 
                                                     quickSelection.prop('checked', false);
+                                                    quickSelection.each((i, ele) => {
+                                                        ele.value = choices[i] === questionObj.answer;
+                                                        ele.nextElementSibling.innerText = choices[i];
+                                                    });
                                                     quickQuestion
                                                         .prop('value', i)//紀錄第幾題
                                                         .toggle("fold");
@@ -1295,16 +1330,15 @@ function locatingGame() {
                                             );
                                         UI.find('.quickOK').on('click', (e) => {
                                             let questionIdx = quickQuestion.prop('value');
-                                            let selectionIdx = quickSelection.filter(":checked").val();
-                                            // console.debug(questButton);
+                                            let isAnswer = quickSelection.filter(":checked").val();
 
-
-
-                                            if (selectionIdx == undefined) {   //==全沒選
+                                            if (isAnswer == undefined) {   //==全沒選
                                                 hintTextAnime('quickUnselect');
                                             }
                                             else {
-                                                if (selectionIdx == 0) {
+                                                // let answerIdx = e
+                                                // console.debug(questButton);
+                                                if (isAnswer === 'true') {
                                                     const gainItems = [['pumpkin', 5]];
                                                     hintTextAnime('itemGain2', gainItems);
                                                 }
@@ -1333,12 +1367,30 @@ function locatingGame() {
                                             .width(510)
                                             .height(320)
                                             .append(`
+                                            <div class='black-tooltip'></div>
                                             <div class='row'>
                                                 <div class='col-5'>
                                                     <div class="block" id="onEquip"></div>
-                                                    <div>
-                                                        <img src="${assetsDir + 'ui/map/player/' + GameData.playerRole}.png" width="80px">
-                                                    </div>
+                                                    <div class="photo">
+                                                        <img src="${assetsDir + 'ui/map/player/' + GameData.playerRole}.png" width="140px">
+                                                        
+                                                        <div>
+                                                            <div class="barGroup">
+                                                                <text>HP </text>
+                                                                <div class="barBox">
+                                                                    <div class="bar HP"></div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="barGroup">
+                                                                <text>MP </text>
+                                                                <div class="barBox">
+                                                                    <div class="bar MP"></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                       
+                                                     
+                                                    </div>                                          
                                                 </div>
                                                 <div class='col-7'>
                                                     <div class="block" id="item"></div>
@@ -1347,7 +1399,7 @@ function locatingGame() {
                                             </div>
                                             <div class="backpackHint" >
                                                 <div class="itemTooltip"></div>
-                                                <div class="itemSelectBar">AAA</div>
+                                                <div class="itemSelectBar"></div>
                                             </div>
                                         `);
 
@@ -1359,7 +1411,17 @@ function locatingGame() {
 
                                             return imgHtml;
                                         };
-                                        let getTableHTML = (row, col, key) => {
+                                        let getTableHTML = (key) => {
+                                            //==道具多於格數擴增包包格子
+                                            if (key === 'item') {
+                                                let itemLength = GameData.backpack['item'].length;
+                                                blockSize[key] = itemLength > blockSize[key].reduce((p, c) => p * c) ?
+                                                    [Math.ceil(itemLength / 4), 4] : blockSize[key];
+                                            };
+                                            let size = blockSize[key];
+
+                                            let row = size[0],
+                                                col = size[1];
                                             let rowIdxs = [...Array(row).keys()],
                                                 colIdxs = [...Array(col).keys()];
 
@@ -1422,7 +1484,7 @@ function locatingGame() {
                                             }[blockKey];
 
                                             let html = selection.map(key =>
-                                                `<div class="selection" option="${key}">${GameData.localeJSON.UI[key]}</div>`).join('');
+                                                `<div class="" option="${key}">${GameData.localeJSON.UI[key]}</div>`).join('');
 
                                             let itemIdx = target.getAttribute('value'),
                                                 item = GameData.backpack[blockKey][itemIdx],
@@ -1444,7 +1506,7 @@ function locatingGame() {
                                             blocks.forEach(key => {
                                                 let block = UI.find('#' + key);
                                                 block.children().remove();
-                                                block.append(getTableHTML(...blockSize[key], key));
+                                                block.append(getTableHTML(key));
                                                 block.find('img')
                                                     .on('mouseover', e => {
                                                         updateTooltip(e.target, key);
@@ -1456,6 +1518,21 @@ function locatingGame() {
                                                         updateSelectBar(e.target, key);
                                                     });
                                             });
+
+
+                                            // console.debug('updateEvt');
+                                            let playerStats = { ...GameData.playerStats };
+
+                                            let hpPercent = parseFloat((playerStats.HP / playerStats.maxHP * 100).toFixed(1)) + '%',
+                                                mpPercent = parseFloat((playerStats.MP / playerStats.maxMP * 100).toFixed(1)) + '%';
+
+                                            UI.find('.HP')
+                                                .width(hpPercent)
+                                                .text(hpPercent);
+                                            UI.find('.MP')
+                                                .width(mpPercent)
+                                                .text(mpPercent);
+
                                         });
 
                                         itemSelectBar.on('click', e => {
@@ -1498,6 +1575,28 @@ function locatingGame() {
                                             if (!e.target.classList.contains('item'))
                                                 itemSelectBar.hide();
                                         });
+
+                                        UI.find('.barBox')
+                                            .on('mouseover', function (e) {
+                                                let isHP = this.children[0].classList.contains('HP');
+                                                let playerStats = GameData.playerStats;
+                                                let status = isHP ?
+                                                    parseInt(playerStats.HP) + ' / ' + playerStats.maxHP :
+                                                    parseInt(playerStats.MP) + ' / ' + playerStats.maxMP;
+
+                                                UI.find('.black-tooltip')
+                                                    .text((isHP ? 'HP ' : 'MP ') + status)
+                                                    .css({
+                                                        "top": `${200 + (isHP ? 0 : this.getBoundingClientRect().height * 1.5)}px`,
+                                                        "left": `${e.offsetX}px`
+                                                    })
+                                                    .show();
+
+                                            })
+                                            .on('mouseout', (e) => {
+                                                UI.find('.black-tooltip')
+                                                    .hide();
+                                            });
                                         break;
                                 };
 

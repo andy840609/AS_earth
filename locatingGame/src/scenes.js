@@ -156,7 +156,7 @@ class UIScene extends Phaser.Scene {
 
                 };
                 update = () => {
-                    var updateBar = () => {
+                    let updateBar = () => {
                         if (this.gameClear) return;
 
                         let orbs = gameScene.orbGroup.getChildren();
@@ -218,7 +218,7 @@ class UIScene extends Phaser.Scene {
 
 
                     };
-                    var hotkeyPress = () => {
+                    let hotkeyPress = () => {
                         let cursors = gameScene.cursors;
                         // console.debug(cursors, gameData.controllCursor)
                         UIButtonArr.forEach(button => {
@@ -410,7 +410,7 @@ class UIScene extends Phaser.Scene {
                 const rectX = x - 95, rectY = y - 88;
                 const rectW = 192, rectH = 130;
 
-                var initDetector = (screen = true) => {
+                let initDetector = (screen = true) => {
                     this.detector = this.add.image(x, y, 'detector')
                         .setOrigin(0.5)
                         .setScale(detectorScale)
@@ -441,7 +441,7 @@ class UIScene extends Phaser.Scene {
                             handleXMin = rectX2 - handleW * 0.5,
                             handleXMax = rectX2 + rectW2 - handleW * 0.5;
 
-                        var initOverview = () => {
+                        let initOverview = () => {
                             initDetector();
                             let screen = this.detectorScreen;
 
@@ -457,7 +457,7 @@ class UIScene extends Phaser.Scene {
 
                             wave.setScale(screen.displayWidth / wave.displayWidth, screen.displayHeight / wave.displayHeight * 0.9);
                         };
-                        var initBrushes = () => {
+                        let initBrushes = () => {
                             let scaleFun = preScene.waveForm.overviewSvgObj.x
                                 .range([handleXMin, handleXMax]);
 
@@ -478,7 +478,7 @@ class UIScene extends Phaser.Scene {
                                 .setAlpha(.5)
                                 .setName(1);
 
-                            var dragBehavior = (brush) => {
+                            let dragBehavior = (brush) => {
                                 brush.setInteractive({ draggable: true, cursor: 'col-resize' })
                                     .on('drag', function (pointer, dragX, dragY) {
                                         let newX;
@@ -501,13 +501,13 @@ class UIScene extends Phaser.Scene {
                                             preScene.stepClear[this.name] = true;
                                     });
                             };
-                            var updateBrushRect = () => {
+                            let updateBrushRect = () => {
                                 let newRectW = Phaser.Math.Distance.BetweenPoints(brushHandle1, brushHandle2);
                                 brushRect.x = Math.min(brushHandle1.x, brushHandle2.x) + handleW * 0.5;
                                 brushRect.width = newRectW;
                             };
-                            var updateWave = (domain = null, scaleY = 1) => {
-                                var action = () => {
+                            let updateWave = (domain = null, scaleY = 1) => {
+                                let action = () => {
                                     const key = 'tutorial_waveForm';
                                     // console.debug(domain)
                                     gameScene.waveForm.getWaveImg(preScene.waveForm.tutorialData, domain, false, scaleY).then(success => {
@@ -530,8 +530,8 @@ class UIScene extends Phaser.Scene {
                             };
 
                             //==避免頻繁刷新
-                            var waveUpdateObj = { updateFlag: true, updateTimeOut: null, updateDelay: 20 };
-                            var updateHandler = (action, updateObj = waveUpdateObj, parameter = null, mustDone = false) => {
+                            let waveUpdateObj = { updateFlag: true, updateTimeOut: null, updateDelay: 20 };
+                            let updateHandler = (action, updateObj = waveUpdateObj, parameter = null, mustDone = false) => {
 
                                 if (!updateObj.updateFlag)
                                     clearTimeout(updateObj.updateTimeOut);
@@ -550,7 +550,7 @@ class UIScene extends Phaser.Scene {
 
                             //===按鈕
                             const buttonScale = 0.2;
-                            var buttonBehavior = (button) => {
+                            let buttonBehavior = (button) => {
                                 let dy = 0, btnFun = null, brushFlag = false;
                                 const btnAction = (brushFlag) => {
                                     btnFun();
@@ -702,7 +702,7 @@ class UIScene extends Phaser.Scene {
                             });
 
                         };
-                        var initUpdateListener = () => {
+                        let initUpdateListener = () => {
                             this.load.on('filecomplete', (key) => {
                                 preScene.waveForm.gameObjs.setTexture(key);
                             });
@@ -713,7 +713,7 @@ class UIScene extends Phaser.Scene {
 
                     };
                     update = () => {
-                        var updateButton = () => {
+                        let updateButton = () => {
                             let cursors = gameScene.cursors;
                             detectorButtons.forEach(button => {
                                 let condition = button.name == 'shiftLeft' || button.name == 'shiftRight' ?
@@ -739,9 +739,9 @@ class UIScene extends Phaser.Scene {
                         const scaleFun = gameScene.waveForm.overviewSvgObj.x
                             .range([handleXMin, handleXMax]);
 
-                        var initOverview = () => {
+                        let initOverview = () => {
                             initDetector();
-                            var wave = () => {
+                            let wave = () => {
                                 let screen = this.detectorScreen;
                                 let wave = this.add.image(x + 1, y - 25, 'overview_waveForm')
                                     .setDepth(Depth.detector + 1);
@@ -751,7 +751,7 @@ class UIScene extends Phaser.Scene {
                             };
                             wave();
                         };
-                        var initBrushes = () => {
+                        let initBrushes = () => {
                             const stationData = gameScene.gameData.stationData;
                             const getTimePoint = gameScene.getTimePoint;
 
@@ -772,7 +772,7 @@ class UIScene extends Phaser.Scene {
                             // console.debug(brushHandle1);
 
 
-                            var dragBehavior = (brush) => {
+                            let dragBehavior = (brush) => {
                                 brush.setInteractive({ draggable: true, cursor: 'col-resize' })
                                     .on('drag', function (pointer, dragX, dragY) {
                                         let newX;
@@ -793,13 +793,13 @@ class UIScene extends Phaser.Scene {
 
                                     });
                             };
-                            var updateBrushRect = () => {
+                            let updateBrushRect = () => {
                                 let newRectW = Phaser.Math.Distance.BetweenPoints(brushHandle1, brushHandle2);
                                 brushRect.x = Math.min(brushHandle1.x, brushHandle2.x) + handleW * 0.5;
                                 brushRect.width = newRectW;
                             };
-                            var updateWave = (domain = null, scaleY = 1, mustDone = false) => {
-                                var action = () => {
+                            let updateWave = (domain = null, scaleY = 1, mustDone = false) => {
+                                let action = () => {
                                     const key = 'waveForm';
                                     // console.debug(scaleY);
                                     gameScene.waveForm.getWaveImg(stationData, domain, false, scaleY).then(success => {
@@ -840,8 +840,8 @@ class UIScene extends Phaser.Scene {
                             };
 
                             //==避免頻繁刷新
-                            var waveUpdateObj = { updateFlag: true, updateTimeOut: null, updateDelay: 20 };
-                            var updateHandler = (action, updateObj = waveUpdateObj, mustDone = false, parameter = null) => {
+                            let waveUpdateObj = { updateFlag: true, updateTimeOut: null, updateDelay: 20 };
+                            let updateHandler = (action, updateObj = waveUpdateObj, mustDone = false, parameter = null) => {
 
                                 if (!updateObj.updateFlag)
                                     clearTimeout(updateObj.updateTimeOut);
@@ -868,7 +868,7 @@ class UIScene extends Phaser.Scene {
 
                             //===按鈕
                             const buttonScale = 0.22;
-                            var buttonBehavior = (button) => {
+                            let buttonBehavior = (button) => {
                                 let dy = 0, btnFun = null, brushFlag = false;
                                 const btnAction = (brushFlag) => {
                                     btnFun();
@@ -1032,13 +1032,13 @@ class UIScene extends Phaser.Scene {
 
                             });
                         };
-                        var initUpdateListener = () => {
+                        let initUpdateListener = () => {
                             this.load.on('filecomplete', (key) => {
                                 // console.debug('filecomplete');
                                 gameScene.waveForm.gameObjs.setTexture(key);
                             });
                         };
-                        var initMapIcon = () => {
+                        let initMapIcon = () => {
                             // console.debug(scaleFun.range(), scaleFun.domain());
 
                             this.orbIcons = this.orbs.map(orb => {
@@ -1091,7 +1091,7 @@ class UIScene extends Phaser.Scene {
 
                     };
                     update = () => {
-                        var updateButton = () => {
+                        let updateButton = () => {
                             let cursors = gameScene.cursors;
                             detectorButtons.forEach(button => {
 
@@ -1102,7 +1102,7 @@ class UIScene extends Phaser.Scene {
                                 if (condition) button.emit('pointerdown');
                             });
                         };
-                        var updateIcon = () => {
+                        let updateIcon = () => {
                             this.orbs.forEach((orb, i) => {
                                 this.orbIcons[i].statsHandler();
                                 if (orb.beholdingFlag)
@@ -1120,11 +1120,11 @@ class UIScene extends Phaser.Scene {
                     let mainCameras = gameScene.cameras.main;
                     preload = () => { };
                     create = () => {
-                        var initOverview = () => {
+                        let initOverview = () => {
                             const mapZoom = rectW / gameScene.groundW;
                             initDetector(false);
 
-                            var initMinimap = () => {
+                            let initMinimap = () => {
                                 this.minimap =
                                     gameScene.cameras.add(rectX, rectY, rectW, rectH)
                                         .setScene(this)
@@ -1148,7 +1148,7 @@ class UIScene extends Phaser.Scene {
                                 });
 
                             };
-                            var initScreenRect = () => {
+                            let initScreenRect = () => {
                                 let sRectW = width * mapZoom,
                                     sRectH = height * mapZoom;
 
@@ -1157,7 +1157,7 @@ class UIScene extends Phaser.Scene {
                                     .setOrigin(0)
                                     .setAlpha(.4);
 
-                                var dragBehavior = (rect) => {
+                                let dragBehavior = (rect) => {
                                     let dragRectPos;
                                     rect.setInteractive({ draggable: true, cursor: 'move' })
                                         .on('dragstart', function (pointer) {
@@ -1195,7 +1195,7 @@ class UIScene extends Phaser.Scene {
 
                                 //===按鈕
                                 const buttonScale = 0.22;
-                                var buttonBehavior = (button) => {
+                                let buttonBehavior = (button) => {
                                     button.setInteractive({ cursor: 'pointer' })
                                         .on('pointerover', function () {
                                             tooltipHandler(true, {
@@ -1267,7 +1267,7 @@ class UIScene extends Phaser.Scene {
                                 detectorButtons.forEach(button => buttonBehavior(button));
 
                             };
-                            var updateMainCamera = (x, y) => {
+                            let updateMainCamera = (x, y) => {
                                 mainCameras
                                     .stopFollow()
                                     .centerOn(x, this.minimap.worldView.y + y);
@@ -1278,7 +1278,7 @@ class UIScene extends Phaser.Scene {
                         initOverview();
                     };
                     update = () => {
-                        var updateMinimap = () => {
+                        let updateMinimap = () => {
                             let minimap = this.minimap;
                             let player = gameScene.player;
                             let speed = player.body.speed;
@@ -1310,7 +1310,7 @@ class UIScene extends Phaser.Scene {
                             // console.debug(rectH / minimap.zoom,)
                             // console.debug(minimap.scrollY, mainCameras.scrollY)
                         };
-                        var updateButton = () => {
+                        let updateButton = () => {
                             let cursors = gameScene.cursors;
                             detectorButtons.forEach(button => {
                                 if (cursors[gameData.controllCursor[button.name]].isDown) {
@@ -1328,10 +1328,10 @@ class UIScene extends Phaser.Scene {
             case 'exitUI'://==升等結算畫面之後作
                 preload = () => { };
                 create = () => {
-                    var levelUp = () => {
+                    let levelUp = () => {
 
                     };
-                    var exit = () => {
+                    let exit = () => {
                         gameScene.gameOver.flag = true;
                         gameScene.scene.resume();
                         this.scene.remove();
@@ -1357,7 +1357,7 @@ class UIScene extends Phaser.Scene {
 
                     let timerGroup = Object.assign(this.add.group(), { display: true });
 
-                    var initTimer = () => {
+                    let initTimer = () => {
                         //==計時,時間到進入結算
                         this.gameTimer = this.time.delayedCall(timeRemain, () => {
                             gameScene.gameOver.flag = true;
@@ -1372,7 +1372,7 @@ class UIScene extends Phaser.Scene {
                             this.gameTimer.paused = true;
 
                     };
-                    var initBox = () => {
+                    let initBox = () => {
 
                         let bar = this.add.graphics()
                             .setPosition(barX, barY)
@@ -1411,8 +1411,8 @@ class UIScene extends Phaser.Scene {
                         });
                         timerGroup.add(bar);
                     };
-                    var initHourglass = () => {
-                        var animsCreate = () => {
+                    let initHourglass = () => {
+                        let animsCreate = () => {
                             this.anims.create({
                                 key: 'hourglass_jump',
                                 frames: this.anims.generateFrameNumbers('hourglass', { start: 0, end: 45 }),
@@ -1494,7 +1494,7 @@ class UIScene extends Phaser.Scene {
                 update = () => {
                     let gameTimer = this.gameTimer;
                     let timeVal = parseInt(timeRemain - gameTimer.getElapsed());
-                    var updateTimer = () => {
+                    let updateTimer = () => {
                         gameTimer.timeVal = timeVal;
 
                         let gameTimeVal = timeVal * timeMultiplier;
@@ -1510,7 +1510,7 @@ class UIScene extends Phaser.Scene {
 
                     };
                     //==時間越少動畫越快
-                    var updateHourglassAnime = () => {
+                    let updateHourglassAnime = () => {
                         const speedUP = 300000;//少於5分鐘加速
                         const min_msPerFrame = 10;//最少一張時間
                         if (timeVal < speedUP) {
@@ -1532,14 +1532,14 @@ class UIScene extends Phaser.Scene {
                 preload = () => { };
                 create = () => {
                     let x = 20, y = 300;
-                    var initRuler = () => {
+                    let initRuler = () => {
                         this.depthRuler = this.add.image(x, y, 'depthRuler')
                             .setScale(0.3, 0.2)
                             .setOrigin(0, 0.5)
                             .setAlpha(0.9)
                             .setDepth(Depth.UI);
                     };
-                    var initCounter = () => {
+                    let initCounter = () => {
                         gameScene.depthCounter.text =
                             this.add.text(x + this.depthRuler.displayWidth * 0.7, y, '', { fontSize: '32px', fill: '#000' })
                                 .setOrigin(0.5)
@@ -1553,7 +1553,7 @@ class UIScene extends Phaser.Scene {
                 };
                 update = () => {
                     // console.debug();
-                    var updateCounter = () => {
+                    let updateCounter = () => {
 
                         let depth = gameScene.player.y + gameScene.player.height * 0.5 - gameScene.groundY;
                         depth = depth < 0 ? 0 : depth * depthScale;
@@ -1634,7 +1634,7 @@ class UIScene extends Phaser.Scene {
 
                         let hpBox, mpBox, headBox;
                         // let hpText, mpText;
-                        var initBox = () => {
+                        let initBox = () => {
                             hpBox = this.add.image(BoxX, hpBoxY, 'UIbar_bar')
                                 .setScale(1.5)
                                 .setOrigin(0)
@@ -1664,10 +1664,10 @@ class UIScene extends Phaser.Scene {
                                 .setOrigin(1)
                                 .setDepth(Depth.label);
                         };
-                        var initBar = () => {
-                            var getGradientColor = (gradientColor, percent) => {
+                        let initBar = () => {
+                            let getGradientColor = (gradientColor, percent) => {
                                 function hexToRgb(hexString) {
-                                    var result = /^0x?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hexString);
+                                    let result = /^0x?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hexString);
                                     return result ? {
                                         r: parseInt(result[1], 16),
                                         g: parseInt(result[2], 16),
@@ -1675,8 +1675,8 @@ class UIScene extends Phaser.Scene {
                                     } : null;
                                 };
                                 function rgbToHex(rgbObj) {
-                                    var componentToHex = (c) => {
-                                        var hex = c.toString(16);
+                                    let componentToHex = (c) => {
+                                        let hex = c.toString(16);
                                         return hex.length == 1 ? "0" + hex : hex;
                                     };
                                     return "0x" + componentToHex(rgbObj.r) + componentToHex(rgbObj.g) + componentToHex(rgbObj.b);
@@ -1697,7 +1697,7 @@ class UIScene extends Phaser.Scene {
                                 // console.debug(newRgb);
                                 return rgbToHex(newRgb);
                             };
-                            var makeBar = (stats) => {
+                            let makeBar = (stats) => {
                                 let bar = this.add.graphics()
                                     .setDepth(Depth.bar)
                                     .setName(stats);
@@ -1768,7 +1768,7 @@ class UIScene extends Phaser.Scene {
                             gameObj.HPbar = this.HPbar;
                             gameObj.MPbar = this.MPbar;
                         };
-                        var initHead = () => {
+                        let initHead = () => {
                             let headX = headBox.x,
                                 headY = headBox.y,
                                 headW = headBox.displayWidth,
@@ -1823,7 +1823,7 @@ class UIScene extends Phaser.Scene {
                         let hpBarGroup = this.add.group();
                         let hpBox;
 
-                        var initBox = () => {
+                        let initBox = () => {
                             hpBox = this.add.image(0, 0, 'bossBar')
                                 .setAlpha(0)
                                 .setScale(0.8)
@@ -1832,7 +1832,7 @@ class UIScene extends Phaser.Scene {
 
                             hpBarGroup.add(hpBox);
                         };
-                        var initText = () => {
+                        let initText = () => {
                             let text = this.add.text(0, 0, `${UItextJSON['bossName']}\n                      `,
                                 {
                                     fontSize: '32px', fill: '#fff', align: 'center',
@@ -1857,7 +1857,7 @@ class UIScene extends Phaser.Scene {
 
                             hpBarGroup.add(text);
                         };
-                        var initBar = () => {
+                        let initBar = () => {
                             const barW = hpBox.displayWidth * 0.88, barH = 15;
                             const barX = -barW * 0.61, barY = -barH * 0.2;
 
@@ -1912,7 +1912,7 @@ class UIScene extends Phaser.Scene {
                 else {
                     preload = () => { };
                     create = () => {
-                        var makeBar = () => {
+                        let makeBar = () => {
                             const barW = 80, barH = 16;
                             const barMargin = 2;
 
@@ -1979,7 +1979,7 @@ class UIScene extends Phaser.Scene {
                 };
                 update = () => {
                     //==update orb(when pause gameScene wont do update funtion)
-                    var updateOrb = () => {
+                    let updateOrb = () => {
                         if (gameScene.name != 'defend') return;
                         gameScene.orbGroup.children.iterate(child => {
 
@@ -2000,7 +2000,7 @@ class UIScene extends Phaser.Scene {
 
                         });
                     };
-                    var updateCursors = () => {
+                    let updateCursors = () => {
                         if (!this.updateFlag) return;
                         let keys = Object.values(gameData.controllCursor).join();
                         this.input.keyboard.removeAllKeys();
@@ -2018,7 +2018,7 @@ class UIScene extends Phaser.Scene {
             case 'blackOut'://==教學用黑幕
                 preload = () => { };
                 create = () => {
-                    var init = () => {
+                    let init = () => {
                         this.cameras.main.setBackgroundColor('rgba(0,0,0,0.7)');
                         this.scene.setVisible(false);
                         gameScene.blackOut = this;
@@ -2039,7 +2039,7 @@ class UIScene extends Phaser.Scene {
                     // this.load.plugin('rextexteditplugin', 'src/phaser-3.55.2/plugins/rexplugins/rextexteditplugin.min.js', true);
                 };
                 create = () => {
-                    var addRexUI = () => {
+                    let addRexUI = () => {
                         //==對話框
                         this.newDialog = (content, config = null, resolve = null) => {
                             //==新設定
@@ -2109,10 +2109,10 @@ class UIScene extends Phaser.Scene {
 
                         };
                     };
-                    var guideSword = () => {
+                    let guideSword = () => {
                         if (gameScene.name == 'boss' ||
                             !(gameScene.firstTimeEvent && gameScene.firstTimeEvent.isFirstTime)) return;
-                        var animsCreate = () => {
+                        let animsCreate = () => {
                             this.anims.create({
                                 key: 'guideSword_swing',
                                 frames: this.anims.generateFrameNumbers('guideSword', { start: 0, end: 16 }),
@@ -2142,7 +2142,7 @@ class UIScene extends Phaser.Scene {
                 create = () => {
                     let creatorObj = gameScene.creatorObj;
 
-                    var background = () => {
+                    let background = () => {
                         // const groundH = height * 0.5;
                         let resources = BackGroundResources.GameStart[creatorObj.background];
 
@@ -2182,12 +2182,12 @@ class UIScene extends Phaser.Scene {
                         });
 
                     };
-                    var character = () => {
+                    let character = () => {
                         let characters = creatorObj.characters;
                         let gap = width / (characters.length + 1);
 
                         let charaSprites = characters.map((chara, i) => {
-                            var animsCreate = () => {
+                            let animsCreate = () => {
                                 let frameRate = GameObjectFrame[chara].frameRate;
                                 this.anims.create({
                                     key: chara + '_idle',
@@ -2335,7 +2335,7 @@ class UIScene extends Phaser.Scene {
 
                         });
                     };
-                    var title = () => {
+                    let title = () => {
                         this.title = this.add.text(width * 0.5, height * 0.3, UItextJSON['chooseCharacter'],
                             {
                                 fontSize: '48px',
@@ -2374,7 +2374,7 @@ class UIScene extends Phaser.Scene {
 
                         this.title.showHandler();
                     };
-                    var initCamera = () => {
+                    let initCamera = () => {
                         this.cameras.main.setBounds(0, 0, width, height);
                         this.cameras.main.flash(500, 0, 0, 0);
                     };
@@ -2425,7 +2425,7 @@ class UIScene extends Phaser.Scene {
                 // if (iconBar) iconBar.scene.pause();
 
                 preload = () => {
-                    var tutorialWindow = () => {
+                    let tutorialWindow = () => {
                         let dir = assetsDir + 'gameObj/environment/background/' + tutorialBG + '/';
                         let resources = BackGroundResources.GameStart[tutorialBG];
 
@@ -2438,7 +2438,7 @@ class UIScene extends Phaser.Scene {
                         });
 
                     };
-                    var controller = () => {
+                    let controller = () => {
                         const UIDir = assetsDir + 'ui/game/tutorial/';
                         this.load.image('startButton', UIDir + 'startButton.png');
                         this.load.image('frames', UIDir + 'frames.png');
@@ -2451,10 +2451,10 @@ class UIScene extends Phaser.Scene {
                         this.load.image('wf_plot', assetsDir + 'ui/game/Transitions/wf_plot.png');
                         if (gameScene.name == 'GameStart') this.load.image('tooltipButton', assetsDir + 'ui/game/tooltipButton.png');
                     };
-                    var player = () => {
+                    let player = () => {
                         if (gameScene.name != 'GameStart') return;
                         const gameObjDir = assetsDir + 'gameObj/';
-                        var sprite = () => {
+                        let sprite = () => {
                             const playerRole = gameData.playerRole;
                             const dir = gameObjDir + 'player/' + playerRole + '/';
                             const playerFrame = GameObjectFrame[playerRole];
@@ -2491,7 +2491,7 @@ class UIScene extends Phaser.Scene {
                         };
                         sprite();
                     };
-                    var sidekick = () => {
+                    let sidekick = () => {
                         const sidekick = gameData.sidekick.type;
                         const dir = assetsDir + 'gameObj/sidekick/' + sidekick + '/';
                         const frameObj = { frameWidth: 32, frameHeight: 32 };
@@ -2505,9 +2505,9 @@ class UIScene extends Phaser.Scene {
                         this.load.spritesheet('sidekick_jumpDust', dir + 'Double_Jump_Dust_5.png', frameObj);
                         this.load.spritesheet('sidekick_runDust', dir + 'Walk_Run_Push_Dust_6.png', frameObj);
                     };
-                    var dummy = () => {
+                    let dummy = () => {
                         const dummyDir = assetsDir + 'gameObj/enemy/zombie/';
-                        var sprite = () => {
+                        let sprite = () => {
                             const frameObj = { frameWidth: 96, frameHeight: 128 };
                             this.load.spritesheet('dummy_death', dummyDir + 'death.png', frameObj);
                             this.load.spritesheet('dummy_hurt', dummyDir + 'hurt.png', frameObj);
@@ -2515,7 +2515,7 @@ class UIScene extends Phaser.Scene {
                         };
                         sprite();
                     };
-                    var orb = () => {
+                    let orb = () => {
                         if (gameScene.name == 'defend') return;
                         const dir = assetsDir + 'gameObj/environment/orb/';
                         this.load.spritesheet('orb',
@@ -2528,7 +2528,7 @@ class UIScene extends Phaser.Scene {
                         );
                         this.load.image('orbBox', dir + 'orbBox.png');
                     };
-                    var detector = () => {
+                    let detector = () => {
                         if (gameScene.name == 'defend' || gameScene.name == 'dig') return;
                         const dir = assetsDir + 'gameObj/environment/overview/';
                         this.load.image('detector', dir + 'detector.png');
@@ -2540,7 +2540,7 @@ class UIScene extends Phaser.Scene {
                         this.load.image('shiftUp', dir + 'shiftUp.png');
                         this.load.image('shiftDown', dir + 'shiftDown.png');
                     };
-                    var wave = () => {
+                    let wave = () => {
                         let tutorialData = gameScene.waveForm.tutorialData;
                         // console.debug(tutorialData);
 
@@ -2583,19 +2583,19 @@ class UIScene extends Phaser.Scene {
                     sidekick();
                 };
                 create = () => {
-                    var backgroundImg = () => {
+                    let backgroundImg = () => {
                         if (gameScene.name != 'GameStart') return;
                         let img = this.add.image(width * 0.5, height * 0.5, 'startScene');
                         img.setScale(width / img.width, height / img.height);
                     };
-                    var tutorialWindow = () => {
-                        var frames = () => {
+                    let tutorialWindow = () => {
+                        let frames = () => {
                             let img = this.add.image(tutorialX, tutorialY, 'frames').setDepth(Depth.UI);
                             img
                                 .setOrigin(0.508, 0.05)
                                 .setScale(tutorialW * 1.12 / img.width, tutorialH * 1.35 / img.height);
                         };
-                        var button = () => {
+                        let button = () => {
                             const buttons = [gameScene.name == 'GameStart' ? 'skip' : 'close', 'previous', 'next', 'info1', 'info2'];
 
                             this.buttonGroups = {
@@ -2850,7 +2850,7 @@ class UIScene extends Phaser.Scene {
                             });
 
                         };
-                        var text = () => {
+                        let text = () => {
                             //==步驟
                             this.stepText = this.add.text(tutorialX, (tutorialY + tutorialH) + 50, '',
                                 {
@@ -2941,7 +2941,7 @@ class UIScene extends Phaser.Scene {
                                 },
                             });
                         };
-                        var stepHandler = () => {
+                        let stepHandler = () => {
                             this.stepObj = { nowStep: 1, maxStep: 5 };
                             this.stepClear = null;
                             this.stepHandler = (flash = true) => {
@@ -3082,7 +3082,7 @@ class UIScene extends Phaser.Scene {
                             };
 
                             //==過關撒花
-                            var animsCreate = () => {
+                            let animsCreate = () => {
                                 this.anims.create({
                                     key: 'sprinkle_fly',
                                     frames: this.anims.generateFrameNumbers('sprinkle'),
@@ -3114,14 +3114,14 @@ class UIScene extends Phaser.Scene {
                         text();
                         stepHandler();
                     };
-                    var initCursors = () => {
+                    let initCursors = () => {
                         if (gameScene.name != 'GameStart') return;
                         //===init cursors
                         this.scene.add(null, new UIScene('cursors', this), true);
                     };
-                    var initPlayer = () => {
+                    let initPlayer = () => {
                         //==anims
-                        var animsCreate = () => {
+                        let animsCreate = () => {
                             if (gameScene.name != 'GameStart') return;
                             let frameRate = GameObjectFrame[gameData.playerRole].frameRate;
 
@@ -3377,7 +3377,7 @@ class UIScene extends Phaser.Scene {
 
 
                                     //==bullet
-                                    var bullet = this.bullets.get();
+                                    let bullet = this.bullets.get();
                                     if (bullet) {
                                         if (this.stats.class)
                                             bullet
@@ -3420,13 +3420,13 @@ class UIScene extends Phaser.Scene {
                         this.physics.add.overlap(this.player.bullets, this.dummy, this.player.playerAttack, null, this);
 
                     };
-                    var initSidekick = () => {
+                    let initSidekick = () => {
                         this.sidekick = this.add.existing(new Sidekick(this, gameData.sidekick.type))
                             .setPosition(ObjOrigin.x + tutorialW * 0.1, ObjOrigin.y + tutorialH * 0.6);
                         this.physics.add.collider(this.sidekick, this.platforms);
                     };
-                    var initDummy = () => {
-                        var animsCreate = () => {
+                    let initDummy = () => {
+                        let animsCreate = () => {
                             this.anims.create({
                                 key: 'dummy_idle',
                                 frames: this.anims.generateFrameNumbers('dummy_idle'),
@@ -3522,8 +3522,8 @@ class UIScene extends Phaser.Scene {
 
                         this.physics.add.collider(this.dummy, this.platforms);
                     };
-                    var environment = () => {
-                        var initBackground = () => {
+                    let environment = () => {
+                        let initBackground = () => {
                             let resources = BackGroundResources.GameStart[tutorialBG];
 
                             this.physics.world.setBounds((width - tutorialW) * 0.5, (height - tutorialH) * 0.5, tutorialW, tutorialH);
@@ -3590,8 +3590,8 @@ class UIScene extends Phaser.Scene {
 
                             });
                         };
-                        var initOrb = () => {
-                            var animsCreate = () => {
+                        let initOrb = () => {
+                            let animsCreate = () => {
                                 if (gameScene.name == 'defend') return;
                                 this.anims.create({
                                     key: 'orb_inactive',
@@ -3719,7 +3719,7 @@ class UIScene extends Phaser.Scene {
 
                             this.physics.add.collider(this.orbGroup, this.platforms);
                         };
-                        var initWave = async () => {
+                        let initWave = async () => {
                             let wave = this.add.image(tutorialX, tutorialY + tutorialH * 0.6)
                                 .setDepth(Depth.wave)
                                 .setAlpha(.7)
@@ -3749,7 +3749,7 @@ class UIScene extends Phaser.Scene {
                         initOrb();
                         initWave();
                     };
-                    var initCamera = () => {
+                    let initCamera = () => {
                         this.cameras.main.setBounds(0, 0, width, height);
                         this.cameras.main.flashHandler = () => {
                             this.cameras.main.flash(400, 255, 255, 255, true);
@@ -3770,16 +3770,16 @@ class UIScene extends Phaser.Scene {
                     console.debug(this);
                 };
                 update = () => {
-                    var updatePlayer = () => {
+                    let updatePlayer = () => {
                         this.player.movingHadler(this);
                         this.player.pickingHadler(this);
                         this.player.attackHandler(this);
                     };
-                    var updateSidekick = () => {
+                    let updateSidekick = () => {
                         this.sidekick.behaviorHandler(this.player, this);
                         // console.debug(this.sidekick.alpha);
                     };
-                    var updateOrb = () => {
+                    let updateOrb = () => {
                         let pickUpObj = this.player.pickUpObj;
                         if (pickUpObj) {
                             pickUpObj.setPosition(this.player.x + 20, this.player.y + 30);
@@ -3988,12 +3988,31 @@ class UIScene extends Phaser.Scene {
                                             .setScale(player.displayWidth * 1.5 / player.equip.width);
 
                                         let statChangeHandler = (item, isEquip = true) => {
-                                            //==改變角色能力
+                                            //==角色改變的能力值
                                             let buffAbility = { ...GameItemData[item].buff };
                                             let tmp = {};
                                             //算裝備或脫下要加還減
                                             Object.keys(buffAbility).forEach(key =>
                                                 tmp[key] = buffAbility[key] * (isEquip ? 1 : -1));
+
+                                            //==免疫速度效果重算
+                                            if (item === 'syringe') {
+                                                //==寶珠debuff
+                                                let pickUpObj = player.pickUpObj;
+                                                if (pickUpObj && pickUpObj.changeStats) {
+                                                    Object.keys(pickUpObj.changeStats).forEach(key =>
+                                                        tmp[key] += pickUpObj.changeStats[key] * (isEquip ? 1 : -1));
+                                                };
+
+                                                //==鳥蛋debuff
+                                                if (isEquip && player.slowDownTween) {
+                                                    player.slowDownTween.remove();
+                                                    player.slowDownTween.callbacks.onComplete.func(player.slowDownTween);
+                                                    player.slowDownTween = null;
+                                                };
+
+                                            };
+
                                             //更新playerstats和buff
                                             player.buffHandler(tmp);
                                         };
@@ -4004,7 +4023,7 @@ class UIScene extends Phaser.Scene {
                                         statChangeHandler(equipItem, isEquip);
 
                                         backpackData.onEquip = isEquip ? [equipItem] : [];
-                                        console.debug(player.stats);
+                                        // console.debug(player.stats);
 
                                         let charaBlock = leftPannel.getElement('charaBlock');
                                         charaBlock.updateOnEquip(backpackData.onEquip);
@@ -4060,7 +4079,7 @@ class UIScene extends Phaser.Scene {
 
                         if (item) item.setScale(badgeW / item.width, badgeW / item.height);
 
-                        var badgeLabel = new RexPlugins.UI.BadgeLabel(scene, {
+                        let badgeLabel = new RexPlugins.UI.BadgeLabel(scene, {
                             width: badgeW,
                             height: badgeW,
                             background: scene.add.existing(block),
@@ -4676,7 +4695,7 @@ class UIScene extends Phaser.Scene {
                     gameScene.hotKeyUI = this;
                 };
                 update = () => {
-                    var updateButton = () => {
+                    let updateButton = () => {
                         let cursors = gameScene.cursors;
                         hotKeyButtons.forEach((hotKey, i) => {
                             if (Phaser.Input.Keyboard.JustDown(cursors[gameData.controllCursor[hotKey]])) {
@@ -4719,7 +4738,7 @@ class UIScene extends Phaser.Scene {
 
 class GameStartScene extends Phaser.Scene {
     constructor(GameData, other) {
-        var sceneConfig = {
+        let sceneConfig = {
             key: 'gameScene',
             pack: {
                 files: [
@@ -4761,14 +4780,14 @@ class GameStartScene extends Phaser.Scene {
         console.debug(this);
     };
     preload() {
-        var UI = () => {
+        let UI = () => {
             const UIDir = assetsDir + 'ui/game/Transitions/';
-            var controller = () => {
+            let controller = () => {
                 this.load.image('startScene', UIDir + 'startScene.jpg');
                 this.load.image('startButton', UIDir + 'startButton.png');
                 this.load.image('gameTitle', UIDir + 'title.png');
             };
-            var intro = () => {
+            let intro = () => {
                 this.load.image('epicenter', UIDir + 'epicenter.png');
                 this.load.image('PSwave', UIDir + 'PSwave.png');
                 this.load.image('GDMS', UIDir + 'GDMS.png');
@@ -4778,11 +4797,11 @@ class GameStartScene extends Phaser.Scene {
             controller();
             intro();
         };
-        var character = () => {
+        let character = () => {
             const characters = this.creatorObj.characters;// ['maleAdventurer']
             const sidekicks = this.creatorObj.sidekicks;
 
-            var sprite = () => {
+            let sprite = () => {
                 const playerDir = assetsDir + 'gameObj/player/';
 
                 characters.forEach(chara => {
@@ -4800,9 +4819,9 @@ class GameStartScene extends Phaser.Scene {
                 });
 
             };
-            var avatar = () => {
+            let avatar = () => {
                 const AvatarDir = assetsDir + 'avatar/';
-                var player = () => {
+                let player = () => {
                     const AvatarCount = 4;
 
                     characters.forEach(chara => {
@@ -4812,7 +4831,7 @@ class GameStartScene extends Phaser.Scene {
 
                     });
                 };
-                var sidekick = () => {
+                let sidekick = () => {
                     sidekicks.forEach(side =>
                         this.load.image(side + '_avatar', AvatarDir + side + '.png'));
                 };
@@ -4824,7 +4843,7 @@ class GameStartScene extends Phaser.Scene {
             avatar();
 
         };
-        var background = () => {
+        let background = () => {
             const creatorBG = this.creatorObj.background;
             let dir = assetsDir + 'gameObj/environment/background/' + creatorBG + '/';
             let resources = BackGroundResources.GameStart[creatorBG];
@@ -4849,12 +4868,12 @@ class GameStartScene extends Phaser.Scene {
         const height = canvas.height;
         const localeJSON = this.gameData.localeJSON;
 
-        var initBackground = () => {
-            var backgroundImg = () => {
+        let initBackground = () => {
+            let backgroundImg = () => {
                 let img = this.add.image(width * 0.5, height * 0.5, 'startScene');
                 img.setScale(width / img.width, height / img.height);
             };
-            var gameTitle = () => {
+            let gameTitle = () => {
                 let gameTitle = this.add.image(width * 0.3, height * 0.5, 'gameTitle')
                     .setRotation(Math.random());
 
@@ -4872,7 +4891,7 @@ class GameStartScene extends Phaser.Scene {
             // backgroundImg();
             gameTitle();
         };
-        var initButton = () => {
+        let initButton = () => {
             //== menu buttons
             const buttons = ['startGame', 'setting', 'intro', 'links', 'rank'];
             const header = height * 0.2;//==預留空間
@@ -4981,7 +5000,7 @@ class GameStartScene extends Phaser.Scene {
 
 
         };
-        var initRexUI = () => {
+        let initRexUI = () => {
             this.scene.add(null, new UIScene('RexUI', this), true);
             this.scene.add(null, new UIScene('blackOut', this), true);
             this.RexUI.rankingData = this.rankingData;
@@ -4992,7 +5011,7 @@ class GameStartScene extends Phaser.Scene {
         initRexUI();
     };
     update() {
-        var updateBGobj = () => {
+        let updateBGobj = () => {
             this.backgroundObj.gameTitle.spinningHandler();
         };
 
@@ -5023,11 +5042,11 @@ class GameOverScene extends Phaser.Scene {
         const localeJSON = this.gameData.localeJSON;
 
         // console.debug(localeJSON);
-        var background = () => {
+        let background = () => {
             let img = this.add.image(width * 0.5, height * 0.5, 'gameOverScene');
             img.setScale(width / img.width, height / img.height);
         };
-        var button = () => {
+        let button = () => {
             // =menu buttons
             const buttons = ['resurrect', 'giveup'];
 
@@ -5107,10 +5126,10 @@ class LoadingScene extends Phaser.Scene {
 
         // console.debug(gameScene);
         const packNum = { 'defend': 1, 'dig': 2, 'boss': 3 }[gameScene.name];
-        var gameObjects = () => {
-            var environment = () => {
+        let gameObjects = () => {
+            let environment = () => {
                 const envDir = gameObjDir + 'environment/';
-                var background = () => {
+                let background = () => {
                     const dir = envDir + 'background/' + gameScene.background + '/';
                     let resources = BackGroundResources[gameScene.name][gameScene.background];
 
@@ -5125,12 +5144,12 @@ class LoadingScene extends Phaser.Scene {
                 };
 
                 if (packNum == 1) {
-                    var station = () => {
+                    let station = () => {
                         const dir = envDir + 'station/';
                         this.load.image('station', dir + 'station.png');
                         this.load.image('title', dir + 'title.png');
                     };
-                    var orb = () => {
+                    let orb = () => {
                         const dir = envDir + 'orb/';
                         this.load.spritesheet('orb',
                             dir + 'orb.png',
@@ -5143,7 +5162,7 @@ class LoadingScene extends Phaser.Scene {
                         this.load.image('orbBox', dir + 'orbBox.png');
 
                     };
-                    var wave = () => {
+                    let wave = () => {
                         let stationData = gameData.stationData;
                         let xAxisDomain = stationData.stationStats.orbStats ? stationData.stationStats.orbStats.xAxisDomain : null;
 
@@ -5167,7 +5186,7 @@ class LoadingScene extends Phaser.Scene {
                     wave();
                 }
                 else if (packNum == 2) {
-                    var groundMatters = () => {
+                    let groundMatters = () => {
                         let terrainDir = envDir + 'terrain/'
 
                         // this.load.image('sprSand', terrainDir + 'sprSand.png');
@@ -5182,13 +5201,13 @@ class LoadingScene extends Phaser.Scene {
                         this.load.image('terrain3', terrainDir + '3.png');
 
                     };
-                    var mineBackground = () => {
+                    let mineBackground = () => {
                         let mineDir = envDir + 'background/mineBackground/';
                         let resources = BackGroundResources['mine']['mineBackground'];
                         let mineBG = resources.static[gameScene.mineBGindex];
                         this.load.image('mineBG', mineDir + mineBG);
                     };
-                    var mineObjs = () => {
+                    let mineObjs = () => {
                         let mineObjDir = envDir + 'mineobject/';
 
                         this.load.spritesheet('tileCrack', mineObjDir + 'tileCrack.png',
@@ -5215,7 +5234,7 @@ class LoadingScene extends Phaser.Scene {
                     mineObjs();
                 }
                 else if (packNum == 3) {
-                    var bossRoom = () => {
+                    let bossRoom = () => {
                         let castleDir = envDir + 'castle/';
                         this.load.spritesheet('bossFlame',
                             castleDir + 'flame.png',
@@ -5223,7 +5242,7 @@ class LoadingScene extends Phaser.Scene {
                         );
                         this.load.image('bossRock', castleDir + 'rock.png');
                     };
-                    var boss = () => {
+                    let boss = () => {
                         let bossDir = gameObjDir + 'boss/';
                         this.load.spritesheet('boss_Attack',
                             bossDir + 'Attack.png',
@@ -5242,7 +5261,7 @@ class LoadingScene extends Phaser.Scene {
                             { frameWidth: 100, frameHeight: 100 },
                         );
                     };
-                    var bossBar = () => {
+                    let bossBar = () => {
                         let bossBarDir = assetsDir + 'ui/game/bossBar/';
                         this.load.image('bossBar', bossBarDir + 'bossBar.png');
                     };
@@ -5252,8 +5271,8 @@ class LoadingScene extends Phaser.Scene {
                 };
                 background();
             };
-            var player = () => {
-                var sprite = () => {
+            let player = () => {
+                let sprite = () => {
                     const playerRole = gameData.playerRole;
                     const dir = gameObjDir + 'player/' + playerRole + '/';
                     const playerFrame = GameObjectFrame[playerRole];
@@ -5302,7 +5321,7 @@ class LoadingScene extends Phaser.Scene {
                         this.load.spritesheet('player_pickSwing', dir + 'pickSwing.png',
                             { frameWidth: effectFrameObj.pick[0], frameHeight: effectFrameObj.pick[1] });
                 };
-                var UIbar = () => {
+                let UIbar = () => {
                     const playerBarDir = assetsDir + 'ui/game/playerBar/';
 
                     this.load.image('UIbar_HPlabel', playerBarDir + 'UIbar_HPlabel.png');
@@ -5315,11 +5334,11 @@ class LoadingScene extends Phaser.Scene {
                 sprite();
                 UIbar();
             };
-            var sidekick = () => {
-                var doctor = () => {
+            let sidekick = () => {
+                let doctor = () => {
                     this.load.image('doctorOwl', assetsDir + 'ui/map/sidekick/Doctor2.png');
                 };
-                var sidekick = () => {
+                let sidekick = () => {
                     const sidekick = gameData.sidekick.type;
                     const dir = gameObjDir + 'sidekick/' + sidekick + '/';
                     const frameObj = { frameWidth: 32, frameHeight: 32 };
@@ -5341,7 +5360,7 @@ class LoadingScene extends Phaser.Scene {
             sidekick();
 
             if (packNum == 1) {
-                var enemy = () => {
+                let enemy = () => {
                     if (gameData.stationData.stationStats.liberate) return;
                     // console.debug(this.aliveEnemy);
                     gameScene.aliveEnemy.forEach(enemy => {
@@ -5361,9 +5380,9 @@ class LoadingScene extends Phaser.Scene {
                 enemy();
             };
         };
-        var UI = () => {
+        let UI = () => {
             const uiDir = assetsDir + 'ui/game/';
-            var UIButtons = () => {
+            let UIButtons = () => {
                 const iconDir = assetsDir + 'icon/';
 
                 let UIButtonArr;
@@ -5387,12 +5406,12 @@ class LoadingScene extends Phaser.Scene {
                 });
                 gameScene.UIButtonArr = UIButtonArr;
             };
-            var pauseMenu = () => {
+            let pauseMenu = () => {
                 this.load.image('menu', uiDir + 'menu.png');
                 this.load.image('menuButton', uiDir + 'menuButton.png');
                 // this.load.spritesheet('menuButton', uiDir + 'menuButton.png');
             };
-            var detector = () => {
+            let detector = () => {
                 if (packNum === 3) return;
 
                 const dir = assetsDir + 'gameObj/environment/overview/';
@@ -5405,9 +5424,9 @@ class LoadingScene extends Phaser.Scene {
                 this.load.image('shiftLeft', dir + `shiftLeft${packNum === 2 ? '_dig' : ''}.png`);
                 this.load.image('shiftRight', dir + `shiftRight${packNum === 2 ? '_dig' : ''}.png`);
             };
-            var backpack = () => {
+            let backpack = () => {
                 const dir = uiDir + 'backpack/';
-                var UI = () => {
+                let UI = () => {
                     this.load.image('backpackBlock', dir + 'block.png');
                     this.load.image('backpackInfo', dir + 'info.png');
                     this.load.image('backpackBanner', dir + 'banner.png');
@@ -5416,21 +5435,25 @@ class LoadingScene extends Phaser.Scene {
                     this.load.image('charaBG2', dir + 'background2.png');
                     this.load.image('charaBG3', dir + 'background3.png');
                 };
-                var items = () => {
+                let items = () => {
                     const itemsDir = dir + 'items/';
-                    Object.keys(GameItemData).forEach(key =>
+                    let itemsArr = Object.keys(GameItemData);
+                    itemsArr.forEach(key =>
                         this.load.image('item_' + key, itemsDir + key + '.png')
                     );
-                    this.load.image('onEquip_pan', itemsDir + 'onEquip_pan.png');
+                    //==裝備要額外讀一張圖
+                    itemsArr.filter(key => GameItemData[key].type === 2).forEach(key =>
+                        this.load.image('onEquip_' + key, itemsDir + 'onEquip_' + key + '.png')
+                    );
                 };
 
                 UI();
                 items();
             };
-            var tooltip = () => {
+            let tooltip = () => {
                 this.load.image('tooltipButton', uiDir + 'tooltipButton.png');
             };
-            var timeRemain = () => {
+            let timeRemain = () => {
                 this.load.spritesheet('hourglass',
                     uiDir + 'hourglass.png',
                     { frameWidth: 200, frameHeight: 310 }
@@ -5438,9 +5461,9 @@ class LoadingScene extends Phaser.Scene {
 
                 if (packNum == 2) this.load.image('depthRuler', uiDir + 'ruler.png');
             };
-            var dialog = () => {
+            let dialog = () => {
 
-                var textBox = () => {
+                let textBox = () => {
 
                     //==對話框(已經在html引入了所以不用這段)
                     // this.load.scenePlugin({
@@ -5453,12 +5476,12 @@ class LoadingScene extends Phaser.Scene {
                     this.load.image('dialogButton', uiDir + 'dialogButton.png');
 
                 };
-                var quiz = () => {
+                let quiz = () => {
                     if (packNum != 3) return;
                     this.load.image('quizCorrect', uiDir + 'correct.png');
                     this.load.image('quizWrong', uiDir + 'wrong.png');
                 };
-                var avatar = () => {
+                let avatar = () => {
                     const avatarDir = assetsDir + 'avatar/';
                     if (packNum == 1) {
                         if (gameScene.firstTimeEvent.isFirstTime) {
@@ -5479,7 +5502,7 @@ class LoadingScene extends Phaser.Scene {
                 quiz();
                 avatar();
             };
-            var tutorial = () => {
+            let tutorial = () => {
                 if (packNum == 3 || !gameScene.firstTimeEvent.isFirstTime) return;
 
                 this.load.spritesheet('guideSword', uiDir + 'guideSword.png',
@@ -5496,7 +5519,7 @@ class LoadingScene extends Phaser.Scene {
             dialog();
             tutorial();
         };
-        var makeProgressBar = () => {
+        let makeProgressBar = () => {
             const canvas = gameScene.sys.game.canvas;
             const width = canvas.width;
             const height = canvas.height;
@@ -5505,9 +5528,9 @@ class LoadingScene extends Phaser.Scene {
             const boxW = 320, boxH = 50;
             const barW = 300, barH = 30;
 
-            var progressGraphics = () => {
+            let progressGraphics = () => {
                 //==為了作dude動畫
-                var loadDude = () => {
+                let loadDude = () => {
                     this.load.spritesheet('dude',
                         assetsDir + 'ui/game/dude.png',
                         { frameWidth: 32, frameHeight: 48 }
@@ -5552,7 +5575,7 @@ class LoadingScene extends Phaser.Scene {
                 }).setOrigin(0.5, 0.5);
 
             };
-            var loadEvents = () => {
+            let loadEvents = () => {
 
                 this.load.on('progress', (percent) => {
                     this.percentText.setText(parseInt(percent * 100) + '%');
@@ -5594,7 +5617,7 @@ class LoadingScene extends Phaser.Scene {
             progressGraphics();
             loadEvents();
             // this.load.image('logo', 'zenvalogo.png');
-            // for (var i = 0; i < 5000; i++) {
+            // for (let i = 0; i < 5000; i++) {
             //     this.load.image('logo' + i, 'zenvalogo.png');
             // }
         };
@@ -5608,7 +5631,7 @@ class LoadingScene extends Phaser.Scene {
 
 class DefendScene extends Phaser.Scene {
     constructor(stationData, GameData, other) {
-        var sceneConfig = {
+        let sceneConfig = {
             key: 'gameScene',
             pack: {
                 files: [
@@ -5725,7 +5748,7 @@ class DefendScene extends Phaser.Scene {
     };
     preload() {
         this.plugins.get('rexawaitloaderplugin').addToScene(this);
-        var callback = (resolve) => this.scene.add(null, new LoadingScene(this, resolve), true);
+        let callback = (resolve) => this.scene.add(null, new LoadingScene(this, resolve), true);
         this.load.rexAwait(callback);//==等LoadingScene完成素材載入
     };
     create() {
@@ -5762,8 +5785,8 @@ class DefendScene extends Phaser.Scene {
         };
         this.Depth = Depth;//==gameObject.js用到
 
-        var initEnvironment = () => {
-            var station = () => {
+        let initEnvironment = () => {
+            let station = () => {
                 let station = this.gameData.stationData.station;
                 let img = this.add.image(width * 0.92, height * 0.53, 'station')
                     .setDepth(Depth.station);
@@ -5772,7 +5795,7 @@ class DefendScene extends Phaser.Scene {
                 this.add.text(width * 0.88, height * 0.46, station, { fontSize: '32px', fill: '#000' })
                     .setRotation(-0.1).setOrigin(0.5, 0.5).setDepth(Depth.station);
             };
-            var background = () => {
+            let background = () => {
                 let resources = BackGroundResources.defend[this.background];
                 this.parallax = [];
 
@@ -5863,7 +5886,7 @@ class DefendScene extends Phaser.Scene {
                 });
 
             };
-            var orbs = () => {
+            let orbs = () => {
                 const orbScale = 0.25;
                 this.orbGroup = this.physics.add.group({
                     key: 'orb',
@@ -5875,7 +5898,7 @@ class DefendScene extends Phaser.Scene {
                     gravityY: 500,
                 });
 
-                var animsCreate = () => {
+                let animsCreate = () => {
                     this.anims.create({
                         key: 'orb_inactive',
                         frames: this.anims.generateFrameNumbers('orb', { start: 1, end: 4 }),
@@ -5999,28 +6022,6 @@ class DefendScene extends Phaser.Scene {
                                 this.laserUpdateFlag = true;
                             };
 
-
-                            //===改變撿起者屬性
-                            if (pickUper) {
-                                let changeStats = {};
-                                if (beholding) {
-                                    //==撿起後角色屬性改變     
-                                    Object.keys(child.changeStats).forEach(key =>
-                                        changeStats[key] = -child.changeStats[key]);
-                                }
-                                else {
-                                    //==放下後角色屬性恢復
-                                    changeStats = { ...child.changeStats };
-                                };
-
-                                if (pickUper.name === 'player')
-                                    this.scene.player.buffHandler(changeStats);
-                                else
-                                    Object.keys(pickUper.stats).forEach(key =>
-                                        pickUper.stats[key] += changeStats[key]);
-                            };
-
-
                             //===改變雷射和時間標籤
                             if (activate) {
                                 this.laserObj
@@ -6038,7 +6039,36 @@ class DefendScene extends Phaser.Scene {
                             this.activateFlag = activate;
                             this.beholdingFlag = beholding;
 
-                            // console.debug(playerStats);
+                            // console.debug('playerStats');
+
+
+                            //===改變撿起者屬性
+                            if (pickUper) {
+                                //==玩家裝備腎上腺素免疫速度變化
+                                let resist =
+                                    pickUper.name === 'player' &&
+                                    this.scene.gameData.backpack.onEquip.includes('syringe');
+                                if (resist) return;
+
+                                let changeStats = {};
+                                if (beholding) {
+                                    //==撿起後角色屬性改變     
+                                    Object.keys(child.changeStats).forEach(key =>
+                                        changeStats[key] = -child.changeStats[key]);
+                                }
+                                else {
+                                    //==放下後角色屬性恢復
+                                    changeStats = { ...child.changeStats };
+                                };
+
+                                if (pickUper.name === 'player') {
+                                    this.scene.player.buffHandler(changeStats);
+                                }
+                                else
+                                    Object.keys(pickUper.stats).forEach(key =>
+                                        pickUper.stats[key] += changeStats[key]);
+                            };
+
                         },
                         outWindowHandler: function (outWindow) {
                             this.hintBox.setAlpha(outWindow);
@@ -6072,7 +6102,7 @@ class DefendScene extends Phaser.Scene {
                 this.physics.add.collider(this.orbGroup, this.platforms);
 
             };
-            var wave = () => {
+            let wave = () => {
                 let wave = this.add.image(width * 0.5, height * 0.5, 'waveForm')
                     .setDepth(Depth.wave)
                     .setAlpha(.7);
@@ -6081,7 +6111,7 @@ class DefendScene extends Phaser.Scene {
 
                 this.waveForm.gameObjs = wave;
             };
-            var overview = () => {
+            let overview = () => {
                 if (!stationStats.clear)
                     this.scene.add(null, new UIScene('detectorUI', this), true);
             };
@@ -6092,7 +6122,7 @@ class DefendScene extends Phaser.Scene {
             overview();
 
         };
-        var initPlayer = () => {
+        let initPlayer = () => {
             this.player = this.add.existing(new Player(this))
                 .setPosition(100, 450)
                 .setDepth(Depth.player);
@@ -6124,20 +6154,20 @@ class DefendScene extends Phaser.Scene {
             };
 
         };
-        var initSidekick = () => {
-            var sidekick = () => {
+        let initSidekick = () => {
+            let sidekick = () => {
                 this.sidekick = this.add.existing(new Sidekick(this, this.gameData.sidekick.type))
                     .setPosition(40, 500);
 
                 this.physics.add.collider(this.sidekick, this.platforms);
             };
-            var doctor = () => {
+            let doctor = () => {
                 this.scene.add(null, new UIScene('doctorUI', this), true);
             };
             sidekick();
             doctor();
         };
-        var initEnemy = () => {
+        let initEnemy = () => {
             if (stationStats.liberate) return;
 
             this.enemy = this.physics.add.group({
@@ -6168,8 +6198,6 @@ class DefendScene extends Phaser.Scene {
                     if (player.stats.HP <= 0) return;
 
                     player.invincibleFlag = true;
-                    // player.setTint(0xff0000);
-
                     player.body.setVelocityX(knockBackSpeed * (foe.x < player.x ? 1 : -1));
 
                     this.time.delayedCall(knockBackDuration, () => {
@@ -6190,6 +6218,8 @@ class DefendScene extends Phaser.Scene {
 
                 if (child.bullets && child.bullets.name === "eggs") {
                     // console.debug(child.bullets);
+                    const slowDownRate = 0.2;
+
                     child.bulletAttack = (player, bullet) => {
 
                         bullet.disableBody(true, true);
@@ -6215,8 +6245,6 @@ class DefendScene extends Phaser.Scene {
                                 if (player.stats.HP <= 0) return;
 
                                 player.invincibleFlag = true;
-                                // player.setTint(0xff0000);
-
                                 player.body.setVelocityX(knockBackSpeed * (child.x < player.x ? 1 : -1));
 
                                 this.time.delayedCall(knockBackDuration, () => {
@@ -6224,11 +6252,48 @@ class DefendScene extends Phaser.Scene {
                                     player.stopCursorsFlag = false;
                                 }, [], this);
 
+
+                                //==沒有針筒被緩速
+                                if (!this.gameData.backpack.onEquip.includes('syringe')) {
+                                    // console.debug('slowDownDur');
+                                    const slowDownDur = 5000;
+
+                                    if (player.slowDownTween) {
+                                        console.debug(player.slowDownTween);
+                                        player.slowDownTween.remove();
+                                        player.slowDownTween.callbacks.onComplete.func(player.slowDownTween);
+                                        player.slowDownTween = null;
+                                    };
+                                    player.slowDownTween = this.tweens.addCounter({
+                                        targets: player,
+                                        from: 10,
+                                        to: 0,
+                                        duration: slowDownDur,
+                                        onUpdate: function (tween) {
+                                            const value = Math.floor(tween.getValue());
+                                            player.setTint(value % 2 ? 0xCC00CC : 0x990099);
+                                        },
+                                        onStart: (tween) => {
+                                            // console.debug(tween);
+                                            tween.slowDownSpeed = player.stats.movementSpeed * slowDownRate;
+                                            player.buffHandler({ movementSpeed: -tween.slowDownSpeed });
+                                        },
+                                        onComplete: (tween) => {
+                                            player.clearTint();
+                                            player.buffHandler({ movementSpeed: tween.slowDownSpeed });
+                                            player.slowDownTween.remove();
+                                            player.slowDownTween = null;
+                                            // console.debug('ccc');
+                                        },
+                                    });
+
+                                };
+
+
                             };
                         }
 
                     };
-
 
                     //==蛋打在地上
                     this.physics.add.collider(child.bullets, this.platforms,
@@ -6240,33 +6305,40 @@ class DefendScene extends Phaser.Scene {
                             this.time.delayedCall(1000, () => {
                                 bullet.disableBody(true, true);
                             }, [], this);
+
+                            //==緩速黏液
+                            let slime = this.add.sprite(bullet.x, bullet.y, 'sunny')
+                                .setDepth(Depth.bullet);
+                            this.time.delayedCall(1000, () => {
+                                bullet.disableBody(true, true);
+                            }, [], this);
                         });
 
                 };
             });
 
         };
-        var initTimer = () => {
+        let initTimer = () => {
             this.scene.add(null, new UIScene('timerUI', this), true);
         };
-        var initIconBar = () => {
+        let initIconBar = () => {
             this.scene.add(null, new UIScene('iconBar', this), true);
         };
-        var initCursors = () => {
+        let initCursors = () => {
             //===init cursors
             this.scene.add(null, new UIScene('cursors', this), true);
         };
-        var initCamera = () => {
+        let initCamera = () => {
             this.cameras.main.setBounds(0, 0, width, height);
             this.cameras.main.flash(500, 0, 0, 0);
         };
-        var initRexUI = () => {
+        let initRexUI = () => {
             this.scene.add(null, new UIScene('RexUI', this), true);
 
             if (this.firstTimeEvent.isFirstTime)
                 this.scene.add(null, new UIScene('blackOut', this), true);
         };
-        var initHotKey = () => {
+        let initHotKey = () => {
             this.scene.add(null, new UIScene('hotKeyUI', this), true);
         };
 
@@ -6284,7 +6356,7 @@ class DefendScene extends Phaser.Scene {
         initCamera();
         initRexUI();
 
-        // var postFxPlugin = this.plugins.get('rexswirlpipelineplugin');
+        // let postFxPlugin = this.plugins.get('rexswirlpipelineplugin');
         // this.cameraFilter = postFxPlugin.add(this.cameras.main);
         // this.input.on('pointerup', (pointer) => {
         //     this.tweens.add({
@@ -6307,7 +6379,7 @@ class DefendScene extends Phaser.Scene {
     update() {
         // this.gameTimer.paused = false;//==時間繼續
         // ==第一次的對話
-        var firstTimeEvent = () => {
+        let firstTimeEvent = () => {
             if (this.firstTimeEvent.isFirstTime) {
                 this.gameTimer.paused = true;//==說話時暫停
                 const speakDelay = 1300;
@@ -6421,7 +6493,7 @@ class DefendScene extends Phaser.Scene {
                 this.firstTimeEvent.isFirstTime = false;
             };
         };
-        var updatePlayer = () => {
+        let updatePlayer = () => {
 
             this.player.movingHadler(this);
             this.player.pickingHadler(this);
@@ -6434,17 +6506,17 @@ class DefendScene extends Phaser.Scene {
             //==狀態對話框
             this.player.dialog.setPosition(this.player.x, this.player.y - this.player.displayHeight * 0.3);
         };
-        var updateSidekick = () => {
+        let updateSidekick = () => {
             this.sidekick.behaviorHandler(this.player, this);
         };
-        var updateOrb = () => {
+        let updateOrb = () => {
 
             let pickUpObj = this.player.pickUpObj;
 
             if (pickUpObj)
                 pickUpObj.setPosition(this.player.x + 20, this.player.y + 30);
         };
-        var updateEnemy = () => {
+        let updateEnemy = () => {
             if (this.gameData.stationData.stationStats.liberate) return;
             //===對話完??
             this.enemy.children.iterate((child) => {
@@ -6541,7 +6613,7 @@ class DefendScene extends Phaser.Scene {
 
         };
 
-        // var activePointer = this.input.activePointer;
+        // let activePointer = this.input.activePointer;
         // if (activePointer.isDown) {
         //     this.cameraFilter.angle += 1;
         //     this.cameraFilter.radius += 5;
@@ -6554,7 +6626,7 @@ class DefendScene extends Phaser.Scene {
 
 class DigScene extends Phaser.Scene {
     constructor(placeData, GameData, other) {
-        var sceneConfig = {
+        let sceneConfig = {
             key: 'gameScene',
             pack: {
                 files: [
@@ -6616,7 +6688,7 @@ class DigScene extends Phaser.Scene {
     };
     preload() {
         this.plugins.get('rexawaitloaderplugin').addToScene(this);
-        var callback = (resolve) => this.scene.add(null, new LoadingScene(this, resolve), true);
+        let callback = (resolve) => this.scene.add(null, new LoadingScene(this, resolve), true);
         this.load.rexAwait(callback);//==等LoadingScene完成素材載入
     };
     create() {
@@ -6636,14 +6708,14 @@ class DigScene extends Phaser.Scene {
         };
         this.Depth = Depth;//==gameObject.js用到
 
-        var initEnvironment = () => {
-            var background = () => {
+        let initEnvironment = () => {
+            let background = () => {
                 this.groundY = this.tileSize * 5;
                 this.groundW = width;
 
                 this.BGgroup = this.add.group();
 
-                var ground = () => {
+                let ground = () => {
                     let resources = BackGroundResources.dig[this.background];
 
                     let imgY = this.groundY - height * 0.5;
@@ -6690,7 +6762,7 @@ class DigScene extends Phaser.Scene {
 
 
                 };
-                var underGround = () => {
+                let underGround = () => {
                     this.underBG = this.add.tileSprite(width * 0.5, this.groundY, 0, 0, 'mineBG')
                         .setDepth(0);
                     this.underBG.setScale(width / this.underBG.width);
@@ -6701,7 +6773,7 @@ class DigScene extends Phaser.Scene {
                 ground();
                 underGround();
             };
-            var initChunks = () => {
+            let initChunks = () => {
                 this.chunks = [];
                 this.chunkSize = Math.ceil(Math.max(canvas.height, width) / this.tileSize);
                 this.chunkWidth = this.chunkSize * this.tileSize;
@@ -6714,8 +6786,8 @@ class DigScene extends Phaser.Scene {
                 //隨機生成的一大塊chunkSize*chunkSize個的地底構造
                 this.chunks = [];
                 this.getChunk = (x, y) => {
-                    var chunk = null;
-                    for (var i = 0; i < this.chunks.length; i++) {
+                    let chunk = null;
+                    for (let i = 0; i < this.chunks.length; i++) {
                         if (this.chunks[i].x == x && this.chunks[i].y == y) {
                             chunk = this.chunks[i];
                         }
@@ -6724,7 +6796,7 @@ class DigScene extends Phaser.Scene {
                 };
 
                 //==每塊tile動畫
-                var animsCreate = () => {
+                let animsCreate = () => {
                     // this.anims.create({
                     //     key: "sprWater",
                     //     frames: this.anims.generateFrameNumbers("sprWater"),
@@ -6754,17 +6826,17 @@ class DigScene extends Phaser.Scene {
             //===地底用到
             initChunks();
         };
-        var initTimer = () => {
+        let initTimer = () => {
             this.scene.add(null, new UIScene('timerUI', this), true);
         };
-        var initIconBar = () => {
+        let initIconBar = () => {
             this.scene.add(null, new UIScene('iconBar', this), true);
         };
-        var initCursors = () => {
+        let initCursors = () => {
             //===init cursors
             this.scene.add(null, new UIScene('cursors', this), true);
         };
-        var initPlayer = () => {
+        let initPlayer = () => {
             this.player = this.add.existing(new Player(this))
                 .setPosition((parseInt((width / this.tileSize) * 0.5) - 0.5) * this.tileSize, 0)
                 .setDepth(Depth.player);
@@ -6900,8 +6972,8 @@ class DigScene extends Phaser.Scene {
             });
 
         };
-        var initSidekick = () => {
-            var sidekick = () => {
+        let initSidekick = () => {
+            let sidekick = () => {
                 this.sidekick = this.add.existing(new Sidekick(this, this.gameData.sidekick.type))
                     .setPosition(width * 0.5, 0)
                     .setDepth(Depth.player - 1);
@@ -6951,14 +7023,14 @@ class DigScene extends Phaser.Scene {
 
                 // console.debug(this.depthCounter.depthCount);
             };
-            var doctor = () => {
+            let doctor = () => {
                 this.scene.add(null, new UIScene('doctorUI', this), true);
             };
             sidekick();
             doctor();
         };
-        var initCamera = () => {
-            var camera = () => {
+        let initCamera = () => {
+            let camera = () => {
                 let camera = this.cameras.main;
 
                 camera.preScrollX = camera.scrollX;
@@ -6977,13 +7049,13 @@ class DigScene extends Phaser.Scene {
                     camera.preScrollY = camera.scrollY;
                 });
             };
-            var bounds = () => {
+            let bounds = () => {
                 let boundY = this.groundY - height;
                 this.physics.world.setBounds(0, boundY, width);
                 this.cameras.main.setBounds(0, boundY, width);
                 // console.debug(canvas.height)
             };
-            var overview = () => {
+            let overview = () => {
                 this.scene.add(null, new UIScene('detectorUI', this), true);
             };
             camera();
@@ -6991,11 +7063,11 @@ class DigScene extends Phaser.Scene {
             overview();
             this.cameras.main.flash(500, 0, 0, 0);
         };
-        var initDepthCounter = () => {
+        let initDepthCounter = () => {
             this.scene.add(null, new UIScene('depthCounterUI', this), true);
 
             if (this.depthCounter.epicenter !== null) {
-                var animsCreate = () => {
+                let animsCreate = () => {
                     this.anims.create({
                         key: 'bossDoor_shine',
                         frames: this.anims.generateFrameNumbers('bossDoor', { frames: [0, 1, 2] }),
@@ -7018,7 +7090,7 @@ class DigScene extends Phaser.Scene {
                 animsCreate();
             };
         };
-        var initRexUI = () => {
+        let initRexUI = () => {
             this.scene.add(null, new UIScene('RexUI', this), true);
 
             if (this.firstTimeEvent.isFirstTime)
@@ -7040,7 +7112,7 @@ class DigScene extends Phaser.Scene {
     };
     update() {
         //==第一次的對話
-        var firstTimeEvent = () => {
+        let firstTimeEvent = () => {
             if (this.firstTimeEvent.isFirstTime) {
                 this.gameTimer.paused = true;//==說話時暫停
                 const speakDelay = 700;
@@ -7112,7 +7184,7 @@ class DigScene extends Phaser.Scene {
             };
         };
 
-        var updatePlayer = () => {
+        let updatePlayer = () => {
             if (!this.player.diggingFlag) this.player.movingHadler(this);//==挖掘時不動
             // this.player.pickingHadler(this);
             this.player.attackHandler(this);
@@ -7124,30 +7196,30 @@ class DigScene extends Phaser.Scene {
             //==狀態對話框
             this.player.dialog.setPosition(this.player.x, this.player.y - this.player.displayHeight * 0.3);
         };
-        var updateSidekick = () => {
+        let updateSidekick = () => {
             this.sidekick.behaviorHandler(this.player, this);
             this.sidekick.remindingHadler(this.sidekick);
         };
-        var updateChunks = () => {
-            var snappedChunkX = Math.round(this.player.x / this.chunkWidth);
-            var snappedChunkY = Math.round(this.player.y / this.chunkWidth);
+        let updateChunks = () => {
+            let snappedChunkX = Math.round(this.player.x / this.chunkWidth);
+            let snappedChunkY = Math.round(this.player.y / this.chunkWidth);
 
             // snappedChunkX = snappedChunkX / this.chunkWidth;
             // snappedChunkY = snappedChunkY / this.chunkWidth;
 
-            for (var x = snappedChunkX - 2; x < snappedChunkX + 2; x++) {
-                for (var y = snappedChunkY - 2; y < snappedChunkY + 2; y++) {
-                    var existingChunk = this.getChunk(x, y);
+            for (let x = snappedChunkX - 2; x < snappedChunkX + 2; x++) {
+                for (let y = snappedChunkY - 2; y < snappedChunkY + 2; y++) {
+                    let existingChunk = this.getChunk(x, y);
 
                     if (existingChunk == null) {
-                        var newChunk = new Chunk(this, x, y);
+                        let newChunk = new Chunk(this, x, y);
                         this.chunks.push(newChunk);
                     };
                 };
             };
 
-            for (var i = 0; i < this.chunks.length; i++) {
-                var chunk = this.chunks[i];
+            for (let i = 0; i < this.chunks.length; i++) {
+                let chunk = this.chunks[i];
                 let distBetweenChunks = Phaser.Math.Distance.Between(snappedChunkX, snappedChunkY, chunk.x, chunk.y);
 
                 if (distBetweenChunks < 2) {
@@ -7164,10 +7236,10 @@ class DigScene extends Phaser.Scene {
 
 
         };
-        var updateGate = () => {
+        let updateGate = () => {
             if (!this.bossCastle) return;
-            var touching = !this.bossCastle.body.touching.none;// || this.bossCastle.body.embedded
-            var wasTouching = !this.bossCastle.body.wasTouching.none;
+            let touching = !this.bossCastle.body.touching.none;// || this.bossCastle.body.embedded
+            let wasTouching = !this.bossCastle.body.wasTouching.none;
 
             if (touching && !wasTouching) {
                 // console.debug("overlapstart");
@@ -7251,7 +7323,7 @@ class DigScene extends Phaser.Scene {
 
 class BossScene extends Phaser.Scene {
     constructor(GameData, background, other) {
-        var sceneConfig = {
+        let sceneConfig = {
             key: 'gameScene',
             pack: {
                 files: [
@@ -7287,7 +7359,7 @@ class BossScene extends Phaser.Scene {
     };
     preload() {
         this.plugins.get('rexawaitloaderplugin').addToScene(this);
-        var callback = (resolve) => this.scene.add(null, new LoadingScene(this, resolve), true);
+        let callback = (resolve) => this.scene.add(null, new LoadingScene(this, resolve), true);
         this.load.rexAwait(callback);//==等LoadingScene完成素材載入
     };
     create() {
@@ -7318,8 +7390,8 @@ class BossScene extends Phaser.Scene {
         const flameCount = 4;
         const animeDelay = 500;
 
-        var initEnvironment = () => {
-            var background = () => {
+        let initEnvironment = () => {
+            let background = () => {
                 let BGgroup = this.add.group();
                 let resources = BackGroundResources.boss[this.background];
                 // console.debug(resources)
@@ -7375,8 +7447,8 @@ class BossScene extends Phaser.Scene {
                 });
 
             };
-            var flame = () => {
-                var animsCreate = () => {
+            let flame = () => {
+                let animsCreate = () => {
                     this.anims.create({
                         key: 'bossFlame_burn',
                         frames: this.anims.generateFrameNumbers('bossFlame'),
@@ -7386,7 +7458,7 @@ class BossScene extends Phaser.Scene {
                 };
                 animsCreate();
 
-                var addFlame = (i, flameCount) => {
+                let addFlame = (i, flameCount) => {
                     this.add.sprite(width * i / (flameCount + 1), height * 0.4, 'bossFlame')
                         .setScale(0.2)
                         .setOrigin(0.5)
@@ -7401,18 +7473,18 @@ class BossScene extends Phaser.Scene {
             background();
             flame();
         };
-        var initTimer = () => {
+        let initTimer = () => {
             this.scene.add(null, new UIScene('timerUI', this), true);
             this.gameTimer.paused = true;
         };
-        var initIconBar = () => {
+        let initIconBar = () => {
             this.scene.add(null, new UIScene('iconBar', this), true);
         };
-        var initCursors = () => {
+        let initCursors = () => {
             //===init cursors
             this.scene.add(null, new UIScene('cursors', this), true);
         };
-        var initPlayer = () => {
+        let initPlayer = () => {
             this.player = this.add.existing(new Player(this))
                 .setPosition(width * 0.15, height * 0.65)
                 .setDepth(Depth.player);
@@ -7510,15 +7582,15 @@ class BossScene extends Phaser.Scene {
                 },
             });
         };
-        var initSidekick = () => {
+        let initSidekick = () => {
             this.sidekick = this.add.existing(new Sidekick(this, this.gameData.sidekick.type))
                 .setPosition(width * 0.1, height * 0.65)
                 .setDepth(Depth.player);
 
             this.sidekick.body.setMaxVelocity(0);
         };
-        var initBoss = () => {
-            var animsCreate = () => {
+        let initBoss = () => {
+            let animsCreate = () => {
                 this.anims.create({
                     key: 'boss_Idle',
                     frames: this.anims.generateFrameNumbers('boss_Idle'),
@@ -7564,10 +7636,10 @@ class BossScene extends Phaser.Scene {
                 .setName('boss');
 
             //==落石發射器
-            var particles = this.add.particles('bossRock')
+            let particles = this.add.particles('bossRock')
                 .setDepth(Depth.boss + 1);
 
-            var emitter = particles.createEmitter({
+            let emitter = particles.createEmitter({
                 x: () => Phaser.Math.Between(-100, width + 100),
                 y: -100,
                 angle: 90,
@@ -7584,7 +7656,7 @@ class BossScene extends Phaser.Scene {
                 on: false,
             });
 
-            var showAnims = () => {
+            let showAnims = () => {
                 let boss = this.boss;
                 let bossHPbar = boss.HPbar;
 
@@ -7633,7 +7705,7 @@ class BossScene extends Phaser.Scene {
 
                 //==說話
                 let speakDelay = attackDelay + 500;
-                var bossContent = localeJSON.Lines.boss[0];
+                let bossContent = localeJSON.Lines.boss[0];
                 this.time.delayedCall(speakDelay, async () => {
                     //==對話完才開始問題
                     await new Promise(resolve => this.RexUI.newDialog(bossContent, {
@@ -7647,12 +7719,12 @@ class BossScene extends Phaser.Scene {
                 }, [], this);
 
             };
-            var attackAnims = (resolve) => {
+            let attackAnims = (resolve) => {
                 let boss = this.boss;
                 let attackType = Phaser.Math.Between(1, 2);
                 let duration = 1000;
 
-                var attack = (type) => {
+                let attack = (type) => {
                     if (type == 1) {
                         let quakeT1 = 1500, quakeT2 = 2000;
                         duration += (quakeT1 + quakeT2);
@@ -7711,7 +7783,7 @@ class BossScene extends Phaser.Scene {
 
                 this.time.delayedCall(duration, () => resolve(), [], this);
             };
-            var gotHurtAnims = (duration) => {
+            let gotHurtAnims = (duration) => {
                 let boss = this.boss;
                 // let bossHP = boss.stats.HP - this.player.stats.attackPower * 4;
                 let bossHP = boss.stats.HP - 400;//3次死
@@ -7759,18 +7831,18 @@ class BossScene extends Phaser.Scene {
 
             showAnims();
         };
-        var initQuiz = () => {
+        let initQuiz = () => {
             this.RexUI.scene.bringToTop();
 
             //==題庫題目總數量
             const quizArr = localeJSON.Quiz;
             const quizAmount = Object.keys(quizArr).length;
 
-            var getQuizIdxArr = (quizAmount) => Array.from(new Array(quizAmount), (d, i) => i).sort(() => 0.5 - Math.random());
+            let getQuizIdxArr = (quizAmount) => Array.from(new Array(quizAmount), (d, i) => i).sort(() => 0.5 - Math.random());
             let quizIdxArr = getQuizIdxArr(quizAmount);
             let quizCount = 1;
 
-            var getQuiz = () => {
+            let getQuiz = () => {
                 let quizIdx = quizIdxArr.pop();
                 if (quizIdxArr.length == 0) quizIdxArr = getQuizIdxArr(quizAmount);
                 // console.debug(quizIdxArr);
@@ -7779,7 +7851,7 @@ class BossScene extends Phaser.Scene {
                     title: localeJSON.UI['Question'] + quizCount++,
                 });
             };
-            var showQuiz = async () => {
+            let showQuiz = async () => {
                 let correct = await new Promise(resolve => this.quizObj = this.RexUI.newQuiz(getQuiz(), 0, resolve));
                 await new Promise(resolve => this[correct ? 'player' : 'boss'].attackAnims(resolve));
 
@@ -7789,11 +7861,11 @@ class BossScene extends Phaser.Scene {
             };
             showQuiz();
         };
-        var initCamera = () => {
+        let initCamera = () => {
             this.cameras.main.setBounds(0, 0, width, height);
             this.cameras.main.flash(500, 0, 0, 0);
         };
-        var initRexUI = () => {
+        let initRexUI = () => {
             this.scene.add(null, new UIScene('RexUI', this), true);
         };
 
@@ -7813,11 +7885,11 @@ class BossScene extends Phaser.Scene {
 
     };
     update() {
-        var updateBoss = () => {
+        let updateBoss = () => {
             let boss = this.boss;
             boss.HPbar.setXY(boss.x, boss.y - boss.displayHeight);
         };
-        var updateSidekick = () => {
+        let updateSidekick = () => {
             this.sidekick.behaviorHandler(this.player, this);
         };
 

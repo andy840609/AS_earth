@@ -43,7 +43,7 @@ const defaultControllCursor = {
 };
 //載入字型
 // function loadFont(name, url) {
-//     var newStyle = document.createElement('style');
+//     let newStyle = document.createElement('style');
 //     newStyle.appendChild(document.createTextNode('@font-face{font-family: ' + name + '; src: url(' + url + ');}'));
 //     document.body.appendChild(newStyle);
 // };
@@ -118,7 +118,7 @@ const GameObjectStats = {
             knockBackSpeed: 10,//==擊退時間固定200ms,這個速度越大擊退越遠
             manaCost: 20,
             manaRegen: 0.15,//per 10 ms(game update per 10ms)0.1
-            HP: 10,
+            HP: 80,
             maxHP: 80,
             MP: 150,
             maxMP: 150,
@@ -490,6 +490,14 @@ const GameItemData = {
         type: 2,
         buff: {
             defense: 5,
+        },
+    },
+    syringe: {
+        type: 2,
+        buff: {
+            attackPower: 20,
+            movementSpeed: 100,
+            jumpingPower: 100,
         },
     },
     sunny: {

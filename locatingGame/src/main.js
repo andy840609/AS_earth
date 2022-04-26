@@ -1,37 +1,37 @@
 function locatingGame() {
-    var selector = 'body';
-    var data;
-    var rankingData;
-    var GameData = null;
+    let selector = 'body';
+    let data;
+    let rankingData;
+    let GameData = null;
 
     //Append to the object constructor function so you can only make static calls
     // Object.merge2 = function (obj1, obj2) {
-    //     for (var attrname in obj2) {
+    //     for (let attrname in obj2) {
     //         obj1[attrname] = obj2[attrname];
     //     }
     //     //Returning obj1 is optional and certainly up to your implementation
     //     return obj1;
     // };
-    var getRandom = (x) => {
+    let getRandom = (x) => {
         return Math.floor(Math.random() * x);
     };
-    var distanceByLnglat = (coordinate1, coordinate2) => {
+    let distanceByLnglat = (coordinate1, coordinate2) => {
         const Rad = (d) => d * Math.PI / 180.0;
 
         let lng1 = coordinate1[1], lat1 = coordinate1[0],
             lng2 = coordinate2[1], lat2 = coordinate2[0];
 
-        var radLat1 = Rad(lat1);
-        var radLat2 = Rad(lat2);
-        var a = radLat1 - radLat2;
-        var b = Rad(lng1) - Rad(lng2);
-        var s = 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(a / 2), 2) + Math.cos(radLat1) * Math.cos(radLat2) * Math.pow(Math.sin(b / 2), 2)));
+        let radLat1 = Rad(lat1);
+        let radLat2 = Rad(lat2);
+        let a = radLat1 - radLat2;
+        let b = Rad(lng1) - Rad(lng2);
+        let s = 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(a / 2), 2) + Math.cos(radLat1) * Math.cos(radLat2) * Math.pow(Math.sin(b / 2), 2)));
         s = s * 6378137.0;// 取WGS84標準參考橢球中的地球長半徑(單位:m)
         s = Math.round(s * 10000) / 10000;
         // console.debug(s);
         return s / 1000;//==km
     };
-    var getPhaserConfig = (width, height) => {
+    let getPhaserConfig = (width, height) => {
         return {
             parent: 'gameMain',
             type: Phaser.AUTO,
@@ -57,14 +57,14 @@ function locatingGame() {
     };
     game.dataDir = async (value) => {
         //==異步讀檔,回傳一個promise而非結果
-        var readTextFile = (filePath, fileDataKey) => {
+        let readTextFile = (filePath, fileDataKey) => {
             // console.debug(fileDataKey);
-            var tmpData = [];
+            let tmpData = [];
 
-            var pushData;
+            let pushData;
             if (fileDataKey.length > 1) {//一行有兩列以上的資料則作物件陣列
                 pushData = (row) => {
-                    var col = row.trim().split(/\s+/);
+                    let col = row.trim().split(/\s+/);
                     // console.debug(col);
                     let obj = {};
                     col.forEach((c, index) => obj[fileDataKey[index]] = (isNaN(c) ? c : parseFloat(c)));
@@ -78,22 +78,22 @@ function locatingGame() {
             };
 
             return new Promise((resolve, reject) => {
-                var rawFile = new XMLHttpRequest();
+                let rawFile = new XMLHttpRequest();
                 rawFile.open("GET", filePath, true);
                 // rawFile.open("GET", filePath, false);
                 rawFile.onreadystatechange = function () {
                     if (rawFile.readyState === 4) {
                         if (rawFile.status === 200 || rawFile.status == 0) {
-                            var rows = rawFile.responseText.split("\n");
+                            let rows = rawFile.responseText.split("\n");
                             rows.forEach(row => {
                                 if (row != '') {
                                     pushData(row);
                                 }
                             })
-                            // var fileName = filePath.substring(
+                            // let fileName = filePath.substring(
                             //     filePath.lastIndexOf('/') + 1,
                             //     filePath.indexOf(fileExtension));
-                            // var fileData = { fileName: fileName, data: tmpData };
+                            // let fileData = { fileName: fileName, data: tmpData };
                             resolve(tmpData);
                         }
                         else {
@@ -105,7 +105,7 @@ function locatingGame() {
             });
 
         };
-        var ajaxReadFile = (dataObj) => {
+        let ajaxReadFile = (dataObj) => {
             return $.ajax({
                 url: dataObj.url ? dataObj.url : '',
                 dataType: dataObj.dataType ? dataObj.dataType : 'text',
@@ -461,13 +461,13 @@ function locatingGame() {
                             // { name: 'sunny', amount: 12 },
                             // { name: 'sunny', amount: 12 },
                         ],
-                        equip: [],//背包中裝備
-                        onEquip: [],//人物裝備中
+                        equip: ['syringe'],//背包中裝備
+                        onEquip: ['syringe'],//人物裝備中
                     },
                 };
             };
             function initStartScene() {
-                var getLanguageJSON = (locale = false) => {
+                let getLanguageJSON = (locale = false) => {
                     // console.debug(locale);
                     return $.ajax({
                         url: "data/locale/" + (locale ? locale : GameData.locale) + ".json",
@@ -479,7 +479,7 @@ function locatingGame() {
                         },
                     });
                 };
-                var startScene = async () => {
+                let startScene = async () => {
                     GameData.localeJSON = await getLanguageJSON();
                     GameData.getLanguageJSON = getLanguageJSON;
 
@@ -507,7 +507,7 @@ function locatingGame() {
                     };
                     initMap();
                     //==test
-                    // gameStart('defend');
+                    gameStart('defend');
                     // gameStart('dig');
                     //==test
                 };
@@ -515,7 +515,7 @@ function locatingGame() {
             };
             function initEndScene(win = false) {
 
-                var gameOverScene = async () => {
+                let gameOverScene = async () => {
                     gameDisplay(true);
                     const rewindTime = 10 * 60000;
 
@@ -538,10 +538,10 @@ function locatingGame() {
                     });
 
                 };
-                var congratsScene = async () => {
+                let congratsScene = async () => {
                     let congrats = chartContainerJQ.find('#gameGroup .Congrats');
 
-                    var initRankChart = () => {
+                    let initRankChart = () => {
                         let svg = getRankChart(rankingData);
                         // let svgBox = svg.viewBox.baseVal;
 
@@ -553,7 +553,7 @@ function locatingGame() {
                         // .width(svgBox.width * (height / svgBox.height));
 
                     };
-                    var initMenu = () => {
+                    let initMenu = () => {
                         let endMenu = congrats.find('.endMenu');
 
                         endMenu
@@ -593,7 +593,7 @@ function locatingGame() {
 
                         endMenu.find('#fbButton')
                             .on('click', () => {
-                                var getProfile = () => {
+                                let getProfile = () => {
                                     const pictureW = 100;
                                     return new Promise(r => {
                                         FB.api('/me', { fields: `id,name,picture.width(${pictureW}).height(${pictureW}).redirect(true)` }, function (response) {
@@ -605,7 +605,7 @@ function locatingGame() {
                                     });
                                 };
 
-                                var share = async (profilePromise = null) => {
+                                let share = async (profilePromise = null) => {
                                     const server = "https://tecdc.earth.sinica.edu.tw/tecdc/Game/locating/";
                                     const certificateDir = server + "certificate/";
 
@@ -682,7 +682,7 @@ function locatingGame() {
                 const fadeOutDuration = 100;
 
                 //==confirmWindow沒關閉又再次點擊會無法產生打字特效,所以用這方法
-                var requestTypingAnim = () => {
+                let requestTypingAnim = () => {
                     let typingText = gameUI.find('.confirmWindow>text');
 
                     typingText
@@ -781,10 +781,10 @@ function locatingGame() {
                     data.forEach((d, i) => {
                         // console.debug(d);
                         // let enemy = ['dog', 'cat', 'dove'];//==之後隨機抽敵人組
-                        // let enemy = [];//==之後隨機抽敵人組
-                        let enemy = copyEnemyArr.length !== 0 ?//===拷貝的陣列抽完才全隨機
-                            [copyEnemyArr.pop()] :
-                            [enemyArr[getRandom(enemyArr.length)]];
+                        let enemy = ['dove'];//==之後隨機抽敵人組
+                        // let enemy = copyEnemyArr.length !== 0 ?//===拷貝的陣列抽完才全隨機
+                        //     [copyEnemyArr.pop()] :
+                        //     [enemyArr[getRandom(enemyArr.length)]];
 
                         let enemyStats = {};
 
@@ -1011,7 +1011,7 @@ function locatingGame() {
                         else UI.hide();
                     };
 
-                    var timeRemain = () => {
+                    let timeRemain = () => {
                         gameUI.append(`
                         <div class="timeRemain">${GameData.localeJSON.UI['timeRemain']} : 
                             <div class='timer' value='0'>
@@ -1024,21 +1024,21 @@ function locatingGame() {
 
                         updateMapUI({ timeRemain: GameData.timeRemain }, 800);
                     };
-                    var UIbar = () => {
+                    let UIbar = () => {
                         const eachButtonH = 100;
                         const UIbarH = eachButtonH * UIbuttons.length,
                             UIbarW = 60;
                         const interval = UIbarH / (UIbuttons.length + 1);
                         const iconW = 50;
 
-                        var init = () => {
+                        let init = () => {
                             gameUI
                                 .append(`<div class="UIbar"></div>`)
                                 .find('.UIbar')
                                 .width(UIbarW)
                                 .height(UIbarH);
                         };
-                        var addIcons = () => {
+                        let addIcons = () => {
                             const left = (UIbarW - iconW) * 0.5;
 
                             let iconsHtml = UIbuttons.map((btn, i) => `
@@ -1236,27 +1236,27 @@ function locatingGame() {
                                             <form class="quickQuestion">
                                                 
                                                 <div class="mb-2 quickTitle">Q0</div>
-                                                <div class='pl-2'>
-                                                    <div class="form-check">
+                                                <div class="form-group">
+                                                    <div class="form-check pt-2">
                                                         <input type="radio" class="form-check-input" id="qs1" name="quickSelection" value="0">
-                                                        <label class="form-check-label" for="qs1">A</label>
+                                                        <label class="form-check-label" for="qs1"></label>
                                                     </div>
-                                                    <div class="form-check">
+                                                    <div class="form-check pt-2">
                                                         <input type="radio" class="form-check-input" id="qs2" name="quickSelection" value="1">
-                                                        <label class="form-check-label" for="qs2">A</label>
+                                                        <label class="form-check-label" for="qs2"></label>
                                                     </div>
-                                                    <div class="form-check">
+                                                    <div class="form-check pt-2">
                                                         <input type="radio" class="form-check-input" id="qs3" name="quickSelection" value="2">
-                                                        <label class="form-check-label" for="qs3">A</label>
+                                                        <label class="form-check-label" for="qs3"></label>
                                                     </div>
-                                                    <div class="form-check">
+                                                    <div class="form-check pt-2">
                                                         <input type="radio" class="form-check-input" id="qs4" name="quickSelection" value="4">
-                                                        <label class="form-check-label" for="qs4">A</label>
+                                                        <label class="form-check-label" for="qs4"></label>
                                                     </div>
                                                 </div>
-                                                <div class='questFooter d-flex justify-content-around'>
-                                                    <button type="button" class="btn btn-light quickOK">${GameData.localeJSON.UI['submit1']}</button>
-                                                    <button type="button" class="btn btn-light quickCancel">${GameData.localeJSON.UI['submit2']}</button>
+                                                <div class="questFooter d-flex justify-content-around">
+                                                    <button type="button" class="btn btn-secondary quickOK">${GameData.localeJSON.UI['submit1']}</button>
+                                                    <button type="button" class="btn btn-secondary quickCancel">${GameData.localeJSON.UI['submit2']}</button>
                                                 </div>
                                             </form>            
                                         `);
@@ -1303,6 +1303,8 @@ function locatingGame() {
                                         UI.find('#infoContent').append(infoContentHTML);
 
                                         //===問答題
+                                        let bingoCount = 0;//玩家答對3、6、9題時獎勵裝備
+
                                         let quickQuestion = $('.quickQuestion');
                                         let quickTitle = $('.quickTitle');
                                         let quickSelection = $('input[name=quickSelection]');
@@ -1339,6 +1341,9 @@ function locatingGame() {
                                                 // let answerIdx = e
                                                 // console.debug(questButton);
                                                 if (isAnswer === 'true') {
+                                                    bingoCount++;
+                                                    // bingoCount === 9 ? a : bingoCount === 9
+                                                    console.debug(bingoCount);
                                                     const gainItems = [['pumpkin', 5]];
                                                     hintTextAnime('itemGain2', gainItems);
                                                 }
@@ -1603,7 +1608,7 @@ function locatingGame() {
                             });
 
                         };
-                        var iconEvent = () => {
+                        let iconEvent = () => {
                             const iconW2 = iconW * 1.5,
                                 fixPos = 0.5 * (iconW - iconW2);//==至中要修正position
                             const duration = 50;
@@ -1654,7 +1659,7 @@ function locatingGame() {
                         //==test
                         // $(`#velocityChart`).trigger('click');
                     };
-                    var confirmWindow = () => {
+                    let confirmWindow = () => {
                         let imgW = 10;
                         let confirmWindow = gameUI.append(`
                         <div class="confirmWindow">
@@ -1701,7 +1706,7 @@ function locatingGame() {
                             });
 
                     };
-                    var congratsPage = () => {
+                    let congratsPage = () => {
                         chartContainerJQ.find('#gameGroup')
                             .append(`
                                 <div class="Congrats">
@@ -1712,7 +1717,7 @@ function locatingGame() {
                                 </div>
                             `);
                     };
-                    var sidekick = () => {
+                    let sidekick = () => {
                         const sidekickDir = assetsDir + 'ui/map/sidekick/';
                         const sidekickW = 200;
                         const textBoxW = 500;
@@ -1722,7 +1727,7 @@ function locatingGame() {
                             .append(`<div class="sidekickUI"></div>`)
                             .find('.sidekickUI');
 
-                        var init = () => {
+                        let init = () => {
                             let localeJSON = GameData.localeJSON.UI;
 
                             sidekickUI
@@ -1863,7 +1868,7 @@ function locatingGame() {
                 const defaultIconUrl = assetsDir + 'icon/home.png';
                 const clearIconUrl = assetsDir + 'icon/home_clear.png';
 
-                var circleAnime = (circleObj, originalRadius, duration = 500) => {
+                let circleAnime = (circleObj, originalRadius, duration = 500) => {
                     // console.debug(circleObj, originalRadius);
                     const delay = 10;
                     const animePart = 3;//3個步驟：變大>變小>原來大小
@@ -1899,7 +1904,7 @@ function locatingGame() {
                 };
 
                 let interval;
-                var iconUpDownAnime = (marker, iconUrl, duration = 600) => {
+                let iconUpDownAnime = (marker, iconUrl, duration = 600) => {
                     const delay = 10;
 
                     const animePart = 2;//2個步驟：變大>原來大小
@@ -1934,7 +1939,7 @@ function locatingGame() {
                     }, delay);
 
                 };
-                var iconTriggerAnime = (marker, trigger = true, duration = 50) => {
+                let iconTriggerAnime = (marker, trigger = true, duration = 50) => {
                     if (interval) return;
                     const iconScale = 1.5;
                     const
@@ -1971,7 +1976,7 @@ function locatingGame() {
                     }, delay);
 
                 };
-                var iconBrokenAnime = (marker, duration = 500) => {
+                let iconBrokenAnime = (marker, duration = 500) => {
                     const
                         iconUrl1 = marker.getIcon().options.iconUrl,
                         iconUrl2 = assetsDir + 'icon/home_broken.png',
@@ -2060,14 +2065,14 @@ function locatingGame() {
                 // console.debug(GameData.playerTimeUse);
                 // console.debug(start, end);
 
-                var timerAnime = (increase) => {
+                let timerAnime = (increase) => {
                     const delay = 10;
                     const sign = increase ? 1 : -1;
                     const step = sign * Math.abs(start - end) / (duration / delay);
 
                     // console.debug(step);
 
-                    var now = start;
+                    let now = start;
                     let interval = setInterval(() => {
                         if ((now - end) * sign >= 0) {
                             now = end;
@@ -2093,7 +2098,7 @@ function locatingGame() {
                 if (controllCursor) GameData.controllCursor = controllCursor;
 
                 //==gameover
-                var stageUnlock = () => {
+                let stageUnlock = () => {
                     if (!GameData.stationClear.chartUnlock) {
                         GameData.stationClear.count = data.filter(d => d.stationStats.clear).length;
                         if (GameData.stationClear.count >= clearStationToUnlock) {
@@ -2101,11 +2106,11 @@ function locatingGame() {
 
                             //==延遲後移除lock.gif
                             const lock = gameUI.find('#velocityChartLock');
-                            var lockAnime = () => {
+                            let lockAnime = () => {
                                 const delay = 10;
                                 const step = 1 / (duration * 1.5 / delay);//==opacity預設1
 
-                                var opacity = 1;
+                                let opacity = 1;
                                 let interval = setInterval(() => {
                                     if (opacity <= 0) {
                                         opacity = 0;
@@ -2132,7 +2137,7 @@ function locatingGame() {
                 if (GameData.timeRemain <= 0) {
                     stopClickFlag = true;
                     const quakeDuration = 800;
-                    var apocalypse = () => {
+                    let apocalypse = () => {
                         const bigMapJQ = $(bigMap);
 
                         const delay = 50;
@@ -2173,7 +2178,7 @@ function locatingGame() {
                     const restTimeCost = 1 * 60000;//1min=60000ms    
                     const restAnimDelay = 3000;
 
-                    var resting = () => {
+                    let resting = () => {
                         const blackout = $('#blackout');
 
                         blackout
@@ -2207,7 +2212,7 @@ function locatingGame() {
             function updateSidekick(stage, index, doneTalking = undefined) {
                 let lines = GameData.localeJSON.Lines.sidekick;
 
-                var showText = (stage, index, doneTalking) => {
+                let showText = (stage, index, doneTalking) => {
                     // console.debug(stage, index, islastLine);
                     let sidekickTXB = gameUI.find('.sidekickUI .sidekickTXB');
 
@@ -2615,9 +2620,9 @@ function locatingGame() {
                     .domain(xAxisDomain)
                     .range([margin.left, width - margin.right]);
 
-                var updateAxis = () => {
+                let updateAxis = () => {
 
-                    var makeXAxis = g => g
+                    let makeXAxis = g => g
                         .attr("transform", `translate(0,${height - margin.bottom * (stationData.isTutorial && !overview ? 2.5 : 1)})`)
                         .style('font', 'small-caps bold 20px/1 sans-serif')
                         .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0))
@@ -2643,10 +2648,10 @@ function locatingGame() {
 
                 }
 
-                var updatePaths = () => {
+                let updatePaths = () => {
                     //波形第一點離中心點偏移位置修正(sclae變大會歪)
                     const domainMean = yAxisDomain.reduce((p, c) => p + c) * 0.5;
-                    var getShiftY = (firstPoint) => {
+                    let getShiftY = (firstPoint) => {
                         let shiftMean = y(domainMean) - y(firstPoint);
                         return shiftMean;
                     };
@@ -2664,7 +2669,7 @@ function locatingGame() {
                         .x(d => x(d.x))
                         .y(d => y(d.y));
 
-                    var makePaths = pathGroup => pathGroup
+                    let makePaths = pathGroup => pathGroup
                         .attr("filter", overview ? null : "url(#pathShadow)")
                         .selectAll('g')
                         .data(newData)
@@ -2717,7 +2722,7 @@ function locatingGame() {
             return getChart();
         };
 
-        var SvgUrlArr = getSvgUrl(waveData);
+        let SvgUrlArr = getSvgUrl(waveData);
         // console.debug(SvgUrlArr);
         return SvgUrlArr;
     };
@@ -2733,12 +2738,12 @@ function locatingGame() {
         const xAxis = svg.append("g").attr("class", "xAxis");
         const yAxis = svg.append("g").attr("class", "yAxis");
 
-        var x, y;
-        var newDataObj;
+        let x, y;
+        let newDataObj;
         const slopeRange = [5, 70];//==速度參數最大小範圍(km/s)
-        var handleSlope = GameData.velocity;
+        let handleSlope = GameData.velocity;
 
-        var getPoint = (slope, rScale = 1) => {
+        let getPoint = (slope, rScale = 1) => {
             //==圓公式 : (x-h)^2+(y-k)^2=r^2 (圓心=(h,k))
             //==斜率 : m=deltaY/deltaX
             //==得 x=(r^2/(m^2+1))^(1/2)+h
@@ -2760,7 +2765,7 @@ function locatingGame() {
             return { x: pointX, y: pointY };
         };
 
-        var epicenterCoord = data.epicenter.coordinate;
+        let epicenterCoord = data.epicenter.coordinate;
 
         function getNewData() {
 
@@ -2830,15 +2835,15 @@ function locatingGame() {
 
                 const r = x.range().reduce((p, c) => c - p);
 
-                var updateAxis = () => {
+                let updateAxis = () => {
 
-                    var makeXAxis = g => g
+                    let makeXAxis = g => g
                         .attr("transform", `translate(0,${height - margin.bottom})`)
                         .style('font', 'small-caps bold 20px/1 sans-serif')
                         .call(d3.axisBottom(x).tickSizeOuter(0).ticks(width / 80))
                         .call(g => g.select('.domain').attr('stroke-width', strokeWidth));
 
-                    var makeYAxis = g => g
+                    let makeYAxis = g => g
                         .attr("transform", `translate(${margin.left},0)`)
                         .style('font', 'small-caps bold 20px/1 sans-serif')
                         .call(d3.axisLeft(y).ticks(height / 80))
@@ -2847,11 +2852,11 @@ function locatingGame() {
                     xAxis.call(makeXAxis);
                     yAxis.call(makeYAxis);
                 };
-                var updateFocus = () => {
+                let updateFocus = () => {
                     const transDuration = 500;
                     const transDelay = 90;
 
-                    var makeDots = focusGroup => focusGroup
+                    let makeDots = focusGroup => focusGroup
                         // .style("mix-blend-mode", "hard-light")
                         .selectAll("g")
                         .data(newDataObj)
@@ -2888,9 +2893,9 @@ function locatingGame() {
                         );
                     focusGroup.call(makeDots);
                 };
-                var updateFixed = () => {
+                let updateFixed = () => {
 
-                    var getArcD = (r, start, end) => d3.arc()
+                    let getArcD = (r, start, end) => d3.arc()
                         .innerRadius(r)
                         .outerRadius(r)
                         .startAngle(start)
@@ -2902,7 +2907,7 @@ function locatingGame() {
                     // console.debug(rangePoint);
 
                     //作出弧線和夾角區域
-                    var makeArcArea = fixedGroup => fixedGroup
+                    let makeArcArea = fixedGroup => fixedGroup
                         .selectAll(".arcArea")
                         .data([0])
                         .join("g")
@@ -2940,7 +2945,7 @@ function locatingGame() {
                         });
 
                     //作出斜率最大最小範圍的線
-                    var makeSlash = fixedGroup => fixedGroup
+                    let makeSlash = fixedGroup => fixedGroup
                         .selectAll(".slash")
                         .data([0])
                         .join("g")
@@ -2970,9 +2975,9 @@ function locatingGame() {
                         .call(makeSlash);
 
                 };
-                var updateHandle = () => {
+                let updateHandle = () => {
                     //作出使用者操作的把手
-                    var makeHandle = fixedGroup => fixedGroup
+                    let makeHandle = fixedGroup => fixedGroup
                         .selectAll(".handle")
                         .data([0])
                         .join("g")
@@ -3043,14 +3048,14 @@ function locatingGame() {
 
         function events(svg) {
             //==使用者按下UI紐觸發更新圖表
-            var updateCustomEvent = () => {
+            let updateCustomEvent = () => {
                 svg.on('updateEvt', function (d, i) {
-                    // var evt = d3.event;
+                    // let evt = d3.event;
                     newDataObj = getNewData();
                     updateChart();
                 });
             };
-            var handleDrag = () => {
+            let handleDrag = () => {
 
                 let velocityStr = d3.select('#velocityStr');
                 // console.debug(velocityStr);
@@ -3093,7 +3098,7 @@ function locatingGame() {
                     .call(g => g.call(dragBehavior));
 
             };
-            var focusHover = () => {
+            let focusHover = () => {
 
                 const UI = d3.select('#velocityChartUI');
                 const tooltip = UI
@@ -3109,7 +3114,7 @@ function locatingGame() {
                     .on('mouseover', function (e) {
                         let targetDOMRect = UI.node().getBoundingClientRect();
 
-                        var makeTooltip = () => {
+                        let makeTooltip = () => {
                             //==show tooltip and set position
                             tooltip.style("display", "inline")
                                 //==到滑鼠位置
@@ -3165,12 +3170,12 @@ function locatingGame() {
         const title = svg.append("g").attr("class", "title");
         const focusGroup = svg.append("g").attr('class', 'focus');
 
-        var x, y, line;
-        var newDataObj;
-        var braveAnim, boss, brave;
+        let x, y, line;
+        let newDataObj;
+        let braveAnim, boss, brave;
 
 
-        var replayFlag = false;
+        let replayFlag = false;
         const
             originOpacity = 0.2,
             afterOpacity = 0.7;
@@ -3186,7 +3191,7 @@ function locatingGame() {
                 score: 0,
             };
 
-            var getGapGroupData = () => {
+            let getGapGroupData = () => {
                 let gapGroupData = Array.from(new Array(groupCount), () => 0);
                 console.debug(rankingData);
                 rankingData.forEach(d => {
@@ -3199,7 +3204,7 @@ function locatingGame() {
                 });
                 return gapGroupData;
             };
-            var getPR = () => {
+            let getPR = () => {
                 rankingData.push(playerObj);
                 rankingData.sort((a, b) => b.timeUse - a.timeUse);
                 let playerIdx = rankingData.findIndex(obj => obj === playerObj);
@@ -3213,7 +3218,7 @@ function locatingGame() {
 
                 return parseFloat(((playerIdx + 1) / rankingData.length * 100).toFixed(1));
             };
-            var writeFile = () => {
+            let writeFile = () => {
                 $.ajax({
                     type: 'POST',
                     url: "src/php/writeRankingFile.php",
@@ -3294,7 +3299,7 @@ function locatingGame() {
                 let gap = newDataObj.gap;
 
                 // console.debug(newDataObj);
-                var init = () => {
+                let init = () => {
                     //==沒完成任何站就給最大時間10才不出bug
                     let xAxisDomain = [gap * gapGroupData.length, 0];
                     let yAxisDomain = [0, d3.max(gapGroupData)];
@@ -3316,8 +3321,8 @@ function locatingGame() {
                         })
                         .y(d => y(d));
                 };
-                var updateAxis = () => {
-                    var setStyle = g => {
+                let updateAxis = () => {
+                    let setStyle = g => {
                         g.selectAll(".tick line").remove();
                         g.selectAll(".tick text")
                             .attr("fill", textColor);
@@ -3326,7 +3331,7 @@ function locatingGame() {
                             .attr('stroke-width', 3)
                             .attr('stroke-linecap', "round")
                     };
-                    var makeXAxis = g => g
+                    let makeXAxis = g => g
                         .attr("transform", `translate(0,${height - margin.bottom})`)
                         .call(g => {
                             let axisFun = d3.axisBottom(x).tickSizeOuter(0);
@@ -3342,7 +3347,7 @@ function locatingGame() {
                             .selectAll('.tick>text')
                             .text((d, i) => (gapGroupData.length - i) * 10)
                         );
-                    var makeYAxis = g => g
+                    let makeYAxis = g => g
                         .attr("transform", `translate(${margin.left},0)`)
                         .call(g => {
                             let axisFun = d3.axisLeft(y).tickSizeOuter(0);
@@ -3358,7 +3363,7 @@ function locatingGame() {
                     xAxis.call(makeXAxis);
                     yAxis.call(makeYAxis);
                 };
-                var updateFocus = () => {
+                let updateFocus = () => {
                     const width = (x(0) - x(gap)) - 1;
 
                     let bar = focusGroup
@@ -3420,7 +3425,7 @@ function locatingGame() {
 
 
                 };
-                var updateBraves = () => {
+                let updateBraves = () => {
 
                     boss = svg
                         .selectAll(".image")
@@ -3447,8 +3452,8 @@ function locatingGame() {
                         .attr("class", "braveAnim");
 
                 };
-                var playAnime = (replay) => {
-                    var init = () => {
+                let playAnime = (replay) => {
+                    let init = () => {
                         brave
                             .attr("href", braveDir + 'braveRun.gif');
 
@@ -3458,7 +3463,7 @@ function locatingGame() {
                             .attr("transform", null);
 
                     };
-                    var walkingAnime = () => {
+                    let walkingAnime = () => {
                         let dur = runDuration / 1000,
                             delay = appearDuration / 1000;
 
@@ -3474,7 +3479,7 @@ function locatingGame() {
                         braveAnim.node().beginElement();
 
                     };
-                    var attackAnime = () => {
+                    let attackAnime = () => {
                         braveAnim
                             .on('beginEvent', () => brave.attr("opacity", 1))
                             .on('endEvent', () => {
@@ -3564,7 +3569,7 @@ function locatingGame() {
                 .attr("class", "black-tooltip ");
             const mouseGap = 50;
 
-            var replayAnime = () => {
+            let replayAnime = () => {
                 let brave = svg.select('.brave');
 
                 brave
@@ -3594,8 +3599,8 @@ function locatingGame() {
                     });
 
             };
-            var barHover = () => {
-                var updateTooltip = (groupIndex, data) => {
+            let barHover = () => {
+                let updateTooltip = (groupIndex, data) => {
 
                     tooltip
                         .selectAll('div')
@@ -3666,16 +3671,16 @@ function locatingGame() {
     function getSharingImg(profile = null) {
         const photoW = profile ? profile.picture.data.width : 120;
 
-        var rankChart = document.querySelector('.rankChart>svg');
-        var composeCertificate = (imgObj, fileName, option) => {
+        let rankChart = document.querySelector('.rankChart>svg');
+        let composeCertificate = (imgObj, fileName, option) => {
 
             function getBlobUrl(imgData, isSvg) {
                 // console.debug(svgUrl);
                 return new Promise(r => {
                     if (isSvg) {
                         // console.debug(imgData);
-                        var svgData = (new XMLSerializer()).serializeToString(imgData);
-                        var blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+                        let svgData = (new XMLSerializer()).serializeToString(imgData);
+                        let blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
                         r(URL.createObjectURL(blob));
                     }
                     else {
@@ -3710,7 +3715,7 @@ function locatingGame() {
 
             };
             function download(href, name) {
-                var downloadLink = document.createElement("a");
+                let downloadLink = document.createElement("a");
                 downloadLink.href = href;
                 downloadLink.download = name;
                 document.body.appendChild(downloadLink);
@@ -3736,16 +3741,16 @@ function locatingGame() {
             };
 
             //==============each svg draw to canvas
-            var CanvasObjArr = getCanvas(option == 'avatar');
-            var canvas = CanvasObjArr[0],
+            let CanvasObjArr = getCanvas(option == 'avatar');
+            let canvas = CanvasObjArr[0],
                 context = CanvasObjArr[1];
 
-            var certPromise;
+            let certPromise;
 
             if (option == 'avatar')//==合成玩家自訂頭像
                 certPromise = new Promise(async (resolve) => {
 
-                    var image = new Image();
+                    let image = new Image();
                     let avatarDir = assetsDir + 'avatar/' + GameData.playerRole + '/' + GameData.playerCustom.avatarIndex + '.png';
                     image.src = avatarDir;
                     image.onload = () => {
@@ -3763,7 +3768,7 @@ function locatingGame() {
             else//==合成獎狀
                 certPromise = new Promise(async (resolve) => {
                     imgObj = await imgObj;
-                    var imgKeys = Object.keys(imgObj);
+                    let imgKeys = Object.keys(imgObj);
                     // console.debug(imgObj);
 
                     for (let index = 0; index < imgKeys.length; index++) {
@@ -3837,11 +3842,11 @@ function locatingGame() {
 
                         };
 
-                        var imgUrl = ((key == 'rankChart') || (key == 'words')) ?
+                        let imgUrl = ((key == 'rankChart') || (key == 'words')) ?
                             await getBlobUrl(value, true) :
                             value;
 
-                        var image = new Image();
+                        let image = new Image();
                         image.src = imgUrl;
                         // console.debug(key, imgUrl);
                         //確保圖層貼上順序
@@ -3882,7 +3887,7 @@ function locatingGame() {
         const title = svg.append("g").attr("class", "title");
         const focusGroup = svg.append("g").attr('class', 'focus');
 
-        var newDataObj;
+        let newDataObj;
         function getNewData() { };
         function updateChart() {
             const
@@ -3982,7 +3987,7 @@ function locatingGame() {
             };
             function render() {
 
-                var updatePhoto = () => {
+                let updatePhoto = () => {
                     let boss = svg
                         .selectAll(".image")
                         .data([0])

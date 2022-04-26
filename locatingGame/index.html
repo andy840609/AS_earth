@@ -32,8 +32,8 @@
         src="https://connect.facebook.net/zh_TW/sdk.js#xfbml=1&version=v12.0&appId=502581274226161&autoLogAppEvents=1"
         nonce="uEUntkmk"></script>-->
     <script>
-        var path = 'data/datafile/event/';
-        var game = locatingGame()
+        let path = 'data/datafile/event/';
+        let game = locatingGame()
             // .dataDir(path)
             .selector('main');
         game();
@@ -54,7 +54,7 @@
             };
 
             (function (d, s, id) {
-                var js, fjs = d.getElementsByTagName(s)[0];
+                let js, fjs = d.getElementsByTagName(s)[0];
                 if (d.getElementById(id)) { return; }
                 js = d.createElement(s); js.id = id;
                 js.src = "https://connect.facebook.net/en_US/sdk.js";

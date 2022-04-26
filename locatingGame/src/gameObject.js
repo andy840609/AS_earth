@@ -136,7 +136,7 @@ const Enemy = new Phaser.Class({
             scene.physics.world.enableBody(this, 0);
 
             //==anims
-            var animsCreate = (key) => {
+            let animsCreate = (key) => {
 
                 let deathRate = 5,
                     hurtRate = 15,
@@ -681,7 +681,7 @@ const Player = new Phaser.Class({
                 onEquip = gameData.backpack.onEquip;
 
             //==anims
-            var animsCreate = () => {
+            let animsCreate = () => {
                 let frameRate = GameObjectFrame[key].frameRate;
 
                 scene.anims.create({
@@ -948,7 +948,7 @@ const Player = new Phaser.Class({
         else if (cursors[controllCursor['right']].isDown) {
             if (scene.name === 'defend') {
                 if (this.body.onWall()) scene.detectorUI.events.emit('playerMove', 1);
-                scene.parallax.forEach((bg, i) => bg.tilePositionX -= 0.3 * (i + 1));
+                scene.parallax.forEach((bg, i) => bg.tilePositionX += 0.3 * (i + 1));
             };
             this.setVelocityX(this.stats.movementSpeed);
             if (this.flipX) this.filpHandler(false);
@@ -1079,7 +1079,7 @@ const Player = new Phaser.Class({
             this.anims.play(attackAnims);
 
             //==bullet
-            var bullet = this.bullets.get();
+            let bullet = this.bullets.get();
             // console.debug(this.stats);
             if (bullet) {
                 if (this.stats.class)
@@ -1104,7 +1104,7 @@ const Player = new Phaser.Class({
     changeHPHandler: function (scene, hpChange) {
         if (scene.gameOver.flag) return;
 
-        const invincibleDuration = 800;
+        const invincibleDuration = 1200;
         let isIncrease = hpChange >= 0;
 
         if (!isIncrease) {
@@ -1219,15 +1219,18 @@ const Player = new Phaser.Class({
         });
     },
     //==裝備、buff屬性改變
+    slowDownTween: null,//被緩速
     buffHandler: function (statsObj) {
         Object.keys(statsObj).forEach(key => {
-            this.stats[key] += statsObj[key];
             this.stats.buff[key] += statsObj[key];
+            this.stats[key] += statsObj[key];
         });
 
         //==包包開啟時改變屬性顯示
         let backpackUI = this.scene.scene.get('backpackUI');
         if (backpackUI) backpackUI.updateStatus();
+
+
     },
 
 
@@ -1245,7 +1248,7 @@ const Sidekick = new Phaser.Class({
             scene.physics.world.enableBody(this, 0);
 
             //==anims
-            var animsCreate = () => {
+            let animsCreate = () => {
                 scene.anims.create({
                     key: 'sidekick_idle',
                     frames: scene.anims.generateFrameNumbers('sidekick_idle'),
@@ -1353,7 +1356,7 @@ const Sidekick = new Phaser.Class({
     talkingHandler: function (scene, hint) {
         const hintDuration = hint.length * 300;//==對話框持續時間(包含淡入淡出時間)一個字x秒
         // hintDelay = Phaser.Math.Between(2, 5) * 1000;//==每則知識間隔
-        var hintDelay = 1000;//==每則知識間隔
+        let hintDelay = 1000;//==每則知識間隔
 
         if (this.talkingCallback) {//==特殊對話馬上出現
             if (this.talkingTween) this.talkingTween.remove();
@@ -1450,7 +1453,7 @@ const Sidekick = new Phaser.Class({
         this.dialog.setPosition(this.x, this.y - 30);
         this.dust.setPosition(this.x, this.y);//揚起灰塵效果跟隨
 
-        var getHint = () => {
+        let getHint = () => {
             const replaceStr = '\t';
             const controllCursor = scene.gameData.controllCursor;
 
@@ -1660,12 +1663,12 @@ class Chunk {
         if (!this.isLoaded) {
             let tileSize = this.gameScene.tileSize;
 
-            for (var y = 0; y < this.gameScene.chunkSize; y++) {
-                var tileY = (this.y * this.gameScene.chunkWidth) + (y * tileSize);
+            for (let y = 0; y < this.gameScene.chunkSize; y++) {
+                let tileY = (this.y * this.gameScene.chunkWidth) + (y * tileSize);
                 if (tileY < this.gameScene.groundY) continue;//==地面上不鋪
 
-                for (var x = 0; x < this.gameScene.chunkSize; x++) {
-                    var tileX = (this.x * this.gameScene.chunkWidth) + (x * tileSize);
+                for (let x = 0; x < this.gameScene.chunkSize; x++) {
+                    let tileX = (this.x * this.gameScene.chunkWidth) + (x * tileSize);
                     if (tileX < 0 || tileX >= this.gameScene.groundW) continue;
 
                     //==地磚
@@ -1738,7 +1741,7 @@ class Chunk {
                     };
 
                     // console.debug(this.y, tileY)
-                    var perlinValue = noise.perlin2(tileX / 100, tileY / 100);
+                    let perlinValue = noise.perlin2(tileX / 100, tileY / 100);
                     // Math.abs(perlinValue) > 0.7 ? console.debug('high : ' + perlinValue.toFixed(2)) : console.debug(perlinValue);
 
 
@@ -1791,7 +1794,7 @@ class Chunk {
                             isLiquid = true;
                         };
 
-                    var tile = new Tile(this.gameScene, tileX, tileY, key);
+                    let tile = new Tile(this.gameScene, tileX, tileY, key);
 
                     if (animationKey) {
                         tile.play(animationKey);
@@ -1827,10 +1830,10 @@ class Tile extends Phaser.GameObjects.Sprite {
 //===對話框
 class RexTextBox extends RexPlugins.UI.TextBox {
     constructor(scene, config, resolve = null) {
-        var tips = resolve ? false : true;//==助手知識
-        var character = config.character;
+        let tips = resolve ? false : true;//==助手知識
+        let character = config.character;
 
-        var getTipColor = (isBox = true) => {//==每個助手對話框不同色
+        let getTipColor = (isBox = true) => {//==每個助手對話框不同色
             let name = character == 'sidekick' ?
                 scene.gameData.sidekick.type : character;
 
@@ -1867,9 +1870,9 @@ class RexTextBox extends RexPlugins.UI.TextBox {
         };
         const iconW = tips ? 0 : 200;//==扣掉頭像和按鈕的空間
 
-        var wrapWidth = GetValue(config, 'wrapWidth', 0) - iconW;
-        var fixedWidth = GetValue(config, 'fixedWidth', 0) - iconW;
-        var fixedHeight = GetValue(config, 'fixedHeight', 0);
+        let wrapWidth = GetValue(config, 'wrapWidth', 0) - iconW;
+        let fixedWidth = GetValue(config, 'fixedWidth', 0) - iconW;
+        let fixedHeight = GetValue(config, 'fixedHeight', 0);
 
         //===textBox config
         let roundCorner = tips ?
@@ -2015,7 +2018,7 @@ class RexDialog extends RexPlugins.UI.Dialog {
         // console.debug(scene, config, resolve);
 
         //== quizType:['魔王問答','確認框','按鍵設定監聽按鍵','選擇語言']
-        var data = config.data,
+        let data = config.data,
             quizType = config.quizType;
 
         const
@@ -2032,7 +2035,7 @@ class RexDialog extends RexPlugins.UI.Dialog {
             bottom: 3,
         };
 
-        var createLabel = (scene, text, backgroundColor) => {
+        let createLabel = (scene, text, backgroundColor) => {
             return new RexPlugins.UI.Label(scene, {
                 background: scene.add.existing(new RexPlugins.UI.RoundRectangle(scene, 0, 0, 100, 40, 20, backgroundColor)),
                 text: scene.add.text(0, 0, text, {
@@ -2048,7 +2051,7 @@ class RexDialog extends RexPlugins.UI.Dialog {
                 align: !quizType ? 'left' : 'center',
             });
         };
-        var setDialog = (data) => {
+        let setDialog = (data) => {
             // console.debug(scene);
             if (!quizType) {
                 //==分行
@@ -2072,10 +2075,10 @@ class RexDialog extends RexPlugins.UI.Dialog {
                 // Set title
                 this.getElement('title').text = GetValue(data, 'title', ' ');
                 // Set choices
-                var choiceTextArray = GetValue(data, 'choices', []).sort(() => 0.5 - Math.random());
-                var choiceText;
-                var choices = this.getElement('choices');
-                for (var i = 0, cnt = choices.length; i < cnt; i++) {
+                let choiceTextArray = GetValue(data, 'choices', []).sort(() => 0.5 - Math.random());
+                let choiceText;
+                let choices = this.getElement('choices');
+                for (let i = 0, cnt = choices.length; i < cnt; i++) {
                     choiceText = choiceTextArray[i];
                     if (choiceText != null) {
                         this.showChoice(i);
@@ -2277,8 +2280,8 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
             x = config.x, y = config.y;
         // console.debug(scene);
 
-        var data, footerItem, panelName = config.panelType;
-        var tmp = null;//==按鍵設定...
+        let data, footerItem, panelName = config.panelType;
+        let tmp = null;//==按鍵設定...
         switch (panelType) {
             case 0:
                 data = {
@@ -2330,17 +2333,17 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
             bottom: 5,
         };
 
-        var createPanel = (scene, data) => {
+        let createPanel = (scene, data) => {
             const categoryArray = Object.keys(data.category);
 
-            var createTable = (scene, key = null) => {
-                var IsURLKey = function (key) {
+            let createTable = (scene, key = null) => {
+                let IsURLKey = function (key) {
                     return (key.substring(0, 4) === 'url:');
                 };
-                var GetURL = function (key) {
+                let GetURL = function (key) {
                     return key.substring(4, key.length);
                 };
-                var getText = (text, major = true) => {
+                let getText = (text, major = true) => {
                     let BBCodeText = scene.add.existing(
                         new RexPlugins.UI.BBCodeText(scene, 0, 0, text, {
                             fontSize: major ? '36px' : '18px',
@@ -2856,7 +2859,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                 // console.debug(table);
                 return table;
             };
-            var createIcon = (scene, iconType, config = {}) => {
+            let createIcon = (scene, iconType, config = {}) => {
                 //===panelType暫定: 0:緣由 1:設定 2:連結 3:排行榜 4.道具
                 //===iconType: controll,language
 
@@ -2898,7 +2901,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
 
             return Panel;
         };
-        var createLabel = (scene, text, backgroundColor) => {
+        let createLabel = (scene, text, backgroundColor) => {
             return new RexPlugins.UI.Label(scene, {
                 background: scene.add.existing(new RexPlugins.UI.RoundRectangle(scene, 0, 0, 100, 40, 20, backgroundColor)),
                 text: scene.add.text(0, 0, text, {
@@ -2915,8 +2918,8 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
             });
         };
         //===關閉面板按鈕
-        var createFooter = (scene, footerItem) => {
-            var createButton = (text) => {
+        let createFooter = (scene, footerItem) => {
+            let createButton = (text) => {
                 return new RexPlugins.UI.Label(scene, {
                     width: 100,
                     height: 40,
@@ -2934,7 +2937,7 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                 });
             };
 
-            var buttons = new RexPlugins.UI.Buttons(scene, {
+            let buttons = new RexPlugins.UI.Buttons(scene, {
                 orientation: scrollMode,
                 buttons: footerItem.map(item => createButton(item)),
                 space: { right: 50, item: 50 },
@@ -3036,8 +3039,8 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
 //==創角色UI
 class RexForm extends RexPlugins.UI.Sizer {
     constructor(scene, config, resolve) {
-        var gameData = config.gameData;
-        var character = config.character;
+        let gameData = config.gameData;
+        let character = config.character;
 
         const GetValue = Phaser.Utils.Objects.GetValue;
         const COLOR_PRIMARY = 0x4e342e;
@@ -3062,12 +3065,12 @@ class RexForm extends RexPlugins.UI.Sizer {
 
         let playerCustom = gameData.playerCustom;
 
-        var playerName = playerCustom.name,
+        let playerName = playerCustom.name,
             avatarIndex = playerCustom.avatarIndex,
             avatarBgColor = playerCustom.avatarBgColor,
             sidekickType = gameData.sidekick.type;
 
-        var createHeader = (scene, text, backgroundColor) => {
+        let createHeader = (scene, text, backgroundColor) => {
             return new RexPlugins.UI.Label(scene, {
                 background: scene.add.existing(new RexPlugins.UI.RoundRectangle(scene, 0, 0, 100, 40, 20, backgroundColor)),
                 text: scene.add.text(0, 0, text, {
@@ -3083,8 +3086,8 @@ class RexForm extends RexPlugins.UI.Sizer {
                 align: 'center',
             });
         };
-        var createFooter = (scene, footerItem) => {
-            var createButton = (text) => {
+        let createFooter = (scene, footerItem) => {
+            let createButton = (text) => {
                 return new RexPlugins.UI.Label(scene, {
                     width: 100,
                     height: 40,
@@ -3103,7 +3106,7 @@ class RexForm extends RexPlugins.UI.Sizer {
                 });
             };
 
-            var buttons = new RexPlugins.UI.Buttons(scene, {
+            let buttons = new RexPlugins.UI.Buttons(scene, {
                 buttons: footerItem.map(item => createButton(item)),
                 space: { right: 50, item: 50 },
                 align: 'right',
@@ -3182,8 +3185,8 @@ class RexForm extends RexPlugins.UI.Sizer {
             return buttons;
         };
         //===頭像名子助手區塊
-        var createID = (scene) => {
-            var label = (text) => {
+        let createID = (scene) => {
+            let label = (text) => {
                 return new RexPlugins.UI.Label(scene, {
                     text: scene.add.text(0, 0, text, {
                         fontSize: '24px',
@@ -3198,7 +3201,7 @@ class RexForm extends RexPlugins.UI.Sizer {
                     align: 'center',
                 });
             };
-            var textBox = () => {
+            let textBox = () => {
                 return new RexPlugins.UI.Label(scene, {
                     background: scene.add.existing(
                         new RexPlugins.UI.RoundRectangle(scene, 0, 0, 10, 10, 10).setStrokeStyle(2, COLOR_LIGHT)),
@@ -3210,7 +3213,7 @@ class RexForm extends RexPlugins.UI.Sizer {
                 })
                     .setInteractive()
                     .on('pointerdown', function () {
-                        var config = {
+                        let config = {
                             onTextChanged: function (textObject, text) {
                                 playerName = text;
                                 textObject.text = text;
@@ -3219,7 +3222,7 @@ class RexForm extends RexPlugins.UI.Sizer {
                         rextexteditplugin.edit(this.getElement('text'), config);
                     });
             };
-            var avatar = () => {
+            let avatar = () => {
                 return new RexPlugins.UI.Label(scene, {
                     background: scene.add.existing(
                         new RexPlugins.UI.RoundRectangle(scene, 0, 0, 0, 0, 5, avatarBgColor).setStrokeStyle(5, COLOR_LIGHT)),
@@ -3234,7 +3237,7 @@ class RexForm extends RexPlugins.UI.Sizer {
                     },
                 });
             };
-            var sideKickIcon = (key) => {
+            let sideKickIcon = (key) => {
                 const iconW = 30;
 
                 let icon = new Phaser.GameObjects.Image(scene, 0, 0, key + '_avatar');
@@ -3304,8 +3307,8 @@ class RexForm extends RexPlugins.UI.Sizer {
                     });
 
         };
-        var createGrid = (scene, isTexture = false) => {
-            var createCell = (index) => {
+        let createGrid = (scene, isTexture = false) => {
+            let createCell = (index) => {
                 const form = this;
 
                 let key = isTexture ?
@@ -3389,7 +3392,7 @@ class RexForm extends RexPlugins.UI.Sizer {
         };
 
         super(scene, formConfig);
-        var background = scene.add.existing(
+        let background = scene.add.existing(
             new RexPlugins.UI.RoundRectangle(scene, 0, 0, 10, 10, 10, COLOR_PRIMARY));
 
 
@@ -3466,14 +3469,14 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
             bottom: 3,
         };
 
-        var keyWords = [];
+        let keyWords = [];
         switch (config.text) {
             case 'info1_detail':
                 keyWords = [UItextJSON['Pwave'], UItextJSON['Swave']];
                 break;
         };
 
-        var createHeader = (scene, text, backgroundColor) => {
+        let createHeader = (scene, text, backgroundColor) => {
             return new RexPlugins.UI.Label(scene, {
                 background: scene.add.existing(new RexPlugins.UI.RoundRectangle(scene, 0, 0, 100, 40, 0, backgroundColor)),
                 text: scene.add.text(0, 0, text, {
@@ -3510,8 +3513,8 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
             sizerEvents: true,
         };
         super(scene, sheetConfig);
-        var background = scene.add.image(0, 0, config.img);
-        var header = createHeader(scene, UItextJSON['closeInfo'], COLOR_DARK);
+        let background = scene.add.image(0, 0, config.img);
+        let header = createHeader(scene, UItextJSON['closeInfo'], COLOR_DARK);
 
         this
             .addBackground(background)
@@ -3549,8 +3552,8 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
         const lines = content.split('\n');
 
         //==箭頭動畫
-        var arrowTweens = [];
-        var arrowAnime = (arrowIdx, show = true) => {
+        let arrowTweens = [];
+        let arrowAnime = (arrowIdx, show = true) => {
             let hintGroup = [
                 this.getElement('arrow' + arrowIdx),
                 this.getElement('label' + arrowIdx),
@@ -3597,7 +3600,7 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
         };
 
 
-        var getText = (str) => {
+        let getText = (str) => {
             let keyWordIdx = keyWords.findIndex(w => w === str);
             let text = scene.add.text(0, 0, str, {
                 fontSize: 20,
@@ -3624,7 +3627,7 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
 
             return text;
         };
-        var spitKey = (words) => {
+        let spitKey = (words) => {
             //==不一定先出現keyWords裡前面的元素，所以不能用迴圈
             let IdxOfArray = keyWords.map((key, i) => words[words.length - 1].indexOf(key));
             let minIdxOf = Math.min(...IdxOfArray.filter(i => i !== -1));
@@ -3636,16 +3639,16 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
             };
             return words;
         };
-        for (var li = 0, lcnt = lines.length; li < lcnt; li++) {
+        for (let li = 0, lcnt = lines.length; li < lcnt; li++) {
             let words = spitKey([lines[li]]);//['ABC']
-            for (var wi = 0, wcnt = words.length; wi < wcnt; wi++) {
+            for (let wi = 0, wcnt = words.length; wi < wcnt; wi++) {
                 this.add(getText(words[wi]));
             };
             this.addNewLine();
         };
 
         //==圖片
-        var img = scene.add.image(0, 0, config.pic).setName('pic');
+        let img = scene.add.image(0, 0, config.pic).setName('pic');
         img.setScale(config.width * 0.8 / img.width);
 
         this
@@ -3653,7 +3656,7 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
             .addNewLine();
 
         //==箭頭,標籤,線
-        var getLabel = (text, i = 0) => {
+        let getLabel = (text, i = 0) => {
             return new RexPlugins.UI.Label(scene, {
                 background: scene.add.existing(
                     new RexPlugins.UI.RoundRectangle(scene, 0, 0, 100, 40, 5, i % 2 === 0 ? COLOR_PRIMARY : COLOR_SECONDARY)
@@ -3664,12 +3667,12 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
                 }),
             }).setAlpha(0);
         };
-        var getArrow = () => {
+        let getArrow = () => {
             return scene.add.image(0, 0, 'sheetArrow')
                 .setScale(0.7)
                 .setAlpha(0);
         };
-        var getLine = () => {
+        let getLine = () => {
             return scene.add.line(0, 0, 0, 0, 0, 0, 0xEA7500)
                 .setAlpha(0);
         };

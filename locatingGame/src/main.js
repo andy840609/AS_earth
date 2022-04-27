@@ -41,12 +41,15 @@ function locatingGame() {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 300 },
-                    // debug: true,
+                    debug: true,
                 },
             },
             dom: {//==for rexUI:rexTextEdit
                 createContainer: true
             },
+            // scale: {
+            //     mode: Phaser.Scale.FIT,
+            // }
         };
 
     };
@@ -333,6 +336,7 @@ function locatingGame() {
                             bigW = originW * 2,
                             fixPos = 0.5 * (originW - bigW);
 
+                        // console.debug(bagImg.css("top") === '0px')
                         //==包包變大
                         bagImg.stop(false, true).animate({
                             width: bigW,
@@ -443,25 +447,8 @@ function locatingGame() {
                             { name: 'sunny', amount: 12 },
                             // { name: 'carrot', amount: 12 },
                             // { name: 'sunny', amount: 12 },
-                            // { name: 'sunny', amount: 12 },
-                            // { name: 'sunny', amount: 12 },
-                            // { name: 'sunny', amount: 12 },
-                            // { name: 'sunny', amount: 12 },
-                            // { name: 'sunny', amount: 12 },
-                            // { name: 'sunny', amount: 12 },
-                            // { name: 'sunny', amount: 12 },
-                            // { name: 'sunny', amount: 12 },
-                            // { name: 'sunny', amount: 12 },
-                            // { name: 'sunny', amount: 12 },
-                            // { name: 'sunny', amount: 12 },
-                            // { name: 'sunny', amount: 12 },
-                            // { name: 'sunny', amount: 12 },
-                            // { name: 'sunny', amount: 12 },
-                            // { name: 'sunny', amount: 12 },
-                            // { name: 'sunny', amount: 12 },
-                            // { name: 'sunny', amount: 12 },
                         ],
-                        equip: ['syringe'],//背包中裝備
+                        equip: ['syringe', 'medicalKit', 'scientistCard'],//背包中裝備[]
                         onEquip: ['syringe'],//人物裝備中
                     },
                 };
@@ -781,7 +768,7 @@ function locatingGame() {
                     data.forEach((d, i) => {
                         // console.debug(d);
                         // let enemy = ['dog', 'cat', 'dove'];//==之後隨機抽敵人組
-                        let enemy = ['dove'];//==之後隨機抽敵人組
+                        let enemy = ['cat'];//==之後隨機抽敵人組
                         // let enemy = copyEnemyArr.length !== 0 ?//===拷貝的陣列抽完才全隨機
                         //     [copyEnemyArr.pop()] :
                         //     [enemyArr[getRandom(enemyArr.length)]];
@@ -1343,8 +1330,23 @@ function locatingGame() {
                                                 if (isAnswer === 'true') {
                                                     bingoCount++;
                                                     // bingoCount === 9 ? a : bingoCount === 9
-                                                    console.debug(bingoCount);
-                                                    const gainItems = [['pumpkin', 5]];
+                                                    // console.debug(bingoCount);
+                                                    let gainItems;
+                                                    switch (bingoCount) {
+                                                        case 3:
+                                                            gainItems = [['medicalKit', 0], ['bread', 5]];
+                                                            break;
+                                                        case 6:
+                                                            gainItems = [['syringe', 0], ['bread', 5]];
+                                                            break;
+                                                        case 9:
+                                                            gainItems = [['scientistCard', 0], ['bread', 5]];
+                                                            break;
+                                                        default:
+                                                            gainItems = [['pumpkin', 5]];
+                                                            break;
+                                                    }
+
                                                     hintTextAnime('itemGain2', gainItems);
                                                 }
                                                 else {
@@ -1464,9 +1466,10 @@ function locatingGame() {
                                                 itemBuff: Object.keys(itemBuff).map(key =>
                                                     `${GameData.localeJSON.UI[key] + (itemBuff[key] > 0 ? ' +' : ' ') + itemBuff[key]}`).join('<br>'),
                                                 itemInfo: itemInfo['short'],
+                                                itemdetail: itemInfo['long'],
                                             };
 
-                                            const tooltipBlock = ['itemName', 'itemBuff', 'itemInfo'];
+                                            const tooltipBlock = ['itemName', 'itemBuff', 'itemInfo', 'itemdetail'];
                                             let html = tooltipBlock.map(key => `<div class="tooltipText" id="${key}">${blockText[key]}</div>`).join('');
 
                                             itemTooltip
@@ -1568,11 +1571,12 @@ function locatingGame() {
                                                         //==數量用完就刪除
                                                         if ((item.amount -= 1) <= 0) GameData.backpack[selectData.key].splice(selectData.idx, 1);
                                                     };
-
+                                                    break;
                                             };
-
                                             gameUI.find('#playerStatsUI').trigger('updateEvt');
                                             UI.trigger('updateEvt');
+
+
                                         });
                                         console.debug(GameData);
 

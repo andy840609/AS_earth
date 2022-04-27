@@ -4029,6 +4029,14 @@ class UIScene extends Phaser.Scene {
                                         charaBlock.updateOnEquip(backpackData.onEquip);
                                         charaBlock.updateCharaPic(backpackData.onEquip);
 
+                                        //==特殊裝備效果
+                                        if (equipItem === 'scientistCard' && isEquip) {
+                                            gameScene.enemy.children.iterate(child => {
+                                                // console.debug(child.behavior);
+                                                child.behavior = 'worship';
+                                            });
+                                        };
+
                                         break;
                                     case 'use':
                                         gameScene.hotKeyUI.useItemHandler(itemIdx);
@@ -5374,6 +5382,12 @@ class LoadingScene extends Phaser.Scene {
                         this.load.spritesheet(enemy + '_Hurt', dir + 'Hurt.png', frameObj);
                         this.load.spritesheet(enemy + '_Idle', dir + 'Idle.png', frameObj);
                         this.load.spritesheet(enemy + '_Walk', dir + 'Walk.png', frameObj);
+                        if (enemy === 'dove') {
+                            this.load.spritesheet(enemy + '_goo', dir + 'goo.png', { frameWidth: 58, frameHeight: 56 });
+                            // this.load.image(enemy + '_goo1', dir + 'goo1.png');
+                            // this.load.image(enemy + '_goo2', dir + 'goo2.png');
+                            // this.load.image(enemy + '_goo3', dir + 'goo3.png');
+                        };
 
                     });
                 };
@@ -6062,7 +6076,18 @@ class DefendScene extends Phaser.Scene {
                                 };
 
                                 if (pickUper.name === 'player') {
-                                    this.scene.player.buffHandler(changeStats);
+                                    if (pickUper.slowDownTween) {
+                                        // console.debug(pickUper.slowDownTween.slowDownSpeed)
+                                        let originalSpeed = pickUper.stats['movementSpeed'] + pickUper.slowDownTween.slowDownSpeed;
+                                        let newSlowDown = (originalSpeed + changeStats['movementSpeed']) * pickUper.slowDownTween.slowDownRate;
+                                        // console.debug(originalSpeed, newSlowDown)
+                                        if (originalSpeed && newSlowDown) {
+                                            changeStats['movementSpeed'] += (pickUper.slowDownTween.slowDownSpeed - newSlowDown);
+                                            pickUper.slowDownTween.slowDownSpeed = newSlowDown;
+                                        };
+                                        // console.debug(pickUper.slowDownTween.slowDownSpeed, changeStats)
+                                    };
+                                    pickUper.buffHandler(changeStats);
                                 }
                                 else
                                     Object.keys(pickUper.stats).forEach(key =>
@@ -6218,8 +6243,34 @@ class DefendScene extends Phaser.Scene {
 
                 if (child.bullets && child.bullets.name === "eggs") {
                     // console.debug(child.bullets);
-                    const slowDownRate = 0.2;
+                    let slowDownPlayer = (player) => {
+                        const slowDownDur = 3000,
+                            slowDownRate = 0.8;
+                        player.slowDownTween = this.tweens.addCounter({
+                            targets: player,
+                            from: 10,
+                            to: 0,
+                            duration: slowDownDur,
+                            onUpdate: function (tween) {
+                                const value = Math.floor(tween.getValue());
+                                player.setTint(value % 2 ? 0xCC00CC : 0x990099);
+                            },
+                            onStart: (tween) => {
+                                // console.debug(tween);
+                                tween.slowDownSpeed = player.stats.movementSpeed * slowDownRate;
+                                player.buffHandler({ movementSpeed: -tween.slowDownSpeed });
+                            },
+                            onComplete: (tween) => {
+                                player.clearTint();
+                                player.buffHandler({ movementSpeed: tween.slowDownSpeed });
+                                player.slowDownTween.remove();
+                                player.slowDownTween = null;
+                                // console.debug('ccc');
+                            },
+                        });
 
+                        player.slowDownTween.slowDownRate = slowDownRate;
+                    };
                     child.bulletAttack = (player, bullet) => {
 
                         bullet.disableBody(true, true);
@@ -6256,37 +6307,15 @@ class DefendScene extends Phaser.Scene {
                                 //==沒有針筒被緩速
                                 if (!this.gameData.backpack.onEquip.includes('syringe')) {
                                     // console.debug('slowDownDur');
-                                    const slowDownDur = 5000;
+
 
                                     if (player.slowDownTween) {
-                                        console.debug(player.slowDownTween);
+                                        // console.debug(player.slowDownTween);
                                         player.slowDownTween.remove();
                                         player.slowDownTween.callbacks.onComplete.func(player.slowDownTween);
                                         player.slowDownTween = null;
                                     };
-                                    player.slowDownTween = this.tweens.addCounter({
-                                        targets: player,
-                                        from: 10,
-                                        to: 0,
-                                        duration: slowDownDur,
-                                        onUpdate: function (tween) {
-                                            const value = Math.floor(tween.getValue());
-                                            player.setTint(value % 2 ? 0xCC00CC : 0x990099);
-                                        },
-                                        onStart: (tween) => {
-                                            // console.debug(tween);
-                                            tween.slowDownSpeed = player.stats.movementSpeed * slowDownRate;
-                                            player.buffHandler({ movementSpeed: -tween.slowDownSpeed });
-                                        },
-                                        onComplete: (tween) => {
-                                            player.clearTint();
-                                            player.buffHandler({ movementSpeed: tween.slowDownSpeed });
-                                            player.slowDownTween.remove();
-                                            player.slowDownTween = null;
-                                            // console.debug('ccc');
-                                        },
-                                    });
-
+                                    slowDownPlayer(player);
                                 };
 
 
@@ -6302,16 +6331,40 @@ class DefendScene extends Phaser.Scene {
                             if (bullet.anims.getName() === anim) return;
                             bullet.play(anim, true);
                             bullet.body.enable = false;
-                            this.time.delayedCall(1000, () => {
+                            this.time.delayedCall(600, () => {
                                 bullet.disableBody(true, true);
+
+                                //==緩速黏液
+                                const gooDur = 2000;
+                                // gooNum = Phaser.Math.Between(1, 3);
+
+                                let goo = this.physics.add.sprite(bullet.x, platform.y - 0.8 * platform.displayHeight)
+                                    .setScale(2)
+                                    .setOrigin(0.5, 1)
+                                    .setImmovable(true)
+                                    .setDepth(Depth.bullet)
+                                    .play(child.name + '_goo');
+
+                                goo.body
+                                    .setSize(40, 20, true)
+                                    .setOffset(goo.body.offset.x, 30)
+                                    .setAllowGravity(false);
+
+                                // console.debug(goo);
+                                let gooCollider = this.physics.add.overlap(goo, this.player, () => {
+                                    // console.debug('aaa');
+                                    if (this.player.slowDownTween ||
+                                        this.gameData.backpack.onEquip.includes('syringe')) return;
+                                    slowDownPlayer(this.player);
+                                });
+
+                                this.time.delayedCall(gooDur, () => {
+                                    goo.destroy();
+                                    gooCollider.destroy();
+                                }, [], this);
                             }, [], this);
 
-                            //==緩速黏液
-                            let slime = this.add.sprite(bullet.x, bullet.y, 'sunny')
-                                .setDepth(Depth.bullet);
-                            this.time.delayedCall(1000, () => {
-                                bullet.disableBody(true, true);
-                            }, [], this);
+
                         });
 
                 };
@@ -6501,8 +6554,9 @@ class DefendScene extends Phaser.Scene {
 
             let playerStats = this.player.stats;
             if (playerStats.MP < playerStats.maxMP)
-                this.player.statsChangeHandler({ MP: playerStats.manaRegen }, this);//自然回魔
-
+                this.player.statsChangeHandler({ MP: playerStats.manaRegen / 100 }, this);//自然回魔
+            if (playerStats.healthRegen > 0 && playerStats.HP < playerStats.maxHP)
+                this.player.statsChangeHandler({ HP: playerStats.healthRegen / 100 }, this);//回血
             //==狀態對話框
             this.player.dialog.setPosition(this.player.x, this.player.y - this.player.displayHeight * 0.3);
         };
@@ -7191,7 +7245,9 @@ class DigScene extends Phaser.Scene {
 
             let playerStats = this.player.stats;
             if (playerStats.MP < playerStats.maxMP)
-                this.player.statsChangeHandler({ MP: playerStats.manaRegen }, this);//自然回魔
+                this.player.statsChangeHandler({ MP: playerStats.manaRegen / 100 }, this);//自然回魔(game update per 10ms,10ms=1/100s)
+            if (playerStats.healthRegen > 0 && playerStats.HP < playerStats.maxHP)
+                this.player.statsChangeHandler({ HP: playerStats.healthRegen / 100 }, this);//回血
 
             //==狀態對話框
             this.player.dialog.setPosition(this.player.x, this.player.y - this.player.displayHeight * 0.3);

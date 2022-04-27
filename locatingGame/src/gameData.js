@@ -94,7 +94,8 @@ const GameObjectStats = {
             bulletSize: [120, 130],
             knockBackSpeed: 250,//==擊退時間固定200ms,這個速度越大擊退越遠
             manaCost: 10,
-            manaRegen: 0.1,//per 10 ms(game update per 10ms)0.1
+            manaRegen: 10,//per sec
+            healthRegen: 0,
             HP: 150,
             maxHP: 150,
             MP: 60,
@@ -117,7 +118,8 @@ const GameObjectStats = {
             bulletSize: [40, 40],
             knockBackSpeed: 10,//==擊退時間固定200ms,這個速度越大擊退越遠
             manaCost: 20,
-            manaRegen: 0.15,//per 10 ms(game update per 10ms)0.1
+            manaRegen: 15,//per 10 ms(game update per 10ms)0.1
+            healthRegen: 0,
             HP: 80,
             maxHP: 80,
             MP: 150,
@@ -498,6 +500,18 @@ const GameItemData = {
             attackPower: 20,
             movementSpeed: 100,
             jumpingPower: 100,
+        },
+    },
+    medicalKit: {
+        type: 2,
+        buff: {
+            healthRegen: 1,
+        },
+    },
+    scientistCard: {
+        type: 2,
+        buff: {
+
         },
     },
     sunny: {

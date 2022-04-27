@@ -198,6 +198,12 @@ const Enemy = new Phaser.Class({
                         frameRate: attackRate,
                         repeat: 0,
                     });
+                    scene.anims.create({
+                        key: key + '_goo',
+                        frames: scene.anims.generateFrameNumbers(key + '_goo'),
+                        frameRate: 4,
+                        repeat: 0,
+                    });
                 }
                 else
                     scene.anims.create({
@@ -247,13 +253,18 @@ const Enemy = new Phaser.Class({
                     name: 'eggs',
                     // maxVelocityY: 0,
                 });
+
+
+            if (scene.gameData.backpack.onEquip.includes('scientistCard'))
+                this.behavior = 'worship';
         },
 
     //=處理轉向
     filpHandler: function (filp) {
-        let bodyOffset = (this.name == 'dove') ? [filp ? 14 : 4, 15] : [filp ? 18 : 5, 30];
+        // let bodyOffset = (this.name == 'dove') ? [filp ? 14 : 4, 15] : [filp ? 18 : 5, 30];
         this.flipX = filp;
-        this.body.setOffset(...bodyOffset);
+        // this.body.setOffset(...bodyOffset);
+        this.body.setOffset(this.body.offset.x, (this.name == 'dove') ? 15 : 30);
     },
 
     //==血條顯示
@@ -384,6 +395,25 @@ const Enemy = new Phaser.Class({
                                 }, [], scene);
                             }
                             break;
+                        case 'worship':
+                            //===判斷player相對敵人的位子來轉向(轉向時停下)
+                            let filpDir = player.x < this.x;
+                            if (this.flipX != filpDir)
+                                this.filpHandler(filpDir);
+
+                            if (this.behaviorCallback) {
+                                this.behaviorCallback.remove();
+                                this.behaviorCallback = null;
+                            };
+
+                            if (this.body.touching.down) {
+                                this.body.reset(this.x, this.y);
+                                this.anims.play('dog_Idle', true);
+                                this.body.enable = false;
+                                return;
+                            };
+
+                            break;
                     };
 
 
@@ -462,11 +492,12 @@ const Enemy = new Phaser.Class({
                                 this.anims.msPerFrame = 30;
 
                                 if (this.body.touching.down) {
+                                    // console.debug('touch down');
                                     //==玩家跳起時距離小於某數貓也跳起
                                     if (!player.body.touching.down && Phaser.Math.Distance.BetweenPoints(player, this) < 300) {
                                         // console.debug(this.body.speed);
                                         let speed = this.body.speed > 800 ? 800 : this.body.speed;
-                                        this.body.reset(this.x, this.y)//==停下    
+                                        this.body.reset(this.x, this.y)//==停下   
                                         this.body.setVelocity(speed * (player.x > this.x ? 1 : -1), -this.stats.jumpingPower);
                                     }
                                     //==以加速度追
@@ -480,9 +511,14 @@ const Enemy = new Phaser.Class({
                                     let filpDir = player.x < this.x;
                                     if (this.flipX != filpDir)
                                         this.filpHandler(filpDir);
-                                };
+                                }
+                                // else if (this.body.onWall()) {
+                                //     // this.body.setVelocityY(0);
+                                //     this.body.reset(this.x, this.y)//==停下   
+                                //     this.body.setAccelerationY(this.stats.jumpingPower);
+                                // };
 
-
+                                // console.debug(this.body.velocity.y);
                             };
                             break;
                         case 'cruising':
@@ -513,7 +549,11 @@ const Enemy = new Phaser.Class({
                                 let filpDir = randomX < this.x;
                                 if (this.flipX != filpDir)
                                     this.filpHandler(filpDir);
-                            };
+                            }
+                            // else if (this.body.onWall()) {
+                            //     this.behavior = 'rest';
+                            //     this.body.reset(this.x, this.y);//==停下
+                            // };
                             break;
                         default:
                         case 'rest':
@@ -529,10 +569,30 @@ const Enemy = new Phaser.Class({
                                 }, [], scene);
                             }
                             break;
+                        case 'worship':
+                            //===判斷player相對敵人的位子來轉向(轉向時停下)
+                            let filpDir = player.x < this.x;
+                            if (this.flipX != filpDir)
+                                this.filpHandler(filpDir);
+
+                            if (this.behaviorCallback) {
+                                this.behaviorCallback.remove();
+                                this.behaviorCallback = null;
+                            };
+
+                            if (this.body.touching.down) {
+                                this.body.reset(this.x, this.y);
+                                this.anims.play('cat_Idle', true);
+                                this.body.enable = false;
+                                return;
+                            };
+                            break;
                     };
 
                 };
                 // console.debug();
+
+
                 //==死亡
                 if (this.stats.HP <= 0) {
                     // console.debug('cat_Death');
@@ -635,6 +695,23 @@ const Enemy = new Phaser.Class({
                                 };
                             };
 
+
+                            break;
+                        case 'worship':
+                            //===判斷player相對敵人的位子來轉向(轉向時停下)
+                            let filpDir = player.x < this.x;
+                            if (this.flipX != filpDir)
+                                this.filpHandler(filpDir);
+
+                            if (this.body.touching.down) {
+                                this.body.reset(this.x, this.y);
+                                this.anims.play('dove_Idle', true);
+                                this.body.enable = false;
+                                return;
+                            };
+                            let speed = this.stats.movementSpeed;//pixel per sec
+                            this.body.setVelocityX(0);
+                            scene.physics.accelerateTo(this, this.x, scene.platforms.getChildren()[0].y, speed / 2, speed);
 
                             break;
                     };
@@ -1102,7 +1179,7 @@ const Player = new Phaser.Class({
     invincibleFlag: false,//無敵時間
     changeHPTween: null,
     changeHPHandler: function (scene, hpChange) {
-        if (scene.gameOver.flag) return;
+        if (scene.gameOver.flag || Math.abs(hpChange) < 1) return;
 
         const invincibleDuration = 1200;
         let isIncrease = hpChange >= 0;
@@ -1222,7 +1299,8 @@ const Player = new Phaser.Class({
     slowDownTween: null,//被緩速
     buffHandler: function (statsObj) {
         Object.keys(statsObj).forEach(key => {
-            this.stats.buff[key] += statsObj[key];
+            if (Object.keys(this.stats.buff).includes(key))
+                this.stats.buff[key] += statsObj[key];
             this.stats[key] += statsObj[key];
         });
 

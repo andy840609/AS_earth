@@ -647,7 +647,6 @@ svg {
     opacity: .95;
     background-image: url(../data/assets/ui/map/itemBG.png);
     padding: 10px 20px;
-    white-space: nowrap;
     pointer-events: none;
     transform: translateY(-25%);
     display: none;
@@ -660,17 +659,28 @@ svg {
 .itemTooltip #itemName {
     font: small-caps bold 28px sans-serif;
     color: white;
+    white-space: nowrap;
 }
 
 .itemTooltip #itemBuff {
     font: small-caps bold 24px sans-serif;
     color: #BEBEBE;
+    white-space: nowrap;
 }
 
 .itemTooltip #itemInfo {
     font: small-caps bold 18px sans-serif;
     color: #EAC100;
+    white-space: nowrap;
 }
+
+.itemTooltip #itemdetail {
+    font: small-caps bold 14px sans-serif;
+    color: #444444;
+    white-space: wrap;
+    margin-top: 0px;
+}
+
 
 .itemSelectBar {
     position: absolute;

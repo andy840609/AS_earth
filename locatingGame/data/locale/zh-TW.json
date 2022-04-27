@@ -85,6 +85,7 @@
         "defense": "防禦力",
         "movementSpeed": "移動速度",
         "jumpingPower": "跳躍力",
+        "healthRegen": "HP回復力",
         "hotkey": "快捷鍵",
         "detector": "探測器",
         "timeRemain": "剩餘時間",
@@ -448,52 +449,62 @@
         "pan": {
             "name": "平底鍋",
             "short": "好像很適合用來煎蛋",
-            "long": "好像很適合用來煎蛋"
+            "long": "增加防禦力，還可以把鴿子蛋變成早餐"
         },
         "syringe": {
             "name": "腎上腺素",
-            "short": "激發你的潛能",
-            "long": "激發你的潛能"
+            "short": "沒有什麼能讓你停下來",
+            "long": "激發你的潛能，增加攻擊力、移動速度、跳躍力，並且免疫所有緩速效果"
+        },
+        "medicalKit": {
+            "name": "醫藥箱",
+            "short": "你的隨身醫師",
+            "long": "HP會隨著時間慢慢回復"
+        },
+        "scientistCard": {
+            "name": "科學證",
+            "short": "你是偉大的科學家",
+            "long": "所有生物都崇拜你！"
         },
         "sunny": {
             "name": "太陽蛋",
             "short": "美好的一天從早晨開始",
-            "long": "美好的一天從早晨開始"
+            "long": "回復少量HP、MP"
         },
         "bread": {
             "name": "麵包",
             "short": "好吃的麵包",
-            "long": "好吃的麵包"
+            "long": "回復少量HP"
         },
         "greens": {
             "name": "青菜",
             "short": "好吃的青菜",
-            "long": "好吃的青菜"
+            "long": "回復HP"
         },
         "okra": {
             "name": "麵包",
             "short": "好吃的麵包",
-            "long": "好吃的麵包"
+            "long": "回復HP"
         },
         "croissant": {
             "name": "可頌",
             "short": "好吃的可頌",
-            "long": "好吃的可頌"
+            "long": "回復HP"
         },
         "carrot": {
             "name": "紅蘿蔔",
             "short": "好吃的紅蘿蔔",
-            "long": "好吃的紅蘿蔔"
+            "long": "回復HP"
         },
         "pumpkin": {
             "name": "南瓜",
             "short": "好吃的南瓜",
-            "long": "好吃的南瓜"
+            "long": "回復大量HP、MP"
         },
         "bone": {
             "name": "骨頭",
             "short": "骨頭骨頭骨頭",
-            "long": "好吃的南瓜"
+            "long": "回復HP"
         }
     },
     "quickQuestion": {

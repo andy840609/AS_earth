@@ -261,10 +261,10 @@ const Enemy = new Phaser.Class({
 
     //=處理轉向
     filpHandler: function (filp) {
-        // let bodyOffset = (this.name == 'dove') ? [filp ? 14 : 4, 15] : [filp ? 18 : 5, 30];
         this.flipX = filp;
-        // this.body.setOffset(...bodyOffset);
         this.body.setOffset(this.body.offset.x, (this.name == 'dove') ? 15 : 30);
+        // let bodyOffset = (this.name == 'dove') ? [filp ? 14 : 4, 15] : [filp ? 18 : 5, 30];
+        // this.body.setOffset(...bodyOffset);
     },
 
     //==血條顯示
@@ -512,11 +512,11 @@ const Enemy = new Phaser.Class({
                                     if (this.flipX != filpDir)
                                         this.filpHandler(filpDir);
                                 }
-                                // else if (this.body.onWall()) {
-                                //     // this.body.setVelocityY(0);
-                                //     this.body.reset(this.x, this.y)//==停下   
-                                //     this.body.setAccelerationY(this.stats.jumpingPower);
-                                // };
+                                else if (this.body.onWall()) {
+                                    // this.body.setVelocityY(0);
+                                    this.body.reset(this.x, this.y)//==停下   
+                                    this.body.setAccelerationY(this.stats.jumpingPower);
+                                };
 
                                 // console.debug(this.body.velocity.y);
                             };
@@ -550,10 +550,10 @@ const Enemy = new Phaser.Class({
                                 if (this.flipX != filpDir)
                                     this.filpHandler(filpDir);
                             }
-                            // else if (this.body.onWall()) {
-                            //     this.behavior = 'rest';
-                            //     this.body.reset(this.x, this.y);//==停下
-                            // };
+                            else if (this.body.onWall()) {
+                                this.behavior = 'rest';
+                                this.body.reset(this.x, this.y);//==停下
+                            };
                             break;
                         default:
                         case 'rest':

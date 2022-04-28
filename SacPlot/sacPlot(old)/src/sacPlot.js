@@ -1,25 +1,35 @@
 function sacPlots() {
+
     let selector = 'body';
-    let rawData = [];
-    let titleArr = null;
-    let channel = null;
+    let paths = [];
+    let data = [];
+    let normalize = false;
+    let pre_xdomain = [];
+    let title, channel;
 
     chart.selector = (vaule) => {
         selector = vaule;
         return chart;
-    };
+    }
 
-    chart.data = async (vaule) => {
-        let paths = vaule;
-        rawData = paths.map(path => {
-            return $.ajax({
+    chart.data = (vaule) => {
+        paths = vaule;
+
+        data = [];
+        // console.debug(paths);
+        // console.debug(normalize);
+        let n = normalize ? 1 : 0;
+        let xyPaths = paths.map(d => d + '.n' + n + 'xy');
+        // console.debug(xyPaths);
+
+
+        xyPaths.forEach(path => {
+            let xyArr = [];
+            $.ajax({
                 url: path,
                 dataType: "text",
-                async: true,
+                async: false,
                 success: function (text) {
-                    let fileName = path.substring(path.lastIndexOf('/') + 1);
-                    let xyArr = [];
-
                     let rows = text.split('\n');
                     rows.forEach(row => {
                         if (row != '') {
@@ -27,40 +37,49 @@ function sacPlots() {
                             xyArr.push({ 'x': parseFloat(col[0]), 'y': parseFloat(col[1]) });
                         }
                     });
-
-                    return { fileName: fileName, data: xyArr };
                 },
                 error: function (XMLHttpRequest, textStatus, errorThrown) {
                     console.debug(XMLHttpRequest, textStatus, errorThrown);
-                },
+                }
             });
+            let startStr = '/';
+            let startIndex = path.lastIndexOf(startStr) + startStr.length;
+            let endIndex = (path.search(/.n0xy/) >= 0) ? path.indexOf('.n0xy') : path.indexOf('.n1xy');
+            let fileName = path.substring(startIndex, endIndex);
+            let fileNameArr = fileName.split('.');
+            if (fileNameArr[fileNameArr.length - 1].search(/_/) >= 0)
+                fileName = fileName.substring(0, fileName.indexOf('_'));
+            data.push({ fileName: fileName, data: xyArr });
         });
-        console.log(rawData);
+        // console.log('data=');
+        console.log(data);
         return chart;
-    };
+    }
 
     chart.title = (vaule) => {
-        titleArr = vaule.split(' ');
+        title = vaule;
         return chart;
-    };
+    }
 
     chart.legend = (vaule) => {
-        channel = vaule.split(' ');
+        channel = vaule;
         return chart;
-    };
+    }
 
     function chart() {
-        let data = rawData;
-        let normalize = false;
-        let pre_xdomain = [];
-        let title = "";
+
+        // const chartContainerJQ = $(selector);
+        // const chartContainerD3 = d3.select(selector);
+
         let referenceTime, referenceTimeStr;
 
-        if (titleArr) {
+        if (title) {
+            let titleArr = title.split(' ');
+            title = "";
             for (let i = 0; i < titleArr.length - 1; i++) {
                 title += titleArr[i];
                 if (i != titleArr.length - 2) title += ".";
-            };
+            }
             referenceTimeStr = titleArr[titleArr.length - 1];
             // referenceTime = new Date(referenceTimeStr + "Z");
             // referenceTime = referenceTime == "Invalid Date" ? null : referenceTime.getTime();
@@ -69,7 +88,14 @@ function sacPlots() {
             // referenceTime = null;
             //test
             // if (referenceTime) data.forEach(d => d.data.forEach(p => p.x = 1000 * p.x + referenceTime));
-        };
+
+
+
+            // console.debug(data);
+        }
+        else title = "";
+
+        channel = channel ? channel.split(' ') : null;
 
         let getLineColor = (index) => {
             switch (index % 6) {
@@ -88,7 +114,7 @@ function sacPlots() {
                 default:
                     return "steelblue";
             }
-        };
+        }
         let getMargin = (tickLength = 5) => {
             let left;
             if (tickLength >= 10)
@@ -98,7 +124,7 @@ function sacPlots() {
             else
                 left = 50;
             return ({ top: 20, right: 30, bottom: 30, left: left });
-        };
+        }
         //solve deviation from float calculate
         let floatCalculate = (method, ...theArgs) => {
             let result;
@@ -154,7 +180,7 @@ function sacPlots() {
                     break;
             }
             return result;
-        };
+        }
         let toScientificNotation = (number, maxIndex = undefined) => {
             // console.debug(number);
             let singed, numberAbs;
@@ -197,7 +223,7 @@ function sacPlots() {
                 else
                     return [number, 0];
 
-        };
+        }
 
         // console.debug(channel);
         function init() {
@@ -248,11 +274,11 @@ function sacPlots() {
             $('#normalize').change(function (event) {
                 // console.debug(pre_xdomain);
                 normalize = !normalize;
-                // chart.data(paths);
+                chart.data(paths);
 
                 //x+referenceTime
-                console.debug("referenceTime=" + referenceTime);
-                // if (referenceTime) data.forEach(d => d.data.forEach(p => p.x = 1000 * p.x + referenceTime));
+                // console.debug("referenceTime=" + referenceTime);
+                if (referenceTime) data.forEach(d => d.data.forEach(p => p.x = 1000 * p.x + referenceTime));
 
                 printChart($('input[name ="plotType"]:checked').val());
             });
@@ -268,8 +294,9 @@ function sacPlots() {
         };
         function printChart(plotType) {
             $('#charts').children().remove();
-
+            // $('.tooltip').remove();
             let i = 1;
+
             let getChartMenu = (title) => {
                 // console.log(d.data);
                 let div = document.createElement("div");
@@ -603,9 +630,8 @@ function sacPlots() {
                 // brushSideB.attr('x', selection[1]);
                 // console.debug('pre=' + pre_selection);
                 //=================brushSide======================================
-            };
+            }
 
-            //限制brush刷新頻率
             const updateDelay = 10;
             let updateFlag = true;
             let updateTimeOut = null;
@@ -621,9 +647,10 @@ function sacPlots() {
                 }, updateDelay);
 
                 updateFlag = false;
-            };
+            }
 
-            //三種圖表
+
+
             function trace() {
                 let extend;
                 let chartNodes = [];
@@ -747,7 +774,21 @@ function sacPlots() {
                         .style("text-anchor", "middle")
                         .attr("alignment-baseline", "text-before-edge")
                         .attr("transform", "rotate(-90)")
-                        .call(g => g.text("Amplipude" + normalize ? "(count)" : ""));
+                        .call(g => {
+                            if (normalize)
+                                g.text("Amplipude (count)");
+                            else
+                                // g.text("Amplipude (cm/s")
+                                //     .append('tspan')
+                                //     .attr("dy", 5)
+                                //     .attr("font-size", "8")
+                                //     .text('2')
+                                //     .append('tspan')
+                                //     .attr("dy", 4)
+                                //     .attr("font-size", "10")
+                                //     .text(')');
+                                g.text("Amplipude");
+                        });
                     // console.debug(yAxis);
 
                     const svg = d3.create("svg")
@@ -1258,7 +1299,7 @@ function sacPlots() {
                 // console.debug(pre_xdomain);
                 return chartNodes;
 
-            };
+            }
             function windowChart(data) {
 
                 let lastIndex = data.length - 1;
@@ -1310,6 +1351,7 @@ function sacPlots() {
                         // console.debug('tickRange= ' + tickRange);
                         return tickRange;
                     }
+                    // let tickRange = normalize ? 1 : getTickRange();
                     let tickRange = assign_tickRange ? assign_tickRange : getTickRange();
 
                     //for tick values look better
@@ -2159,8 +2201,12 @@ function sacPlots() {
                 svg.call(events, focus);
 
                 return svg.node();
-            };
+            }
             function overlayChart() {
+
+                let lastIndex = data.length - 1;
+                // data.forEach(d => { console.debug(d.data[0]); console.debug(d.data[d.data.length - 1]) })
+
                 let width = 800;
                 let height = 500;
                 let height2 = 65;//for context
@@ -2217,18 +2263,29 @@ function sacPlots() {
                     .attr("transform", `translate(${margin.left},0)`)
                     .attr("class", "yAxis")
                     .call(d3.axisLeft(y)
+                        // .tickValues(d3.range(y.domain()[0], y.domain()[1] + (tickRange / 10), tickRange))
+                        // .tickValues(getTickValues(y.domain()[0], y.domain()[1] + (tickRange / 10), tickRange))
                         .ticks(height / 40))
 
                     // //＝＝＝＝＝＝＝＝＝＝tick轉科學記號
                     // //刻度轉成科學記號的常數
                     .call(g => {
+                        // let tick_toSN_index = toScientificNotation(tickRange)[1];
+                        // g.selectAll(".tick text")._groups[0].forEach(d => {
+                        //     console.debug(d.textContent);
+                        // });
                         let ticks = g.selectAll(".tick text")._groups[0];
                         let tickRange = ticks[1].__data__ - ticks[0].__data__;
                         tick_toSN_index = toScientificNotation(tickRange)[1];
+
+                        // console.debug(tick_toSN_index);
                         tick_SN_Arr = [];
+                        // console.debug(tick_SN_Arr);
 
                         g.selectAll(".tick text")._groups[0].forEach(d => {
+                            // console.debug(d.__data__);
                             let SN = toScientificNotation(d.__data__, tick_toSN_index);
+                            // tick_SN_Arr.push({ constant: SN[0], index: SN[1] });
                             tick_SN_Arr.push({ constant: SN[0] });
                         });
                         // console.debug(tick_SN_Arr);
@@ -2259,8 +2316,15 @@ function sacPlots() {
                     .call(g => {
                         let lastTickIndex = g.selectAll("g.yAxis g.tick")._groups[0].length - 1;
                         g.selectAll("g.yAxis g.tick line")
+                            // .attr("stroke-width", "1px")
                             .attr("x2", d => width - margin.left - margin.right)
-                            .attr("stroke-opacity", (d, i) => i == lastTickIndex ? 1 : 0.2);
+                            .attr("stroke-opacity", (d, i) => {
+                                // console.debug(lastTick);
+                                if (i == lastTickIndex)
+                                    return 1;
+                                else
+                                    return 0.2;
+                            });
                     })
                     .append('text')
                     .attr('x', -height / 2)
@@ -2271,7 +2335,21 @@ function sacPlots() {
                     .style("text-anchor", "middle")
                     .attr("alignment-baseline", "text-before-edge")
                     .attr("transform", "rotate(-90)")
-                    .call(g => g.text("Amplipude" + normalize ? "(count)" : ""));
+                    .call(g => {
+                        if (normalize)
+                            g.text("Amplipude (count)");
+                        else
+                            // g.text("Amplipude (cm/s")
+                            //     .append('tspan')
+                            //     .attr("dy", 5)
+                            //     .attr("font-size", "8")
+                            //     .text('2')
+                            //     .append('tspan')
+                            //     .attr("dy", 4)
+                            //     .attr("font-size", "10")
+                            //     .text(')');
+                            g.text("Amplipude");
+                    });
 
 
 
@@ -2557,7 +2635,11 @@ function sacPlots() {
                                             else
                                                 SN_html = constant + ' x 10<sup>' + index + '</sup>';
                                             let html = "<font size='5'>" + SN_html + "</font>";
+                                            // if (normalize)
                                             return html;
+                                            // else {
+                                            //     return html + ' cm/s<sup>2</sup>';
+                                            // }
                                         });
                                 });
 
@@ -3019,7 +3101,8 @@ function sacPlots() {
                 svg.call(events);
 
                 return svg.node();
-            };
+            }
+
 
             if (plotType == 'window') {
                 getChartMenu('wf_plot');
@@ -3042,13 +3125,17 @@ function sacPlots() {
                     i++;
                 })
 
-            };
+            }
             MenuEvents();
+
+
         };
 
         if (!($('#form-chart').length >= 1))
             init();
-    };
+
+
+    }
 
     return chart;
-};
+}

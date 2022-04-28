@@ -4682,11 +4682,40 @@ class UIScene extends Phaser.Scene {
 
                         //==物品效果
                         let gameItemData = GameItemData[itemName];
-                        if (gameItemData.type === 0) {//是消耗品
-                            Object.keys(gameItemData.buff).forEach(key =>
-                                gameScene.player.statsChangeHandler({ [key]: gameItemData.buff[key] }));
+                        switch (gameItemData.type) {
+                            case 0://是消耗品
+                                Object.keys(gameItemData.buff).forEach(key =>
+                                    gameScene.player.statsChangeHandler({ [key]: gameItemData.buff[key] }));
+                                break;
+                            case 1://是放置物品
+                                console.debug('是放置物品');
+                                if (gameScene.name === 'boss') return;
+                                let trap = gameScene.physics.add.image(gameScene.player.x, gameScene.player.y, 'item_' + itemName)
+                                    .setDepth(Depth.wave);
+                                trap.setScale(blockW / trap.width, blockW / trap.height);
+                                trap.collider = gameScene.physics.add.collider(trap, gameScene.platforms);
+                                gameScene.itemOnFloor.push(trap);
+                                if (gameScene.enemy)
+                                    switch (itemName) {
+                                        case 'okra':
+                                            gameScene.enemy.children.iterate((child, i) =>
+                                                child.name === 'dog' ? child.behavior = 'worship' : false
+                                            );
+                                            break;
+                                        // case '':
+                                        //     break;
+                                        // case '':
+                                        //     break;
+                                    };
+                                // trap.setC
+                                console.debug(trap);
+                                break;
                         };
-
+                        // if (gameItemData.type === 0) {//是消耗品
+                        //     Object.keys(gameItemData.buff).forEach(key =>
+                        //         gameScene.player.statsChangeHandler({ [key]: gameItemData.buff[key] }));
+                        // };
+                        console.debug('是放置物品');
                         //==數量用完就刪除
                         if ((itemData[itemIdx].amount -= 1) <= 0) itemData.splice(itemIdx, 1);
                         this.updateHotKey(itemName);
@@ -5682,6 +5711,7 @@ class DefendScene extends Phaser.Scene {
             platforms: null,
             gameTimer: null,
             cursors: null,
+            itemOnFloor: [],
             waveForm: {
                 overviewSvgObj: null,
                 svgObj: null,
@@ -6713,6 +6743,7 @@ class DigScene extends Phaser.Scene {
             platforms: null,
             gameTimer: null,
             cursors: null,
+            itemOnFloor: [],
             gameData: GameData,
             background: placeData.background,
             mineBGindex: placeData.mineBGindex,

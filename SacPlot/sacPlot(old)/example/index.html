@@ -24,8 +24,14 @@
     <script src="../src/sacPlot.js"></script>
     <script>
 
-        var paths = ['../data/A002.10.HLE.xy', '../data/A002.10.HLN.xy', '../data/A002.10.HLZ.xy'];
+        var paths = ['../data/A002.10.HLE', '../data/A002.10.HLN', '../data/A002.10.HLZ'];
+        // var paths = [
+        //     'http://192.168.201.82/GDMS_projects/SacPlot/sacPlot_clone(mod_with_title)/data/A002.10.HLE',
+        //     '../data/A002.10.HLN',
+        //     '../data/A002.10.HLZ'
+        // ];
 
+        // var paths = ['../data/201602051950.TW.0000549.BN1', '../data/201602051950.TW.0000549.BN2', '../data/201602051950.TW.0000549.BN3'];
         var chart = sacPlots()
             .data(paths)
             .title("TSMIP 10 A002 2020-01-01T00:00:00")

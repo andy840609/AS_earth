@@ -441,9 +441,9 @@ function locatingGame() {
                     //     onEquip: [],//人物裝備中
                     // },
                     backpack: {//==道具裝備相關
-                        hotKey: ['sunny'],//快捷鍵
+                        hotKey: ['okra', 'sunny'],//快捷鍵
                         item: [//消耗品
-                            // { name: 'bone', amount: 1 },
+                            { name: 'okra', amount: 999 },
                             { name: 'sunny', amount: 12 },
                             // { name: 'carrot', amount: 12 },
                             // { name: 'sunny', amount: 12 },
@@ -768,10 +768,10 @@ function locatingGame() {
                     data.forEach((d, i) => {
                         // console.debug(d);
                         // let enemy = ['dog', 'cat', 'dove'];//==之後隨機抽敵人組
-                        let enemy = ['cat'];//==之後隨機抽敵人組
-                        // let enemy = copyEnemyArr.length !== 0 ?//===拷貝的陣列抽完才全隨機
-                        //     [copyEnemyArr.pop()] :
-                        //     [enemyArr[getRandom(enemyArr.length)]];
+                        // let enemy = ['dove'];//==之後隨機抽敵人組
+                        let enemy = copyEnemyArr.length !== 0 ?//===拷貝的陣列抽完才全隨機
+                            [copyEnemyArr.pop()] :
+                            [enemyArr[getRandom(enemyArr.length)]];
 
                         let enemyStats = {};
 

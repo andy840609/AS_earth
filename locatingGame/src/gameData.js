@@ -535,10 +535,9 @@ const GameItemData = {
         }
     },
     okra: {
-        type: 0,
+        type: 1,
         buff: {
-            HP: 30,
-            MP: 50,
+
         }
     },
     croissant: {

@@ -1,6 +1,6 @@
 function sacPlots() {
     let selector = 'body';
-    let rawData = [];
+    let rawData = null;
     let titleArr = null;
     let channel = null;
 
@@ -9,33 +9,61 @@ function sacPlots() {
         return chart;
     };
 
-    chart.data = async (vaule) => {
+    chart.data = (vaule) => {
         let paths = vaule;
-        rawData = paths.map(path => {
+
+        let promises = paths.map((path) => {
             return $.ajax({
                 url: path,
                 dataType: "text",
                 async: true,
-                success: function (text) {
-                    let fileName = path.substring(path.lastIndexOf('/') + 1);
-                    let xyArr = [];
-
-                    let rows = text.split('\n');
-                    rows.forEach(row => {
-                        if (row != '') {
-                            let col = row.trim().split(/\s+/);
-                            xyArr.push({ 'x': parseFloat(col[0]), 'y': parseFloat(col[1]) });
-                        }
-                    });
-
-                    return { fileName: fileName, data: xyArr };
-                },
                 error: function (XMLHttpRequest, textStatus, errorThrown) {
                     console.debug(XMLHttpRequest, textStatus, errorThrown);
                 },
+            }).then(success => {
+                let fileName = path.substring(path.lastIndexOf('/') + 1);
+                let xyArr = [];
+
+                let rows = success.split('\n');
+                rows.forEach(row => {
+                    if (row != '') {
+                        let col = row.trim().split(/\s+/);
+                        xyArr.push({ 'x': parseFloat(col[0]), 'y': parseFloat(col[1]) });
+                    }
+                });
+
+                return { fileName: fileName, data: xyArr };
             });
         });
-        console.log(rawData);
+
+        //==將原資料算出 normalize_self 和 normalize_all
+        rawData = Promise.all(promises).then(raw => {
+            let tmpData = raw.map(s => s.data);
+            let maxAmpArr = tmpData.map(data => d3.max(data, d => Math.abs(d.y))),
+                maxAmp = d3.max(maxAmpArr);
+            console.log(tmpData);
+            console.log(maxAmpArr, maxAmp);
+
+            //===normalize_self
+            let self = tmpData.map((data, i) =>
+                new Object({
+                    fileName: raw[i].fileName,
+                    data: data.map(d => new Object({ x: d.x, y: d.y / maxAmpArr[i] }))
+                })
+            );
+            console.log(self);
+            //===normalize_all
+            let all = tmpData.map((data, i) =>
+                new Object({
+                    fileName: raw[i].fileName,
+                    data: data.map(d => new Object({ x: d.x, y: d.y / maxAmp }))
+                })
+            );
+            console.log(all);
+
+            return { raw, self, all };
+        });
+        // console.log(rawData);
         return chart;
     };
 
@@ -49,12 +77,16 @@ function sacPlots() {
         return chart;
     };
 
-    function chart() {
-        let data = rawData;
-        let normalize = false;
+    async function chart() {
+
+        let normalize = 0;//==0:raw 1:self 2:all
         let pre_xdomain = [];
         let title = "";
         let referenceTime, referenceTimeStr;
+
+        rawData = await rawData;
+        let data = rawData.raw;
+        console.debug(rawData, data);
 
         if (titleArr) {
             for (let i = 0; i < titleArr.length - 1; i++) {
@@ -205,27 +237,31 @@ function sacPlots() {
                 <form id="form-chart">
             <div class="form-group" id="chartsOptions" style="display: inline;">
                 <div class="row">
-                    <div
-                        class="form-group col-lg-3 col-md-3 col-sm-6 d-flex justify-content-end  align-items-start flex-column col-md-6">
-                        <div id="normalize-group" class="form-group">
-                            <input class="form-check-label" type="checkbox" id="normalize" name="normalize">
-                            <label class="form-check-label" for="normalize" data-lang="">
-                                normalization
-                            </label>
-                        </div>
-                    </div>
-    
-                    <div class="form-group col-lg-3 col-md-3 col-sm-6 ">
-                        <div class="btn-group btn-group-toggle" data-toggle="buttons">
-                            <label class="btn btn-secondary active">
-                                <input type="radio" name="plotType" id="trace" value="trace" checked> trace
-                            </label>
-                            <label class="btn btn-secondary">
-                                <input type="radio" name="plotType" id="window" value="window"> window
-                            </label>
-                            <label class="btn btn-secondary">
-                                <input type="radio" name="plotType" id="overlay" value="overlay"> overlay
-                            </label>
+
+                    <div class="form-group col-12">
+                
+                        <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
+                            <input type="radio" class="btn-check" name="plotType" id="trace"  value="trace" autocomplete="off" checked>
+                            <label class="btn btn-secondary" for="trace">trace</label>
+
+                            <input type="radio" class="btn-check" name="plotType" id="window"  value="window" autocomplete="off">
+                            <label class="btn btn-secondary" for="window">window</label>
+
+                            <input type="radio" class="btn-check" name="plotType" id="overlay" value="overlay" autocomplete="off">
+                            <label class="btn btn-secondary" for="overlay">overlay</label>
+                       
+                       
+                            <div class="btn-group" role="group" >
+                                <button class="btn btn-secondary dropdown-toggle" type="button" id="normalizeBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Data
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="normalizeBtn">
+                                    <li><button class="dropdown-item" type="button" name="normalize" value="raw">raw data</button></li>
+                                    <li><button class="dropdown-item" type="button" name="normalize" value="self">normalization(self)</button></li>
+                                    <li><button class="dropdown-item" type="button" name="normalize" value="all">normalization(all)</button></li>
+                                </ul>
+                            </div>
+
                         </div>
                     </div>
     
@@ -245,18 +281,22 @@ function sacPlots() {
                 $('input[name ="plotType"][value="trace"]').trigger('change');
             });
 
-            $('#normalize').change(function (event) {
+            $('button[name ="normalize"]').click(function (e) {
                 // console.debug(pre_xdomain);
-                normalize = !normalize;
-                // chart.data(paths);
+                // console.debug(this.value);
+
+                data = rawData[this.value];
+                normalize = !(this.value === 'raw');
+                $('#normalizeBtn').text(this.value);
+
 
                 //x+referenceTime
-                console.debug("referenceTime=" + referenceTime);
+                // console.debug("referenceTime=" + referenceTime);
                 // if (referenceTime) data.forEach(d => d.data.forEach(p => p.x = 1000 * p.x + referenceTime));
 
                 printChart($('input[name ="plotType"]:checked').val());
             });
-            $('input[name ="plotType"]').change(function (event) {
+            $('input[name ="plotType"]').change(function (e) {
                 // console.debug(this.value);
                 if (this.value == 'trace')
                     pre_xdomain = [];
@@ -266,7 +306,7 @@ function sacPlots() {
                 printChart(this.value);
             });
         };
-        function printChart(plotType) {
+        async function printChart(plotType) {
             $('#charts').children().remove();
 
             let i = 1;

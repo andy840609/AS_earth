@@ -41,7 +41,7 @@ function locatingGame() {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 300 },
-                    debug: true,
+                    // debug: true,
                 },
             },
             dom: {//==for rexUI:rexTextEdit
@@ -432,25 +432,25 @@ function locatingGame() {
                         doneTalking: false,
                         stopHotkey: false,//==對話完空白鍵不再出現對話（只能滑鼠點）
                     },
-                    // backpack: {//==道具裝備相關
-                    //     hotKey: [],//快捷鍵
-                    //     item: [//消耗品
-
-                    //     ],
-                    //     equip: [],//背包中裝備
-                    //     onEquip: [],//人物裝備中
-                    // },
                     backpack: {//==道具裝備相關
-                        hotKey: ['okra', 'sunny'],//快捷鍵
+                        hotKey: [],//快捷鍵
                         item: [//消耗品
-                            { name: 'okra', amount: 999 },
-                            { name: 'sunny', amount: 12 },
-                            // { name: 'carrot', amount: 12 },
-                            // { name: 'sunny', amount: 12 },
+
                         ],
-                        equip: ['syringe', 'medicalKit', 'scientistCard'],//背包中裝備[]
-                        onEquip: ['syringe'],//人物裝備中
+                        equip: [],//背包中裝備
+                        onEquip: [],//人物裝備中
                     },
+                    // backpack: {//==道具裝備相關
+                    //     hotKey: ['catfood', 'okra'],//快捷鍵
+                    //     item: [//消耗品
+                    //         { name: 'okra', amount: 999 },
+                    //         { name: 'sunny', amount: 12 },
+                    //         { name: 'bone', amount: 999 },
+                    //         { name: 'catfood', amount: 999 },
+                    //     ],
+                    //     equip: ['syringe', 'medicalKit', 'scientistCard'],//背包中裝備[]
+                    //     onEquip: ['medicalKit'],//人物裝備中
+                    // },
                 };
             };
             function initStartScene() {
@@ -489,12 +489,12 @@ function locatingGame() {
                     //==test
 
                     if (1) {//doneTutorial     
-                        const gainItems = [['pan', 0], ['bread', 5]];
+                        const gainItems = [['pan', 0], ['bread', 5], ['bone', 3]];
                         hintTextAnime('itemGain1', gainItems);
                     };
                     initMap();
                     //==test
-                    gameStart('defend');
+                    // gameStart('defend');
                     // gameStart('dig');
                     //==test
                 };
@@ -768,7 +768,7 @@ function locatingGame() {
                     data.forEach((d, i) => {
                         // console.debug(d);
                         // let enemy = ['dog', 'cat', 'dove'];//==之後隨機抽敵人組
-                        // let enemy = ['dove'];//==之後隨機抽敵人組
+                        // let enemy = ['cat'];//==之後隨機抽敵人組
                         let enemy = copyEnemyArr.length !== 0 ?//===拷貝的陣列抽完才全隨機
                             [copyEnemyArr.pop()] :
                             [enemyArr[getRandom(enemyArr.length)]];
@@ -1172,8 +1172,6 @@ function locatingGame() {
                                         });
 
 
-
-
                                         break;
                                     case 'velocityChart':
                                         //==lock gif
@@ -1343,7 +1341,8 @@ function locatingGame() {
                                                             gainItems = [['scientistCard', 0], ['bread', 5]];
                                                             break;
                                                         default:
-                                                            gainItems = [['pumpkin', 5]];
+
+                                                            gainItems = [['pumpkin', 5], ['catfood', 3]];
                                                             break;
                                                     }
 
@@ -1367,7 +1366,7 @@ function locatingGame() {
                                         const blockSize = {//==[row,colum]
                                             onEquip: [1, 1],
                                             equip: [1, 4],
-                                            item: [5, 4],
+                                            item: [3, 4],
                                         };
 
                                         UI
@@ -1785,7 +1784,7 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
-                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             let lat = e.latlng.lat,
                                 lng = e.latlng.lng
 

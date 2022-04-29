@@ -138,6 +138,7 @@ class UIScene extends Phaser.Scene {
                                 // else//==create UI
                                 //     this.scene.add(null, new UIScene(key, this), true);
 
+
                                 if (!this.game.scene.getScene(key))
                                     this.scene.add(null, new UIScene(key, this), true);
                                 else if (this.scene.isSleeping(key))
@@ -3850,12 +3851,8 @@ class UIScene extends Phaser.Scene {
                 };
                 break;
             case 'backpackUI'://===道具
-                //==不觸發探測器事件
-                if (gameScene.scene.isActive('detectorUI'))
-                    gameScene.scene.pause('detectorUI');
-
                 const backpackData = gameData.backpack;
-                // console.debug(backpackData);
+                // console.debug(this);
 
                 preload = () => { };
                 create = () => {
@@ -4030,12 +4027,13 @@ class UIScene extends Phaser.Scene {
                                         charaBlock.updateCharaPic(backpackData.onEquip);
 
                                         //==特殊裝備效果
-                                        if (equipItem === 'scientistCard' && isEquip) {
-                                            gameScene.enemy.children.iterate(child => {
-                                                // console.debug(child.behavior);
-                                                child.behavior = 'worship';
-                                            });
-                                        };
+                                        if (gameScene.enemy)
+                                            if (equipItem === 'scientistCard' && isEquip) {
+                                                gameScene.enemy.children.iterate(child => {
+                                                    // console.debug(child.behavior);
+                                                    child.behavior = 'worship';
+                                                });
+                                            };
 
                                         break;
                                     case 'use':
@@ -4049,7 +4047,7 @@ class UIScene extends Phaser.Scene {
                                         break;
                                 };
 
-                                console.debug(button.name, index, gameObject.name);
+                                // console.debug(button.name, index, gameObject.name);
 
 
                                 if (button.name !== 'hotkey') {
@@ -4567,12 +4565,22 @@ class UIScene extends Phaser.Scene {
 
                     console.debug(this);
                     //==關閉背包下拉選單同時移除
-                    this.events.on('destroy', () => {
-                        if (gameScene.gameOver.flag) return;
-                        gameScene.scene.remove('menuScene');
-                        if (gameScene.scene.get('detectorUI'))
+                    this.events
+                        .on('create', () => {
+                            // console.debug('create')
+                            this.scene.bringToTop();
+                            gameScene.scene.pause('detectorUI');
+                        })
+                        .on('wake', () => {
+                            this.scene.bringToTop();
+                            gameScene.scene.pause('detectorUI');
+                        })
+                        .on('sleep', () => {
+                            // console.debug('sleep')
+                            if (gameScene.gameOver.flag) return;
+                            gameScene.scene.remove('menuScene');
                             gameScene.scene.resume('detectorUI');
-                    });
+                        });
 
                     gameScene.backpackUI = this;
                 };
@@ -4688,34 +4696,40 @@ class UIScene extends Phaser.Scene {
                                     gameScene.player.statsChangeHandler({ [key]: gameItemData.buff[key] }));
                                 break;
                             case 1://是放置物品
-                                console.debug('是放置物品');
+                                // console.debug('是放置物品');
                                 if (gameScene.name === 'boss') return;
                                 let trap = gameScene.physics.add.image(gameScene.player.x, gameScene.player.y, 'item_' + itemName)
+                                    .setName(itemName)
                                     .setDepth(Depth.wave);
+
                                 trap.setScale(blockW / trap.width, blockW / trap.height);
                                 trap.collider = gameScene.physics.add.collider(trap, gameScene.platforms);
                                 gameScene.itemOnFloor.push(trap);
-                                if (gameScene.enemy)
+                                if (gameScene.enemy) {
+                                    let enemyName;
                                     switch (itemName) {
-                                        case 'okra':
-                                            gameScene.enemy.children.iterate((child, i) =>
-                                                child.name === 'dog' ? child.behavior = 'worship' : false
-                                            );
+                                        case 'bone':
+                                            enemyName = 'dog';
+                                            break;
+                                        case 'catfood':
+                                            enemyName = 'cat';
                                             break;
                                         // case '':
                                         //     break;
-                                        // case '':
-                                        //     break;
                                     };
-                                // trap.setC
-                                console.debug(trap);
+
+                                    gameScene.enemy.children.iterate((child, i) =>
+                                        child.name === enemyName && child.behavior !== 'Death' ?
+                                            child.behavior = 'possessed' : false
+                                    );
+                                };
                                 break;
                         };
                         // if (gameItemData.type === 0) {//是消耗品
                         //     Object.keys(gameItemData.buff).forEach(key =>
                         //         gameScene.player.statsChangeHandler({ [key]: gameItemData.buff[key] }));
                         // };
-                        console.debug('是放置物品');
+                        // console.debug('是放置物品');
                         //==數量用完就刪除
                         if ((itemData[itemIdx].amount -= 1) <= 0) itemData.splice(itemIdx, 1);
                         this.updateHotKey(itemName);
@@ -6465,6 +6479,8 @@ class DefendScene extends Phaser.Scene {
         let firstTimeEvent = () => {
             if (this.firstTimeEvent.isFirstTime) {
                 this.gameTimer.paused = true;//==說話時暫停
+                let iconBar = this.game.scene.getScene('iconBar');
+                iconBar.scene.pause();
                 const speakDelay = 1300;
 
                 let tutorial = (content) => {
@@ -6472,7 +6488,6 @@ class DefendScene extends Phaser.Scene {
                         //各個UIScene
                         let blackOut = this.blackOut;
                         let RexUI = this.RexUI;
-                        let iconBar = this.game.scene.getScene('iconBar');
                         let detectorUI = null;//會被關掉
                         let playerUI = this.game.scene.getScene('playerUI');
                         let timerUI = this.game.scene.getScene('timerUI');
@@ -6507,12 +6522,10 @@ class DefendScene extends Phaser.Scene {
                         //==2.說明探測器的zoom
                         blackOut.scene.bringToTop();
                         //檢查是否被關掉 
-                        if (this.scene.isActive('detectorUI')) {
-                            detectorUI = this.game.scene.getScene('detectorUI');
+                        if (detectorUI = this.game.scene.getScene('detectorUI')) {
                             detectorUI.scene.bringToTop();
                         } else detectorUI = this.scene.add(null, new UIScene('detectorUI', this), true);
                         RexUI.scene.bringToTop();
-
 
                         guideSword
                             .setPosition(detectorUI.detector.x, detectorUI.detector.y);
@@ -6571,6 +6584,7 @@ class DefendScene extends Phaser.Scene {
 
                     this.firstTimeEvent.eventComplete = true;
                     this.gameTimer.paused = false;//==時間繼續
+                    iconBar.scene.resume();
                 }, [], this);
 
                 this.firstTimeEvent.isFirstTime = false;
@@ -6612,8 +6626,8 @@ class DefendScene extends Phaser.Scene {
 
         };
 
-        // firstTimeEvent();
-        // if (!this.firstTimeEvent.eventComplete && !this.gameOver.flag) return;
+        firstTimeEvent();
+        if (!this.firstTimeEvent.eventComplete && !this.gameOver.flag) return;
 
         updatePlayer();
         updateSidekick();
@@ -7181,6 +7195,9 @@ class DigScene extends Phaser.Scene {
             if (this.firstTimeEvent.isFirstTime)
                 this.scene.add(null, new UIScene('blackOut', this), true);
         };
+        let initHotKey = () => {
+            this.scene.add(null, new UIScene('hotKeyUI', this), true);
+        };
 
         //==gameScene
         initEnvironment();
@@ -7192,6 +7209,7 @@ class DigScene extends Phaser.Scene {
         initCursors();
         initIconBar();
         initTimer();
+        initHotKey();
         initDepthCounter();
         initRexUI();
     };
@@ -7200,6 +7218,8 @@ class DigScene extends Phaser.Scene {
         let firstTimeEvent = () => {
             if (this.firstTimeEvent.isFirstTime) {
                 this.gameTimer.paused = true;//==說話時暫停
+                let iconBar = this.game.scene.getScene('iconBar');
+                iconBar.scene.pause();
                 const speakDelay = 700;
 
                 let tutorial = (content) => {
@@ -7207,7 +7227,6 @@ class DigScene extends Phaser.Scene {
                         //各個UIScene
                         let blackOut = this.blackOut;
                         let RexUI = this.RexUI;
-                        let iconBar = this.game.scene.getScene('iconBar');
                         let detectorUI = null;
                         let depthCounterUI = this.game.scene.getScene('depthCounterUI');
                         // let timerUI = this.game.scene.getScene('timerUI');
@@ -7263,7 +7282,7 @@ class DigScene extends Phaser.Scene {
 
                     this.firstTimeEvent.eventComplete = true;
                     this.gameTimer.paused = false;//==時間繼續
-
+                    iconBar.scene.resume();
                 }, [], this);
                 this.firstTimeEvent.isFirstTime = false;
             };
@@ -7955,6 +7974,9 @@ class BossScene extends Phaser.Scene {
         let initRexUI = () => {
             this.scene.add(null, new UIScene('RexUI', this), true);
         };
+        let initHotKey = () => {
+            this.scene.add(null, new UIScene('hotKeyUI', this), true);
+        };
 
         //==gameScene
         initEnvironment();
@@ -7966,6 +7988,7 @@ class BossScene extends Phaser.Scene {
         initCursors();
         initIconBar();
         initTimer();
+        initHotKey();
         initCamera();
         initRexUI();
         // initQuiz();
@@ -7979,9 +8002,19 @@ class BossScene extends Phaser.Scene {
         let updateSidekick = () => {
             this.sidekick.behaviorHandler(this.player, this);
         };
+        let updatePlayer = () => {
+            this.player.equip
+                .setPosition(this.player.x, this.player.y - this.player.height * 0.35);
 
+            let playerStats = this.player.stats;
+            if (playerStats.MP < playerStats.maxMP)
+                this.player.statsChangeHandler({ MP: playerStats.manaRegen / 100 }, this);//自然回魔(game update per 10ms,10ms=1/100s)
+            if (playerStats.healthRegen > 0 && playerStats.HP < playerStats.maxHP)
+                this.player.statsChangeHandler({ HP: playerStats.healthRegen / 100 }, this);//回血
+        };
         updateBoss();
         updateSidekick();
+        updatePlayer();
 
         // console.debug(this.quizObj);
         if (this.gameOver.flag) {

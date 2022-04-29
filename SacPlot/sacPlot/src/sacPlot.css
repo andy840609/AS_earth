@@ -39,6 +39,7 @@
 }
 
 .toggle-menu a {
+    text-decoration: none;
     display: block;
 }
 
@@ -58,21 +59,6 @@
     text-decoration: none;
     color: rgba(0, 0, 0, 0.658);
 }
-
-/* div.tooltip {
-    position: absolute;
-    text-align: center;
-    width: 150px;
-    height: 115px;
-    padding: 40px;
-    font: 16px sans-serif;
-    color: white;
-    font-weight: 500;
-    background: black;
-    border: 0px;
-    border-radius: 4px;
-    pointer-events: none;
-} */
 
 .grid .tick {
     stroke: lightgrey;
@@ -102,4 +88,8 @@ a {
 
 .yAxis .domain {
     stroke: none;
+}
+
+.chart {
+    padding: 10px 15px;
 }

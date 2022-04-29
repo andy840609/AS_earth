@@ -503,8 +503,13 @@
         },
         "bone": {
             "name": "骨頭",
-            "short": "骨頭骨頭骨頭",
-            "long": "回復HP"
+            "short": "可口、營養、方便",
+            "long": "丟在地上引開狗的注意"
+        },
+        "catfood": {
+            "name": "貓罐頭",
+            "short": "愛它，就給它最好的",
+            "long": "丟在地上引開貓的注意"
         }
     },
     "quickQuestion": {

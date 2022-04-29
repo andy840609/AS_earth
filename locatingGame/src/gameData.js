@@ -510,9 +510,15 @@ const GameItemData = {
     },
     scientistCard: {
         type: 2,
-        buff: {
-
-        },
+        buff: {},
+    },
+    bone: {
+        type: 1,
+        buff: {}
+    },
+    catfood: {
+        type: 1,
+        buff: {}
     },
     sunny: {
         type: 0,
@@ -535,9 +541,10 @@ const GameItemData = {
         }
     },
     okra: {
-        type: 1,
+        type: 0,
         buff: {
-
+            HP: 30,
+            MP: 50,
         }
     },
     croissant: {
@@ -560,9 +567,6 @@ const GameItemData = {
             MP: 50,
         }
     },
-    // bone: {
-    //     type: 1,
-    //     buff: {}
-    // },
+
 };
 

@@ -223,7 +223,7 @@ svg {
     right: 0px;
     bottom: 0px;
     z-index: 1100;
-    display: none;
+    /* display: none; */
 }
 
 #gameUI .sidekickUI .sidekick {

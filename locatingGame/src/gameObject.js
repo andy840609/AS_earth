@@ -310,11 +310,13 @@ const Enemy = new Phaser.Class({
                 // console.debug(this);
                 //===人物攻擊或進入領域則啟動追擊
                 if (!this.stats.active)
-                    if (Phaser.Math.Distance.BetweenPoints(player, this) < 300 || this.behavior == 'hurt')
+                    if (Phaser.Math.Distance.BetweenPoints(player, this) < 300 || this.behavior == 'hurt' || this.behavior == 'possessed')
                         this.stats.active = true;
                     else return;
                 //===開始行爲模式(0.受傷 1.追擊 2.休息 )
                 else {
+                    let target = player;
+
                     switch (this.behavior) {
                         case 'hurt':
                             this.anims.play('dog_Hurt', true);
@@ -396,11 +398,6 @@ const Enemy = new Phaser.Class({
                             }
                             break;
                         case 'worship':
-                            //===判斷player相對敵人的位子來轉向(轉向時停下)
-                            let filpDir = player.x < this.x;
-                            if (this.flipX != filpDir)
-                                this.filpHandler(filpDir);
-
                             if (this.behaviorCallback) {
                                 this.behaviorCallback.remove();
                                 this.behaviorCallback = null;
@@ -412,13 +409,44 @@ const Enemy = new Phaser.Class({
                                 this.body.enable = false;
                                 return;
                             };
+                            break;
+                        case 'possessed':
+                            if (this.behaviorCallback) {
+                                this.behaviorCallback.remove();
+                                this.behaviorCallback = null;
+                            };
+
+                            let boneIdx = scene.itemOnFloor.findIndex(item => item.name === 'bone');
+                            // console.debug(boneArr)
+                            if (boneIdx !== -1) {
+                                target = scene.itemOnFloor[boneIdx];
+
+                                if (target.destroyCallback) return;
+
+                                // console.debug()
+                                if (Phaser.Math.Distance.BetweenPoints(this, target) < 40) {
+                                    this.body.reset(this.x, this.y);
+                                    this.anims.play('dog_Idle', true);
+                                    const destroyDur = Phaser.Math.Between(2, 4) * 1000;
+                                    target.destroyCallback = scene.time.delayedCall(destroyDur, () => {
+                                        target.destroy();
+                                        scene.itemOnFloor.splice(boneIdx, 1);
+                                    }, [], scene);
+                                }
+                                else {
+                                    this.anims.play('dog_Walk', true);
+                                    let speed = this.stats.movementSpeed;
+                                    scene.physics.accelerateToObject(this, target, speed, speed * 1.1);
+                                };
+
+                            } else {
+                                this.behavior = 'barking';
+                            };
 
                             break;
                     };
-
-
-                    //===判斷player相對敵人的位子來轉向(轉向時停下)
-                    let filpDir = player.x < this.x;
+                    //===判斷目標相對位子來轉向(轉向時停下)
+                    let filpDir = target.x < this.x;
                     if (this.flipX != filpDir) {
                         this.filpHandler(filpDir);
                         this.body.reset(this.x, this.y);
@@ -586,6 +614,43 @@ const Enemy = new Phaser.Class({
                                 this.body.enable = false;
                                 return;
                             };
+                            break;
+                        case 'possessed':
+                            if (this.behaviorCallback) {
+                                this.behaviorCallback.remove();
+                                this.behaviorCallback = null;
+                            };
+
+                            let catfoodIdx = scene.itemOnFloor.findIndex(item => item.name === 'catfood');
+                            // console.debug(boneArr)
+                            if (catfoodIdx !== -1) {
+                                target = scene.itemOnFloor[catfoodIdx];
+
+                                if (target.destroyCallback) return;
+
+                                // console.debug()
+                                if (Phaser.Math.Distance.BetweenPoints(this, target) < 40) {
+                                    this.body.reset(this.x, this.y);
+                                    this.anims.play('cat_Idle', true);
+                                    const destroyDur = Phaser.Math.Between(2, 4) * 1000;
+                                    target.destroyCallback = scene.time.delayedCall(destroyDur, () => {
+                                        target.destroy();
+                                        scene.itemOnFloor.splice(catfoodIdx, 1);
+                                    }, [], scene);
+                                }
+                                else {
+                                    this.anims.play('cat_Walk', true);
+                                    let speed = this.stats.movementSpeed;
+                                    scene.physics.accelerateToObject(this, target, speed, speed * 1.1);
+                                    let filpDir = target.x < this.x;
+                                    if (this.flipX != filpDir)
+                                        this.filpHandler(filpDir);
+                                };
+
+                            } else {
+                                this.behavior = 'rest';
+                            };
+
                             break;
                     };
 
@@ -933,6 +998,7 @@ const Player = new Phaser.Class({
 
             //====init equip
             this.equip = scene.add.image(0, 0, 'onEquip_' + onEquip[0])
+                .setPosition(-100, -100)
                 .setOrigin(0.5)
                 .setVisible(onEquip.length !== 0)
                 .setDepth(scene.Depth.player + 1);
@@ -1201,6 +1267,7 @@ const Player = new Phaser.Class({
                 repeat: 10,
                 ease: 'Sine.easeInOut',
                 onComplete: () => {
+                    this.alpha = 1;
                     this.invincibleFlag = false;
                     this.play('player_idle', true);
                 },

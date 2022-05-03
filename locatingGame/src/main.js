@@ -41,7 +41,7 @@ function locatingGame() {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 300 },
-                    // debug: true,
+                    debug: true,
                 },
             },
             dom: {//==for rexUI:rexTextEdit
@@ -432,25 +432,27 @@ function locatingGame() {
                         doneTalking: false,
                         stopHotkey: false,//==對話完空白鍵不再出現對話（只能滑鼠點）
                     },
+                    // backpack: {//==道具裝備相關
+                    //     hotKey: [],//快捷鍵
+                    //     item: [//消耗品
+
+                    //     ],
+                    //     equip: [],//背包中裝備
+                    //     onEquip: [],//人物裝備中
+                    // },
                     backpack: {//==道具裝備相關
-                        hotKey: [],//快捷鍵
+                        hotKey: ['catfood', 'bone', 'seeds'],//快捷鍵
                         item: [//消耗品
+                            { name: 'okra', amount: 999 },
+                            { name: 'sunny', amount: 12 },
+                            { name: 'bone', amount: 999 },
+                            { name: 'catfood', amount: 999 },
+                            { name: 'seeds', amount: 999 },
 
                         ],
-                        equip: [],//背包中裝備
-                        onEquip: [],//人物裝備中
+                        equip: ['syringe', 'medicalKit', 'scientistCard'],//背包中裝備[]
+                        onEquip: ['medicalKit'],//人物裝備中
                     },
-                    // backpack: {//==道具裝備相關
-                    //     hotKey: ['catfood', 'okra'],//快捷鍵
-                    //     item: [//消耗品
-                    //         { name: 'okra', amount: 999 },
-                    //         { name: 'sunny', amount: 12 },
-                    //         { name: 'bone', amount: 999 },
-                    //         { name: 'catfood', amount: 999 },
-                    //     ],
-                    //     equip: ['syringe', 'medicalKit', 'scientistCard'],//背包中裝備[]
-                    //     onEquip: ['medicalKit'],//人物裝備中
-                    // },
                 };
             };
             function initStartScene() {
@@ -768,10 +770,10 @@ function locatingGame() {
                     data.forEach((d, i) => {
                         // console.debug(d);
                         // let enemy = ['dog', 'cat', 'dove'];//==之後隨機抽敵人組
-                        // let enemy = ['cat'];//==之後隨機抽敵人組
-                        let enemy = copyEnemyArr.length !== 0 ?//===拷貝的陣列抽完才全隨機
-                            [copyEnemyArr.pop()] :
-                            [enemyArr[getRandom(enemyArr.length)]];
+                        let enemy = ['dove'];//==之後隨機抽敵人組
+                        // let enemy = copyEnemyArr.length !== 0 ?//===拷貝的陣列抽完才全隨機
+                        //     [copyEnemyArr.pop()] :
+                        //     [enemyArr[getRandom(enemyArr.length)]];
 
                         let enemyStats = {};
 
@@ -1327,24 +1329,44 @@ function locatingGame() {
                                                 // console.debug(questButton);
                                                 if (isAnswer === 'true') {
                                                     bingoCount++;
-                                                    // bingoCount === 9 ? a : bingoCount === 9
-                                                    // console.debug(bingoCount);
-                                                    let gainItems;
-                                                    switch (bingoCount) {
-                                                        case 3:
-                                                            gainItems = [['medicalKit', 0], ['bread', 5]];
-                                                            break;
-                                                        case 6:
-                                                            gainItems = [['syringe', 0], ['bread', 5]];
-                                                            break;
-                                                        case 9:
-                                                            gainItems = [['scientistCard', 0], ['bread', 5]];
-                                                            break;
-                                                        default:
 
-                                                            gainItems = [['pumpkin', 5], ['catfood', 3]];
-                                                            break;
-                                                    }
+
+                                                    let getRandomAmount = (min = 3) => {//==隨機最小幾個到+2
+                                                        return getRandom(3) + min;
+                                                    };
+                                                    let getRandomItem = (type = 0) => {
+                                                        let items = Object.keys(GameItemData).filter(item => GameItemData[item].type === type);
+                                                        return items[getRandom(items.length)];
+                                                    };
+
+                                                    // let gainItems;
+                                                    // switch (bingoCount) {
+                                                    //     case 3:
+                                                    //         gainItems = [['medicalKit', 0], ['bread', getRandomAmount()]];
+                                                    //         break;
+                                                    //     case 6:
+                                                    //         gainItems = [['syringe', 0], ['bread', getRandomAmount()]];
+                                                    //         break;
+                                                    //     case 9:
+                                                    //         gainItems = [['scientistCard', 0], ['bread', getRandomAmount()]];
+                                                    //         break;
+                                                    //     default:
+                                                    //         gainItems = bingoCount % 3 === 0 ?
+                                                    //             [['pumpkin', getRandomAmount()], ['seeds', getRandomAmount()]] : bingoCount % 3 === 1 ?
+                                                    //                 [['pumpkin', getRandomAmount()], ['bone', getRandomAmount()]] :
+                                                    //                 [['pumpkin', getRandomAmount()], ['catfood', getRandomAmount()]];
+                                                    //         break;
+                                                    // }
+
+                                                    let gainItems = bingoCount % 3 === 0 ?
+                                                        [[{
+                                                            1: 'medicalKit',
+                                                            2: 'syringe',
+                                                            3: 'scientistCard'
+                                                        }[bingoCount / 3], 0], [getRandomItem(), getRandomAmount()], ['seeds', getRandomAmount()]] :
+                                                        bingoCount % 3 === 1 ?
+                                                            [[getRandomItem(), getRandomAmount()], ['bone', getRandomAmount()]] :
+                                                            [[getRandomItem(), getRandomAmount()], ['catfood', getRandomAmount()]];
 
                                                     hintTextAnime('itemGain2', gainItems);
                                                 }

@@ -36,7 +36,7 @@
         "tutorial2": "按下\t攻擊",
         "tutorial3": "按下\t撿起/放下光球",
         "tutorial4": "選取地震波形到P波和S波的範圍",
-        "tutorial5": "將光球放到正確的P波和S波位置",
+        "tutorial5": "將光球放到正確(綠色)的P波和S波位置",
         "UP": "⬆",
         "DOWN": "⬇",
         "LEFT": "⬅",
@@ -466,50 +466,55 @@
             "short": "你是偉大的科學家",
             "long": "所有生物都崇拜你！"
         },
-        "sunny": {
-            "name": "太陽蛋",
-            "short": "美好的一天從早晨開始",
-            "long": "回復少量HP、MP"
-        },
-        "bread": {
-            "name": "麵包",
-            "short": "好吃的麵包",
-            "long": "回復少量HP"
-        },
-        "greens": {
-            "name": "青菜",
-            "short": "好吃的青菜",
-            "long": "回復HP"
-        },
-        "okra": {
-            "name": "麵包",
-            "short": "好吃的麵包",
-            "long": "回復HP"
-        },
-        "croissant": {
-            "name": "可頌",
-            "short": "好吃的可頌",
-            "long": "回復HP"
-        },
-        "carrot": {
-            "name": "紅蘿蔔",
-            "short": "好吃的紅蘿蔔",
-            "long": "回復HP"
-        },
-        "pumpkin": {
-            "name": "南瓜",
-            "short": "好吃的南瓜",
-            "long": "回復大量HP、MP"
-        },
         "bone": {
             "name": "骨頭",
-            "short": "可口、營養、方便",
-            "long": "丟在地上引開狗的注意"
+            "short": "狗都喜歡的骨頭",
+            "long": "可口、營養、方便，丟在地上引開狗的注意"
         },
         "catfood": {
             "name": "貓罐頭",
-            "short": "愛它，就給它最好的",
-            "long": "丟在地上引開貓的注意"
+            "short": "貓最愛的魚肉罐頭",
+            "long": "愛它，就給它最好的，丟在地上引開貓的注意"
+        },
+        "seeds": {
+            "name": "向日葵種子",
+            "short": "給鴿子吃的炒瓜子",
+            "long": "富含複合亞油酸的健康食品，丟在地上引誘鴿子下來"
+        },
+        "sunny": {
+            "name": "太陽蛋",
+            "short": "回復少量HP、MP",
+            "long": "美好的一天從早晨開始"
+        },
+        "bread": {
+            "name": "麵包",
+            "short": "回復少量HP",
+            "long": "好吃的麵包"
+        },
+        "greens": {
+            "name": "青菜",
+            "short": "回復MP",
+            "long": "好吃的青菜"
+        },
+        "okra": {
+            "name": "秋葵",
+            "short": "回復大量MP",
+            "long": "好吃的麵包"
+        },
+        "croissant": {
+            "name": "可頌",
+            "short": "回復少量HP、MP",
+            "long": "好吃的可頌"
+        },
+        "carrot": {
+            "name": "紅蘿蔔",
+            "short": "回復少量MP",
+            "long": "好吃的紅蘿蔔"
+        },
+        "pumpkin": {
+            "name": "南瓜",
+            "short": "回復大量HP、MP",
+            "long": "好吃的南瓜"
         }
     },
     "quickQuestion": {

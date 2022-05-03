@@ -520,6 +520,10 @@ const GameItemData = {
         type: 1,
         buff: {}
     },
+    seeds: {
+        type: 1,
+        buff: {}
+    },
     sunny: {
         type: 0,
         buff: {
@@ -536,28 +540,26 @@ const GameItemData = {
     greens: {
         type: 0,
         buff: {
-            HP: 30,
-            MP: 50,
+            MP: 30,
         }
     },
     okra: {
         type: 0,
         buff: {
-            HP: 30,
             MP: 50,
         }
     },
     croissant: {
         type: 0,
         buff: {
-            HP: 30,
-            MP: 50,
+            HP: 20,
+            MP: 20,
         }
     },
     carrot: {
         type: 0,
         buff: {
-            attackPower: 100,
+            MP: 20,
         }
     },
     pumpkin: {

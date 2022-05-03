@@ -63,7 +63,7 @@ const Item = new Phaser.Class({
     Extends: Phaser.Physics.Arcade.Sprite,
 
     initialize:
-        function Item(scene, key, x, y, flyAnims = false) {
+        function Item(scene, key, x, y, flyAnims = false, setByPlayer = false) {
 
             Phaser.Physics.Arcade.Sprite.call(this, scene);
 
@@ -72,16 +72,8 @@ const Item = new Phaser.Class({
                 .setTexture('item_' + key)
                 .setScale(itemW / this.width)
                 .setPosition(x, y)
-                .setDepth(scene.Depth.player)
+                .setDepth(scene.Depth.tips)
                 .setName(key);
-            // this.onWorldBounds = true;
-            // let bodySize = (key === 'dove') ? [15, 15] : [25, 18];
-
-            // this.body
-            //     .setSize(...bodySize)
-            //     .setGravityY(5000);
-
-            // this.body.collideWorldBounds = true;
 
             if (flyAnims)//往上飛
             {
@@ -96,6 +88,12 @@ const Item = new Phaser.Class({
                 });
             }
             else scene.physics.world.enableBody(this, 0);
+
+            //==碰撞器
+            this.colliderArray = [scene.physics.add.collider(this, scene.platforms)];//==方便移除
+            if (!setByPlayer) this.colliderArray.push(
+                scene.physics.add.collider(this, scene.player, this.collectHandler)
+            );
         },
 
     collectHandler: function (item, player) {
@@ -139,6 +137,7 @@ const Enemy = new Phaser.Class({
             let animsCreate = (key) => {
 
                 let deathRate = 5,
+                    eatRate = 7,
                     hurtRate = 15,
                     walkRate = 10,
                     attackRate = 10;
@@ -184,7 +183,12 @@ const Enemy = new Phaser.Class({
                     frameRate: walkRate,
                     repeat: -1,
                 });
-
+                scene.anims.create({
+                    key: key + '_Eat',
+                    frames: scene.anims.generateFrameNumbers(key + '_Eat'),
+                    frameRate: eatRate,
+                    repeat: -1,
+                });
                 if (key === 'dove') {
                     scene.anims.create({
                         key: key + '_Attack1',
@@ -338,6 +342,7 @@ const Enemy = new Phaser.Class({
                         default:
                         case 'barking':
                             this.anims.play('dog_Attack', true);
+                            this.body.enable = true;
                             // console.debug(!this.behaviorCallback);
                             if (!this.behaviorCallback) {
                                 //==叫完後chasing
@@ -426,7 +431,7 @@ const Enemy = new Phaser.Class({
                                 // console.debug()
                                 if (Phaser.Math.Distance.BetweenPoints(this, target) < 40) {
                                     this.body.reset(this.x, this.y);
-                                    this.anims.play('dog_Idle', true);
+                                    this.anims.play('dog_Eat', true);
                                     const destroyDur = Phaser.Math.Between(2, 4) * 1000;
                                     target.destroyCallback = scene.time.delayedCall(destroyDur, () => {
                                         target.destroy();
@@ -586,6 +591,7 @@ const Enemy = new Phaser.Class({
                         default:
                         case 'rest':
                             this.anims.play('cat_Idle', true);
+                            this.body.enable = true;
 
                             if (!this.behaviorCallback) {
                                 const restingDuration = Phaser.Math.FloatBetween(1.5, 3) * 1000;//==休息隨機x秒
@@ -631,7 +637,7 @@ const Enemy = new Phaser.Class({
                                 // console.debug()
                                 if (Phaser.Math.Distance.BetweenPoints(this, target) < 40) {
                                     this.body.reset(this.x, this.y);
-                                    this.anims.play('cat_Idle', true);
+                                    this.anims.play('cat_Eat', true);
                                     const destroyDur = Phaser.Math.Between(2, 4) * 1000;
                                     target.destroyCallback = scene.time.delayedCall(destroyDur, () => {
                                         target.destroy();
@@ -703,6 +709,7 @@ const Enemy = new Phaser.Class({
                             break;
                         default:
                         case 'flying':
+                            this.body.enable = true;
                             //==遊走到隨機位置                       
                             if (!this.behaviorCallback) {
                                 this.anims.play('dove_Walk', true);
@@ -768,6 +775,12 @@ const Enemy = new Phaser.Class({
                             if (this.flipX != filpDir)
                                 this.filpHandler(filpDir);
 
+                            if (this.behaviorCallback) {
+                                if (Object.prototype.toString.call(this.behaviorCallback) === '[object Object]')
+                                    this.behaviorCallback.remove();
+                                this.behaviorCallback = null;
+                            };
+
                             if (this.body.touching.down) {
                                 this.body.reset(this.x, this.y);
                                 this.anims.play('dove_Idle', true);
@@ -777,6 +790,44 @@ const Enemy = new Phaser.Class({
                             let speed = this.stats.movementSpeed;//pixel per sec
                             this.body.setVelocityX(0);
                             scene.physics.accelerateTo(this, this.x, scene.platforms.getChildren()[0].y, speed / 2, speed);
+
+                            break;
+                        case 'possessed':
+                            if (this.behaviorCallback) {
+                                if (Object.prototype.toString.call(this.behaviorCallback) === '[object Object]')
+                                    this.behaviorCallback.remove();
+                                this.behaviorCallback = null;
+                            };
+
+                            let seedsIdx = scene.itemOnFloor.findIndex(item => item.name === 'seeds');
+                            // console.debug(boneArr)
+                            if (seedsIdx !== -1) {
+                                target = scene.itemOnFloor[seedsIdx];
+
+                                if (target.destroyCallback) return;
+
+                                // console.debug()
+                                if (Phaser.Math.Distance.BetweenPoints(this, target) < 40 && this.body.touching.down) {
+                                    this.body.reset(this.x, this.y);
+                                    this.anims.play('dove_Eat', true);
+                                    const destroyDur = Phaser.Math.Between(2, 4) * 1000;
+                                    target.destroyCallback = scene.time.delayedCall(destroyDur, () => {
+                                        target.destroy();
+                                        scene.itemOnFloor.splice(seedsIdx, 1);
+                                    }, [], scene);
+                                }
+                                else {
+                                    this.anims.play('dove_Walk', true);
+                                    let speed = this.stats.movementSpeed;
+                                    scene.physics.accelerateToObject(this, target, speed / 2, speed);
+                                    let filpDir = target.x < this.x;
+                                    if (this.flipX != filpDir)
+                                        this.filpHandler(filpDir);
+                                };
+
+                            } else {
+                                this.behavior = 'flying';
+                            };
 
                             break;
                     };

@@ -4019,22 +4019,23 @@ class UIScene extends Phaser.Scene {
                                             statChangeHandler(backpackData.onEquip[0], false);
                                         statChangeHandler(equipItem, isEquip);
 
+
+                                        //==特殊裝備效果
+                                        if (gameScene.enemy)
+                                            if (equipItem === 'scientistCard' || backpackData.onEquip.includes('scientistCard')) {
+                                                gameScene.enemy.children.iterate(child => {
+                                                    // console.debug(child.behavior);
+                                                    child.behavior = (equipItem === 'scientistCard' && isEquip) ?
+                                                        'worship' : '';
+                                                });
+                                            };
+
                                         backpackData.onEquip = isEquip ? [equipItem] : [];
                                         // console.debug(player.stats);
 
                                         let charaBlock = leftPannel.getElement('charaBlock');
                                         charaBlock.updateOnEquip(backpackData.onEquip);
                                         charaBlock.updateCharaPic(backpackData.onEquip);
-
-                                        //==特殊裝備效果
-                                        if (gameScene.enemy)
-                                            if (equipItem === 'scientistCard' && isEquip) {
-                                                gameScene.enemy.children.iterate(child => {
-                                                    // console.debug(child.behavior);
-                                                    child.behavior = 'worship';
-                                                });
-                                            };
-
                                         break;
                                     case 'use':
                                         gameScene.hotKeyUI.useItemHandler(itemIdx);
@@ -4698,12 +4699,14 @@ class UIScene extends Phaser.Scene {
                             case 1://是放置物品
                                 // console.debug('是放置物品');
                                 if (gameScene.name === 'boss') return;
-                                let trap = gameScene.physics.add.image(gameScene.player.x, gameScene.player.y, 'item_' + itemName)
-                                    .setName(itemName)
-                                    .setDepth(Depth.wave);
+                                // let trap = gameScene.physics.add.image(gameScene.player.x, gameScene.player.y, 'item_' + itemName)
+                                //     .setName(itemName)
+                                //     .setDepth(Depth.wave);
+                                // trap.setScale(blockW / trap.width, blockW / trap.height);
+                                // trap.collider = gameScene.physics.add.collider(trap, gameScene.platforms);
 
-                                trap.setScale(blockW / trap.width, blockW / trap.height);
-                                trap.collider = gameScene.physics.add.collider(trap, gameScene.platforms);
+                                let trap = gameScene.add.existing(
+                                    new Item(gameScene, itemName, gameScene.player.x, gameScene.player.y, false, true));
                                 gameScene.itemOnFloor.push(trap);
                                 if (gameScene.enemy) {
                                     let enemyName;
@@ -4713,13 +4716,17 @@ class UIScene extends Phaser.Scene {
                                             break;
                                         case 'catfood':
                                             enemyName = 'cat';
+                                        case 'seeds':
+                                            enemyName = 'dove';
+
                                             break;
                                         // case '':
                                         //     break;
                                     };
 
                                     gameScene.enemy.children.iterate((child, i) =>
-                                        child.name === enemyName && child.behavior !== 'Death' ?
+                                        child.name === enemyName &&
+                                            !(child.behavior === 'Death' || child.behavior === 'worship') ?
                                             child.behavior = 'possessed' : false
                                     );
                                 };
@@ -5425,6 +5432,7 @@ class LoadingScene extends Phaser.Scene {
                         this.load.spritesheet(enemy + '_Hurt', dir + 'Hurt.png', frameObj);
                         this.load.spritesheet(enemy + '_Idle', dir + 'Idle.png', frameObj);
                         this.load.spritesheet(enemy + '_Walk', dir + 'Walk.png', frameObj);
+                        this.load.spritesheet(enemy + '_Eat', dir + 'Eat.png', frameObj);
                         if (enemy === 'dove') {
                             this.load.spritesheet(enemy + '_goo', dir + 'goo.png', { frameWidth: 58, frameHeight: 56 });
                             // this.load.image(enemy + '_goo1', dir + 'goo1.png');
@@ -6321,12 +6329,7 @@ class DefendScene extends Phaser.Scene {
 
                         //==有特殊裝備阻擋攻擊
                         if (this.gameData.backpack.onEquip.includes('pan')) {
-                            let sunny = this.add.existing(new Item(this, 'sunny', bullet.x, bullet.y, true));
-                            // console.debug(sunny);
-                            sunny.colliderArray = [//==方便移除
-                                this.physics.add.collider(sunny, this.platforms),
-                                this.physics.add.collider(sunny, this.player, sunny.collectHandler)];
-
+                            this.add.existing(new Item(this, 'sunny', bullet.x, bullet.y, true));
                         }
                         //==沒有則受到攻擊
                         else {
@@ -6626,8 +6629,8 @@ class DefendScene extends Phaser.Scene {
 
         };
 
-        firstTimeEvent();
-        if (!this.firstTimeEvent.eventComplete && !this.gameOver.flag) return;
+        // firstTimeEvent();
+        // if (!this.firstTimeEvent.eventComplete && !this.gameOver.flag) return;
 
         updatePlayer();
         updateSidekick();

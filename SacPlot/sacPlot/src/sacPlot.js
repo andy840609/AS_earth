@@ -39,27 +39,65 @@ function sacPlots() {
         //==將原資料算出 normalize_self 和 normalize_all
         rawData = Promise.all(promises).then(raw => {
             let tmpData = raw.map(s => s.data);
-            let maxAmpArr = tmpData.map(data => d3.max(data, d => Math.abs(d.y))),
-                maxAmp = d3.max(maxAmpArr);
+
+            //==先算出各自/全部平均
+            let meanArr = tmpData.map(data => d3.mean(data, d => d.y)),
+                grandMean = d3.mean(meanArr);
+
+            //==扣掉各自/全部平均的振幅陣列
+            let demeanArray = tmpData.map((data, i) => data.map(d => new Object({ x: d.x, y: d.y - meanArr[i] }))),
+                deGrandMeanArray = tmpData.map(data => data.map(d => new Object({ x: d.x, y: d.y - grandMean })));
+
+            //==去平均完才取最大振幅
+            // let maxAmpArr = tmpData.map(data => d3.max(data, d => Math.abs(d.y))),
+            //     maxAmp = d3.max(maxAmpArr);
+
+
+            let maxAmpArr = demeanArray.map(data => d3.max(data, d => Math.abs(d.y))),
+                maxAmp = d3.max(deGrandMeanArray, data => d3.max(data, d => Math.abs(d.y)));
+
+
             console.log(tmpData);
+            console.log('mean=');
+            console.log(meanArr, grandMean);
+            console.log('maxAmp=');
             console.log(maxAmpArr, maxAmp);
 
             //===normalize_self
-            let self = tmpData.map((data, i) =>
+            let self = demeanArray.map((data, i) =>
                 new Object({
                     fileName: raw[i].fileName,
                     data: data.map(d => new Object({ x: d.x, y: d.y / maxAmpArr[i] }))
                 })
             );
-            console.log(self);
+            // console.log(self);
             //===normalize_all
-            let all = tmpData.map((data, i) =>
+            let all = deGrandMeanArray.map((data, i) =>
                 new Object({
                     fileName: raw[i].fileName,
                     data: data.map(d => new Object({ x: d.x, y: d.y / maxAmp }))
                 })
             );
-            console.log(all);
+            // console.log(all);
+
+
+            //===================test========================================================
+            // //===normalize_self
+            // let self = tmpData.map((data, i) =>
+            //     new Object({
+            //         fileName: raw[i].fileName,
+            //         data: data.map(d => new Object({ x: d.x, y: (d.y - meanArr[i]) / maxAmpArr[i] }))
+            //     })
+            // );
+            // // console.log(self);
+            // //===normalize_all
+            // let all = tmpData.map((data, i) =>
+            //     new Object({
+            //         fileName: raw[i].fileName,
+            //         data: data.map(d => new Object({ x: d.x, y: (d.y - grandMean) / maxAmp }))
+            //     })
+            // );
+            // // console.log(all);
 
             return { raw, self, all };
         });

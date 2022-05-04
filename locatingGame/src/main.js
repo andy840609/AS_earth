@@ -473,21 +473,21 @@ function locatingGame() {
                     GameData.getLanguageJSON = getLanguageJSON;
 
                     //==test
-                    // gameDisplay(true);
-                    // let doneTutorial = await new Promise((resolve, reject) => {
-                    //     const config = Object.assign(getPhaserConfig(width, height), {
-                    //         scene: new GameStartScene(GameData, {
-                    //             getWaveImg: getWaveImg,
-                    //             tutorialData: data.tutorialData,
-                    //             resolve: resolve,
-                    //             getLanguageJSON: getLanguageJSON,
-                    //             rankingData: rankingData,//排行榜
-                    //         }),
-                    //     });
-                    //     new Phaser.Game(config);
-                    // });
-                    // // console.debug(doneTutorial);
-                    // gameDisplay(false);
+                    gameDisplay(true);
+                    let doneTutorial = await new Promise((resolve, reject) => {
+                        const config = Object.assign(getPhaserConfig(width, height), {
+                            scene: new GameStartScene(GameData, {
+                                getWaveImg: getWaveImg,
+                                tutorialData: data.tutorialData,
+                                resolve: resolve,
+                                getLanguageJSON: getLanguageJSON,
+                                rankingData: rankingData,//排行榜
+                            }),
+                        });
+                        new Phaser.Game(config);
+                    });
+                    // console.debug(doneTutorial);
+                    gameDisplay(false);
                     //==test
 
                     if (1) {//doneTutorial     
@@ -1338,25 +1338,6 @@ function locatingGame() {
                                                         let items = Object.keys(GameItemData).filter(item => GameItemData[item].type === type);
                                                         return items[getRandom(items.length)];
                                                     };
-
-                                                    // let gainItems;
-                                                    // switch (bingoCount) {
-                                                    //     case 3:
-                                                    //         gainItems = [['medicalKit', 0], ['bread', getRandomAmount()]];
-                                                    //         break;
-                                                    //     case 6:
-                                                    //         gainItems = [['syringe', 0], ['bread', getRandomAmount()]];
-                                                    //         break;
-                                                    //     case 9:
-                                                    //         gainItems = [['scientistCard', 0], ['bread', getRandomAmount()]];
-                                                    //         break;
-                                                    //     default:
-                                                    //         gainItems = bingoCount % 3 === 0 ?
-                                                    //             [['pumpkin', getRandomAmount()], ['seeds', getRandomAmount()]] : bingoCount % 3 === 1 ?
-                                                    //                 [['pumpkin', getRandomAmount()], ['bone', getRandomAmount()]] :
-                                                    //                 [['pumpkin', getRandomAmount()], ['catfood', getRandomAmount()]];
-                                                    //         break;
-                                                    // }
 
                                                     let gainItems = bingoCount % 3 === 0 ?
                                                         [[{

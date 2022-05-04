@@ -4,6 +4,62 @@ function sacPlots() {
     let titleArr = null;
     let channel = null;
 
+    //solve deviation from float calculate
+    let floatCalculate = (method, ...theArgs) => {
+        let result;
+        function isFloat(n) {
+            return n.toString().indexOf('.') >= 0;
+        };
+
+        let powerArr = [];
+        theArgs.forEach(d => {
+            if (isFloat(d)) {
+                // console.debug(d);
+                // let tmp = d.toString().split('.')[1].length;
+                // if (tmp > power)
+                //     power = tmp;
+                powerArr.push(d.toString().split('.')[1].length);
+            }
+            else
+                powerArr.push(0);
+        });
+        let maxPower = Math.max(...powerArr);
+        // console.debug(maxPower);
+        let newArgs = theArgs.map((d, i) => parseInt(d.toString().replace('.', '')) * Math.pow(10, (maxPower - powerArr[i])));
+        // console.debug(newArgs);
+        switch (method) {
+            case 'add':
+                result = 0;
+                newArgs.forEach(d => result += d);
+                result /= Math.pow(10, maxPower);
+                break;
+            case 'minus':
+                result = newArgs[0] * 2;
+                newArgs.forEach(d => result -= d);
+                result /= Math.pow(10, maxPower);
+                break;
+            case 'times':
+                result = 1;
+                newArgs.forEach(d => result *= d);
+                result /= Math.pow(Math.pow(10, maxPower), newArgs.length);
+                break;
+            case 'divide':
+                result = Math.pow(newArgs[0], 2);
+                newArgs.forEach((d, i) => {
+                    if (!(result == 0 && i == 0))
+                        result /= d
+                });
+                // console.debug(result);
+                result *= Math.pow(Math.pow(10, maxPower), newArgs.length - 2);
+                break;
+            default:
+                result = 0;
+                newArgs.forEach(d => result += d);
+                result /= Math.pow(10, maxPower);
+                break;
+        }
+        return result;
+    };
     chart.selector = (vaule) => {
         selector = vaule;
         return chart;
@@ -45,59 +101,38 @@ function sacPlots() {
                 grandMean = d3.mean(meanArr);
 
             //==扣掉各自/全部平均的振幅陣列
-            let demeanArray = tmpData.map((data, i) => data.map(d => new Object({ x: d.x, y: d.y - meanArr[i] }))),
-                deGrandMeanArray = tmpData.map(data => data.map(d => new Object({ x: d.x, y: d.y - grandMean })));
+            let demeanArray = tmpData.map((data, i) => data.map(d => new Object({ x: d.x, y: floatCalculate('minus', d.y, meanArr[i]) }))),
+                deGrandMeanArray = tmpData.map(data => data.map(d => new Object({ x: d.x, y: floatCalculate('minus', d.y, grandMean) })));
 
             //==去平均完才取最大振幅
-            // let maxAmpArr = tmpData.map(data => d3.max(data, d => Math.abs(d.y))),
-            //     maxAmp = d3.max(maxAmpArr);
-
-
             let maxAmpArr = demeanArray.map(data => d3.max(data, d => Math.abs(d.y))),
                 maxAmp = d3.max(deGrandMeanArray, data => d3.max(data, d => Math.abs(d.y)));
 
 
             console.log(tmpData);
+            console.log('demean=');
+            console.log(demeanArray, deGrandMeanArray);
             console.log('mean=');
             console.log(meanArr, grandMean);
             console.log('maxAmp=');
             console.log(maxAmpArr, maxAmp);
 
-            //===normalize_self
+            //===normalize_self  Math.round(num + "e+5")  + "e-5");
             let self = demeanArray.map((data, i) =>
                 new Object({
                     fileName: raw[i].fileName,
-                    data: data.map(d => new Object({ x: d.x, y: d.y / maxAmpArr[i] }))
+                    data: data.map(d => new Object({ x: d.x, y: floatCalculate('divide', d.y, maxAmpArr[i]) }))
                 })
             );
-            // console.log(self);
+            console.log(self[0]);
             //===normalize_all
             let all = deGrandMeanArray.map((data, i) =>
                 new Object({
                     fileName: raw[i].fileName,
-                    data: data.map(d => new Object({ x: d.x, y: d.y / maxAmp }))
+                    data: data.map(d => new Object({ x: d.x, y: floatCalculate('divide', d.y, maxAmp) }))
                 })
             );
             // console.log(all);
-
-
-            //===================test========================================================
-            // //===normalize_self
-            // let self = tmpData.map((data, i) =>
-            //     new Object({
-            //         fileName: raw[i].fileName,
-            //         data: data.map(d => new Object({ x: d.x, y: (d.y - meanArr[i]) / maxAmpArr[i] }))
-            //     })
-            // );
-            // // console.log(self);
-            // //===normalize_all
-            // let all = tmpData.map((data, i) =>
-            //     new Object({
-            //         fileName: raw[i].fileName,
-            //         data: data.map(d => new Object({ x: d.x, y: (d.y - grandMean) / maxAmp }))
-            //     })
-            // );
-            // // console.log(all);
 
             return { raw, self, all };
         });
@@ -168,62 +203,6 @@ function sacPlots() {
             else
                 left = 50;
             return ({ top: 20, right: 30, bottom: 30, left: left });
-        };
-        //solve deviation from float calculate
-        let floatCalculate = (method, ...theArgs) => {
-            let result;
-            function isFloat(n) {
-                return n.toString().indexOf('.') >= 0;
-            }
-
-            let powerArr = [];
-            theArgs.forEach(d => {
-                if (isFloat(d)) {
-                    // console.debug(d);
-                    // let tmp = d.toString().split('.')[1].length;
-                    // if (tmp > power)
-                    //     power = tmp;
-                    powerArr.push(d.toString().split('.')[1].length);
-                }
-                else
-                    powerArr.push(0);
-            });
-            let maxPower = Math.max(...powerArr);
-            // console.debug(maxPower);
-            let newArgs = theArgs.map((d, i) => parseInt(d.toString().replace('.', '')) * Math.pow(10, (maxPower - powerArr[i])));
-            // console.debug(newArgs);
-            switch (method) {
-                case 'add':
-                    result = 0;
-                    newArgs.forEach(d => result += d);
-                    result /= Math.pow(10, maxPower);
-                    break;
-                case 'minus':
-                    result = newArgs[0] * 2;
-                    newArgs.forEach(d => result -= d);
-                    result /= Math.pow(10, maxPower);
-                    break;
-                case 'times':
-                    result = 1;
-                    newArgs.forEach(d => result *= d);
-                    result /= Math.pow(Math.pow(10, maxPower), newArgs.length);
-                    break;
-                case 'divide':
-                    result = Math.pow(newArgs[0], 2);
-                    newArgs.forEach((d, i) => {
-                        if (!(result == 0 && i == 0))
-                            result /= d
-                    });
-                    // console.debug(result);
-                    result *= Math.pow(Math.pow(10, maxPower), newArgs.length - 2);
-                    break;
-                default:
-                    result = 0;
-                    newArgs.forEach(d => result += d);
-                    result /= Math.pow(10, maxPower);
-                    break;
-            }
-            return result;
         };
         let toScientificNotation = (number, maxIndex = undefined) => {
             // console.debug(number);
@@ -706,14 +685,7 @@ function sacPlots() {
                 let extend;
                 let chartNodes = [];
 
-                const tooltip = d3.select("#charts").append("div")
-                    .attr("id", "tooltip")
-                    .style('position', 'absolute')
-                    .style('z-index', '999')
-                    .style("background-color", "#D3D3D3")
-                    .style('padding', '20px 20px 20px 20px')
-                    .style("opacity", " .9")
-                    .style('display', 'none');
+
                 function getExtent(dataArr) {
                     // console.debug(dataArr);
                     let min = d3.min(dataArr, d => {
@@ -825,7 +797,7 @@ function sacPlots() {
                         .style("text-anchor", "middle")
                         .attr("alignment-baseline", "text-before-edge")
                         .attr("transform", "rotate(-90)")
-                        .call(g => g.text("Amplipude" + normalize ? "(count)" : ""));
+                        .call(g => g.text("Amplipude" + (normalize ? " (count)" : "")));
                     // console.debug(yAxis);
 
                     const svg = d3.create("svg")
@@ -907,7 +879,6 @@ function sacPlots() {
                         const lineStroke = "2px";
                         const lineStroke2 = "0.5px";
 
-
                         //====================================mouse move==================================================
                         const mouseG = svg.append("g")
                             .attr("class", "mouse-over-effects");
@@ -957,18 +928,24 @@ function sacPlots() {
                             .attr('fill', 'none')
                             .attr('pointer-events', 'all');
 
+                        //==tooltip
+                        const chart_center = [d3.mean(x.range()), d3.mean(y.range())];
+                        const tooltipMouseGap = 50;
+
+                        const tooltip = d3.select("#charts").append("div")
+                            .attr("id", "tooltip")
+                            .style('position', 'absolute')
+                            .style('z-index', '999')
+                            .style("background-color", "#D3D3D3")
+                            .style('padding', '20px 20px 20px 20px')
+                            .style("opacity", " .9")
+                            .style('display', 'none');
                         // append a rect to catch mouse movements on canvas
+
                         let event_rect =
                             mouseG
                                 .append("use")
                                 .attr('xlink:href', "#rectRenderRange" + (index + 1))
-                                // .append("rect")
-                                // .attr('x', margin.left)
-                                // .attr('y', margin.top)
-                                // .attr('width', width - margin.right - margin.left)
-                                // .attr('height', height - margin.top - margin.bottom)
-                                // .attr('fill', 'none')
-                                // .attr('pointer-events', 'all')
                                 .on('mouseleave', function () { // on mouse out hide line, circles and text
                                     svg.select(".mouse-line")
                                         .style("opacity", "0");
@@ -977,8 +954,6 @@ function sacPlots() {
                                     svg.selectAll(".mouse-per-line text")
                                         .style("opacity", "0");
                                     tooltip
-                                        // .transition().duration(500)
-                                        // .style("opacity", 0)
                                         .style("display", "none");
 
                                 })
@@ -1015,13 +990,13 @@ function sacPlots() {
                                         .style("opacity", "0.7");
                                     svg.selectAll(".mouse-per-line circle")
                                         .style("opacity", "1");
-                                    tooltip
-                                        // .transition().duration(200)
-                                        // .style("opacity", .9)
-                                        .style("display", "inline");
+
                                     tooltip.html(divHtml)
-                                        .style("left", (event.pageX + 20) + "px")
-                                        .style("top", (event.pageY - 20) + "px")
+                                        .style("display", "inline")
+                                        .style("left", `${pointer[0] < chart_center[0] ?
+                                            event.pageX + tooltipMouseGap : event.pageX - tooltipMouseGap - tooltip.property('clientWidth')}px`)
+                                        .style("top", `${pointer[1] < chart_center[1] ?
+                                            event.pageY : event.pageY - tooltip.property('clientHeight')}px`)
                                         .append('div')
                                         .style('color', () => getLineColor(index))
                                         .style('font-size', 10)
@@ -1616,7 +1591,7 @@ function sacPlots() {
                     .style("text-anchor", "middle")
                     .attr("alignment-baseline", "text-before-edge")
                     .attr("transform", "rotate(-90)")
-                    .text("Amplipude" + (normalize ? ' (count)' : ''));
+                    .text("Amplipude" + (normalize ? " (count)" : ""));
 
                 let xAxis = svg.append("g")
                     .call(xAxis_g);
@@ -1674,14 +1649,6 @@ function sacPlots() {
 
                     const lineStroke = "2px";
                     const lineStroke2 = "0.5px";
-                    const tooltip = d3.select("#charts").append("div")
-                        .attr("id", "tooltip")
-                        .style('position', 'absolute')
-                        .style('z-index', '999')
-                        .style("background-color", "#D3D3D3")
-                        .style('padding', '20px 20px 20px 20px')
-                        .style("opacity", " .9")
-                        .style('display', 'none');
 
                     //====================================mouse move==================================================
                     const mouseG = svg.append("g")
@@ -1733,6 +1700,19 @@ function sacPlots() {
                         .attr('height', height - margin.top - margin.bottom)
                         .attr('fill', 'none')
                         .attr('pointer-events', 'all');
+
+                    //==tooltip
+                    const chart_center = [d3.mean(x.range()), d3.mean(y.range())];
+                    const tooltipMouseGap = 50;
+
+                    const tooltip = d3.select("#charts").append("div")
+                        .attr("id", "tooltip")
+                        .style('position', 'absolute')
+                        .style('z-index', '999')
+                        .style("background-color", "#D3D3D3")
+                        .style('padding', '20px 20px 20px 20px')
+                        .style("opacity", " .9")
+                        .style('display', 'none');
 
                     // append a rect to catch mouse movements on canvas
                     let event_rect =
@@ -1788,13 +1768,13 @@ function sacPlots() {
                                     .style("opacity", "0.7");
                                 svg.selectAll(".mouse-per-line circle")
                                     .style("opacity", "1");
-                                tooltip
-                                    // .transition().duration(200)
-                                    // .style("opacity", .9)
-                                    .style("display", "inline");
+
                                 tooltip.html(divHtml)
-                                    .style("left", (event.pageX + 20) + "px")
-                                    .style("top", (event.pageY - 20) + "px")
+                                    .style("display", "inline")
+                                    .style("left", `${pointer[0] < chart_center[0] ?
+                                        event.pageX + tooltipMouseGap : event.pageX - tooltipMouseGap - tooltip.property('clientWidth')}px`)
+                                    .style("top", `${pointer[1] < chart_center[1] ?
+                                        event.pageY : event.pageY - tooltip.property('clientHeight')}px`)
                                     .selectAll()
                                     .data(newData).enter()
                                     .append('div')
@@ -2349,7 +2329,7 @@ function sacPlots() {
                     .style("text-anchor", "middle")
                     .attr("alignment-baseline", "text-before-edge")
                     .attr("transform", "rotate(-90)")
-                    .call(g => g.text("Amplipude" + normalize ? "(count)" : ""));
+                    .call(g => g.text("Amplipude" + (normalize ? " (count)" : "")));
 
 
 
@@ -2483,14 +2463,6 @@ function sacPlots() {
                         const lineStroke = "2px";
                         const lineStroke2 = "0.5px";
 
-                        const tooltip = d3.select("#charts").append("div")
-                            .attr("id", "tooltip")
-                            .style('position', 'absolute')
-                            .style('z-index', '999')
-                            .style("background-color", "#D3D3D3")
-                            .style('padding', '20px 20px 20px 20px')
-                            .style("opacity", " .9")
-                            .style('display', 'none');
 
                         //====================================mouse move==================================================
                         const mouseG = svg.append("g")
@@ -2543,6 +2515,18 @@ function sacPlots() {
                             .attr('fill', 'none')
                             .attr('pointer-events', 'all');
 
+                        //==tooltip
+                        const chart_center = [d3.mean(x.range()), d3.mean(y.range())];
+                        const tooltipMouseGap = 50;
+
+                        const tooltip = d3.select("#charts").append("div")
+                            .attr("id", "tooltip")
+                            .style('position', 'absolute')
+                            .style('z-index', '999')
+                            .style("background-color", "#D3D3D3")
+                            .style('padding', '20px 20px 20px 20px')
+                            .style("opacity", " .9")
+                            .style('display', 'none');
                         // append a rect to catch mouse movements on canvas
                         let event_rect =
                             mouseG
@@ -2599,13 +2583,13 @@ function sacPlots() {
                                         .style("opacity", "0.7");
                                     svg.selectAll(".mouse-per-line circle")
                                         .style("opacity", "1");
-                                    tooltip
-                                        // .transition().duration(200)
-                                        // .style("opacity", .9)
-                                        .style("display", "inline");
+
                                     tooltip.html(divHtml)
-                                        .style("left", (event.clientX + 20) + "px")
-                                        .style("top", (event.clientY - 20) + "px")
+                                        .style("display", "inline")
+                                        .style("left", `${pointer[0] < chart_center[0] ?
+                                            event.pageX + tooltipMouseGap : event.pageX - tooltipMouseGap - tooltip.property('clientWidth')}px`)
+                                        .style("top", `${pointer[1] < chart_center[1] ?
+                                            event.pageY : event.pageY - tooltip.property('clientHeight')}px`)
                                         .selectAll()
                                         .data(newData).enter()
                                         .append('div')

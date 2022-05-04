@@ -2298,16 +2298,16 @@ class UIScene extends Phaser.Scene {
 
                                                 scene.time.delayedCall(destroyDelay * 0.5, () => cameras.fadeOut(500, 0, 0, 0), [], this);
                                                 scene.time.delayedCall(destroyDelay, () => {
-                                                    if (1) {//===一開始不進入教學？                                                
-                                                        gameScene.scene.add(null, new UIScene('tutorial', scene), true);
-                                                        scene.time.delayedCall(destroyDelay, () => scene.scene.remove());
-                                                    }
-                                                    else {
-                                                        gameScene.game.destroy(true, false);
-                                                        gameScene.resolve(false);
-                                                    };
+                                                    // if (1) {//===一開始不進入教學？                                                
+                                                    //     gameScene.scene.add(null, new UIScene('tutorial', scene), true);
+                                                    //     scene.time.delayedCall(destroyDelay, () => scene.scene.remove());
+                                                    // }
+                                                    // else {
+                                                    //     gameScene.game.destroy(true, false);
+                                                    //     gameScene.resolve(false);
+                                                    // };
 
-
+                                                    scene.time.delayedCall(destroyDelay, () => scene.scene.remove());
                                                 }, [], this);
 
 
@@ -4806,12 +4806,12 @@ class GameStartScene extends Phaser.Scene {
                         url: 'src/phaser-3.55.2/plugins/rexplugins/rextexteditplugin.min.js',
                         start: true,
                     },
-                    // {//==讓preload()能await才create()[確定資源都讀取完成才執行create()]
-                    //     type: 'plugin',
-                    //     key: 'rexawaitloaderplugin',
-                    //     url: 'src/phaser-3.55.2/plugins/rexplugins/rexawaitloaderplugin.min.js',
-                    //     start: true,
-                    // },
+                    {//==讓preload()能await才create()[確定資源都讀取完成才執行create()]
+                        type: 'plugin',
+                        key: 'rexawaitloaderplugin',
+                        url: 'src/phaser-3.55.2/plugins/rexplugins/rexawaitloaderplugin.min.js',
+                        start: true,
+                    },
                 ]
             },
         };
@@ -4838,87 +4838,91 @@ class GameStartScene extends Phaser.Scene {
         console.debug(this);
     };
     preload() {
-        let UI = () => {
-            const UIDir = assetsDir + 'ui/game/Transitions/';
-            let controller = () => {
-                this.load.image('startScene', UIDir + 'startScene.jpg');
-                this.load.image('startButton', UIDir + 'startButton.png');
-                this.load.image('gameTitle', UIDir + 'title.png');
-            };
-            let intro = () => {
-                this.load.image('epicenter', UIDir + 'epicenter.png');
-                this.load.image('PSwave', UIDir + 'PSwave.png');
-                this.load.image('GDMS', UIDir + 'GDMS.png');
-                this.load.image('BATS', UIDir + 'BATS.png');
-                this.load.image('TECDC', UIDir + 'TECDC.png');
-            };
-            controller();
-            intro();
-        };
-        let character = () => {
-            const characters = this.creatorObj.characters;// ['maleAdventurer']
-            const sidekicks = this.creatorObj.sidekicks;
+        // let UI = () => {
+        //     const UIDir = assetsDir + 'ui/game/Transitions/';
+        //     let controller = () => {
+        //         this.load.image('startScene', UIDir + 'startScene.jpg');
+        //         this.load.image('startButton', UIDir + 'startButton.png');
+        //         this.load.image('gameTitle', UIDir + 'title.png');
+        //     };
+        //     let intro = () => {
+        //         this.load.image('epicenter', UIDir + 'epicenter.png');
+        //         this.load.image('PSwave', UIDir + 'PSwave.png');
+        //         this.load.image('GDMS', UIDir + 'GDMS.png');
+        //         this.load.image('BATS', UIDir + 'BATS.png');
+        //         this.load.image('TECDC', UIDir + 'TECDC.png');
+        //     };
+        //     controller();
+        //     intro();
+        // };
+        // let character = () => {
+        //     const characters = this.creatorObj.characters;// ['maleAdventurer']
+        //     const sidekicks = this.creatorObj.sidekicks;
 
-            let sprite = () => {
-                const playerDir = assetsDir + 'gameObj/player/';
+        //     let sprite = () => {
+        //         const playerDir = assetsDir + 'gameObj/player/';
 
-                characters.forEach(chara => {
-                    let dir = playerDir + chara + '/';
-                    const playerFrame = GameObjectFrame[chara];
-                    const frameObj = playerFrame.frameObj;
-                    const effectFrameObj = playerFrame.effect;
+        //         characters.forEach(chara => {
+        //             let dir = playerDir + chara + '/';
+        //             const playerFrame = GameObjectFrame[chara];
+        //             const frameObj = playerFrame.frameObj;
+        //             const effectFrameObj = playerFrame.effect;
 
-                    this.load.spritesheet(chara + '_idle', dir + 'idle.png', frameObj);
-                    this.load.spritesheet(chara + '_run', dir + 'run.png', frameObj);
-                    this.load.spritesheet(chara + '_doubleJump', dir + 'doubleJump.png', frameObj);
-                    this.load.spritesheet(chara + '_attack', dir + 'attack.png', frameObj);
-                    this.load.spritesheet(chara + '_swordSwing', dir + 'swordSwing.png', { frameWidth: effectFrameObj.attack[0], frameHeight: effectFrameObj.attack[1] });
+        //             this.load.spritesheet(chara + '_idle', dir + 'idle.png', frameObj);
+        //             this.load.spritesheet(chara + '_run', dir + 'run.png', frameObj);
+        //             this.load.spritesheet(chara + '_doubleJump', dir + 'doubleJump.png', frameObj);
+        //             this.load.spritesheet(chara + '_attack', dir + 'attack.png', frameObj);
+        //             this.load.spritesheet(chara + '_swordSwing', dir + 'swordSwing.png', { frameWidth: effectFrameObj.attack[0], frameHeight: effectFrameObj.attack[1] });
 
-                });
+        //         });
 
-            };
-            let avatar = () => {
-                const AvatarDir = assetsDir + 'avatar/';
-                let player = () => {
-                    const AvatarCount = 4;
+        //     };
+        //     let avatar = () => {
+        //         const AvatarDir = assetsDir + 'avatar/';
+        //         let player = () => {
+        //             const AvatarCount = 4;
 
-                    characters.forEach(chara => {
-                        let dir = AvatarDir + chara + '/';
-                        [...Array(AvatarCount).keys()].forEach(i =>
-                            this.load.image(chara + '_avatar' + i, dir + i + '.png'));
+        //             characters.forEach(chara => {
+        //                 let dir = AvatarDir + chara + '/';
+        //                 [...Array(AvatarCount).keys()].forEach(i =>
+        //                     this.load.image(chara + '_avatar' + i, dir + i + '.png'));
 
-                    });
-                };
-                let sidekick = () => {
-                    sidekicks.forEach(side =>
-                        this.load.image(side + '_avatar', AvatarDir + side + '.png'));
-                };
+        //             });
+        //         };
+        //         let sidekick = () => {
+        //             sidekicks.forEach(side =>
+        //                 this.load.image(side + '_avatar', AvatarDir + side + '.png'));
+        //         };
 
-                player();
-                sidekick();
-            };
-            sprite();
-            avatar();
+        //         player();
+        //         sidekick();
+        //     };
+        //     sprite();
+        //     avatar();
 
-        };
-        let background = () => {
-            const creatorBG = this.creatorObj.background;
-            let dir = assetsDir + 'gameObj/environment/background/' + creatorBG + '/';
-            let resources = BackGroundResources.GameStart[creatorBG];
+        // };
+        // let background = () => {
+        //     const creatorBG = this.creatorObj.background;
+        //     let dir = assetsDir + 'gameObj/environment/background/' + creatorBG + '/';
+        //     let resources = BackGroundResources.GameStart[creatorBG];
 
-            //==重新取名讓loader裡的key不會重複(檔名可能重複)
-            resources.static.forEach((res, i) => {
-                this.load.image('staticBG_' + i, dir + res);
-            });
-            resources.dynamic.forEach((res, i) => {
-                this.load.image('dynamicBG_' + i, dir + res);
-            });
+        //     //==重新取名讓loader裡的key不會重複(檔名可能重複)
+        //     resources.static.forEach((res, i) => {
+        //         this.load.image('staticBG_' + i, dir + res);
+        //     });
+        //     resources.dynamic.forEach((res, i) => {
+        //         this.load.image('dynamicBG_' + i, dir + res);
+        //     });
 
-        };
+        // };
 
-        UI();
-        character();
-        background();
+        // UI();
+        // character();
+        // background();
+
+        this.plugins.get('rexawaitloaderplugin').addToScene(this);
+        let callback = (resolve) => this.scene.add(null, new LoadingScene(this, resolve), true);
+        this.load.rexAwait(callback);//==等LoadingScene完成素材載入
     };
     create() {
         const canvas = this.sys.game.canvas;
@@ -5063,17 +5067,536 @@ class GameStartScene extends Phaser.Scene {
             this.scene.add(null, new UIScene('blackOut', this), true);
             this.RexUI.rankingData = this.rankingData;
         };
+        let initCreatorUI = () => {
+            this.scene.add(null, new UIScene('creator', this), true);
+        };
+        let initTutorial = () => {
+            this.scene.add(null, new UIScene('tutorial', this), true);
+        };
+        let initStartAnime = () => {
+            const canvas = this.sys.game.canvas;
+            const width = canvas.width;
+            const height = canvas.height;
+            const localeJSON = this.gameData.localeJSON;
+            const Depth = {
+                tips: 6,
+                flame: 8,
+                player: 10,
+                boss: 11,
+                UI: 20,
+                /*
+                Depth:
+                  0-4(background)
+                  5(laser)
+                  6(wave)
+                  7(orbs)
+                  9(enemy)
+                  10(player)
+                  11(orb pickUp)
+                  15(bullet)
+                  20(UI:HP bar...)
+                */
+            };
+            this.Depth = Depth;//==gameObject.js用到
+            const flameCount = 4;
+            const animeDelay = 500;
 
-        initBackground();
-        initButton();
+            let initEnvironment = () => {
+                let background = () => {
+                    let BGgroup = this.add.group();
+                    let resources = BackGroundResources.boss[this.background];
+                    // console.debug(resources)
+                    resources.static.forEach((res, i) => {
+                        let img = this.add.image(width * 0.5, height * 0.5, 'staticBG_' + i);
+                        img
+                            .setAlpha(0)
+                            .setScale(width / img.width, height / img.height)
+                            .setDepth(resources.depth.static[i]);
+
+                        BGgroup.add(img);
+                    });
+
+                    resources.dynamic.forEach((res, i) => {
+                        let thing = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, 'dynamicBG_' + i);
+
+                        thing
+                            .setAlpha(0)
+                            .setScale(width / thing.width, height / thing.height)
+                            .setDepth(resources.depth.dynamic[i]);
+
+                        //==tweens
+                        let movingDuration = Phaser.Math.Between(5, 15) * 1000;//==第一次移動5到20秒
+                        let animType = resources.animType[i];
+                        //==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
+
+                        this.tweens.add(
+                            Object.assign({
+                                targets: thing,
+                                repeat: -1,
+                                duration: movingDuration,
+                                delay: animeDelay * flameCount,
+                            },
+                                animType == 1 ?
+                                    { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
+                                    animType == 2 ? { alpha: { start: 0, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
+                                        animType == 3 ? { scaleX: { start: t => t.scaleX, to: t => t.scaleX * 1.5 }, scaleY: { start: t => t.scaleY, to: t => t.scaleY * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
+                                            { alpha: { start: 0, to: 1 }, ease: 'Bounce', yoyo: true }
+
+                            ));
+
+                        BGgroup.add(thing);
+
+                    });
+
+                    this.tweens.add({
+                        targets: BGgroup.getChildren(),
+                        repeat: 0,
+                        ease: 'Back.easeInOut',
+                        delay: animeDelay * flameCount,
+                        duration: animeDelay * 2,
+                        alpha: { from: 0, to: 1 },
+                    });
+
+                };
+                let flame = () => {
+                    let animsCreate = () => {
+                        this.anims.create({
+                            key: 'bossFlame_burn',
+                            frames: this.anims.generateFrameNumbers('bossFlame'),
+                            frameRate: 13,
+                            repeat: -1,
+                        });
+                    };
+                    animsCreate();
+
+                    let addFlame = (i, flameCount) => {
+                        this.add.sprite(width * i / (flameCount + 1), height * 0.4, 'bossFlame')
+                            .setScale(0.2)
+                            .setOrigin(0.5)
+                            .setDepth(Depth.flame)
+                            .play('bossFlame_burn');
+                    };
+
+                    for (let i = 1; i <= flameCount; i++)
+                        this.time.delayedCall(animeDelay * i, () => addFlame(i, flameCount), [], this);
+
+                };
+                background();
+                flame();
+            };
+            let initTimer = () => {
+                this.scene.add(null, new UIScene('timerUI', this), true);
+                this.gameTimer.paused = true;
+            };
+            let initIconBar = () => {
+                this.scene.add(null, new UIScene('iconBar', this), true);
+            };
+            let initCursors = () => {
+                //===init cursors
+                this.scene.add(null, new UIScene('cursors', this), true);
+            };
+            let initPlayer = () => {
+                this.player = this.add.existing(new Player(this))
+                    .setPosition(width * 0.15, height * 0.65)
+                    .setDepth(Depth.player);
+
+                this.player.body
+                    // .setGravityY(2000)
+                    .setMaxVelocity(0);
+
+                this.player.attackEffect
+                    .setDepth(Depth.boss + 1);
+
+                this.player.dialog
+                    .setPosition(this.player.x, this.player.y - this.player.displayHeight * 0.3);
+
+                Object.assign(this.player, {
+                    attackingFlag: false,
+                    attackAnims: (resolve) => {
+                        let hurtDuration = 2000;
+                        let duration = 500 + hurtDuration;
+
+                        //==playerAttack
+                        this.tweens.add({
+                            targets: this.player,
+                            ease: 'Linear',
+                            // delay: showDelay,
+                            duration: hurtDuration * 0.3,
+                            hold: hurtDuration * 0.5,//==yoyo delay
+                            yoyo: true,
+                            x: this.boss.x * 0.6,
+                            // y: this.boss.y,
+                            onUpdate: (t) => {
+                                // console.debug( this.anims);
+                                // console.debug(t.countdown);
+                                if (!this.player.attackingFlag && t.elapsed > hurtDuration * 0.3) {
+                                    let effectShowDuration = hurtDuration * 0.2,
+                                        effectMoveDuration = hurtDuration * 0.6;
+
+                                    this.player
+                                        .play('player_attack')
+                                        .anims.setRepeat(-1);
+
+                                    this.player.attackEffect
+                                        .setAlpha(0)
+                                        .setTexture('player_ultAttackEffect')
+                                        .setPosition(this.player.x + 120, this.player.y * 0.9);
+
+                                    this.tweens.add({
+                                        targets: this.player.attackEffect,
+                                        ease: 'Linear',
+                                        duration: effectShowDuration,
+                                        alpha: { start: 0, to: 1 },
+                                        onComplete: () => this.player.attackEffect.play('player_ultAttackEffect'),
+                                    });
+
+                                    this.tweens.add({
+                                        targets: this.player.attackEffect,
+                                        ease: 'Linear.Out',
+                                        delay: effectShowDuration,
+                                        duration: effectMoveDuration,
+                                        x: width + this.player.attackEffect.displayWidth,
+                                        scale: { start: 2, to: 3 },
+                                    });
+
+                                    // console.debug(this.player.anims.repeat);
+
+                                    this.player.attackingFlag = true;
+                                };
+                            },
+                            onStart: () => this.player.play('player_run'),
+                            onYoyo: () => {
+                                this.player.play('player_run').filpHandler(true);
+                                this.boss.gotHurtAnims(hurtDuration * 0.5);
+                            },
+                            onComplete: () => {
+                                this.player
+                                    .play('player_idle')
+                                    .filpHandler(false);
+
+                                this.player.attackingFlag = false;
+                            },
+                        });
+
+                        this.time.delayedCall(duration, () => resolve(), [], this);
+                    },
+                    winAnims: () => {
+                        let talkDelay = 1000;
+                        let playerContent = localeJSON.Lines.player[3];
+                        this.gameOver.bossDefeated = true;
+
+                        //==說話
+                        this.time.delayedCall(talkDelay, async () => {
+                            await new Promise(resolve => this.RexUI.newDialog(playerContent, { character: 'player' }, resolve));
+                            this.gameOver.flag = true;
+                        }, [], this);
+                    },
+                });
+            };
+            let initSidekick = () => {
+                this.sidekick = this.add.existing(new Sidekick(this, this.gameData.sidekick.type))
+                    .setPosition(width * 0.1, height * 0.65)
+                    .setDepth(Depth.player);
+
+                this.sidekick.body.setMaxVelocity(0);
+            };
+            let initBoss = () => {
+                let animsCreate = () => {
+                    this.anims.create({
+                        key: 'boss_Idle',
+                        frames: this.anims.generateFrameNumbers('boss_Idle'),
+                        frameRate: 5,
+                        repeat: -1,
+                    });
+                    this.anims.create({
+                        key: 'boss_Attack',
+                        frames: this.anims.generateFrameNumbers('boss_Attack', { start: 0, end: 10 }),
+                        frameRate: 8,
+                        repeat: 0,
+                    });
+                    this.anims.create({
+                        key: 'boss_Death',
+                        frames: this.anims.generateFrameNumbers('boss_Death'),
+                        frameRate: 5,
+                        repeat: 0,
+                    });
+                    this.anims.create({
+                        key: 'boss_Fly',
+                        frames: this.anims.generateFrameNumbers('boss_Fly'),
+                        frameRate: 4,
+                        repeat: 0,
+                    });
+                    this.anims.create({
+                        key: 'boss_Hurt',
+                        frames: this.anims.generateFrameNumbers('boss_Death', { start: 0, end: 2 }),
+                        frameRate: 8,
+                        repeat: 0,
+                    });
+
+                };
+                animsCreate();
+
+                const bossScale = 3;
+                this.boss = this.add.sprite(width * 0.8, height * 0.75, 'boss_Fly');
+
+                this.boss
+                    .setScale(-bossScale, bossScale)
+                    .setOrigin(0.5, 1)
+                    .setAlpha(0)
+                    .setDepth(Depth.boss)
+                    .setName('boss');
+
+                //==落石發射器
+                let particles = this.add.particles('bossRock')
+                    .setDepth(Depth.boss + 1);
+
+                let emitter = particles.createEmitter({
+                    x: () => Phaser.Math.Between(-100, width + 100),
+                    y: -100,
+                    angle: 90,
+                    speed: () => Phaser.Math.Between(100, 800),
+                    lifespan: 2000,
+                    frequency: 50,
+                    rotate: {
+                        onEmit: p => {
+                            p.keepRotate = Phaser.Math.Between(1, 5);
+                            return 0;
+                        },
+                        onUpdate: p => p.angle + p.keepRotate,
+                    },
+                    on: false,
+                });
+
+                let showAnims = () => {
+                    let boss = this.boss;
+                    let bossHPbar = boss.HPbar;
+
+                    //==出現
+                    let showDelay = flameCount * animeDelay;
+                    let barShowDelay = 500;
+
+                    this.tweens.add({
+                        targets: [boss].concat(bossHPbar.getChildren()),
+                        repeat: 0,
+                        ease: 'Back.easeInOut',
+                        delay: (t, tk, v, i) => showDelay + (i > 0 ? barShowDelay : 0),
+                        duration: animeDelay,
+                        alpha: { from: 0, to: 1 },
+                    });
+
+                    //==出現血條
+                    let bossHP = boss.stats.HP;
+                    this.tweens.addCounter({
+                        from: 0,
+                        to: bossHP,
+                        loop: 0,
+                        delay: showDelay + barShowDelay,
+                        duration: animeDelay * 3,
+                        onUpdate: (t, v) => {
+                            boss.stats.HP = v.value;
+                            bossHPbar.updateFlag = true;
+                        },
+                    });
+
+                    //==飛
+                    let flyRepeat = 2, yoyoFlag = true;
+                    this.tweens.add({
+                        targets: boss,
+                        repeat: flyRepeat - 1,
+                        ease: 'Quadratic.InOut',
+                        delay: showDelay,
+                        duration: animeDelay,
+                        yoyo: yoyoFlag,
+                        y: { from: this.boss.y, to: this.boss.y - 15 },
+                    });
+
+                    //==攻擊動畫
+                    let attackDelay = (flameCount + flyRepeat * (yoyoFlag ? 2 : 1)) * animeDelay;
+                    this.time.delayedCall(attackDelay, () => boss.play('boss_Attack'), [], this);
+
+                    //==說話
+                    let speakDelay = attackDelay + 500;
+                    let bossContent = localeJSON.Lines.boss[0];
+                    this.time.delayedCall(speakDelay, async () => {
+                        //==對話完才開始問題
+                        await new Promise(resolve => this.RexUI.newDialog(bossContent, {
+                            character: 'boss',
+                            pageendEvent: true,
+                        }, resolve));
+                        this.gameTimer.paused = false;
+                        boss.play('boss_Idle');
+                        this.time.delayedCall(animeDelay, () => initQuiz(), [], this);
+
+                    }, [], this);
+
+                };
+                let attackAnims = (resolve) => {
+                    let boss = this.boss;
+                    let attackType = Phaser.Math.Between(1, 2);
+                    let duration = 1000;
+
+                    let attack = (type) => {
+                        if (type == 1) {
+                            let quakeT1 = 1500, quakeT2 = 2000;
+                            duration += (quakeT1 + quakeT2);
+                            boss.play('boss_Attack');
+                            this.time.delayedCall(quakeT1, () => {
+                                //==quake
+                                this.cameras.main.shake(quakeT2, 0.015);
+
+                                //==falling rock
+                                emitter.start();
+
+                                //==player got hurt
+                                this.tweens.addCounter({
+                                    from: 0,
+                                    to: 1,
+                                    loop: Math.ceil(quakeT2 / 1000),
+                                    duration: 1000,
+                                    onLoop: () => {
+                                        this.player.statsChangeHandler({ HP: -boss.stats.attackPower }, this);
+                                        emitter.stop();
+                                    },
+                                });
+                                this.time.delayedCall(quakeT2, () => boss.play('boss_Idle'), [], this);
+                            }, [], this);
+                        }
+                        else {
+                            let flyT1 = 1000, flyT2 = 1000;
+                            duration += (flyT1 + flyT2 * 2);
+                            boss.play('boss_Fly');
+
+                            let otiginX = boss.x;
+                            this.tweens.add({
+                                targets: boss,
+                                ease: 'Expo.InOut',
+                                delay: flyT2,
+                                duration: flyT1,
+                                x: { from: otiginX, to: -boss.displayWidth },
+                                onComplete: () => {
+                                    this.tweens.add({
+                                        targets: boss,
+                                        ease: 'Quadratic.InOut',
+                                        duration: flyT2,
+                                        x: { from: width + boss.displayWidth, to: otiginX },
+                                    });
+                                },
+                            });
+
+                            this.time.delayedCall((flyT1 + flyT2) * 0.8, () => {
+                                this.player.statsChangeHandler({ HP: -boss.stats.attackPower * 1.5 }, this);
+                            }, [], this);
+
+                            this.time.delayedCall(flyT1 + flyT2 * 2, () => boss.play('boss_Idle'), [], this);
+                        };
+                    };
+                    attack(attackType);
+
+                    this.time.delayedCall(duration, () => resolve(), [], this);
+                };
+                let gotHurtAnims = (duration) => {
+                    let boss = this.boss;
+                    // let bossHP = boss.stats.HP - this.player.stats.attackPower * 4;
+                    let bossHP = boss.stats.HP - 400;//3次死
+
+                    this.tweens.addCounter({
+                        from: boss.stats.HP,
+                        to: bossHP,
+                        loop: 0,
+                        duration: duration,
+                        onUpdate: (t, v) => {
+                            boss.stats.HP = v.value;
+                            boss.HPbar.updateFlag = true;
+                        },
+                    });
+
+                    if (bossHP <= 0) {
+                        boss.play('boss_Death');
+                        this.tweens.add({
+                            targets: boss.HPbar.getChildren(),
+                            repeat: 0,
+                            ease: 'Back.easeInOut',
+                            duration: duration * 2,
+                            alpha: { from: t => t.alpha, to: 0 },
+                        });
+
+                        this.player.winAnims();
+                    }
+                    else {
+                        boss.play('boss_Hurt');
+                        this.time.delayedCall(duration, () => boss.play('boss_Idle'), [], this);
+                    };
+
+                    // console.debug(boss.stats.HP);
+                };
+
+                this.scene.add(null, new UIScene('statsBar', this, this.boss), true);
+                let newStats = { ...GameObjectStats.creature['boss'] };
+                Object.assign(this.boss, {
+                    attackAnims: attackAnims,
+                    gotHurtAnims: gotHurtAnims,
+                    stats: Object.assign(newStats, {
+                        maxHP: newStats.HP,
+                    }),
+                });
+
+                showAnims();
+            };
+            let initQuiz = () => {
+                this.RexUI.scene.bringToTop();
+
+                //==題庫題目總數量
+                const quizArr = localeJSON.Quiz;
+                const quizAmount = Object.keys(quizArr).length;
+
+                let getQuizIdxArr = (quizAmount) => Array.from(new Array(quizAmount), (d, i) => i).sort(() => 0.5 - Math.random());
+                let quizIdxArr = getQuizIdxArr(quizAmount);
+                let quizCount = 1;
+
+                let getQuiz = () => {
+                    let quizIdx = quizIdxArr.pop();
+                    if (quizIdxArr.length == 0) quizIdxArr = getQuizIdxArr(quizAmount);
+                    // console.debug(quizIdxArr);
+
+                    return Object.assign(quizArr[quizIdx], {
+                        title: localeJSON.UI['Question'] + quizCount++,
+                    });
+                };
+                let showQuiz = async () => {
+                    let correct = await new Promise(resolve => this.quizObj = this.RexUI.newQuiz(getQuiz(), 0, resolve));
+                    await new Promise(resolve => this[correct ? 'player' : 'boss'].attackAnims(resolve));
+
+                    if (this.boss.stats.HP > 0 && !this.gameOver.flag) showQuiz();
+
+                    // console.debug('hp :' + this.boss.stats.HP);
+                };
+                showQuiz();
+            };
+            let initCamera = () => {
+                this.cameras.main.setBounds(0, 0, width, height);
+                this.cameras.main.flash(500, 0, 0, 0);
+            };
+            let initRexUI = () => {
+                this.scene.add(null, new UIScene('RexUI', this), true);
+            };
+            let initHotKey = () => {
+                this.scene.add(null, new UIScene('hotKeyUI', this), true);
+            };
+
+        };
+
         initRexUI();
+        initCreatorUI();
+        // initBackground();
+        // initButton();
+
     };
     update() {
         let updateBGobj = () => {
             this.backgroundObj.gameTitle.spinningHandler();
         };
 
-        updateBGobj();
+        // updateBGobj();
     };
 };
 
@@ -5183,7 +5706,7 @@ class LoadingScene extends Phaser.Scene {
         const LoadtextJSON = gameData.localeJSON.Load;
 
         // console.debug(gameScene);
-        const packNum = { 'defend': 1, 'dig': 2, 'boss': 3 }[gameScene.name];
+        const packNum = { 'GameStart': 0, 'defend': 1, 'dig': 2, 'boss': 3 }[gameScene.name];
         let gameObjects = () => {
             let environment = () => {
                 const envDir = gameObjDir + 'environment/';

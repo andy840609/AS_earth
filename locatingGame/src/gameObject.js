@@ -90,7 +90,24 @@ const Item = new Phaser.Class({
             else scene.physics.world.enableBody(this, 0);
 
             //==碰撞器
-            this.colliderArray = [scene.physics.add.collider(this, scene.platforms)];//==方便移除
+            this.colliderArray = [];
+
+            switch (scene.name) {//==方便移除
+                case 'defend':
+                    this.colliderArray.push(
+                        scene.physics.add.collider(this, scene.platforms)
+                    );
+                    break;
+                case 'dig':
+                    scene.chunks.forEach(chunk => {
+                        this.colliderArray.push(
+                            scene.physics.add.collider(this, chunk.tiles)
+                        );
+                    })
+
+                    break;
+            }
+
             if (!setByPlayer) this.colliderArray.push(
                 scene.physics.add.collider(this, scene.player, this.collectHandler)
             );

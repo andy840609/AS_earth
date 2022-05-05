@@ -4855,70 +4855,7 @@ class GameStartScene extends Phaser.Scene {
         //     controller();
         //     intro();
         // };
-        // let character = () => {
-        //     const characters = this.creatorObj.characters;// ['maleAdventurer']
-        //     const sidekicks = this.creatorObj.sidekicks;
-
-        //     let sprite = () => {
-        //         const playerDir = assetsDir + 'gameObj/player/';
-
-        //         characters.forEach(chara => {
-        //             let dir = playerDir + chara + '/';
-        //             const playerFrame = GameObjectFrame[chara];
-        //             const frameObj = playerFrame.frameObj;
-        //             const effectFrameObj = playerFrame.effect;
-
-        //             this.load.spritesheet(chara + '_idle', dir + 'idle.png', frameObj);
-        //             this.load.spritesheet(chara + '_run', dir + 'run.png', frameObj);
-        //             this.load.spritesheet(chara + '_doubleJump', dir + 'doubleJump.png', frameObj);
-        //             this.load.spritesheet(chara + '_attack', dir + 'attack.png', frameObj);
-        //             this.load.spritesheet(chara + '_swordSwing', dir + 'swordSwing.png', { frameWidth: effectFrameObj.attack[0], frameHeight: effectFrameObj.attack[1] });
-
-        //         });
-
-        //     };
-        //     let avatar = () => {
-        //         const AvatarDir = assetsDir + 'avatar/';
-        //         let player = () => {
-        //             const AvatarCount = 4;
-
-        //             characters.forEach(chara => {
-        //                 let dir = AvatarDir + chara + '/';
-        //                 [...Array(AvatarCount).keys()].forEach(i =>
-        //                     this.load.image(chara + '_avatar' + i, dir + i + '.png'));
-
-        //             });
-        //         };
-        //         let sidekick = () => {
-        //             sidekicks.forEach(side =>
-        //                 this.load.image(side + '_avatar', AvatarDir + side + '.png'));
-        //         };
-
-        //         player();
-        //         sidekick();
-        //     };
-        //     sprite();
-        //     avatar();
-
-        // };
-        // let background = () => {
-        //     const creatorBG = this.creatorObj.background;
-        //     let dir = assetsDir + 'gameObj/environment/background/' + creatorBG + '/';
-        //     let resources = BackGroundResources.GameStart[creatorBG];
-
-        //     //==重新取名讓loader裡的key不會重複(檔名可能重複)
-        //     resources.static.forEach((res, i) => {
-        //         this.load.image('staticBG_' + i, dir + res);
-        //     });
-        //     resources.dynamic.forEach((res, i) => {
-        //         this.load.image('dynamicBG_' + i, dir + res);
-        //     });
-
-        // };
-
         // UI();
-        // character();
-        // background();
 
         this.plugins.get('rexawaitloaderplugin').addToScene(this);
         let callback = (resolve) => this.scene.add(null, new LoadingScene(this, resolve), true);
@@ -5068,7 +5005,12 @@ class GameStartScene extends Phaser.Scene {
             this.RexUI.rankingData = this.rankingData;
         };
         let initCreatorUI = () => {
-            this.scene.add(null, new UIScene('creator', this), true);
+            let creator = this.scene.add(null, new UIScene('creator', this), true);
+
+            creator.events.on('destroy', function () {
+                // console.debug('creator');
+                initTutorial();
+            });
         };
         let initTutorial = () => {
             this.scene.add(null, new UIScene('tutorial', this), true);
@@ -5711,8 +5653,9 @@ class LoadingScene extends Phaser.Scene {
             let environment = () => {
                 const envDir = gameObjDir + 'environment/';
                 let background = () => {
-                    const dir = envDir + 'background/' + gameScene.background + '/';
-                    let resources = BackGroundResources[gameScene.name][gameScene.background];
+                    let background = packNum ? gameScene.background : gameScene.creatorObj.background;
+                    const dir = envDir + 'background/' + background + '/';
+                    let resources = BackGroundResources[gameScene.name][background];
 
                     //==重新取名讓loader裡的key不會重複(檔名可能重複)
                     resources.static.forEach((res, i) => {
@@ -5853,6 +5796,7 @@ class LoadingScene extends Phaser.Scene {
                 background();
             };
             let player = () => {
+                if (packNum == 0) return;
                 let sprite = () => {
                     const playerRole = gameData.playerRole;
                     const dir = gameObjDir + 'player/' + playerRole + '/';
@@ -5916,6 +5860,7 @@ class LoadingScene extends Phaser.Scene {
                 UIbar();
             };
             let sidekick = () => {
+                if (packNum == 0) return;
                 let doctor = () => {
                     this.load.image('doctorOwl', assetsDir + 'ui/map/sidekick/Doctor2.png');
                 };
@@ -5939,8 +5884,57 @@ class LoadingScene extends Phaser.Scene {
             environment();
             player();
             sidekick();
+            if (packNum === 0) {
+                //==讀全角色給玩家選
+                let character = () => {
+                    const characters = gameScene.creatorObj.characters;// ['maleAdventurer']
+                    const sidekicks = gameScene.creatorObj.sidekicks;
 
-            if (packNum == 1) {
+                    let sprite = () => {
+                        const playerDir = assetsDir + 'gameObj/player/';
+
+                        characters.forEach(chara => {
+                            let dir = playerDir + chara + '/';
+                            const playerFrame = GameObjectFrame[chara];
+                            const frameObj = playerFrame.frameObj;
+                            const effectFrameObj = playerFrame.effect;
+
+                            this.load.spritesheet(chara + '_idle', dir + 'idle.png', frameObj);
+                            this.load.spritesheet(chara + '_run', dir + 'run.png', frameObj);
+                            this.load.spritesheet(chara + '_doubleJump', dir + 'doubleJump.png', frameObj);
+                            this.load.spritesheet(chara + '_attack', dir + 'attack.png', frameObj);
+                            this.load.spritesheet(chara + '_swordSwing', dir + 'swordSwing.png', { frameWidth: effectFrameObj.attack[0], frameHeight: effectFrameObj.attack[1] });
+
+                        });
+
+                    };
+                    let avatar = () => {
+                        const AvatarDir = assetsDir + 'avatar/';
+                        let player = () => {
+                            const AvatarCount = 4;
+
+                            characters.forEach(chara => {
+                                let dir = AvatarDir + chara + '/';
+                                [...Array(AvatarCount).keys()].forEach(i =>
+                                    this.load.image(chara + '_avatar' + i, dir + i + '.png'));
+
+                            });
+                        };
+                        let sidekick = () => {
+                            sidekicks.forEach(side =>
+                                this.load.image(side + '_avatar', AvatarDir + side + '.png'));
+                        };
+
+                        player();
+                        sidekick();
+                    };
+                    sprite();
+                    avatar();
+
+                };
+                character();
+            }
+            else if (packNum === 1) {
                 let enemy = () => {
                     if (gameData.stationData.stationStats.liberate) return;
                     // console.debug(this.aliveEnemy);
@@ -5975,6 +5969,9 @@ class LoadingScene extends Phaser.Scene {
 
                 let UIButtonArr;
                 switch (packNum) {
+                    case 0:
+                        UIButtonArr = ['detector', 'backpack', 'pause', 'exit'];
+                        break;
                     case 1:
                         UIButtonArr = ['detector', 'backpack', 'pause', 'exit'];
                         break;
@@ -6013,6 +6010,7 @@ class LoadingScene extends Phaser.Scene {
                 this.load.image('shiftRight', dir + `shiftRight${packNum === 2 ? '_dig' : ''}.png`);
             };
             let backpack = () => {
+                if (packNum === 0) return;
                 const dir = uiDir + 'backpack/';
                 let UI = () => {
                     this.load.image('backpackBlock', dir + 'block.png');
@@ -6042,6 +6040,7 @@ class LoadingScene extends Phaser.Scene {
                 this.load.image('tooltipButton', uiDir + 'tooltipButton.png');
             };
             let timeRemain = () => {
+                if (packNum === 0) return;
                 this.load.spritesheet('hourglass',
                     uiDir + 'hourglass.png',
                     { frameWidth: 200, frameHeight: 310 }
@@ -6091,7 +6090,7 @@ class LoadingScene extends Phaser.Scene {
                 avatar();
             };
             let tutorial = () => {
-                if (packNum == 3 || !gameScene.firstTimeEvent.isFirstTime) return;
+                if (packNum == 0 || packNum == 3 || !gameScene.firstTimeEvent.isFirstTime) return;
 
                 this.load.spritesheet('guideSword', uiDir + 'guideSword.png',
                     { frameWidth: 500, frameHeight: 200 });
@@ -6108,6 +6107,11 @@ class LoadingScene extends Phaser.Scene {
             tutorial();
         };
         let makeProgressBar = () => {
+            //==開場不要讀取條
+            if (packNum == 0) {
+                this.load.on('complete', () => this.resolve());
+                return;
+            };
             const canvas = gameScene.sys.game.canvas;
             const width = canvas.width;
             const height = canvas.height;
@@ -6164,7 +6168,6 @@ class LoadingScene extends Phaser.Scene {
 
             };
             let loadEvents = () => {
-
                 this.load.on('progress', (percent) => {
                     this.percentText.setText(parseInt(percent * 100) + '%');
                     this.progressBar.clear();
@@ -6198,16 +6201,13 @@ class LoadingScene extends Phaser.Scene {
                     this.assetText.destroy();
                     this.dude.destroy();
                     this.resolve();
-                    // this.scene.remove();
                 });
+
 
             };
             progressGraphics();
             loadEvents();
-            // this.load.image('logo', 'zenvalogo.png');
-            // for (let i = 0; i < 5000; i++) {
-            //     this.load.image('logo' + i, 'zenvalogo.png');
-            // }
+
         };
         makeProgressBar();
         gameObjects();

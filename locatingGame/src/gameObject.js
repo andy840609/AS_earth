@@ -2052,18 +2052,20 @@ class RexTextBox extends RexPlugins.UI.TextBox {
 
             let color;
             switch (name) {
-                default:
-                case 'Owlet':
-                    color = isBox ? 0x7B7B7B : 0xffffff;
-                    break;
-                case 'Dude':
-                    color = isBox ? 0x004B97 : 0xAE0000;
-                    break;
-                case 'Pink':
-                    color = isBox ? 0xBF0060 : 0x000000;
-                    break;
+                // case 'Owlet':
+                //     color = isBox ? 0x7B7B7B : 0xffffff;
+                //     break;
+                // case 'Dude':
+                //     color = isBox ? 0x004B97 : 0xAE0000;
+                //     break;
+                // case 'Pink':
+                //     color = isBox ? 0xBF0060 : 0x000000;
+                //     break;
                 case 'doctor':  //==doctor
                     color = isBox ? 0xD9B300 : 0xffffff;
+                    break;
+                default:
+                    color = isBox ? 0xffffff : 0x000000;
                     break;
             };
             return color;
@@ -2098,8 +2100,9 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                 fixedWidth: fixedWidth,
                 fixedHeight: fixedHeight,
                 fontSize: '20px',
-                color: (character == 'doctor' || character == 'playerHint') ?
-                    '#272727' : '#fff',
+                // color: (character == 'doctor' || character == 'playerHint') ?
+                //     '#272727' : '#fff',
+                color: '#272727',
                 wrap: {
                     mode: 0,// 0|'none'|1|'word'|2|'char'|'character'
                     width: wrapWidth

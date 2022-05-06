@@ -2410,7 +2410,8 @@ class UIScene extends Phaser.Scene {
                 const
                     tutorialX = width * 0.5,
                     tutorialY = height * 0.15,
-                    tutorialW = width * 0.8 > 750 ? 750 : width * 0.8,
+                    // tutorialW = width * 0.8 > 750 ? 750 : width * 0.8,
+                    tutorialW = width * 0.7,
                     tutorialH = height * 0.6;
 
                 //角色等物件原點
@@ -2598,6 +2599,8 @@ class UIScene extends Phaser.Scene {
                         };
                         let button = () => {
                             const buttons = [gameScene.name == 'GameStart' ? 'skip' : 'close', 'previous', 'next', 'info1', 'info2'];
+                            let blackOut = gameScene.blackOut;
+                            blackOut.scene.bringToTop();
 
                             this.buttonGroups = {
                                 buttonWobbleTween: null,
@@ -2773,8 +2776,14 @@ class UIScene extends Phaser.Scene {
                                             case 'info2':
                                                 let tooltipHandler = this.detectorUI.tooltip.tooltipHandler;
                                                 this.buttonGroups.infoObjs.forEach(obj => obj.destroy());
+                                                blackOut.scene.setVisible(false);
 
                                                 if (!button.click) {
+                                                    blackOut.scene.setVisible(true);
+                                                    this.scene.moveAbove('blackOut', 'tutorialDetectorUI');
+
+
+                                                    // sendToBack
                                                     let anotherButton, infoTooltip;
                                                     if (name == 'info1') {
                                                         this.scene.pause();
@@ -2797,7 +2806,9 @@ class UIScene extends Phaser.Scene {
                                                         this.detectorUI.brushHandles.forEach(b => b.disableInteractive());
                                                         this.detectorUI.detectorButtons.forEach(b => b.disableInteractive());
                                                         infoTooltip.once('destroy', () => {
-                                                            this.scene.resume(); button.click = false;
+                                                            this.scene.resume();
+                                                            button.click = false;
+                                                            gameScene.blackOut.scene.setVisible(false);
                                                             this.detectorUI.brushHandles.forEach(b => b.setInteractive());
                                                             this.detectorUI.detectorButtons.forEach(b => b.setInteractive());
                                                         });
@@ -2868,16 +2879,16 @@ class UIScene extends Phaser.Scene {
                             //==目標
                             this.title = this.add.text(tutorialX, tutorialY + 50, '',
                                 {
-                                    fontSize: '48px',
+                                    font: '600 48px Arial',
                                     fill: '#000000',
-                                    shadow: {
-                                        offsetX: 5,
-                                        offsetY: 5,
-                                        color: '#9D9D9D',
-                                        blur: 3,
-                                        stroke: true,
-                                        fill: true
-                                    },
+                                    // shadow: {
+                                    //     offsetX: 5,
+                                    //     offsetY: 5,
+                                    //     color: '#9D9D9D',
+                                    //     blur: 3,
+                                    //     stroke: true,
+                                    //     fill: true
+                                    // },
                                     padding: {
                                         top: 5,
                                         bottom: 5,
@@ -5528,7 +5539,8 @@ class GameStartScene extends Phaser.Scene {
         };
 
         initRexUI();
-        initCreatorUI();
+        // initCreatorUI();
+        initTutorial();
         // initBackground();
         // initButton();
 

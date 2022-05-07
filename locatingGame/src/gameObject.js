@@ -3832,7 +3832,7 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
                         //==取消預設出現動畫
                         // console.debug(arrowTweens[0].length);
                         keyWords.forEach((key, i) =>
-                            arrowTweens[i].length !== 0 ? arrowAnime(i, false) : false);
+                            arrowTweens[i] && arrowTweens[i].length !== 0 ? arrowAnime(i, false) : false);
 
                         arrowAnime(keyWordIdx, true);
                     })

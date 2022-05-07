@@ -11,14 +11,19 @@ const datafileDir = 'data/datafile/';
 //     pause: 'P',
 //     backpack: 'I',
 //     detector: 'O',
-//     shiftLeft: 'A',
-//     shiftRight: 'D',
-//     shiftUp: 'W',
-//     shiftDown: 'S',
-//     functionKey: 'E',
+//     shiftLeft: 'Q',
+//     shiftRight: 'W',
+//     shiftUp: 'E',
+//     shiftDown: 'D',
+//     functionKey: 'A',
 //     reset: 'R',
 //     exit: 'ESC',
+//     //==道具快捷鍵
+//     hotkey1: 'ONE',
+//     hotkey2: 'TWO',
+//     hotkey3: 'THREE',
 // };
+
 const defaultControllCursor = {
     up: 'W',
     down: 'S',

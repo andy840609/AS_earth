@@ -2442,7 +2442,7 @@ class UIScene extends Phaser.Scene {
                     };
                     let controller = () => {
                         const UIDir = assetsDir + 'ui/game/tutorial/';
-                        this.load.image('startButton', UIDir + 'startButton.png');
+                        this.load.image('skipButton', UIDir + 'button.png');
                         this.load.image('frames', UIDir + 'frames.png');
                         this.load.image('arrow', UIDir + 'arrow.png');
                         this.load.image('info', UIDir + 'info.png');
@@ -2587,7 +2587,7 @@ class UIScene extends Phaser.Scene {
                 create = () => {
                     let backgroundImg = () => {
                         if (gameScene.name != 'GameStart') return;
-                        let img = this.add.image(width * 0.5, height * 0.5, 'startScene');
+                        let img = this.add.image(width * 0.5, height * 0.5, 'staticTutorialBG_0');
                         img.setScale(width / img.width, height / img.height);
                     };
                     let tutorialWindow = () => {
@@ -2633,8 +2633,8 @@ class UIScene extends Phaser.Scene {
                                     case 0:
                                         x = tutorialX + tutorialW * 0.5 - 80;
                                         y = tutorialY + tutorialH + 80;
-                                        img = 'startButton';
-                                        imgScale = 0.1;
+                                        img = 'skipButton';
+                                        imgScale = 0.3;
                                         break;
                                     case 1:
                                         x = tutorialX - tutorialW * 0.5;
@@ -3125,11 +3125,6 @@ class UIScene extends Phaser.Scene {
                         button();
                         text();
                         stepHandler();
-                    };
-                    let initCursors = () => {
-                        if (gameScene.name != 'GameStart') return;
-                        //===init cursors
-                        this.scene.add(null, new UIScene('cursors', this), true);
                     };
                     let initPlayer = () => {
                         //==anims
@@ -3771,7 +3766,6 @@ class UIScene extends Phaser.Scene {
 
                     backgroundImg();
                     initCamera();
-                    initCursors();
 
                     environment();
                     tutorialWindow();
@@ -4832,6 +4826,7 @@ class GameStartScene extends Phaser.Scene {
         Object.assign(this, {
             name: 'GameStart',
             gameData: GameData,
+            cursors: null,
             backgroundObj: null,
             creatorObj: {
                 background: 'castle_2',
@@ -5010,10 +5005,17 @@ class GameStartScene extends Phaser.Scene {
 
 
         };
+
+        let initIconBar = () => {
+            this.scene.add(null, new UIScene('iconBar', this), true);
+        };
         let initRexUI = () => {
             this.scene.add(null, new UIScene('RexUI', this), true);
             this.scene.add(null, new UIScene('blackOut', this), true);
             this.RexUI.rankingData = this.rankingData;
+        };
+        let initCursors = () => {
+            this.scene.add(null, new UIScene('cursors', this), true);
         };
         let initCreatorUI = () => {
             let creator = this.scene.add(null, new UIScene('creator', this), true);
@@ -5141,9 +5143,7 @@ class GameStartScene extends Phaser.Scene {
                 this.scene.add(null, new UIScene('timerUI', this), true);
                 this.gameTimer.paused = true;
             };
-            let initIconBar = () => {
-                this.scene.add(null, new UIScene('iconBar', this), true);
-            };
+
             let initCursors = () => {
                 //===init cursors
                 this.scene.add(null, new UIScene('cursors', this), true);
@@ -5538,11 +5538,19 @@ class GameStartScene extends Phaser.Scene {
 
         };
 
-        initRexUI();
+
+
+        //==gameScene
         // initCreatorUI();
         initTutorial();
         // initBackground();
         // initButton();
+
+
+        //==UI
+        initCursors();
+        // initIconBar();
+        initRexUI();
 
     };
     update() {
@@ -5982,7 +5990,7 @@ class LoadingScene extends Phaser.Scene {
                 let UIButtonArr;
                 switch (packNum) {
                     case 0:
-                        UIButtonArr = ['detector', 'backpack', 'pause', 'exit'];
+                        UIButtonArr = ['detector', 'backpack', 'pause'];
                         break;
                     case 1:
                         UIButtonArr = ['detector', 'backpack', 'pause', 'exit'];

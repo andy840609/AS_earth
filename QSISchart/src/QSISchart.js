@@ -27,14 +27,14 @@ function QSISchart() {
 
                 <div class="form-group"  id="chartMain">
 
-                    <div id="charts"></div>          
+                    <div id="charts" class="row"></div>          
                 
                     <div id="outerdiv"
                         style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:10;width:100%;height:100%;display:none;">
                         <div id="innerdiv" style=" background-color: rgb(255, 255, 255);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div>                      
                     </div>
 
-                    <div id='loading'>
+                    <div id="loading"  style="display:none;">
                         <div class="spinner-border"role="status">
                             <span class="sr-only" >Loading...</span>
                         </div>
@@ -48,9 +48,7 @@ function QSISchart() {
         async function printChart() {
             chartContainerJQ.find('#charts').children().remove();
 
-            let i = 1;
-
-            let getChartMenu = () => {
+            let getChartMenu = (i) => {
                 // console.log(d.data);
                 let div = document.createElement("div");
                 div.setAttribute("id", "chart" + i);
@@ -88,10 +86,8 @@ function QSISchart() {
                         let svgArr = [];
                         let svg = chartContainerJQ.find("#" + $(e.target).parents('.chart')[0].id).children('svg')[0];
                         svgArr.push(svg);
-                        let xAxisName = document.querySelector('input[name ="xAxisName"]:checked').value;
-                        let xAxisScale = document.querySelector('input[name ="xAxisScale"]:checked').value;
-                        let referenceTime = stringObj.referenceTime;
-                        let fileName = 'WF_by_' + xAxisName + (xAxisScale == 'band' ? '-sta' : '') + '_' + referenceTime + 'Z';
+
+                        let fileName = 'qsis';
                         downloadSvg(svgArr, fileName, option);
                     });
 
@@ -105,7 +101,7 @@ function QSISchart() {
                 let charts = document.getElementById('charts');
                 let stopPropagation = (e) => {
                     e.stopPropagation();
-                }
+                };
 
                 //start or stop DOM event capturing
                 function chartEventControl(control) {
@@ -118,8 +114,8 @@ function QSISchart() {
                         // console.debug('remove');
                         charts.removeEventListener('mousemove', stopPropagation, true);
                         charts.removeEventListener('mouseenter', stopPropagation, true);
-                    }
-                }
+                    };
+                };
 
                 chartContainerJQ.find('.toggle-nav').off('click');
                 chartContainerJQ.find('.toggle-nav').click(function (e) {
@@ -285,11 +281,13 @@ function QSISchart() {
 
             };
 
-            function activeCircle() {
+            function activeCircle(data, index) {
+                console.debug(data, index);
+                let width = 150, height = 150;
                 const svg = d3.create("svg")
                     .attr("viewBox", [0, 0, width, height]);
-                const xAxis = svg.append("g").attr("class", "xAxis");
-                const yAxis = svg.append("g").attr("class", "yAxis");
+                // const xAxis = svg.append("g").attr("class", "xAxis");
+                // const yAxis = svg.append("g").attr("class", "yAxis");
                 const focusGroup = svg.append("g").attr('class', 'focus');
                 const legendGroup = svg.append("g").attr('class', 'legendGroup');
 
@@ -306,6 +304,26 @@ function QSISchart() {
                     };
                     function render() {
 
+
+                        // circle stuff
+                        let twoPi = 2 * Math.PI,
+                            radius = Math.min(width, height) / 2 - 5,
+                            arcBackground = d3.arc()
+                                .startAngle(0)
+                                .endAngle(d => d.value * twoPi)
+                                .outerRadius(radius - 10)
+                                .innerRadius(radius - 35),
+                            arcForeground = d3.arc()
+                                .startAngle(0)
+                                .endAngle(d => d.value * twoPi)
+                                .outerRadius(radius)
+                                .innerRadius(radius - 27),
+
+                            // animation stuff,
+                            duration = 3000;
+
+                        // string to number
+                        let value = 200;
                         let refreshText = () => {
                             xAxis
                                 .select('.axis_name')
@@ -357,9 +375,102 @@ function QSISchart() {
                         };
                         let updateFocus = () => {
 
+                            let meter = focusGroup.attr(
+                                'transform',
+                                'translate(' + width / 2 + ',' + height / 2 + ')'
+                            );;
+
+
+                            meter.append('title')
+                                .text('Progress meter showing amount of space used for ' + 'AAA');
+
+                            meter.data(
+                                [
+                                    { value: .0, index: .5 }
+                                ]
+                            )
+                                .append('path')
+                                .attr('class', 'backgroundCircle')
+                                .attr('d', arcBackground)
+                                .attr('filter', 'url(#dropshadow)')
+                                .transition()
+                                .duration(duration)
+                                .attrTween('d', tweenArcBackground({ value: 1 }));
+
+
+                            let foreground = meter.data(
+                                [
+                                    { value: .0, index: .5 }
+                                ]
+                            )
+                                .append('path')
+                                .attr('stroke', '#fff')
+                                .attr('class', 'foregroundCircle')
+                                .attr('d', arcForeground)
+                                .attr('filter', 'url(#dropshadow)')
+                                .transition()
+                                .attr('stroke', '#aaa')
+                                .delay(1000 * index)
+                                .duration(duration)
+                                .attrTween('d', tweenArcForeground({ value: value / 1000 }));
+
+
+                            meter.data([0])
+                                .append('text')
+                                .text(0)
+                                .attr('font-size', '25px')
+                                .attr('x', 0)
+                                .attr('y', 0)
+                                .attr('fill', '#fff')
+                                .attr('text-anchor', 'middle')
+                                .attr('filter', 'url(#dropshadow)')
+                                .transition()
+                                .delay(1000 * index)
+                                .duration(duration)
+                                .tween('text', tweenText(value));
+
+                            meter.append('text')
+                                .attr('fill', '#fff')
+                                .attr('x', 0)
+                                .attr('y', 20)
+                                .attr('text-anchor', 'middle')
+                                .attr('filter', 'url(#dropshadow)')
+                                .text('mb');
+
+
+                            // Helper functions!!!
+                            function tweenArcForeground(b) {
+                                return function (a) {
+                                    let i = d3.interpolate(a, b);
+
+                                    return function (t) {
+                                        return arcForeground(i(t));
+                                    };
+                                };
+                            }
+
+                            function tweenArcBackground(b) {
+                                return function (a) {
+                                    let i = d3.interpolate(a, b);
+
+                                    return function (t) {
+                                        return arcBackground(i(t));
+                                    };
+                                };
+                            }
+
+                            function tweenText(b) {
+                                return function (a) {
+                                    let i = d3.interpolateRound(a, b);
+
+                                    return function (t) {
+                                        this.textContent = i(t);
+                                    };
+                                }
+                            }
                         };
 
-
+                        updateFocus();
                     };
 
                     if (!newDataObj) {
@@ -367,17 +478,140 @@ function QSISchart() {
                         init();
                     };
                     render();
+
                 };
                 updateChart();
 
-                function events(svg) { };
+                function events(svg) {
+                    const defs = svg.append('defs');
+
+                    let spin = () => {     // filter stuff
+                        /* For the drop shadow filter... */
+                        let filter = defs.append('filter')
+                            .attr('id', 'dropshadow')
+
+                        filter.append('feGaussianBlur')
+                            .attr('in', 'SourceAlpha')
+                            .attr('stdDeviation', 2)
+                            .attr('result', 'blur');
+                        filter.append('feOffset')
+                            .attr('in', 'blur')
+                            .attr('dx', 2)
+                            .attr('dy', 3)
+                            .attr('result', 'offsetBlur');
+
+                        let feMerge = filter.append('feMerge');
+
+                        feMerge.append('feMergeNode')
+                            .attr('in", "offsetBlur')
+                        feMerge.append('feMergeNode')
+                            .attr('in', 'SourceGraphic');
+                        // end filter stuff
+
+                        // gradient stuff    
+                        let gradientBackgroundRed = defs.append('linearGradient')
+                            .attr('id', 'gradientBackgroundRed')
+                            .attr('x1', '0')
+                            .attr('x2', '0')
+                            .attr('y1', '0')
+                            .attr('y2', '1');
+                        gradientBackgroundRed.append('stop')
+                            .attr('class', 'redBackgroundStop1')
+                            .attr('offset', '0%');
+
+                        gradientBackgroundRed.append('stop')
+                            .attr('class', 'redBackgroundStop2')
+                            .attr('offset', '100%');
+
+                        let gradientBackgroundPurple = defs.append('linearGradient')
+                            .attr('id', 'gradientBackgroundPurple')
+                            .attr('x1', '0')
+                            .attr('x2', '0')
+                            .attr('y1', '0')
+                            .attr('y2', '1');
+
+                        gradientBackgroundPurple.append('stop')
+                            .attr('class', 'purpleBackgroundStop1')
+                            .attr('offset', '0%');
+
+                        gradientBackgroundPurple.append('stop')
+                            .attr('class', 'purpleBackgroundStop2')
+                            .attr('offset', '100%');
+
+                        let gradientBackgroundCyan = defs.append('linearGradient')
+                            .attr('id', 'gradientBackgroundCyan')
+                            .attr('x1', '0')
+                            .attr('x2', '0')
+                            .attr('y1', '0')
+                            .attr('y2', '1');
+
+                        gradientBackgroundCyan.append('stop')
+                            .attr('class', 'cyanBackgroundStop1')
+                            .attr('offset', '0%');
+
+                        gradientBackgroundCyan.append('stop')
+                            .attr('class', 'cyanBackgroundStop2')
+                            .attr('offset', '100%');
+
+                        let gradientForegroundRed = defs.append('linearGradient')
+                            .attr('id', 'gradientForegroundRed')
+                            .attr('x1', '0')
+                            .attr('x2', '0')
+                            .attr('y1', '0')
+                            .attr('y2', '1');
+                        gradientForegroundRed.append('stop')
+                            .attr('class', 'redForegroundStop1')
+                            .attr('offset', '0%');
+
+                        gradientForegroundRed.append('stop')
+                            .attr('class', 'redForegroundStop2')
+                            .attr('offset', '100%');
+
+                        let gradientForegroundPurple = defs.append('linearGradient')
+                            .attr('id', 'gradientForegroundPurple')
+                            .attr('x1', '0')
+                            .attr('x2', '0')
+                            .attr('y1', '0')
+                            .attr('y2', '1');
+
+                        gradientForegroundPurple.append('stop')
+                            .attr('class', 'purpleForegroundStop1')
+                            .attr('offset', '0%');
+
+                        gradientForegroundPurple.append('stop')
+                            .attr('class', 'purpleForegroundStop2')
+                            .attr('offset', '100%');
+
+                        let gradientForegroundCyan = defs.append('linearGradient')
+                            .attr('id', 'gradientForegroundCyan')
+                            .attr('x1', '0')
+                            .attr('x2', '0')
+                            .attr('y1', '0')
+                            .attr('y2', '1');
+
+                        gradientForegroundCyan.append('stop')
+                            .attr('class', 'cyanForegroundStop1')
+                            .attr('offset', '0%');
+
+                        gradientForegroundCyan.append('stop')
+                            .attr('class', 'cyanForegroundStop2')
+                            .attr('offset', '100%');
+                        // end gradient stuff
+                    };
+                    spin();
+                };
                 svg.call(events);
 
 
                 return svg.node();
             };
-            getChartMenu('qsis');
-            chartContainerJQ.find('#chart' + i).append(activeCircle());
+
+
+            data.forEach((d, i) => {
+                getChartMenu(i);
+                chartContainerJQ.find('#chart' + i).append(activeCircle(d, i));
+            });
+            MenuEvents();
 
         };
         //===init once
@@ -386,6 +620,7 @@ function QSISchart() {
         };
         printChart();
 
-        return chart;
+
     };
+    return chart;
 };

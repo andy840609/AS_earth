@@ -1,0 +1,155 @@
+ .redBackgroundStop1 {
+     stop-color: adjust-lightness(#ff5440, 7);
+ }
+
+ .redBackgroundStop2 {
+     stop-color: #ff5440;
+ }
+
+ .purpleBackgroundStop1 {
+     stop-color: adjust-lightness(#a8aff1, 7);
+ }
+
+ .purpleBackgroundStop2 {
+     stop-color: #a8aff1;
+ }
+
+ .cyanBackgroundStop1 {
+     stop-color: adjust-lightness(#62d6eb, 7);
+ }
+
+ .cyanBackgroundStop2 {
+     stop-color: #62d6eb;
+ }
+
+ .redForegroundStop1 {
+     stop-color: adjust-lightness(#ff5440, 35);
+ }
+
+ .redForegroundStop2 {
+     stop-color: adjust-lightness(#ff5440, 23);
+ }
+
+ .purpleForegroundStop1 {
+     stop-color: adjust-lightness(#a8aff1, 17);
+ }
+
+ .purpleForegroundStop2 {
+     stop-color: adjust-lightness(#a8aff1, 8);
+ }
+
+ .cyanForegroundStop1 {
+     stop-color: adjust-lightness(#62d6eb, 29);
+ }
+
+ .cyanForegroundStop2 {
+     stop-color: adjust-lightness(#62d6eb, 15);
+ }
+
+ .focus {
+     margin: 0.5em;
+     height: 10em;
+ }
+
+ .backgroundCircle {
+     fill: #000;
+ }
+
+ .foregroundCircle {
+     fill: rgb(24, 214, 33);
+     stroke-width: 1px;
+ }
+
+
+ /* chart */
+ #chartMain {
+     position: relative;
+ }
+
+ .chart {
+     width: 300px;
+     height: 300px;
+ }
+
+
+ /* toggle-menu */
+ .toggle-menu {
+     position: relative;
+     display: inline-block;
+
+ }
+
+ .toggle-menu ul.active {
+     display: none;
+ }
+
+ .toggle-menu ul {
+     width: 200px;
+     height: 200px;
+     position: absolute;
+     top: 100%;
+     right: 0px;
+     padding: 0px 0px 0px 0px;
+     box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.15);
+     border: rgb(197, 197, 197) 1px solid;
+     border-radius: 3px;
+     background-color: #fff;
+ }
+
+ .toggle-menu li {
+     float: none;
+     display: block;
+ }
+
+ .toggle-menu li a {
+     text-decoration: none;
+     color: #777;
+     text-align: center;
+     font-size: 16px;
+ }
+
+ .toggle-menu li a:hover {
+     background: #1ABC9C;
+     color: #fff;
+ }
+
+ .toggle-menu a {
+     display: block;
+ }
+
+ .toggle-nav {
+     padding: 5px 9px 5px 10px;
+     display: inline-block;
+     box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.15);
+     border: rgb(197, 197, 197) 1px solid;
+     border-radius: 3px;
+     text-shadow: 0px 1px 0px rgba(0, 0, 0, 0.5);
+     color: #777;
+     font-size: 20px;
+     text-decoration: none;
+ }
+
+ .toggle-nav:hover,
+ .toggle-nav.active {
+     text-decoration: none;
+     color: rgba(0, 0, 0, 0.658);
+ }
+
+
+ #loading {
+     --loading-width: 150px;
+     --loading-height: 60px;
+
+     position: absolute;
+     width: var(--loading-width);
+     height: var(--loading-height);
+     left: calc(50% - var(--loading-width) * 0.5);
+     top: calc(50% - var(--loading-height));
+     z-index: 50;
+     padding: 10px 10px;
+     background: #3C3C3C;
+     color: #fff;
+     text-align: center;
+     box-shadow: 2px 2px 10px;
+     border-radius: 5px;
+ }

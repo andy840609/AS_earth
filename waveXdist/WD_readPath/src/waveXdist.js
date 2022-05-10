@@ -1729,7 +1729,7 @@ function waveXdist() {
                     tooltip.call(tooltip => {
 
                         tooltip.select('.timeArea>font')
-                            .text(timming);
+                            .text(timming.toFixed(3));
 
                         tooltip.select('.pageArea text:nth-child(2)')
                             .text((currentPage + 1) + ' / ' + (totalPages + 1));

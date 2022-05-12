@@ -15,6 +15,12 @@ function QSISchart() {
         const chartContainerJQ = $(selector);
         const chartContainerD3 = d3.select(selector);
 
+
+        // let getColor = (i) => {
+        //     i % 3
+        //     return
+        // };
+
         function init() {
             chartContainerJQ.append(`
             <form id="form-chart">
@@ -283,11 +289,9 @@ function QSISchart() {
 
             function activeCircle(data, index) {
                 console.debug(data, index);
-                let width = 150, height = 150;
+                let width = 180, height = 180;
                 const svg = d3.create("svg")
-                    .attr("viewBox", [0, 0, width, height]);
-                // const xAxis = svg.append("g").attr("class", "xAxis");
-                // const yAxis = svg.append("g").attr("class", "yAxis");
+                    .attr("viewBox", [0, 0, width, height + 50]);
                 const focusGroup = svg.append("g").attr('class', 'focus');
                 const legendGroup = svg.append("g").attr('class', 'legendGroup');
 
@@ -303,7 +307,11 @@ function QSISchart() {
 
                     };
                     function render() {
-
+                        const site = data.site,
+                            activeCount = data.active,
+                            totalCount = data.total;
+                        // animation stuff,
+                        const duration = 3000;
 
                         // circle stuff
                         let twoPi = 2 * Math.PI,
@@ -317,126 +325,72 @@ function QSISchart() {
                                 .startAngle(0)
                                 .endAngle(d => d.value * twoPi)
                                 .outerRadius(radius)
-                                .innerRadius(radius - 27),
+                                .innerRadius(radius - 27);
 
-                            // animation stuff,
-                            duration = 3000;
-
-                        // string to number
-                        let value = 200;
-                        let refreshText = () => {
-                            xAxis
-                                .select('.axis_name')
-                                .text();
-
-
-                            yAxis
-                                .select('.axis_name')
-                                .text();
-
-
-                        };
-                        let updateAxis = () => {
-                            function formatPower(x) {
-                                const e = Math.log10(x);
-                                if (e !== Math.floor(e)) return; // Ignore non-exact power of ten.
-                                return `10${(e + "").replace(/./g, c => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c] || "⁻")}`;
-                            };
-
-                            let makeXAxis = g => g
-                                .attr("transform", `translate(0,${height - margin.bottom})`)
-                                .call(g => {
-                                    let axisFun = d3.axisBottom(x).tickSizeOuter(0);
-                                    xAxisOption.metric == 'date' ?
-                                        axisFun.ticks(width / 80) :
-                                        xAxisOption.logScale ?
-                                            axisFun.ticks(Math.log10(x.domain()[1] / x.domain()[0]) + 1, formatPower) :
-                                            axisFun.ticks(width / 80);
-                                    axisFun(g);
-                                });
-
-                            let makeYAxis = g => g
-                                .attr("transform", `translate(${margin.left},0)`)
-                                .call(g => {
-                                    let axisFun = d3.axisLeft(y);
-                                    yAxisOption.logScale ?
-                                        axisFun.ticks(Math.log10(y.domain()[1] / y.domain()[0]) + 1, formatPower) :
-                                        axisFun.ticks(height / 30);
-                                    axisFun(g);
-                                })
-                                .call(g =>
-                                    g.selectAll("g.yAxis g.tick line")
-                                        .attr("x2", d => width - margin.left - margin.right)
-                                        .attr("stroke-opacity", 0.2)
-                                );
-
-                            xAxis.call(makeXAxis);
-                            yAxis.call(makeYAxis);
-                        };
                         let updateFocus = () => {
 
-                            let meter = focusGroup.attr(
-                                'transform',
-                                'translate(' + width / 2 + ',' + height / 2 + ')'
-                            );;
+                            focusGroup.append('g')
+                                .attr('class', 'meter')
+                                .attr('transform', 'translate(' + width / 2 + ',' + height / 2 + ')')
+                                .call(g => {
+
+                                    g.append('title').text(site);
+
+                                    g
+                                        .data([{ value: .0, index: .5 }])
+                                        .append('path')
+                                        .attr('class', 'backgroundCircle')
+                                        .attr('fill', '#000')
+                                        .attr('d', arcBackground)
+                                        .attr('filter', 'url(#dropshadow)')
+                                        .transition()
+                                        .duration(duration)
+                                        .attrTween('d', tweenArcBackground({ value: 1 }));
+
+                                    g
+                                        .data([{ value: .0, index: .5 }])
+                                        .append('path')
+                                        .attr('class', 'foregroundCircle')
+                                        .attr('stroke', '#28FF28')
+                                        .attr('fill', '#00A600')
+                                        .attr('d', arcForeground)
+                                        .attr('filter', 'url(#dropshadow)')
+                                        .transition()
+                                        .attr('stroke', '#aaa')
+                                        .delay(duration / 3)
+                                        .duration(duration)
+                                        .attrTween('d', tweenArcForeground({ value: activeCount / totalCount }));
 
 
-                            meter.append('title')
-                                .text('Progress meter showing amount of space used for ' + 'AAA');
+                                    g
+                                        .data([0])
+                                        .append('text')
+                                        .text(`0 / ${totalCount}`)
+                                        .attr('font-size', '20px')
+                                        .attr('fill', '#000')
+                                        .attr('text-anchor', 'middle')
+                                        .attr('alignment-baseline', 'middle')
+                                        .attr('filter', 'url(#dropshadow)')
+                                        .transition()
+                                        .delay(duration / 3)
+                                        .duration(duration)
+                                        .tween('text', tweenText(activeCount));
 
-                            meter.data(
-                                [
-                                    { value: .0, index: .5 }
-                                ]
-                            )
-                                .append('path')
-                                .attr('class', 'backgroundCircle')
-                                .attr('d', arcBackground)
-                                .attr('filter', 'url(#dropshadow)')
-                                .transition()
-                                .duration(duration)
-                                .attrTween('d', tweenArcBackground({ value: 1 }));
+                                });
 
-
-                            let foreground = meter.data(
-                                [
-                                    { value: .0, index: .5 }
-                                ]
-                            )
-                                .append('path')
-                                .attr('stroke', '#fff')
-                                .attr('class', 'foregroundCircle')
-                                .attr('d', arcForeground)
-                                .attr('filter', 'url(#dropshadow)')
-                                .transition()
-                                .attr('stroke', '#aaa')
-                                .delay(1000 * index)
-                                .duration(duration)
-                                .attrTween('d', tweenArcForeground({ value: value / 1000 }));
-
-
-                            meter.data([0])
-                                .append('text')
-                                .text(0)
-                                .attr('font-size', '25px')
-                                .attr('x', 0)
-                                .attr('y', 0)
-                                .attr('fill', '#fff')
-                                .attr('text-anchor', 'middle')
-                                .attr('filter', 'url(#dropshadow)')
-                                .transition()
-                                .delay(1000 * index)
-                                .duration(duration)
-                                .tween('text', tweenText(value));
-
-                            meter.append('text')
-                                .attr('fill', '#fff')
-                                .attr('x', 0)
-                                .attr('y', 20)
-                                .attr('text-anchor', 'middle')
-                                .attr('filter', 'url(#dropshadow)')
-                                .text('mb');
-
+                            focusGroup.append('g')
+                                .attr('class', 'text')
+                                .attr('transform', 'translate(' + width / 2 + ',' + height + ')')
+                                .call(g => {
+                                    g
+                                        .append('text')
+                                        .attr('fill', '#000')
+                                        .attr('x', 0)
+                                        .attr('y', 20)
+                                        .attr('text-anchor', 'middle')
+                                        .attr('filter', 'url(#dropshadow)')
+                                        .text(site);
+                                });
 
                             // Helper functions!!!
                             function tweenArcForeground(b) {
@@ -464,7 +418,7 @@ function QSISchart() {
                                     let i = d3.interpolateRound(a, b);
 
                                     return function (t) {
-                                        this.textContent = i(t);
+                                        this.textContent = i(t) + ' / ' + totalCount;
                                     };
                                 }
                             }

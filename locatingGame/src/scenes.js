@@ -4721,14 +4721,14 @@ class UIScene extends Phaser.Scene {
                                             break;
                                         case 'catfood':
                                             enemyName = 'cat';
+                                            break;
                                         case 'seeds':
                                             enemyName = 'dove';
-
                                             break;
                                         // case '':
                                         //     break;
                                     };
-
+                                    // console.debug(enemyName);
                                     gameScene.enemy.children.iterate((child, i) =>
                                         child.name === enemyName &&
                                             !(child.behavior === 'Death' || child.behavior === 'worship') ?
@@ -5021,18 +5021,15 @@ class GameStartScene extends Phaser.Scene {
             let creator = this.scene.add(null, new UIScene('creator', this), true);
 
             creator.events.on('destroy', function () {
-                // console.debug('creator');
-                initTutorial();
+                console.debug('creator');
+                initStartAnime();
+                // initTutorial();
             });
         };
         let initTutorial = () => {
             this.scene.add(null, new UIScene('tutorial', this), true);
         };
         let initStartAnime = () => {
-            const canvas = this.sys.game.canvas;
-            const width = canvas.width;
-            const height = canvas.height;
-            const localeJSON = this.gameData.localeJSON;
             const Depth = {
                 tips: 6,
                 flame: 8,
@@ -5053,18 +5050,16 @@ class GameStartScene extends Phaser.Scene {
                 */
             };
             this.Depth = Depth;//==gameObject.js用到
-            const flameCount = 4;
             const animeDelay = 500;
 
             let initEnvironment = () => {
                 let background = () => {
                     let BGgroup = this.add.group();
-                    let resources = BackGroundResources.boss[this.background];
+                    let resources = BackGroundResources.GameStart['castle_2'];
                     // console.debug(resources)
                     resources.static.forEach((res, i) => {
                         let img = this.add.image(width * 0.5, height * 0.5, 'staticBG_' + i);
                         img
-                            .setAlpha(0)
                             .setScale(width / img.width, height / img.height)
                             .setDepth(resources.depth.static[i]);
 
@@ -5075,42 +5070,41 @@ class GameStartScene extends Phaser.Scene {
                         let thing = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, 'dynamicBG_' + i);
 
                         thing
-                            .setAlpha(0)
                             .setScale(width / thing.width, height / thing.height)
                             .setDepth(resources.depth.dynamic[i]);
 
                         //==tweens
-                        let movingDuration = Phaser.Math.Between(5, 15) * 1000;//==第一次移動5到20秒
-                        let animType = resources.animType[i];
+                        // let movingDuration = Phaser.Math.Between(5, 15) * 1000;//==第一次移動5到20秒
+                        // let animType = resources.animType[i];
                         //==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
 
-                        this.tweens.add(
-                            Object.assign({
-                                targets: thing,
-                                repeat: -1,
-                                duration: movingDuration,
-                                delay: animeDelay * flameCount,
-                            },
-                                animType == 1 ?
-                                    { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
-                                    animType == 2 ? { alpha: { start: 0, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
-                                        animType == 3 ? { scaleX: { start: t => t.scaleX, to: t => t.scaleX * 1.5 }, scaleY: { start: t => t.scaleY, to: t => t.scaleY * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
-                                            { alpha: { start: 0, to: 1 }, ease: 'Bounce', yoyo: true }
+                        // this.tweens.add(
+                        //     Object.assign({
+                        //         targets: thing,
+                        //         repeat: -1,
+                        //         duration: movingDuration,
+                        //         delay: animeDelay * flameCount,
+                        //     },
+                        //         animType == 1 ?
+                        //             { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
+                        //             animType == 2 ? { alpha: { start: 0, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
+                        //                 animType == 3 ? { scaleX: { start: t => t.scaleX, to: t => t.scaleX * 1.5 }, scaleY: { start: t => t.scaleY, to: t => t.scaleY * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
+                        //                     { alpha: { start: 0, to: 1 }, ease: 'Bounce', yoyo: true }
 
-                            ));
+                        //     ));
 
                         BGgroup.add(thing);
 
                     });
 
-                    this.tweens.add({
-                        targets: BGgroup.getChildren(),
-                        repeat: 0,
-                        ease: 'Back.easeInOut',
-                        delay: animeDelay * flameCount,
-                        duration: animeDelay * 2,
-                        alpha: { from: 0, to: 1 },
-                    });
+                    // this.tweens.add({
+                    //     targets: BGgroup.getChildren(),
+                    //     repeat: 0,
+                    //     ease: 'Back.easeInOut',
+                    //     delay: animeDelay * flameCount,
+                    //     duration: animeDelay * 2,
+                    //     alpha: { from: 0, to: 1 },
+                    // });
 
                 };
                 let flame = () => {
@@ -5137,114 +5131,29 @@ class GameStartScene extends Phaser.Scene {
 
                 };
                 background();
-                flame();
-            };
-            let initTimer = () => {
-                this.scene.add(null, new UIScene('timerUI', this), true);
-                this.gameTimer.paused = true;
+                // flame();
             };
 
-            let initCursors = () => {
-                //===init cursors
-                this.scene.add(null, new UIScene('cursors', this), true);
-            };
             let initPlayer = () => {
+                let player = this.gameData.playerRole;
                 this.player = this.add.existing(new Player(this))
-                    .setPosition(width * 0.15, height * 0.65)
+                    .setPosition(0, height * 0.6)
                     .setDepth(Depth.player);
 
-                this.player.body
-                    // .setGravityY(2000)
-                    .setMaxVelocity(0);
 
-                this.player.attackEffect
-                    .setDepth(Depth.boss + 1);
-
-                this.player.dialog
-                    .setPosition(this.player.x, this.player.y - this.player.displayHeight * 0.3);
-
-                Object.assign(this.player, {
-                    attackingFlag: false,
-                    attackAnims: (resolve) => {
-                        let hurtDuration = 2000;
-                        let duration = 500 + hurtDuration;
-
-                        //==playerAttack
-                        this.tweens.add({
-                            targets: this.player,
-                            ease: 'Linear',
-                            // delay: showDelay,
-                            duration: hurtDuration * 0.3,
-                            hold: hurtDuration * 0.5,//==yoyo delay
-                            yoyo: true,
-                            x: this.boss.x * 0.6,
-                            // y: this.boss.y,
-                            onUpdate: (t) => {
-                                // console.debug( this.anims);
-                                // console.debug(t.countdown);
-                                if (!this.player.attackingFlag && t.elapsed > hurtDuration * 0.3) {
-                                    let effectShowDuration = hurtDuration * 0.2,
-                                        effectMoveDuration = hurtDuration * 0.6;
-
-                                    this.player
-                                        .play('player_attack')
-                                        .anims.setRepeat(-1);
-
-                                    this.player.attackEffect
-                                        .setAlpha(0)
-                                        .setTexture('player_ultAttackEffect')
-                                        .setPosition(this.player.x + 120, this.player.y * 0.9);
-
-                                    this.tweens.add({
-                                        targets: this.player.attackEffect,
-                                        ease: 'Linear',
-                                        duration: effectShowDuration,
-                                        alpha: { start: 0, to: 1 },
-                                        onComplete: () => this.player.attackEffect.play('player_ultAttackEffect'),
-                                    });
-
-                                    this.tweens.add({
-                                        targets: this.player.attackEffect,
-                                        ease: 'Linear.Out',
-                                        delay: effectShowDuration,
-                                        duration: effectMoveDuration,
-                                        x: width + this.player.attackEffect.displayWidth,
-                                        scale: { start: 2, to: 3 },
-                                    });
-
-                                    // console.debug(this.player.anims.repeat);
-
-                                    this.player.attackingFlag = true;
-                                };
-                            },
-                            onStart: () => this.player.play('player_run'),
-                            onYoyo: () => {
-                                this.player.play('player_run').filpHandler(true);
-                                this.boss.gotHurtAnims(hurtDuration * 0.5);
-                            },
-                            onComplete: () => {
-                                this.player
-                                    .play('player_idle')
-                                    .filpHandler(false);
-
-                                this.player.attackingFlag = false;
-                            },
-                        });
-
-                        this.time.delayedCall(duration, () => resolve(), [], this);
-                    },
-                    winAnims: () => {
-                        let talkDelay = 1000;
-                        let playerContent = localeJSON.Lines.player[3];
-                        this.gameOver.bossDefeated = true;
-
-                        //==說話
-                        this.time.delayedCall(talkDelay, async () => {
-                            await new Promise(resolve => this.RexUI.newDialog(playerContent, { character: 'player' }, resolve));
-                            this.gameOver.flag = true;
-                        }, [], this);
+                this.tweens.add({
+                    targets: this.player,
+                    repeat: 0,
+                    ease: 'Linear',
+                    duration: animeDelay * 3,
+                    x: { from: -this.player.displayWidth, to: width * 0.2 },
+                    onStart: () => this.player.play(player + '_run'),
+                    onComplete: () => {
+                        this.player.play(player + '_idle');
+                        initLines();
                     },
                 });
+
             };
             let initSidekick = () => {
                 this.sidekick = this.add.existing(new Sidekick(this, this.gameData.sidekick.type))
@@ -5495,54 +5404,88 @@ class GameStartScene extends Phaser.Scene {
 
                 showAnims();
             };
-            let initQuiz = () => {
-                this.RexUI.scene.bringToTop();
-
-                //==題庫題目總數量
-                const quizArr = localeJSON.Quiz;
-                const quizAmount = Object.keys(quizArr).length;
-
-                let getQuizIdxArr = (quizAmount) => Array.from(new Array(quizAmount), (d, i) => i).sort(() => 0.5 - Math.random());
-                let quizIdxArr = getQuizIdxArr(quizAmount);
-                let quizCount = 1;
-
-                let getQuiz = () => {
-                    let quizIdx = quizIdxArr.pop();
-                    if (quizIdxArr.length == 0) quizIdxArr = getQuizIdxArr(quizAmount);
-                    // console.debug(quizIdxArr);
-
-                    return Object.assign(quizArr[quizIdx], {
-                        title: localeJSON.UI['Question'] + quizCount++,
-                    });
-                };
-                let showQuiz = async () => {
-                    let correct = await new Promise(resolve => this.quizObj = this.RexUI.newQuiz(getQuiz(), 0, resolve));
-                    await new Promise(resolve => this[correct ? 'player' : 'boss'].attackAnims(resolve));
-
-                    if (this.boss.stats.HP > 0 && !this.gameOver.flag) showQuiz();
-
-                    // console.debug('hp :' + this.boss.stats.HP);
-                };
-                showQuiz();
-            };
             let initCamera = () => {
                 this.cameras.main.setBounds(0, 0, width, height);
                 this.cameras.main.flash(500, 0, 0, 0);
             };
-            let initRexUI = () => {
-                this.scene.add(null, new UIScene('RexUI', this), true);
-            };
-            let initHotKey = () => {
-                this.scene.add(null, new UIScene('hotKeyUI', this), true);
-            };
+            let initLines = () => {
+                const speakDelay = 500;
+                this.time.delayedCall(speakDelay, async () => {
 
+                    //==對話完才開始
+                    let lines = localeJSON.Lines;
+                    let playerContent = lines.player,
+                        doctorContent = lines.sidekick['start'],
+                        enemyContent = lines.enemy;
+                    let playerName = this.gameData.playerCustom.name,
+                        sidekickName = this.gameData.sidekick.type;
+                    // console.debug(playerName);
+
+                    //==填入名子
+                    await new Promise(resolve => this.RexUI.newDialog(doctorContent[0], { character: 'doctor' }, resolve));
+                    await new Promise(resolve => this.RexUI.newDialog(doctorContent[1], { character: 'player' }, resolve));
+                    await new Promise(resolve => this.RexUI.newDialog(doctorContent[2], { character: 'doctor' }, resolve));
+                    await new Promise(resolve => this.RexUI.newDialog(doctorContent[3], { character: 'player' }, resolve));
+                    await new Promise(resolve => this.RexUI.newDialog(doctorContent[4], { character: 'doctor', pageendEvent: true }, resolve));
+
+                    this.cameras.main.fadeOut(500, 0, 0, 0);
+                    this.time.delayedCall(speakDelay, () => initTutorial());
+
+
+                }, [], this);
+
+                // let rexBBText = new RexPlugins.UI.BBCodeText(scene, 0, 0, '',
+                //     {
+                //         fixedWidth: fixedWidth,
+                //         fixedHeight: fixedHeight,
+                //         fontSize: '20px',
+                //         // color: (character == 'doctor' || character == 'playerHint') ?
+                //         //     '#272727' : '#fff',
+                //         color: '#272727',
+                //         wrap: {
+                //             mode: 0,// 0|'none'|1|'word'|2|'char'|'character'
+                //             width: wrapWidth
+                //         },
+                //         underline: {
+                //             color: '#9D9D9D',  // css string, or number
+                //             thickness: 2,
+                //             offset: 6
+                //         },
+                //         // maxLines: 3,
+                //         lineSpacing: 10,
+                //         padding: padding,
+                //         valign: character == 'playerHint' ? 'center' : 'top',  // 'top'|'center'|'bottom'
+                //     });
+            };
+            let loadAssets = () => {
+
+                this.load.svg(key, success.svg, { scale: 1 });
+                this.load.start();
+                resolve();
+
+
+                this.load.on('complete', () => {
+                    // initEnvironment();
+                    // // initPlayer();
+                    // initLines();
+                    // initCamera();
+                });
+
+                // this.load.image('playerAvatar', `${avatarDir + gameData.playerRole}/${gameData.playerCustom.avatarIndex}.png`);
+            };
+            // loadAssets();
+            initEnvironment();
+            initPlayer();
+
+            initCamera();
         };
 
 
 
         //==gameScene
-        // initCreatorUI();
-        initTutorial();
+        initCreatorUI();
+        // initStartAnime();
+        // initTutorial();
         // initBackground();
         // initButton();
 
@@ -7172,8 +7115,8 @@ class DefendScene extends Phaser.Scene {
 
         };
 
-        // firstTimeEvent();
-        // if (!this.firstTimeEvent.eventComplete && !this.gameOver.flag) return;
+        firstTimeEvent();
+        if (!this.firstTimeEvent.eventComplete && !this.gameOver.flag) return;
 
         updatePlayer();
         updateSidekick();
@@ -7833,7 +7776,6 @@ class DigScene extends Phaser.Scene {
                 this.firstTimeEvent.isFirstTime = false;
             };
         };
-
         let updatePlayer = () => {
             if (!this.player.diggingFlag) this.player.movingHadler(this);//==挖掘時不動
             // this.player.pickingHadler(this);

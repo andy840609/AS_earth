@@ -678,7 +678,7 @@ const Enemy = new Phaser.Class({
                     };
 
                 };
-                // console.debug();
+                // console.debug(this.behavior);
 
 
                 //==死亡
@@ -883,12 +883,15 @@ const Player = new Phaser.Class({
     initialize:
         function Player(scene) {
             Phaser.Physics.Arcade.Sprite.call(this, scene);
+            if (scene.name === 'GameStart') return;
             scene.physics.world.enableBody(this, 0);
 
             let gameData = scene.gameData;
             let key = gameData.playerRole,
                 stats = gameData.playerStats,
                 onEquip = gameData.backpack.onEquip;
+
+            // console.debug(this.body);
 
             //==anims
             let animsCreate = () => {
@@ -1043,9 +1046,8 @@ const Player = new Phaser.Class({
             animsCreate();
 
             this
-                // .setScale(2)
-                .setCollideWorldBounds(true)
                 .setPushable(false)
+                .setCollideWorldBounds(true)
                 .setName('player')
                 .play('player_idle');
 
@@ -1053,7 +1055,7 @@ const Player = new Phaser.Class({
                 .setSize(45, 100, true)
                 .setOffset(this.body.offset.x, 28)
                 .setGravityY(500);
-            // console.debug(this.body);
+
 
             //===init attack
             this.bullets = scene.physics.add.group({
@@ -2049,6 +2051,7 @@ class RexTextBox extends RexPlugins.UI.TextBox {
         let getTipColor = (isBox = true) => {//==每個助手對話框不同色
             let name = character == 'sidekick' ?
                 scene.gameData.sidekick.type : character;
+            // console.debug(name);
 
             let color;
             switch (name) {
@@ -2102,7 +2105,7 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                 fontSize: '20px',
                 // color: (character == 'doctor' || character == 'playerHint') ?
                 //     '#272727' : '#fff',
-                color: '#272727',
+                color: tips ? '#000' : '#fff',
                 wrap: {
                     mode: 0,// 0|'none'|1|'word'|2|'char'|'character'
                     width: wrapWidth
@@ -2115,7 +2118,8 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                 // maxLines: 3,
                 lineSpacing: 10,
                 padding: padding,
-                valign: character == 'playerHint' ? 'center' : 'top',  // 'top'|'center'|'bottom'
+                valign: character == 'playerHint' ?
+                    'center' : 'top',  // 'top'|'center'|'bottom'
             });
 
         //==頭像調整爲150*150

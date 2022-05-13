@@ -285,6 +285,15 @@ const BackGroundResources = {
             },
             animType: [1],
         },
+        castle_2: {
+            static: ['p1.png', 'p2.png', '0.png', '1.png'],
+            dynamic: ['2.png'],
+            depth: {
+                static: [1, 1, 0, 0],
+                dynamic: [0],
+            },
+            animType: [1],
+        },
         tutorial: {
             static: ['background1.png', 'background2.png', 'trees.png', 'ground.png'],
             dynamic: ['birds.png'],

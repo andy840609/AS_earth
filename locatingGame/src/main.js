@@ -41,7 +41,7 @@ function locatingGame() {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 300 },
-                    debug: true,
+                    // debug: true,
                 },
             },
             dom: {//==for rexUI:rexTextEdit
@@ -770,10 +770,10 @@ function locatingGame() {
                     data.forEach((d, i) => {
                         // console.debug(d);
                         // let enemy = ['dog', 'cat', 'dove'];//==之後隨機抽敵人組
-                        let enemy = ['dove'];//==之後隨機抽敵人組
-                        // let enemy = copyEnemyArr.length !== 0 ?//===拷貝的陣列抽完才全隨機
-                        //     [copyEnemyArr.pop()] :
-                        //     [enemyArr[getRandom(enemyArr.length)]];
+                        // let enemy = ['dove'];//==之後隨機抽敵人組
+                        let enemy = copyEnemyArr.length !== 0 ?//===拷貝的陣列抽完才全隨機
+                            [copyEnemyArr.pop()] :
+                            [enemyArr[getRandom(enemyArr.length)]];
 
                         let enemyStats = {};
 

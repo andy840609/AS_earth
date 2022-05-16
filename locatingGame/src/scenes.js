@@ -2054,6 +2054,7 @@ class UIScene extends Phaser.Scene {
                                 fixedHeight: DLconfig.dialogHeight,
                                 character: config.character,
                                 gameData: gameScene.gameData,
+                                sceneName: gameScene.name,
                                 pageendEvent: config.pageendEvent ? config.pageendEvent : false,
                             }, resolve)
                                 // .setDepth(Depth.UI)
@@ -5886,6 +5887,7 @@ class LoadingScene extends Phaser.Scene {
                         let sidekick = () => {
                             sidekicks.forEach(side =>
                                 this.load.image(side + '_avatar', AvatarDir + side + '.png'));
+                            this.load.image('doctorAvatar', AvatarDir + 'Doctor.png');
                         };
 
                         player();

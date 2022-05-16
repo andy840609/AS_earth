@@ -2124,17 +2124,22 @@ class RexTextBox extends RexPlugins.UI.TextBox {
 
         //==頭像調整爲150*150
         let icon = null;
-        // console.debug(character)
+
         if (!tips) {
             const imgW = 150;
             let gameData = config.gameData;
             let isPlayer = character == 'player' || character == 'sidekick';
-            let BgColor = isPlayer ? gameData.playerCustom.avatarBgColor : undefined;
-            let img = new Phaser.GameObjects.Image(scene, 0, 0, character + 'Avatar');
-
+            let BgColor = isPlayer ? gameData.playerCustom.avatarBgColor :
+                character == 'doctor' ? 0x00EC00 : undefined;
+            let img = new Phaser.GameObjects.Image(scene, 0, 0,
+                isPlayer && config.sceneName === 'GameStart' ?
+                    gameData.playerRole + '_avatar' + gameData.playerCustom.avatarIndex :
+                    character + 'Avatar'
+            );
+            // console.debug(character + 'Avatar')
             img
                 .setScale(imgW / Math.max(img.width, img.height))
-                .setDepth(isPlayer ? 3 : 1);
+                .setDepth(3);
 
             icon = new RexPlugins.UI.Label(scene, {
                 background: scene.add.existing(

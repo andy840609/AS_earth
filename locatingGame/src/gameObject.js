@@ -2123,7 +2123,8 @@ class RexTextBox extends RexPlugins.UI.TextBox {
             });
 
         //==頭像調整爲150*150
-        let icon = null;
+        let icon = null,
+            action = null;
 
         if (!tips) {
             const imgW = 150;
@@ -2149,6 +2150,11 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                 width: imgW,
                 height: imgW,
             });
+
+
+            //==跳過...等
+            action = new RexPlugins.UI.Sizer(scene, { orientation: 1, })
+                .add(scene.add.image(0, 0, 'dialogButton').setVisible(false).setScale(0.1))
         };
 
         const textBoxConfig = {
@@ -2159,7 +2165,7 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                 scene.add.existing(rexRect),
             icon: icon,//==tips ? null : scene.add.image(0, 0, character + 'Avatar')
             text: scene.add.existing(rexBBText),
-            action: tips ? null : scene.add.image(0, 0, 'dialogButton').setVisible(false).setScale(0.1),
+            action: tips ? null : action,
             space: {
                 left: 20,
                 right: 20,
@@ -2228,6 +2234,8 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                 keyObj = cursors[controllCursor['attack']];  // Get key object
 
             keyObj.on('down', () => !scene.scene.isPaused() ? this.emit('pointerdown') : false);
+
+            //==上一頁、跳過
 
         };
 

@@ -2111,28 +2111,28 @@ class UIScene extends Phaser.Scene {
 
                         };
                     };
-                    let guideSword = () => {
+                    let guideArrow = () => {
                         if (gameScene.name == 'boss' ||
                             !(gameScene.firstTimeEvent && gameScene.firstTimeEvent.isFirstTime)) return;
                         let animsCreate = () => {
                             this.anims.create({
-                                key: 'guideSword_swing',
-                                frames: this.anims.generateFrameNumbers('guideSword', { start: 0, end: 16 }),
+                                key: 'guideArrow_moving',
+                                frames: this.anims.generateFrameNumbers('guideArrow'),
                                 frameRate: 20,
                                 repeat: -1,
                             });
                         };
                         animsCreate();
 
-                        this.guideSword = this.add.sprite(0, 0)
+                        this.guideArrow = this.add.sprite(0, 0)
                             .setScale(0.8)
                             .setOrigin(1, 0.5)
                             .setAlpha(0)
-                            .play('guideSword_swing');
+                            .play('guideArrow_moving');
 
                     };
                     addRexUI();
-                    guideSword();
+                    guideArrow();
 
                     gameScene.RexUI = this;
                     // console.debug(this);
@@ -6057,8 +6057,8 @@ class LoadingScene extends Phaser.Scene {
             let tutorial = () => {
                 if (packNum == 0 || packNum == 3 || !gameScene.firstTimeEvent.isFirstTime) return;
 
-                this.load.spritesheet('guideSword', uiDir + 'guideSword.png',
-                    { frameWidth: 500, frameHeight: 200 });
+                this.load.spritesheet('guideArrow', uiDir + 'tutorial/guideArrow.png',
+                    { frameWidth: 220, frameHeight: 96 });
 
             };
 
@@ -6970,114 +6970,120 @@ class DefendScene extends Phaser.Scene {
         let firstTimeEvent = () => {
             if (this.firstTimeEvent.isFirstTime) {
                 this.gameTimer.paused = true;//==說話時暫停
-                let iconBar = this.game.scene.getScene('iconBar');
-                iconBar.scene.pause();
-                const speakDelay = 1300;
 
-                let tutorial = (content) => {
-                    return new Promise(async (r) => {
-                        //各個UIScene
-                        let blackOut = this.blackOut;
-                        let RexUI = this.RexUI;
-                        let detectorUI = null;//會被關掉
-                        let playerUI = this.game.scene.getScene('playerUI');
-                        let timerUI = this.game.scene.getScene('timerUI');
+                let tutorial = () => {
+                    const speakDelay = 1300;
 
-                        let guideSword = RexUI.guideSword.setAlpha(1),
-                            swordWidth = guideSword.displayWidth,
-                            swordHeight = guideSword.displayHeight;
-
-                        //==0.人物操作說明
-                        const controllCursor = this.gameData.controllCursor;
-                        let upKey = controllCursor['up'],
-                            downKey = controllCursor['down'],
-                            leftKey = controllCursor['left'],
-                            rightKey = controllCursor['right'],
-                            attackKey = controllCursor['attack'];
-
-                        let controllIntro = content[1]
-                            .replace('\t', leftKey).replace('\t', rightKey)
-                            .replace('\t', upKey).replace('\t', attackKey).replace('\t', downKey);
-                        await new Promise(resolve => this.RexUI.newDialog(controllIntro, { character: 'sidekick' }, resolve));
-
-                        blackOut.scene.setVisible(true);
-
-                        //==1.UI bar
-                        let iconButton = iconBar.iconButtons[0];
-                        iconBar.scene.bringToTop();
-                        RexUI.scene.bringToTop();
-                        guideSword
-                            .setPosition(iconButton.x - swordWidth * 0.3, iconButton.y);
-                        await new Promise(resolve => this.RexUI.newDialog(content[2], { character: 'sidekick' }, resolve));
-
-                        //==2.說明探測器的zoom
-                        blackOut.scene.bringToTop();
-                        //檢查是否被關掉 
-                        if (detectorUI = this.game.scene.getScene('detectorUI')) {
-                            detectorUI.scene.bringToTop();
-                        } else detectorUI = this.scene.add(null, new UIScene('detectorUI', this), true);
-                        RexUI.scene.bringToTop();
-
-                        guideSword
-                            .setPosition(detectorUI.detector.x, detectorUI.detector.y);
-                        await new Promise(resolve => this.RexUI.newDialog(content[3], { character: 'sidekick' }, resolve));
-
-                        //==3.HP/MP
-                        blackOut.scene.bringToTop();
-                        playerUI.scene.bringToTop();
-                        RexUI.scene.bringToTop();
-
-                        guideSword
-                            .setFlipX(true)
-                            .setPosition(playerUI.HPbar.x + swordWidth * 1.5, playerUI.HPbar.y + swordHeight * 0.2);
-                        await new Promise(resolve => this.RexUI.newDialog(content[4], { character: 'sidekick' }, resolve));
-
-                        //==4.time remain
-                        blackOut.scene.bringToTop();
-                        timerUI.scene.bringToTop();
-                        RexUI.scene.bringToTop();
-
-                        guideSword
-                            .setPosition(timerUI.hourglass.x + swordWidth * 1.3, timerUI.hourglass.y);
-                        await new Promise(resolve => this.RexUI.newDialog(content[5], { character: 'sidekick', pageendEvent: true }, resolve));
-
-                        // console.debug(timerUI);
-
-                        iconBar.scene.bringToTop();//不讓探測器蓋過
-                        blackOut.scene.remove();
-                        guideSword.destroy();
-                        r();
-                    });
-                };
-
-                this.time.delayedCall(speakDelay, async () => {
-
-                    //==對話完才開始
-                    let lines = this.gameData.localeJSON.Lines;
-                    let playerContent = lines.player,
-                        sidekickContent = lines.sidekick['defend'],
-                        enemyContent = lines.enemy;
+                    //==臺詞
+                    let lines = this.gameData.localeJSON.Lines.defend;
                     let playerName = this.gameData.playerCustom.name,
                         sidekickName = this.gameData.sidekick.type;
                     // console.debug(playerName);
 
-                    //==填入名子
-                    let intro = sidekickContent[0].replace('\t', playerName).replace('\t', sidekickName);
-                    await new Promise(resolve => this.RexUI.newDialog(playerContent[0], { character: 'player', pageendEvent: true }, resolve));
-                    await new Promise(resolve => this.RexUI.newDialog(intro, { character: 'sidekick' }, resolve));
-                    await tutorial(sidekickContent);
+                    //==人物操作按鍵
+                    const controllCursor = this.gameData.controllCursor;
+                    let upKey = controllCursor['up'],
+                        downKey = controllCursor['down'],
+                        leftKey = controllCursor['left'],
+                        rightKey = controllCursor['right'],
+                        attackKey = controllCursor['attack'];
 
-                    //==停頓在說
-                    await new Promise(resolve => this.time.delayedCall(speakDelay * 0.5, () => resolve()));
-                    await new Promise(resolve => this.RexUI.newDialog(sidekickContent[6], { character: 'sidekick', pageendEvent: true }, resolve));
-                    await new Promise(resolve => this.RexUI.newDialog(enemyContent[0], { character: 'enemy', pageendEvent: true }, resolve));
-                    await new Promise(resolve => this.RexUI.newDialog(sidekickContent[7], { character: 'sidekick', pageendEvent: true }, resolve));
+                    //==各個UIScene
+                    let blackOut = this.blackOut;
+                    let RexUI = this.RexUI;
+                    let detectorUI = null;//會被關掉
+                    let playerUI = this.game.scene.getScene('playerUI');
+                    let timerUI = this.game.scene.getScene('timerUI');
+                    let iconBar = this.game.scene.getScene('iconBar');
 
-                    this.firstTimeEvent.eventComplete = true;
-                    this.gameTimer.paused = false;//==時間繼續
-                    iconBar.scene.resume();
-                }, [], this);
+                    let guideArrow = RexUI.guideArrow.setAlpha(1),
+                        arrowWidth = guideArrow.displayWidth,
+                        arrowHeight = guideArrow.displayHeight;
 
+                    iconBar.scene.pause();
+                    this.time.delayedCall(speakDelay, async () => {
+                        for (let i = 0; i < Object.keys(lines).length; i++) {
+                            let line = lines[i].line,
+                                character = lines[i].character,
+                                pageendEvent = false;
+
+                            switch (i) {
+                                case 0:
+                                    pageendEvent = true;
+                                    break;
+                                case 1:
+                                    line = line.replace('\t', playerName).replace('\t', sidekickName);
+                                    break;
+                                //====================教學==========================================
+                                case 2: //==0.人物操作說明
+                                    line = line.replace('\t', leftKey).replace('\t', rightKey)
+                                        .replace('\t', upKey).replace('\t', attackKey).replace('\t', downKey);
+                                    break;
+                                case 3://==1.UI bar
+                                    blackOut.scene.setVisible(true);
+                                    let iconButton = iconBar.iconButtons[0];
+                                    iconBar.scene.bringToTop();
+                                    RexUI.scene.bringToTop();
+                                    guideArrow
+                                        .setPosition(iconButton.x - arrowWidth, iconButton.y);
+                                    break;
+                                case 4: //==2.說明探測器的zoom
+                                    blackOut.scene.bringToTop();
+                                    //檢查是否被關掉 
+                                    if (detectorUI = this.game.scene.getScene('detectorUI')) {
+                                        detectorUI.scene.bringToTop();
+                                    } else detectorUI = this.scene.add(null, new UIScene('detectorUI', this), true);
+                                    RexUI.scene.bringToTop();
+                                    guideArrow
+                                        .setPosition(detectorUI.detector.x - arrowWidth * 0.5, detectorUI.detector.y);
+                                    break;
+                                case 5: //==3.HP/MP
+                                    blackOut.scene.bringToTop();
+                                    playerUI.scene.bringToTop();
+                                    RexUI.scene.bringToTop();
+                                    guideArrow
+                                        .setFlipX(true)
+                                        .setPosition(playerUI.HPbar.x + arrowWidth * 2.5, playerUI.HPbar.y + arrowHeight * 0.2);
+
+                                    break;
+                                case 6: //==4.time remain
+                                    blackOut.scene.bringToTop();
+                                    timerUI.scene.bringToTop();
+                                    RexUI.scene.bringToTop();
+
+                                    guideArrow
+                                        .setPosition(timerUI.hourglass.x + arrowWidth * 2, timerUI.hourglass.y);
+                                    break;
+                                case 7:
+                                    //==停頓在說
+                                    await new Promise(resolve => this.time.delayedCall(speakDelay * 0.5, () => resolve()));
+                                    pageendEvent = true;
+                                    break;
+                                case 8:
+                                    pageendEvent = true;
+                                    break;
+                                case 9:
+                                    pageendEvent = true;
+                                    break;
+
+                            };
+
+                            let skip = await new Promise(resolve => this.RexUI.newDialog(line, { character, pageendEvent }, resolve));
+                            console.debug(skip);
+                            //===結束教學黑屏
+                            if (i === 6 || skip) {
+                                iconBar.scene.bringToTop();//不讓探測器蓋過
+                                blackOut.scene.remove();
+                                guideArrow.destroy();
+                            };
+                        };
+
+                        this.firstTimeEvent.eventComplete = true;
+                        this.gameTimer.paused = false;//==時間繼續
+                        iconBar.scene.resume();
+                    }, [], this);
+                };
+                tutorial();
                 this.firstTimeEvent.isFirstTime = false;
             };
         };

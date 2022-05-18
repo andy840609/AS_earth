@@ -2083,7 +2083,7 @@ class RexTextBox extends RexPlugins.UI.TextBox {
         const padding = {
             left: 3,
             right: 3,
-            top: 3,
+            top: 5,
             bottom: 3,
         };
         const iconW = tips ? 0 : 200;//==扣掉頭像和按鈕的空間
@@ -2153,8 +2153,33 @@ class RexTextBox extends RexPlugins.UI.TextBox {
 
 
             //==跳過...等
-            action = new RexPlugins.UI.Sizer(scene, { orientation: 1, })
-                .add(scene.add.image(0, 0, 'dialogButton').setVisible(false).setScale(0.1))
+            let dialogButton = scene.add.image(0, 0, 'dialogButton')
+                .setVisible(false)
+                .setScale(0.1)
+                .setName('dialogButton')
+                .setDepth(3);
+
+            let skip = scene.add.text(0, 0, gameData.localeJSON.UI["skip"], {
+                font: '20px sans-serif',
+                fill: '#7B7B7B',
+            })
+                .setOrigin(0.5, 1)
+                .setName('skip')
+                .setDepth(3);
+
+
+            let prevLine = scene.add.text(0, 0, gameData.localeJSON.UI["prevLine"], {
+                font: '20px sans-serif',
+                fill: '#7B7B7B',
+            })
+                .setOrigin(0.5, 1)
+                .setName('prevLine')
+                .setDepth(3);
+
+            action = new RexPlugins.UI.Sizer(scene, { orientation: 0 })
+                .add(prevLine)
+                .add(skip)
+                .add(dialogButton)
         };
 
         const textBoxConfig = {
@@ -2184,19 +2209,24 @@ class RexTextBox extends RexPlugins.UI.TextBox {
             .layout();
 
         if (!tips) {
+            let action = this.getElement('action'),
+                dialogButton = action.getElement('#dialogButton'),
+                skip = action.getElement('#skip'),
+                prevLine = action.getElement('#prevLine');
+            // console.debug(dialogButton);
+
             this
                 .setInteractive()
                 .on('pointerdown', function () {
-                    let action = this.getElement('action');
-                    action.setVisible(false);
-                    this.resetChildVisibleState(action);
+                    dialogButton.setVisible(false);
+                    this.resetChildVisibleState(dialogButton);
 
                     if (this.isTyping) {
                         this.stop(true);
                     } else {
                         if (this.isLastPage) {
                             this.destroy();
-                            if (resolve) resolve();
+                            resolve(2);
                             return;
                         };
                         this.typeNextPage();
@@ -2207,14 +2237,13 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                 .on('pageend', function () {
                     if (this.isLastPage && config.pageendEvent) return;
 
-                    let action = this.getElement('action');
-                    action.setVisible(true);
-                    this.resetChildVisibleState(action);
+                    dialogButton.setVisible(true);
+                    this.resetChildVisibleState(dialogButton);
 
                     const endY = this.y - 50;//originY= 1
 
                     scene.tweens.add({
-                        targets: action,
+                        targets: dialogButton,
                         y: {
                             start: endY - 20,
                             to: endY,
@@ -2236,12 +2265,45 @@ class RexTextBox extends RexPlugins.UI.TextBox {
             keyObj.on('down', () => !scene.scene.isPaused() ? this.emit('pointerdown') : false);
 
             //==上一頁、跳過
+            skip
+                .setPosition(this.x - skip.displayWidth, this.y)
+                .setInteractive({ cursor: 'pointer' })
+                .on('pointerover', function () {
+                    this
+                        .setScale(1.5)
+                        .setColor('#FFFF37');
+
+                })
+                .on('pointerout', function () {
+                    this
+                        .setScale(1)
+                        .setColor('#7B7B7B');
+                })
+                .on('pointerdown', () => {
+                    this.destroy();
+                    resolve(0);
+                });
+            prevLine
+                .setPosition(this.x + prevLine.displayWidth, this.y)
+                .setInteractive({ cursor: 'pointer' })
+                .on('pointerover', function () {
+                    this
+                        .setScale(1.5)
+                        .setColor('#FFFF37');
+
+                })
+                .on('pointerout', function () {
+                    this
+                        .setScale(1)
+                        .setColor('#7B7B7B');
+                })
+                .on('pointerdown', () => {
+                    this.destroy();
+                    resolve(1);
+                });
 
         };
 
-        //.on('type', function () {
-        //})
-        // console.debug(scene);
     };
 };
 

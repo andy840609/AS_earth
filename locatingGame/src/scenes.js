@@ -5410,77 +5410,59 @@ class GameStartScene extends Phaser.Scene {
                 this.cameras.main.flash(500, 0, 0, 0);
             };
             let initLines = () => {
+                //==臺詞
+                let lines = this.gameData.localeJSON.Lines.start;
+                let playerName = this.gameData.playerCustom.name,
+                    sidekickName = this.gameData.sidekick.type;
+
                 const speakDelay = 500;
                 this.time.delayedCall(speakDelay, async () => {
 
-                    //==對話完才開始
-                    let lines = localeJSON.Lines;
-                    let playerContent = lines.player,
-                        doctorContent = lines.sidekick['start'],
-                        enemyContent = lines.enemy;
-                    let playerName = this.gameData.playerCustom.name,
-                        sidekickName = this.gameData.sidekick.type;
-                    // console.debug(playerName);
+                    for (let i = 0; i < Object.keys(lines).length; i++) {
+                        let line = lines[i].line,
+                            character = lines[i].character,
+                            pageendEvent = false;
 
-                    //==填入名子
-                    await new Promise(resolve => this.RexUI.newDialog(doctorContent[0], { character: 'doctor' }, resolve));
-                    await new Promise(resolve => this.RexUI.newDialog(doctorContent[1], { character: 'player' }, resolve));
-                    await new Promise(resolve => this.RexUI.newDialog(doctorContent[2], { character: 'doctor' }, resolve));
-                    await new Promise(resolve => this.RexUI.newDialog(doctorContent[3], { character: 'player' }, resolve));
-                    await new Promise(resolve => this.RexUI.newDialog(doctorContent[4], { character: 'doctor', pageendEvent: true }, resolve));
+                        switch (i) {
+                            case 0:
+
+                                break;
+                        };
+
+                        let dialogCode = await new Promise(resolve => this.RexUI.newDialog(line, { character, pageendEvent }, resolve));
+                        // console.debug(dialogCode);
+
+                        if (dialogCode === 0) break;
+                        else if (dialogCode === 1) i = i - 2 < 0 ? -1 : i - 2;
+                    };
+
 
                     this.cameras.main.fadeOut(500, 0, 0, 0);
                     this.time.delayedCall(speakDelay, () => initTutorial());
-
-
                 }, [], this);
 
-                // let rexBBText = new RexPlugins.UI.BBCodeText(scene, 0, 0, '',
-                //     {
-                //         fixedWidth: fixedWidth,
-                //         fixedHeight: fixedHeight,
-                //         fontSize: '20px',
-                //         // color: (character == 'doctor' || character == 'playerHint') ?
-                //         //     '#272727' : '#fff',
-                //         color: '#272727',
-                //         wrap: {
-                //             mode: 0,// 0|'none'|1|'word'|2|'char'|'character'
-                //             width: wrapWidth
-                //         },
-                //         underline: {
-                //             color: '#9D9D9D',  // css string, or number
-                //             thickness: 2,
-                //             offset: 6
-                //         },
-                //         // maxLines: 3,
-                //         lineSpacing: 10,
-                //         padding: padding,
-                //         valign: character == 'playerHint' ? 'center' : 'top',  // 'top'|'center'|'bottom'
-                //     });
             };
-            let loadAssets = () => {
-
-                this.load.svg(key, success.svg, { scale: 1 });
-                this.load.start();
-                resolve();
-
-
-                this.load.on('complete', () => {
-                    // initEnvironment();
-                    // // initPlayer();
-                    // initLines();
-                    // initCamera();
-                });
-
-                // this.load.image('playerAvatar', `${avatarDir + gameData.playerRole}/${gameData.playerCustom.avatarIndex}.png`);
-            };
-            // loadAssets();
             initEnvironment();
             initPlayer();
-
             initCamera();
         };
+        let loadAssets = () => {
 
+            this.load.svg(key, success.svg, { scale: 1 });
+            this.load.start();
+            resolve();
+
+
+            this.load.on('complete', () => {
+                // initEnvironment();
+                // // initPlayer();
+                // initLines();
+                // initCamera();
+            });
+
+            // this.load.image('playerAvatar', `${avatarDir + gameData.playerRole}/${gameData.playerCustom.avatarIndex}.png`);
+        };
+        // loadAssets();
 
 
         //==gameScene
@@ -7015,9 +6997,11 @@ class DefendScene extends Phaser.Scene {
                                     line = line.replace('\t', playerName).replace('\t', sidekickName);
                                     break;
                                 //====================教學==========================================
-                                case 2: //==0.人物操作說明
+                                case 2: //==0.人物操作說明              
+                                    blackOut.scene.setVisible(false);
                                     line = line.replace('\t', leftKey).replace('\t', rightKey)
                                         .replace('\t', upKey).replace('\t', attackKey).replace('\t', downKey);
+                                    guideArrow.setVisible(false);
                                     break;
                                 case 3://==1.UI bar
                                     blackOut.scene.setVisible(true);
@@ -7025,6 +7009,7 @@ class DefendScene extends Phaser.Scene {
                                     iconBar.scene.bringToTop();
                                     RexUI.scene.bringToTop();
                                     guideArrow
+                                        .setVisible(true)
                                         .setPosition(iconButton.x - arrowWidth, iconButton.y);
                                     break;
                                 case 4: //==2.說明探測器的zoom
@@ -7035,6 +7020,7 @@ class DefendScene extends Phaser.Scene {
                                     } else detectorUI = this.scene.add(null, new UIScene('detectorUI', this), true);
                                     RexUI.scene.bringToTop();
                                     guideArrow
+                                        .setFlipX(false)
                                         .setPosition(detectorUI.detector.x - arrowWidth * 0.5, detectorUI.detector.y);
                                     break;
                                 case 5: //==3.HP/MP
@@ -7047,14 +7033,16 @@ class DefendScene extends Phaser.Scene {
 
                                     break;
                                 case 6: //==4.time remain
-                                    blackOut.scene.bringToTop();
+                                    blackOut.scene.setVisible(true).bringToTop();
                                     timerUI.scene.bringToTop();
                                     RexUI.scene.bringToTop();
-
                                     guideArrow
+                                        .setVisible(true)
                                         .setPosition(timerUI.hourglass.x + arrowWidth * 2, timerUI.hourglass.y);
                                     break;
                                 case 7:
+                                    blackOut.scene.setVisible(false);
+                                    guideArrow.setVisible(false);
                                     //==停頓在說
                                     await new Promise(resolve => this.time.delayedCall(speakDelay * 0.5, () => resolve()));
                                     pageendEvent = true;
@@ -7068,15 +7056,17 @@ class DefendScene extends Phaser.Scene {
 
                             };
 
-                            let skip = await new Promise(resolve => this.RexUI.newDialog(line, { character, pageendEvent }, resolve));
-                            console.debug(skip);
-                            //===結束教學黑屏
-                            if (i === 6 || skip) {
-                                iconBar.scene.bringToTop();//不讓探測器蓋過
-                                blackOut.scene.remove();
-                                guideArrow.destroy();
-                            };
+                            let dialogCode = await new Promise(resolve => this.RexUI.newDialog(line, { character, pageendEvent }, resolve));
+                            // console.debug(dialogCode);
+
+                            if (dialogCode === 0) break;
+                            else if (dialogCode === 1) i = i - 2 < 0 ? -1 : i - 2;
                         };
+
+                        //===結束教學
+                        iconBar.scene.bringToTop();//不讓探測器蓋過
+                        blackOut.scene.remove();
+                        guideArrow.destroy();
 
                         this.firstTimeEvent.eventComplete = true;
                         this.gameTimer.paused = false;//==時間繼續
@@ -7532,12 +7522,27 @@ class DigScene extends Phaser.Scene {
                     //==助手對話
                     if (!this.sidekick.gateEventFlag) {
 
-                        let sidekickContent = localeJSON.Lines.sidekick['dig'][4].replace('\t', this.gameData.playerCustom.name);
+                        //==臺詞
+                        let lines = this.gameData.localeJSON.Lines.digEnd;
+                        let playerName = this.gameData.playerCustom.name;
 
-                        await new Promise(resolve => this.RexUI.newDialog(sidekickContent, {
-                            character: 'sidekick',
-                            pageendEvent: true,
-                        }, resolve));
+                        for (let i = 0; i < Object.keys(lines).length; i++) {
+                            let line = lines[i].line,
+                                character = lines[i].character,
+                                pageendEvent = false;
+                            switch (i) {
+                                case 0:
+                                    line = line.replace('\t', playerName);
+                                    pageendEvent = true;
+                                    break;
+                            };
+
+                            let dialogCode = await new Promise(resolve => this.RexUI.newDialog(line, { character, pageendEvent }, resolve));
+                            // console.debug(dialogCode);
+
+                            if (dialogCode === 0) break;
+                            else if (dialogCode === 1) i = i - 2 < 0 ? -1 : i - 2;
+                        };
 
                         this.sidekick.gateEventFlag = true;
                     };
@@ -7715,72 +7720,88 @@ class DigScene extends Phaser.Scene {
         let firstTimeEvent = () => {
             if (this.firstTimeEvent.isFirstTime) {
                 this.gameTimer.paused = true;//==說話時暫停
-                let iconBar = this.game.scene.getScene('iconBar');
-                iconBar.scene.pause();
-                const speakDelay = 700;
 
-                let tutorial = (content) => {
-                    return new Promise(async (r) => {
-                        //各個UIScene
-                        let blackOut = this.blackOut;
-                        let RexUI = this.RexUI;
-                        let detectorUI = null;
-                        let depthCounterUI = this.game.scene.getScene('depthCounterUI');
-                        // let timerUI = this.game.scene.getScene('timerUI');
+                let tutorial = () => {
+                    const speakDelay = 700;
 
-                        let guideSword = RexUI.guideSword.setAlpha(1),
-                            swordWidth = guideSword.displayWidth,
-                            swordHeight = guideSword.displayHeight;
-
-                        blackOut.scene.setVisible(true);
-                        // console.debug(detectorUI);
-
-                        //==1.說明小地圖
-                        blackOut.scene.bringToTop();
-                        //檢查是否被關掉 
-                        if (this.scene.isActive('detectorUI')) {
-                            detectorUI = this.game.scene.getScene('detectorUI');
-                            detectorUI.scene.bringToTop();
-                        } else detectorUI = this.scene.add(null, new UIScene('detectorUI', this), true);
-                        RexUI.scene.bringToTop();
-
-                        guideSword
-                            .setPosition(detectorUI.detector.x, detectorUI.detector.y);
-                        await new Promise(resolve => this.RexUI.newDialog(content[1], { character: 'sidekick' }, resolve));
-
-                        //==2.深度
-                        blackOut.scene.bringToTop();
-                        depthCounterUI.scene.bringToTop();
-                        RexUI.scene.bringToTop();
-
-                        guideSword
-                            .setFlipX(true)
-                            .setPosition(this.depthCounter.text.x + swordWidth, this.depthCounter.text.y);
-                        await new Promise(resolve => this.RexUI.newDialog(content[2], { character: 'sidekick' }, resolve));
-
-                        iconBar.scene.bringToTop();//不讓探測器蓋過
-                        blackOut.scene.remove();
-                        guideSword.destroy();
-                        r();
-                    });
-                };
-                this.time.delayedCall(speakDelay, async () => {
-
-                    //==對話完才開始
-                    let lines = this.gameData.localeJSON.Lines;
-                    let sidekickContent = lines.sidekick['dig'];
+                    //==臺詞
+                    let lines = this.gameData.localeJSON.Lines.dig;
                     let playerName = this.gameData.playerCustom.name;
 
-                    //==填入名子
-                    let intro = sidekickContent[0].replace('\t', playerName);
-                    await new Promise(resolve => this.RexUI.newDialog(intro, { character: 'sidekick' }, resolve));
-                    await tutorial(sidekickContent);
-                    await new Promise(resolve => this.RexUI.newDialog(sidekickContent[3], { character: 'sidekick', pageendEvent: true }, resolve));
+                    // console.debug(playerName);
 
-                    this.firstTimeEvent.eventComplete = true;
-                    this.gameTimer.paused = false;//==時間繼續
-                    iconBar.scene.resume();
-                }, [], this);
+                    //==各個UIScene
+                    let blackOut = this.blackOut;
+                    let RexUI = this.RexUI;
+                    let detectorUI = null;
+                    let depthCounterUI = this.game.scene.getScene('depthCounterUI');
+                    let iconBar = this.game.scene.getScene('iconBar');
+
+                    let guideArrow = RexUI.guideArrow.setAlpha(1),
+                        arrowWidth = guideArrow.displayWidth,
+                        arrowHeight = guideArrow.displayHeight;
+
+                    iconBar.scene.pause();
+                    this.time.delayedCall(speakDelay, async () => {
+                        for (let i = 0; i < Object.keys(lines).length; i++) {
+                            let line = lines[i].line,
+                                character = lines[i].character,
+                                pageendEvent = false;
+
+                            switch (i) {
+                                case 0:
+                                    blackOut.scene.setVisible(false);
+                                    guideArrow.setVisible(false);
+                                    line = line.replace('\t', playerName);
+                                    break;
+                                //====================教學==========================================
+                                case 1://==0.說明小地圖
+                                    blackOut.scene.setVisible(true).bringToTop();
+                                    //檢查是否被關掉 
+                                    if (this.scene.isActive('detectorUI')) {
+                                        detectorUI = this.game.scene.getScene('detectorUI');
+                                        detectorUI.scene.bringToTop();
+                                    } else detectorUI = this.scene.add(null, new UIScene('detectorUI', this), true);
+                                    RexUI.scene.bringToTop();
+                                    guideArrow
+                                        .setFlipX(false)
+                                        .setVisible(true)
+                                        .setPosition(detectorUI.detector.x - arrowWidth * 0.5, detectorUI.detector.y);
+                                    break;
+                                case 2: //==1.深度
+                                    blackOut.scene.setVisible(true).bringToTop();
+                                    depthCounterUI.scene.bringToTop();
+                                    RexUI.scene.bringToTop();
+                                    guideArrow
+                                        .setFlipX(true)
+                                        .setVisible(true)
+                                        .setPosition(this.depthCounter.text.x + arrowWidth, this.depthCounter.text.y);
+                                    break;
+                                case 3:
+                                    blackOut.scene.setVisible(false);
+                                    guideArrow.setVisible(false);
+                                    pageendEvent = true;
+                                    break;
+                            };
+
+                            let dialogCode = await new Promise(resolve => this.RexUI.newDialog(line, { character, pageendEvent }, resolve));
+                            // console.debug(dialogCode);
+
+                            if (dialogCode === 0) break;
+                            else if (dialogCode === 1) i = i - 2 < 0 ? -1 : i - 2;
+                        };
+
+                        //===結束教學
+                        iconBar.scene.bringToTop();//不讓探測器蓋過
+                        blackOut.scene.remove();
+                        guideArrow.destroy();
+
+                        this.firstTimeEvent.eventComplete = true;
+                        this.gameTimer.paused = false;//==時間繼續
+                        iconBar.scene.resume();
+                    }, [], this);
+                };
+                tutorial();
                 this.firstTimeEvent.isFirstTime = false;
             };
         };
@@ -8172,13 +8193,29 @@ class BossScene extends Phaser.Scene {
                     this.time.delayedCall(duration, () => resolve(), [], this);
                 },
                 winAnims: () => {
-                    let talkDelay = 1000;
-                    let playerContent = localeJSON.Lines.player[3];
                     this.gameOver.bossDefeated = true;
 
-                    //==說話
+                    const talkDelay = 1000;
                     this.time.delayedCall(talkDelay, async () => {
-                        await new Promise(resolve => this.RexUI.newDialog(playerContent, { character: 'player' }, resolve));
+                        //==臺詞
+                        let lines = this.gameData.localeJSON.Lines.bossEnd;
+
+                        for (let i = 0; i < Object.keys(lines).length; i++) {
+                            let line = lines[i].line,
+                                character = lines[i].character,
+                                pageendEvent = false;
+                            switch (i) {
+                                case 0:
+                                    pageendEvent = true;
+                                    break;
+                            };
+
+                            let dialogCode = await new Promise(resolve => this.RexUI.newDialog(line, { character, pageendEvent }, resolve));
+                            // console.debug(dialogCode);
+
+                            if (dialogCode === 0) break;
+                            else if (dialogCode === 1) i = i - 2 < 0 ? -1 : i - 2;
+                        };
                         this.gameOver.flag = true;
                     }, [], this);
                 },
@@ -8305,21 +8342,8 @@ class BossScene extends Phaser.Scene {
                 let attackDelay = (flameCount + flyRepeat * (yoyoFlag ? 2 : 1)) * animeDelay;
                 this.time.delayedCall(attackDelay, () => boss.play('boss_Attack'), [], this);
 
-                //==說話
-                let speakDelay = attackDelay + 500;
-                let bossContent = localeJSON.Lines.boss[0];
-                this.time.delayedCall(speakDelay, async () => {
-                    //==對話完才開始問題
-                    await new Promise(resolve => this.RexUI.newDialog(bossContent, {
-                        character: 'boss',
-                        pageendEvent: true,
-                    }, resolve));
-                    this.gameTimer.paused = false;
-                    boss.play('boss_Idle');
-                    this.time.delayedCall(animeDelay, () => initQuiz(), [], this);
 
-                }, [], this);
-
+                initLines(attackDelay);
             };
             let attackAnims = (resolve) => {
                 let boss = this.boss;
@@ -8432,6 +8456,37 @@ class BossScene extends Phaser.Scene {
             });
 
             showAnims();
+        };
+        let initLines = (bossShowDelay) => {
+            const speakDelay = bossShowDelay + 500;
+
+            this.time.delayedCall(speakDelay, async () => {
+                //==臺詞
+                let lines = this.gameData.localeJSON.Lines.boss;
+
+                for (let i = 0; i < Object.keys(lines).length; i++) {
+                    let line = lines[i].line,
+                        character = lines[i].character,
+                        pageendEvent = false;
+                    switch (i) {
+                        case 0:
+                            pageendEvent = true;
+                            break;
+                    };
+
+                    let dialogCode = await new Promise(resolve => this.RexUI.newDialog(line, { character, pageendEvent }, resolve));
+                    // console.debug(dialogCode);
+
+                    if (dialogCode === 0) break;
+                    else if (dialogCode === 1) i = i - 2 < 0 ? -1 : i - 2;
+                };
+
+                this.gameTimer.paused = false;
+                this.boss.play('boss_Idle');
+                //==對話完才開始問題
+                this.time.delayedCall(animeDelay, () => initQuiz(), [], this);
+
+            }, [], this);
         };
         let initQuiz = () => {
             this.RexUI.scene.bringToTop();

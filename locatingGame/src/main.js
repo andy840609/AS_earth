@@ -473,21 +473,21 @@ function locatingGame() {
                     GameData.getLanguageJSON = getLanguageJSON;
 
                     //==test
-                    // gameDisplay(true);
-                    // let doneTutorial = await new Promise((resolve, reject) => {
-                    //     const config = Object.assign(getPhaserConfig(width, height), {
-                    //         scene: new GameStartScene(GameData, {
-                    //             getWaveImg: getWaveImg,
-                    //             tutorialData: data.tutorialData,
-                    //             resolve: resolve,
-                    //             getLanguageJSON: getLanguageJSON,
-                    //             rankingData: rankingData,//排行榜
-                    //         }),
-                    //     });
-                    //     new Phaser.Game(config);
-                    // });
-                    // // console.debug(doneTutorial);
-                    // gameDisplay(false);
+                    gameDisplay(true);
+                    let doneTutorial = await new Promise((resolve, reject) => {
+                        const config = Object.assign(getPhaserConfig(width, height), {
+                            scene: new GameStartScene(GameData, {
+                                getWaveImg: getWaveImg,
+                                tutorialData: data.tutorialData,
+                                resolve: resolve,
+                                getLanguageJSON: getLanguageJSON,
+                                rankingData: rankingData,//排行榜
+                            }),
+                        });
+                        new Phaser.Game(config);
+                    });
+                    // console.debug(doneTutorial);
+                    gameDisplay(false);
                     //==test
 
                     if (1) {//doneTutorial     
@@ -496,7 +496,7 @@ function locatingGame() {
                     };
                     initMap();
                     //==test
-                    gameStart('defend');
+                    // gameStart('defend');
                     // gameStart('dig');
                     //==test
                 };
@@ -2216,7 +2216,7 @@ function locatingGame() {
 
             };
             function updateSidekick(stage, index, doneTalking = undefined) {
-                let lines = GameData.localeJSON.Lines.sidekick;
+                let lines = GameData.localeJSON.Lines.bigMap;
 
                 let showText = (stage, index, doneTalking) => {
                     // console.debug(stage, index, islastLine);

@@ -4828,7 +4828,8 @@ class GameStartScene extends Phaser.Scene {
             name: 'GameStart',
             gameData: GameData,
             cursors: null,
-            backgroundObj: null,
+            // backgroundObj: null,
+            background: 'space_1',
             creatorObj: {
                 background: 'castle_2',
                 characters: Object.keys(GameObjectStats.player),
@@ -5006,7 +5007,6 @@ class GameStartScene extends Phaser.Scene {
 
 
         };
-
         let initIconBar = () => {
             this.scene.add(null, new UIScene('iconBar', this), true);
         };
@@ -5030,10 +5030,11 @@ class GameStartScene extends Phaser.Scene {
         let initTutorial = () => {
             this.scene.add(null, new UIScene('tutorial', this), true);
         };
+
+
         let initStartAnime = () => {
             const Depth = {
-                tips: 6,
-                flame: 8,
+                earth: 3,
                 player: 10,
                 boss: 11,
                 UI: 20,
@@ -5054,85 +5055,102 @@ class GameStartScene extends Phaser.Scene {
             const animeDelay = 500;
 
             let initEnvironment = () => {
-                let background = () => {
+                let space = () => {
                     let BGgroup = this.add.group();
-                    let resources = BackGroundResources.GameStart['castle_2'];
+                    let resources = BackGroundResources.GameStart[this.background];
+
                     // console.debug(resources)
                     resources.static.forEach((res, i) => {
-                        let img = this.add.image(width * 0.5, height * 0.5, 'staticBG_' + i);
+                        let img = this.add.image(0, height * 0.5, 'staticBG_space' + i);
                         img
-                            .setScale(width / img.width, height / img.height)
+                            .setScale(width * 2 / img.width, height / img.height)
+                            .setOrigin(0, 0.5)
                             .setDepth(resources.depth.static[i]);
 
                         BGgroup.add(img);
                     });
 
                     resources.dynamic.forEach((res, i) => {
-                        let thing = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, 'dynamicBG_' + i);
+                        let thing = this.add.tileSprite(0, height * 0.5, 0, 0, 'dynamicBG_space' + i);
 
                         thing
-                            .setScale(width / thing.width, height / thing.height)
+                            .setScale(width * 2 / thing.width, height / thing.height)
+                            .setOrigin(0, 0.5)
                             .setDepth(resources.depth.dynamic[i]);
 
                         //==tweens
-                        // let movingDuration = Phaser.Math.Between(5, 15) * 1000;//==第一次移動5到20秒
-                        // let animType = resources.animType[i];
+                        let movingDuration = Phaser.Math.Between(10, 15) * 1000;//==第一次移動5到20秒
+                        let animType = resources.animType[i];
                         //==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
 
-                        // this.tweens.add(
-                        //     Object.assign({
-                        //         targets: thing,
-                        //         repeat: -1,
-                        //         duration: movingDuration,
-                        //         delay: animeDelay * flameCount,
-                        //     },
-                        //         animType == 1 ?
-                        //             { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
-                        //             animType == 2 ? { alpha: { start: 0, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
-                        //                 animType == 3 ? { scaleX: { start: t => t.scaleX, to: t => t.scaleX * 1.5 }, scaleY: { start: t => t.scaleY, to: t => t.scaleY * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
-                        //                     { alpha: { start: 0, to: 1 }, ease: 'Bounce', yoyo: true }
+                        this.tweens.add(
+                            Object.assign({
+                                targets: thing,
+                                repeat: -1,
+                                duration: movingDuration + i * movingDuration * 0.5,
+                            },
+                                animType == 1 ?
+                                    { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
+                                    animType == 2 ? { alpha: { start: 0, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
+                                        animType == 3 ? { scaleX: { start: t => t.scaleX, to: t => t.scaleX * 1.5 }, scaleY: { start: t => t.scaleY, to: t => t.scaleY * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
+                                            { alpha: { start: 0, to: 1 }, ease: 'Bounce', yoyo: true }
 
-                        //     ));
+                            ));
 
                         BGgroup.add(thing);
 
                     });
 
-                    // this.tweens.add({
-                    //     targets: BGgroup.getChildren(),
-                    //     repeat: 0,
-                    //     ease: 'Back.easeInOut',
-                    //     delay: animeDelay * flameCount,
-                    //     duration: animeDelay * 2,
-                    //     alpha: { from: 0, to: 1 },
-                    // });
-
                 };
-                let flame = () => {
+                let planet = () => {
                     let animsCreate = () => {
                         this.anims.create({
-                            key: 'bossFlame_burn',
-                            frames: this.anims.generateFrameNumbers('bossFlame'),
-                            frameRate: 13,
+                            key: 'earth_spin',
+                            frames: this.anims.generateFrameNumbers('planetEarth'),
+                            frameRate: 8,
+                            repeat: -1,
+                        });
+                        this.anims.create({
+                            key: 'earth_destory',
+                            frames: this.anims.generateFrameNumbers('planetMars'),
+                            frameRate: 5,
                             repeat: -1,
                         });
                     };
                     animsCreate();
+                    this.earth = this.add.sprite(width * 0.5, height * 0.5, 'planetEarth')
+                        .setScale(1.2)
+                        .setOrigin(0.5, 0.4)
+                        .setDepth(Depth.earth)
+                        .play('earth_spin');
 
-                    let addFlame = (i, flameCount) => {
-                        this.add.sprite(width * i / (flameCount + 1), height * 0.4, 'bossFlame')
-                            .setScale(0.2)
-                            .setOrigin(0.5)
-                            .setDepth(Depth.flame)
-                            .play('bossFlame_burn');
-                    };
-
-                    for (let i = 1; i <= flameCount; i++)
-                        this.time.delayedCall(animeDelay * i, () => addFlame(i, flameCount), [], this);
+                    // this.cameras.main.zoomTo(0.5, 1000);
 
                 };
-                background();
-                // flame();
+                let blackOut = () => {
+                    this.blackOut.scene
+                        .setVisible(true)
+                        .bringToTop();
+
+                    // this.tweens.add(
+                    //     Object.assign({
+                    //         targets: thing,
+                    //         repeat: -1,
+                    //         duration: movingDuration + i * movingDuration * 0.5,
+                    //     },
+                    //         animType == 1 ?
+                    //             { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
+                    //             animType == 2 ? { alpha: { start: 0, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
+                    //                 animType == 3 ? { scaleX: { start: t => t.scaleX, to: t => t.scaleX * 1.5 }, scaleY: { start: t => t.scaleY, to: t => t.scaleY * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
+                    //                     { alpha: { start: 0, to: 1 }, ease: 'Bounce', yoyo: true }
+
+                    //     ));
+                };
+                blackOut();
+                space();
+                planet();
+
+
             };
 
             let initPlayer = () => {
@@ -5406,77 +5424,127 @@ class GameStartScene extends Phaser.Scene {
                 showAnims();
             };
             let initCamera = () => {
-                this.cameras.main.setBounds(0, 0, width, height);
+                this.cameras.main.setBounds(0, 0, width * 2, height);
                 this.cameras.main.flash(500, 0, 0, 0);
             };
             let initLines = () => {
-                //==臺詞
-                let lines = this.gameData.localeJSON.Lines.start;
-                let playerName = this.gameData.playerCustom.name,
-                    sidekickName = this.gameData.sidekick.type;
+                let initSubtitle = () => {
 
-                const speakDelay = 500;
-                this.time.delayedCall(speakDelay, async () => {
+                    // let text = localeJSON.Intro.intro;
+                    // let rexBBText = new RexPlugins.UI.BBCodeText(this, width * 0.5, height * 0.5, text,
+                    //     {
+                    //         // fixedWidth: fixedWidth,
+                    //         // fixedHeight: fixedHeight,
+                    //         fontSize: '20px',
+                    //         // color: (character == 'doctor' || character == 'playerHint') ?
+                    //         //     '#272727' : '#fff',
+                    //         color: '#fff',
+                    //         wrap: {
+                    //             mode: 2,// 0|'none'|1|'word'|2|'char'|'character'
+                    //             // width: wrapWidth
+                    //         },
+                    //         underline: {
+                    //             color: '#9D9D9D',  // css string, or number
+                    //             thickness: 2,
+                    //             offset: 6
+                    //         },
+                    //         // maxLines: 3,
+                    //         lineSpacing: 10,
+                    //         // padding: padding,
+                    //         valign: 'center',
+                    //     });
+                };
+                let characterLines = () => {
+                    //==臺詞
+                    let lines = this.gameData.localeJSON.Lines.start;
+                    let playerName = this.gameData.playerCustom.name,
+                        sidekickName = this.gameData.sidekick.type;
 
-                    for (let i = 0; i < Object.keys(lines).length; i++) {
-                        let line = lines[i].line,
-                            character = lines[i].character,
-                            pageendEvent = false;
+                    //==
 
-                        switch (i) {
-                            case 0:
 
-                                break;
+                    let dialogCode = await new Promise(resolve => this.RexUI.newDialog(line, { character, pageendEvent }, resolve));
+
+
+                    const camera = this.cameras.main;
+                    const speakDelay = 500;
+                    this.time.delayedCall(speakDelay, async () => {
+
+                        for (let i = 0; i < Object.keys(lines).length; i++) {
+                            let line = lines[i].line,
+                                character = lines[i].character,
+                                pageendEvent = false;
+
+                            switch (i) {
+                                case 0:
+                                    // this.time.delayedCall(2000, () => {
+                                    //     const shakeDura = 3000;
+
+                                    //     // this.cameras.main.shake(shakeDura, 0.015);
+                                    //     // this.cameras.main.setZoom(4);
+                                    //     camera.pan(width * 2, height * 0.5, 2000, 'Power2', true);
+
+                                    //     // console.debug(camera)
+                                    //     // camera.on('PAN_START', (cam, b) => {
+                                    //     //     console.debug(cam, b)
+                                    //     // });
+                                    //     this.time.delayedCall(shakeDura, () => {
+                                    //         this.earth.play('earth_destory');
+                                    //     }, [], this);
+
+                                    // }, [], this);
+                                    break;
+                                case 1:
+                                    camera.pan(width * 2, height * 0.5, 2000, 'Power2', true);
+                                    break;
+                                case 2:
+                                    break;
+                                case 3:
+                                    break;
+                                case 4:
+                                    break;
+                            };
+
+                            let dialogCode = await new Promise(resolve => this.RexUI.newDialog(line, { character, pageendEvent }, resolve));
+                            // console.debug(dialogCode);
+
+                            if (dialogCode === 0) break;
+                            else if (dialogCode === 1) i = i - 2 < 0 ? -1 : i - 2;
                         };
 
-                        let dialogCode = await new Promise(resolve => this.RexUI.newDialog(line, { character, pageendEvent }, resolve));
-                        // console.debug(dialogCode);
 
-                        if (dialogCode === 0) break;
-                        else if (dialogCode === 1) i = i - 2 < 0 ? -1 : i - 2;
-                    };
+                        this.cameras.main.fadeOut(500, 0, 0, 0);
+                        this.time.delayedCall(speakDelay, () => initTutorial());
+                    }, [], this);
 
+                };
 
-                    this.cameras.main.fadeOut(500, 0, 0, 0);
-                    this.time.delayedCall(speakDelay, () => initTutorial());
-                }, [], this);
-
+                initSubtitle();
+                characterLines();
             };
+
             initEnvironment();
             initPlayer();
             initCamera();
         };
-        let loadAssets = () => {
-
-            this.load.svg(key, success.svg, { scale: 1 });
-            this.load.start();
-            resolve();
 
 
-            this.load.on('complete', () => {
-                // initEnvironment();
-                // // initPlayer();
-                // initLines();
-                // initCamera();
-            });
-
-            // this.load.image('playerAvatar', `${avatarDir + gameData.playerRole}/${gameData.playerCustom.avatarIndex}.png`);
-        };
-        // loadAssets();
-
-
-        //==gameScene
-        initCreatorUI();
-        // initStartAnime();
-        // initTutorial();
-        // initBackground();
-        // initButton();
 
 
         //==UI
         initCursors();
         // initIconBar();
         initRexUI();
+
+
+        //==gameScene
+        // initCreatorUI();
+        initStartAnime();
+        // initTutorial();
+        // initBackground();
+        // initButton();
+
+
 
     };
     update() {
@@ -5598,22 +5666,39 @@ class LoadingScene extends Phaser.Scene {
         let gameObjects = () => {
             let environment = () => {
                 const envDir = gameObjDir + 'environment/';
-                let background = () => {
-                    let background = packNum ? gameScene.background : gameScene.creatorObj.background;
-                    const dir = envDir + 'background/' + background + '/';
-                    let resources = BackGroundResources[gameScene.name][background];
+                let background = (bgName, key = undefined) => {
+                    const dir = envDir + 'background/' + bgName + '/';
+                    let resources = BackGroundResources[gameScene.name][bgName];
 
                     //==重新取名讓loader裡的key不會重複(檔名可能重複)
                     resources.static.forEach((res, i) => {
-                        this.load.image('staticBG_' + i, dir + res);
+                        this.load.image(`staticBG_${(key ? key : '') + i}`, dir + res);
                     });
                     resources.dynamic.forEach((res, i) => {
-                        this.load.image('dynamicBG_' + i, dir + res);
+                        this.load.image(`dynamicBG_${(key ? key : '') + i}`, dir + res);
                     });
 
                 };
 
-                if (packNum == 1) {
+                if (packNum == 0) {
+                    let startDir = envDir + 'start/';
+                    let planet = () => {
+                        const planetW = 512;
+                        this.load.spritesheet('planetEarth',
+                            startDir + 'earth.png',
+                            { frameWidth: planetW, frameHeight: planetW }
+                        );
+                        this.load.spritesheet('planetMars',
+                            startDir + 'mars.png',
+                            { frameWidth: planetW, frameHeight: planetW }
+                        );
+                    };
+                    background(gameScene.creatorObj.background);
+                    background(gameScene.background, 'space');
+
+                    planet();
+                }
+                else if (packNum == 1) {
                     let station = () => {
                         const dir = envDir + 'station/';
                         this.load.image('station', dir + 'station.png');
@@ -5651,6 +5736,7 @@ class LoadingScene extends Phaser.Scene {
 
                     };
 
+                    background(gameScene.background);
                     station();
                     orb();
                     wave();
@@ -5699,6 +5785,7 @@ class LoadingScene extends Phaser.Scene {
 
                     };
 
+                    background(gameScene.background);
                     groundMatters();
                     mineBackground();
                     mineObjs();
@@ -5735,11 +5822,13 @@ class LoadingScene extends Phaser.Scene {
                         let bossBarDir = assetsDir + 'ui/game/bossBar/';
                         this.load.image('bossBar', bossBarDir + 'bossBar.png');
                     };
+
+                    background(gameScene.background);
                     bossRoom();
                     boss();
                     bossBar();
                 };
-                background();
+
             };
             let player = () => {
                 if (packNum == 0) return;
@@ -6353,16 +6442,7 @@ class DefendScene extends Phaser.Scene {
                                 .refreshBody()
                                 .setName('platform');
 
-                            // this.platforms = this.physics.add.staticImage(width * 0.5, height);
-                            // this.platforms
-                            //     .setScale(width / this.platforms.width, height * 0.085 / this.platforms.height)
-                            //     .setOrigin(0.5, 1)
-                            //     .refreshBody()
-                            //     .setName('platform');
 
-                            // img = this.add.tileSprite(width * 0.5, height, 0, 0, 'staticBG_' + i)
-                            // img.setScale(this.platforms.displayWidth / img.width, this.platforms.displayHeight / img.height);
-                            // this.parallax.push(img);
                             break;
                         default:
                             img = this.add.image(width * 0.5, height * 0.5, 'staticBG_' + i);
@@ -6370,25 +6450,6 @@ class DefendScene extends Phaser.Scene {
                             break;
                     };
                     img.setDepth(resources.depth.static[i]);
-                    // if (i == resources.static.length - 1) {
-
-                    //     this.platforms = this.physics.add.staticGroup();
-                    //     let ground = this.platforms.create(width * 0.5, height, 'staticBG_' + i);
-
-                    //     ground
-                    //         .setScale(width / ground.width, height * 0.085 / ground.height)
-                    //         .setDepth(Depth.platform)
-                    //         .setOrigin(0.5, 1)
-                    //         .refreshBody()
-                    //         .setName('platform');
-
-                    // }
-                    // else {
-                    //     let img = this.add.image(width * 0.5, height * 0.5, 'staticBG_' + i);
-                    //     img
-                    //         .setScale(width / img.width, height / img.height)
-                    //         .setDepth(resources.depth.static[i]);
-                    // };
 
                 });
 

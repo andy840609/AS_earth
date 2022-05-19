@@ -2107,7 +2107,7 @@ class RexTextBox extends RexPlugins.UI.TextBox {
                 //     '#272727' : '#fff',
                 color: tips ? '#000' : '#fff',
                 wrap: {
-                    mode: 0,// 0|'none'|1|'word'|2|'char'|'character'
+                    mode: 2,// 0|'none'|1|'word'|2|'char'|'character'
                     width: wrapWidth
                 },
                 underline: {

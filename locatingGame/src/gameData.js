@@ -285,14 +285,15 @@ const BackGroundResources = {
             },
             animType: [1],
         },
-        castle_2: {
-            static: ['p1.png', 'p2.png', '0.png', '1.png'],
-            dynamic: ['2.png'],
+        space_1: {
+            static: ['bkgd_0.png'],
+            dynamic: ['bkgd_2.png', 'bkgd_3.png', 'bkgd_6.png', 'bkgd_7.png'],
             depth: {
-                static: [1, 1, 0, 0],
-                dynamic: [0],
+                // static: [0, 0, 0, 0, 0, 0, 0],
+                static: [0],
+                dynamic: [0, 0, 0, 0, 0],
             },
-            animType: [1],
+            animType: [1, 1, 1, 1, 1, 1, 1],
         },
         tutorial: {
             static: ['background1.png', 'background2.png', 'trees.png', 'ground.png'],

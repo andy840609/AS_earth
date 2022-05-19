@@ -2219,7 +2219,7 @@ function locatingGame() {
                 let lines = GameData.localeJSON.Lines.bigMap;
 
                 let showText = (stage, index, doneTalking) => {
-                    // console.debug(stage, index, islastLine);
+                    // console.debug(stage, index, doneTalking);
                     let sidekickTXB = gameUI.find('.sidekickUI .sidekickTXB');
 
                     // console.debug(line);

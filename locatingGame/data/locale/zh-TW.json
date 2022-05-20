@@ -174,53 +174,59 @@
     },
     "Lines": {
         "start": {
-            "0": {
-                "character": "doctor",
-                "line": "你醒了阿。"
+            "space": {
+                "0": {
+                    "character": "doctor",
+                    "line": "你醒了阿。"
+                },
+                "1": {
+                    "character": "player",
+                    "line": "這裡是哪裡?"
+                },
+                "2": {
+                    "character": "doctor",
+                    "line": "這裡是爾絲星球，是我召喚你來的。"
+                },
+                "3": {
+                    "character": "player",
+                    "line": "那...我要怎麼回家？\f\n我家裡有門禁，時間到沒回家我媽會火山爆發啦！"
+                },
+                "4": {
+                    "character": "doctor",
+                    "line": "放心，只要走過這個穿越門就可以回到你的星球了。\f\n但是在你回家前，可以請你幫我一個忙嗎？"
+                },
+                "5": {
+                    "character": "player",
+                    "line": "好吧，誰叫我熱心助人，從小到大都是模範生，就幫你吧。"
+                },
+                "6": {
+                    "character": "doctor",
+                    "line": "事情是這樣的，最近我們爾絲星球的「鈦丸」島附近受到「[size=26][color=red][b]震源[/b][/color][/size]」魔王的侵襲，地震頻傳。\f\n想請你幫我們[u]打敗震源魔王[/u]，還我們爾絲星球安寧。"
+                },
+                "7": {
+                    "character": "player",
+                    "line": "(低語：爾絲星球，怎麼聽起來好像earth，鈦丸？不會就是台灣吧，[u]台灣位於板塊交界處[/u]，本來就很容易發生地震阿，真是大驚小怪)\f\n這樣啊．．．"
+                },
+                "8": {
+                    "character": "doctor",
+                    "line": "我在島上裝了幾個能量接收器，可以[u]透過接收到的波形[/u]找到震源魔王的震源城。"
+                },
+                "9": {
+                    "character": "player",
+                    "line": "(低語：能量接收器？該不會就是[size=24][color=orange][b]地震觀測站[/b][/color][/size]吧，現在是要我在這邊做[size=24][color=orange][b]地震定位[/b][/color][/size]？)\f\n太好了，有裝備可以用嗎？"
+                },
+                "10": {
+                    "character": "doctor",
+                    "line": "在能量接受器的位置有幾顆光球，幫我放到 [size=26][color=orange][b]P[/b][/color][/size] 波和 [size=26][color=orange][b]S[/b][/color][/size] 波的位置就好。"
+                },
+                "11": {
+                    "character": "player",
+                    "line": "(低語：前面取那麼多花俏的名字，這邊 [size=26][color=orange][b]P[/b][/color][/size] 波和 [size=26][color=orange][b]S[/b][/color][/size] 波倒是跟地球命名規則一樣阿。)\f\n好的，那我出發囉！"
+                }
             },
-            "1": {
-                "character": "player",
-                "line": "這裡是哪裡?"
-            },
-            "2": {
-                "character": "doctor",
-                "line": "這裡是爾絲星球，是我召喚你來的。"
-            },
-            "3": {
-                "character": "player",
-                "line": "那...我要怎麼回家？\f\n我家裡有門禁，時間到沒回家我媽會火山爆發啦！"
-            },
-            "4": {
-                "character": "doctor",
-                "line": "放心，只要走過這個穿越門就可以回到你的星球了。\f\n但是在你回家前，可以請你幫我一個忙嗎？"
-            },
-            "5": {
-                "character": "player",
-                "line": "好吧，誰叫我熱心助人，從小到大都是模範生，就幫你吧。"
-            },
-            "6": {
-                "character": "doctor",
-                "line": "事情是這樣的，最近我們爾絲星球的「鈦丸」島附近受到「[size=26][color=red][b]震源[/b][/color][/size]」魔王的侵襲，地震頻傳。\f\n想請你幫我們[u]打敗震源魔王[/u]，還我們爾絲星球安寧。"
-            },
-            "7": {
-                "character": "player",
-                "line": "(低語：爾絲星球，怎麼聽起來好像earth，鈦丸？不會就是台灣吧，[u]台灣位於板塊交界處[/u]，本來就很容易發生地震阿，真是大驚小怪)\f\n這樣啊．．．"
-            },
-            "8": {
-                "character": "doctor",
-                "line": "我在島上裝了幾個能量接收器，可以[u]透過接收到的波形[/u]找到震源魔王的震源城。"
-            },
-            "9": {
-                "character": "player",
-                "line": "(低語：能量接收器？該不會就是[size=24][color=orange][b]地震觀測站[/b][/color][/size]吧，現在是要我在這邊做[size=24][color=orange][b]地震定位[/b][/color][/size]？)\f\n太好了，有裝備可以用嗎？"
-            },
-            "10": {
-                "character": "doctor",
-                "line": "在能量接受器的位置有幾顆光球，幫我放到 [size=26][color=orange][b]P[/b][/color][/size] 波和 [size=26][color=orange][b]S[/b][/color][/size] 波的位置就好。"
-            },
-            "11": {
-                "character": "player",
-                "line": "(低語：前面取那麼多花俏的名字，這邊 [size=26][color=orange][b]P[/b][/color][/size] 波和 [size=26][color=orange][b]S[/b][/color][/size] 波倒是跟地球命名規則一樣阿。)\f\n好的，那我出發囉！"
+            "intro": {
+                "0": "[color=black]某個風和日麗的下午，[r]你在森林裡探險......[/color]",
+                "1": "回神過來後，[r]你已經穿越到一個平行時空的異世界了...[r]"
             }
         },
         "defend": {
@@ -531,8 +537,7 @@
         }
     },
     "Intro": {
-        "intro": "勇者穿越到一個平行時空的異世界，協助異世界的貓頭鷹博士解決「震源」魔王。",
-        "intro0": "    地震通常是因為地底下的斷層面兩側突然錯動所引起，這個錯動起始點的位置稱為震源，而震源垂直投影到地面的位置就叫做震央。\n    在這個遊戲裡，震源位置就是大魔王作亂的地方，你的任務就是找出大魔王的所在地，為此我們需要先到地震測站獲得情報，藉由P波和S波的到時差來估計震央距，當蒐集到三個測站的震央距時就能找出震央的可能位置，有了震央位置就能尋找位於地底下的震源，找到大魔王居住的震源城並回答正確的地震知識就能擊敗牠完成任務取得任務證書，我們的地震防災就靠你了！加油！",
+        "intro": "    地震通常是因為地底下的斷層面兩側突然錯動所引起，這個錯動起始點的位置稱為震源，而震源垂直投影到地面的位置就叫做震央。\n    在這個遊戲裡，震源位置就是大魔王作亂的地方，你的任務就是找出大魔王的所在地，為此我們需要先到地震測站獲得情報，藉由P波和S波的到時差來估計震央距，當蒐集到三個測站的震央距時就能找出震央的可能位置，有了震央位置就能尋找位於地底下的震源，找到大魔王居住的震源城並回答正確的地震知識就能擊敗牠完成任務取得任務證書，我們的地震防災就靠你了！加油！",
         "epicenter": "[size=26]▲[/size]地震發生時，地震震源向上垂直投影到地面的位置，也就是地面距震源最近的地方。\n（ 資料來源：臺灣地震科學中心 [size=16][color=blue][u=blue][area=url:https://tec.earth.sinica.edu.tw/glossaryquery.php]https://tec.earth.sinica.edu.tw/glossaryquery.php[/area][/u][/color][/size] ）",
         "PSwave": "[size=26]▲[/size]P波到達的時間通常是在垂直向波形中，最先出現明顯大幅震盪的位置；而S波到達的時間則是在東西向或南北向波形上，振幅開始變得較大且略為變疏的地方。圖爲桃園縣爺亨測站所記錄的一筆波形資料，作為挑選P波與S波的範例，地震位於125公里外的花蓮外海。\n（ 資料來源：臺灣地震科學雲端學習平台 [size=16][color=blue][u=blue][area=url:http://qcntw.earth.sinica.edu.tw/index.php/eqk-game/location-game]http://qcntw.earth.sinica.edu.tw/index.php/eqk-game/location-game[/area][/u][/color][/size] ）",
         "questInfo0": "地震定位(Earthquake Location) 是指當地震發生時， 利用地震測站所記錄的地震波「到時」資料來估算地震所發生的時間、位置以及深度等資訊。有了地震發生的位置，我們才能進一步估計地震的規模大小。",

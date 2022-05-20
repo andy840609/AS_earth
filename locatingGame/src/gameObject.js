@@ -3985,3 +3985,72 @@ class RexSheet extends RexPlugins.UI.FixWidthSizer {
         scene.time.delayedCall(500, () => keyWords.forEach((key, i) => arrowAnime(i, true)), [], scene);
     };
 };
+
+//===開場字幕
+class RexTextPlayer extends RexPlugins.UI.TextPlayer {
+    constructor(scene, config, resolve) {
+
+        const COLOR_PRIMARY = 0x005AB5;
+        const COLOR_SECONDARY = 0x750000;
+        const COLOR_DARK = 0x000000;
+
+        const textPlayerConfig = {
+            x: config.x,
+            y: config.y,
+            width: config.width,
+            height: config.height,  // Fixed width and height
+            padding: 20,
+            style: {
+                fontSize: '36px',
+                stroke: 'green',
+                strokeThickness: 3,
+
+                // shadowColor: 'red',
+                // shadowOffsetX: 5,
+                // shadowOffsetY: 5,
+                // shadowBlur: 3
+            },
+            wrap: {
+                maxLines: 5,
+                padding: { bottom: 10 },
+            },
+            typing: {
+                speed: config.speed,  // 0: no-typing
+                animation: !config.animation ? false :
+                    {
+                        duration: 1000,
+                        yoyo: true,
+                        onStart: function (char) {
+                            char
+                                .setVisible()
+                                .setData('y', char.y);
+                        },
+                        onProgress: function (char, t) {
+                            var p0 = char.getData('y');
+                            var p1 = p0 - 20;
+                            var value = Phaser.Math.Linear(p0, p1, Phaser.Math.Easing.Cubic.Out(t));
+                            char.setY(value);
+                        },
+                        onComplete: function (char) {
+                            // console.debug("onComplete");
+                        }
+                    }
+            },
+            // images: {
+            //     'dude': {
+            //         height: 24
+            //     }
+            // },
+            // sounds: {
+            //     bgm: {
+            //         loop: true,
+            //         fade: 1000
+            //     }
+            // },
+            // clickTarget: this
+        };
+        super(scene, textPlayerConfig);
+        scene.add.existing(this);
+
+    };
+};

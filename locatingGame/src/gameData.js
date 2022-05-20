@@ -285,6 +285,15 @@ const BackGroundResources = {
             },
             animType: [1],
         },
+        plain_2: {
+            static: ['p1.png', 'p2.png', '0.png'],
+            dynamic: ['1.png'],
+            depth: {
+                static: [1, 1, 0],
+                dynamic: [0],
+            },
+            animType: [1],
+        },
         space_1: {
             static: ['bkgd_0.png'],
             dynamic: ['bkgd_2.png', 'bkgd_3.png', 'bkgd_6.png', 'bkgd_7.png'],

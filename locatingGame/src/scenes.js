@@ -324,7 +324,7 @@ class UIScene extends Phaser.Scene {
                                         break;
                                     case 'setting':
                                         //==RexUI被暫停所以直接呼叫RexScrollablePanel
-                                        //==pauseUI被暫停,所以RexScrollablePanel要在另個scence
+                                        //==pauseUI被暫停,所以RexScrollablePanel要在另個scene
                                         let settingUI = this.scene.add(null, new Phaser.Scene("settingUI"), true);
                                         let panel = new RexScrollablePanel(settingUI, {
                                             x: width * 0.5,
@@ -2020,8 +2020,30 @@ class UIScene extends Phaser.Scene {
                 preload = () => { };
                 create = () => {
                     let init = () => {
-                        this.cameras.main.setBackgroundColor('rgba(0,0,0,0.7)');
+                        const camera = this.cameras.main;
+
+
+                        camera.setBackgroundColor('rgb(0,0,0,0.7)');
                         this.scene.setVisible(false);
+                        // this.backgroundColor = camera.backgroundColor;
+
+
+                        this.fadeInTween = this.tweens.add({
+                            targets: camera.backgroundColor,
+                            // ease: 'Quadratic.InOut',
+                            duration: 1500,
+                            repeat: 0,
+                            alphaGL: { from: 0.7, to: 0 },
+                        }).stop(0);
+
+                        this.fadeOutTween = this.tweens.add({
+                            targets: camera.backgroundColor,
+                            // ease: 'Quadratic.InOut',
+                            duration: 1500,
+                            repeat: 0,
+                            alphaGL: { from: 0, to: 0.7 },
+                        }).stop(0);
+
                         gameScene.blackOut = this;
                     };
                     init();
@@ -2109,6 +2131,18 @@ class UIScene extends Phaser.Scene {
                                 // .setDepth(Depth.UI)
                                 .popUp(500);
 
+                        };
+
+                        //==開場字幕
+                        this.newTextPlayer = (config = null, resolve = null) => {
+                            return new RexTextPlayer(this, {
+                                x: config.x ? config.x : DLconfig.dialogX,
+                                y: config.y ? config.y : DLconfig.dialogY,
+                                width: config.width ? config.width : DLconfig.dialogWidth,
+                                height: config.height ? config.height : DLconfig.dialogHeight,
+                                speed: config.speed ? config.speed : 200,
+                                animation: config.animation ? config.animation : false,
+                            }, resolve);
                         };
                     };
                     let guideArrow = () => {
@@ -4829,7 +4863,7 @@ class GameStartScene extends Phaser.Scene {
             gameData: GameData,
             cursors: null,
             // backgroundObj: null,
-            background: 'space_1',
+            background: ['plain_2', 'space_1',],
             creatorObj: {
                 background: 'castle_2',
                 characters: Object.keys(GameObjectStats.player),
@@ -4875,141 +4909,143 @@ class GameStartScene extends Phaser.Scene {
         const height = canvas.height;
         const localeJSON = this.gameData.localeJSON;
 
-        let initBackground = () => {
-            let backgroundImg = () => {
-                let img = this.add.image(width * 0.5, height * 0.5, 'startScene');
-                img.setScale(width / img.width, height / img.height);
+        {
+            let initBackground = () => {
+                let backgroundImg = () => {
+                    let img = this.add.image(width * 0.5, height * 0.5, 'startScene');
+                    img.setScale(width / img.width, height / img.height);
+                };
+                let gameTitle = () => {
+                    let gameTitle = this.add.image(width * 0.3, height * 0.5, 'gameTitle')
+                        .setRotation(Math.random());
+
+                    gameTitle.spinningHandler = function () {
+                        this
+                            .setRotation(this.rotation - 0.01)
+                            .setScale(0.6 + Math.abs(Math.sin(this.rotation)));
+                    };
+
+                    this.backgroundObj = {
+                        // starGraphics: starGraphics,
+                        gameTitle: gameTitle,
+                    };
+                };
+                // backgroundImg();
+                gameTitle();
             };
-            let gameTitle = () => {
-                let gameTitle = this.add.image(width * 0.3, height * 0.5, 'gameTitle')
-                    .setRotation(Math.random());
+            let initButton = () => {
+                //== menu buttons
+                const buttons = ['startGame', 'setting', 'intro', 'links', 'rank'];
+                const header = height * 0.2;//==預留空間
+                const buttonGap = (height - header) / (buttons.length + 1);
+                const x = width * 0.8;
 
-                gameTitle.spinningHandler = function () {
-                    this
-                        .setRotation(this.rotation - 0.01)
-                        .setScale(0.6 + Math.abs(Math.sin(this.rotation)));
-                };
+                let buttonGroup = buttons.map((button, i) => {
+                    let y = header + buttonGap * (i + 1);
+                    let menuButton = this.add.image(x, y, 'startButton');
+                    let buttonText = this.add.text(x, y, localeJSON.UI[button], { font: '40px Arial', fill: '#ffffff' })
+                        .setOrigin(0.5);
+                    let buttonScale = buttonText.height * 2 / menuButton.height;
 
-                this.backgroundObj = {
-                    // starGraphics: starGraphics,
-                    gameTitle: gameTitle,
-                };
+                    menuButton
+                        .setScale(buttonScale)//menu.width / 4 / menuButton.width
+                        .setInteractive()//{ cursor: 'pointer' }
+                        .on('pointerover', function () {
+                            let scale = 1.2;
+                            this.setScale(buttonScale * scale);
+                            buttonText
+                                .setScale(scale)
+                                .setTint(0xFFFF37);
+                        })
+                        .on('pointerout', function () {
+                            this.setScale(buttonScale);
+                            buttonText
+                                .setScale(1)
+                                .clearTint();
+                        })
+                        .on('pointerdown', async () => {
+                            // console.debug(button);
+                            switch (button) {
+                                case 'startGame':
+                                    this.scene.pause();
+                                    this.scene.add(null, new UIScene('creator', this), true);
+                                    // this.scene.add(null, new UIScene('tutorial', this), true);
+
+                                    // this.game.destroy(true, false);
+                                    // this.resolve(this.gameData);
+                                    break;
+
+                                default:
+                                    let blackOut = this.blackOut.scene
+                                        .setVisible(true)
+                                        .bringToTop();
+
+                                    let panel = this.RexUI.newPanel(button);
+                                    this.RexUI.scene.bringToTop();
+                                    this.scene.pause();
+
+                                    panel.on('destroy', () => {
+                                        blackOut.setVisible(false);
+                                        if (button == 'setting')
+                                            buttonGroup.forEach((group, i) =>
+                                                group.text.setText(this.gameData.localeJSON.UI[buttons[i]])
+                                            );
+                                        this.scene.resume();
+                                    });
+
+                                    // this.RexUI.scene.bringToTop();
+                                    // this.scene.pause();
+
+                                    // let buttonPressed = await new Promise(resolve => this.RexUI.newPanel(button, resolve));
+                                    // console.debug(buttonPressed);
+
+                                    // blackOut.setVisible(false);
+                                    // this.scene.resume();
+
+                                    break;
+
+                            };
+                        });
+
+                    return {
+                        button: menuButton,
+                        text: buttonText,
+                    };
+
+                });
+
+
+                // const tweensDuration = 100;
+
+                // this.tweens.add({
+                //     targets: buttonGroup.map(g => g.button),
+                //     repeat: 0,
+                //     ease: 'linear',
+                //     duration: tweensDuration * 0.2,
+                //     delay: tweensDuration * 0.5,
+                //     x: { from: menu.x - menu.displayWidth * 0.3, to: menu.x },
+                //     scaleX: {
+                //         from: 0, to: (target) => buttonGroup[0].text.height * 2 / target.height
+                //     },
+
+                // });
+
+
+                // this.tweens.add({
+                //     targets: buttonGroup.map(g => g.text),
+                //     repeat: 0,
+                //     ease: 'linear',
+                //     duration: tweensDuration,
+                //     delay: tweensDuration * 0.5,
+                //     alpha: { from: 0, to: 1 },
+                // });
+
+
             };
-            // backgroundImg();
-            gameTitle();
-        };
-        let initButton = () => {
-            //== menu buttons
-            const buttons = ['startGame', 'setting', 'intro', 'links', 'rank'];
-            const header = height * 0.2;//==預留空間
-            const buttonGap = (height - header) / (buttons.length + 1);
-            const x = width * 0.8;
-
-            let buttonGroup = buttons.map((button, i) => {
-                let y = header + buttonGap * (i + 1);
-                let menuButton = this.add.image(x, y, 'startButton');
-                let buttonText = this.add.text(x, y, localeJSON.UI[button], { font: '40px Arial', fill: '#ffffff' })
-                    .setOrigin(0.5);
-                let buttonScale = buttonText.height * 2 / menuButton.height;
-
-                menuButton
-                    .setScale(buttonScale)//menu.width / 4 / menuButton.width
-                    .setInteractive()//{ cursor: 'pointer' }
-                    .on('pointerover', function () {
-                        let scale = 1.2;
-                        this.setScale(buttonScale * scale);
-                        buttonText
-                            .setScale(scale)
-                            .setTint(0xFFFF37);
-                    })
-                    .on('pointerout', function () {
-                        this.setScale(buttonScale);
-                        buttonText
-                            .setScale(1)
-                            .clearTint();
-                    })
-                    .on('pointerdown', async () => {
-                        // console.debug(button);
-                        switch (button) {
-                            case 'startGame':
-                                this.scene.pause();
-                                this.scene.add(null, new UIScene('creator', this), true);
-                                // this.scene.add(null, new UIScene('tutorial', this), true);
-
-                                // this.game.destroy(true, false);
-                                // this.resolve(this.gameData);
-                                break;
-
-                            default:
-                                let blackOut = this.blackOut.scene
-                                    .setVisible(true)
-                                    .bringToTop();
-
-                                let panel = this.RexUI.newPanel(button);
-                                this.RexUI.scene.bringToTop();
-                                this.scene.pause();
-
-                                panel.on('destroy', () => {
-                                    blackOut.setVisible(false);
-                                    if (button == 'setting')
-                                        buttonGroup.forEach((group, i) =>
-                                            group.text.setText(this.gameData.localeJSON.UI[buttons[i]])
-                                        );
-                                    this.scene.resume();
-                                });
-
-                                // this.RexUI.scene.bringToTop();
-                                // this.scene.pause();
-
-                                // let buttonPressed = await new Promise(resolve => this.RexUI.newPanel(button, resolve));
-                                // console.debug(buttonPressed);
-
-                                // blackOut.setVisible(false);
-                                // this.scene.resume();
-
-                                break;
-
-                        };
-                    });
-
-                return {
-                    button: menuButton,
-                    text: buttonText,
-                };
-
-            });
-
-
-            // const tweensDuration = 100;
-
-            // this.tweens.add({
-            //     targets: buttonGroup.map(g => g.button),
-            //     repeat: 0,
-            //     ease: 'linear',
-            //     duration: tweensDuration * 0.2,
-            //     delay: tweensDuration * 0.5,
-            //     x: { from: menu.x - menu.displayWidth * 0.3, to: menu.x },
-            //     scaleX: {
-            //         from: 0, to: (target) => buttonGroup[0].text.height * 2 / target.height
-            //     },
-
-            // });
-
-
-            // this.tweens.add({
-            //     targets: buttonGroup.map(g => g.text),
-            //     repeat: 0,
-            //     ease: 'linear',
-            //     duration: tweensDuration,
-            //     delay: tweensDuration * 0.5,
-            //     alpha: { from: 0, to: 1 },
-            // });
-
-
-        };
-        let initIconBar = () => {
-            this.scene.add(null, new UIScene('iconBar', this), true);
-        };
+            let initIconBar = () => {
+                this.scene.add(null, new UIScene('iconBar', this), true);
+            };
+        }
         let initRexUI = () => {
             this.scene.add(null, new UIScene('RexUI', this), true);
             this.scene.add(null, new UIScene('blackOut', this), true);
@@ -5020,12 +5056,8 @@ class GameStartScene extends Phaser.Scene {
         };
         let initCreatorUI = () => {
             let creator = this.scene.add(null, new UIScene('creator', this), true);
-
-            creator.events.on('destroy', function () {
-                console.debug('creator');
-                initStartAnime();
-                // initTutorial();
-            });
+            creator.events.on('destroy', () => initStartAnime());
+            // creator.scene.remove();
         };
         let initTutorial = () => {
             this.scene.add(null, new UIScene('tutorial', this), true);
@@ -5035,6 +5067,8 @@ class GameStartScene extends Phaser.Scene {
         let initStartAnime = () => {
             const Depth = {
                 earth: 3,
+                appleTree: 3,
+                apple: 4,
                 player: 10,
                 boss: 11,
                 UI: 20,
@@ -5053,420 +5087,29 @@ class GameStartScene extends Phaser.Scene {
             };
             this.Depth = Depth;//==gameObject.js用到
             const animeDelay = 500;
-
-            let initEnvironment = () => {
-                let space = () => {
-                    let BGgroup = this.add.group();
-                    let resources = BackGroundResources.GameStart[this.background];
-
-                    // console.debug(resources)
-                    resources.static.forEach((res, i) => {
-                        let img = this.add.image(0, height * 0.5, 'staticBG_space' + i);
-                        img
-                            .setScale(width * 2 / img.width, height / img.height)
-                            .setOrigin(0, 0.5)
-                            .setDepth(resources.depth.static[i]);
-
-                        BGgroup.add(img);
-                    });
-
-                    resources.dynamic.forEach((res, i) => {
-                        let thing = this.add.tileSprite(0, height * 0.5, 0, 0, 'dynamicBG_space' + i);
-
-                        thing
-                            .setScale(width * 2 / thing.width, height / thing.height)
-                            .setOrigin(0, 0.5)
-                            .setDepth(resources.depth.dynamic[i]);
-
-                        //==tweens
-                        let movingDuration = Phaser.Math.Between(10, 15) * 1000;//==第一次移動5到20秒
-                        let animType = resources.animType[i];
-                        //==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
-
-                        this.tweens.add(
-                            Object.assign({
-                                targets: thing,
-                                repeat: -1,
-                                duration: movingDuration + i * movingDuration * 0.5,
-                            },
-                                animType == 1 ?
-                                    { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
-                                    animType == 2 ? { alpha: { start: 0, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
-                                        animType == 3 ? { scaleX: { start: t => t.scaleX, to: t => t.scaleX * 1.5 }, scaleY: { start: t => t.scaleY, to: t => t.scaleY * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
-                                            { alpha: { start: 0, to: 1 }, ease: 'Bounce', yoyo: true }
-
-                            ));
-
-                        BGgroup.add(thing);
-
-                    });
-
-                };
-                let planet = () => {
-                    let animsCreate = () => {
-                        this.anims.create({
-                            key: 'earth_spin',
-                            frames: this.anims.generateFrameNumbers('planetEarth'),
-                            frameRate: 8,
-                            repeat: -1,
-                        });
-                        this.anims.create({
-                            key: 'earth_destory',
-                            frames: this.anims.generateFrameNumbers('planetMars'),
-                            frameRate: 5,
-                            repeat: -1,
-                        });
-                    };
-                    animsCreate();
-                    this.earth = this.add.sprite(width * 0.5, height * 0.5, 'planetEarth')
-                        .setScale(1.2)
-                        .setOrigin(0.5, 0.4)
-                        .setDepth(Depth.earth)
-                        .play('earth_spin');
-
-                    // this.cameras.main.zoomTo(0.5, 1000);
-
-                };
-                let blackOut = () => {
-                    this.blackOut.scene
-                        .setVisible(true)
-                        .bringToTop();
-
-                    // this.tweens.add(
-                    //     Object.assign({
-                    //         targets: thing,
-                    //         repeat: -1,
-                    //         duration: movingDuration + i * movingDuration * 0.5,
-                    //     },
-                    //         animType == 1 ?
-                    //             { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
-                    //             animType == 2 ? { alpha: { start: 0, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
-                    //                 animType == 3 ? { scaleX: { start: t => t.scaleX, to: t => t.scaleX * 1.5 }, scaleY: { start: t => t.scaleY, to: t => t.scaleY * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
-                    //                     { alpha: { start: 0, to: 1 }, ease: 'Bounce', yoyo: true }
-
-                    //     ));
-                };
-                blackOut();
-                space();
-                planet();
-
-
+            let getChildByName = (name) => {
+                return this.sceneGroup.getChildren().find(obj => obj.name === name);
             };
 
-            let initPlayer = () => {
-                let player = this.gameData.playerRole;
-                this.player = this.add.existing(new Player(this))
-                    .setPosition(0, height * 0.6)
-                    .setDepth(Depth.player);
+            let initScene = () => {
+                this.sceneGroup = this.add.group();
 
 
-                this.tweens.add({
-                    targets: this.player,
-                    repeat: 0,
-                    ease: 'Linear',
-                    duration: animeDelay * 3,
-                    x: { from: -this.player.displayWidth, to: width * 0.2 },
-                    onStart: () => this.player.play(player + '_run'),
-                    onComplete: () => {
-                        this.player.play(player + '_idle');
-                        initLines();
-                    },
-                });
-
-            };
-            let initSidekick = () => {
-                this.sidekick = this.add.existing(new Sidekick(this, this.gameData.sidekick.type))
-                    .setPosition(width * 0.1, height * 0.65)
-                    .setDepth(Depth.player);
-
-                this.sidekick.body.setMaxVelocity(0);
-            };
-            let initBoss = () => {
-                let animsCreate = () => {
-                    this.anims.create({
-                        key: 'boss_Idle',
-                        frames: this.anims.generateFrameNumbers('boss_Idle'),
-                        frameRate: 5,
-                        repeat: -1,
-                    });
-                    this.anims.create({
-                        key: 'boss_Attack',
-                        frames: this.anims.generateFrameNumbers('boss_Attack', { start: 0, end: 10 }),
-                        frameRate: 8,
-                        repeat: 0,
-                    });
-                    this.anims.create({
-                        key: 'boss_Death',
-                        frames: this.anims.generateFrameNumbers('boss_Death'),
-                        frameRate: 5,
-                        repeat: 0,
-                    });
-                    this.anims.create({
-                        key: 'boss_Fly',
-                        frames: this.anims.generateFrameNumbers('boss_Fly'),
-                        frameRate: 4,
-                        repeat: 0,
-                    });
-                    this.anims.create({
-                        key: 'boss_Hurt',
-                        frames: this.anims.generateFrameNumbers('boss_Death', { start: 0, end: 2 }),
-                        frameRate: 8,
-                        repeat: 0,
-                    });
-
-                };
-                animsCreate();
-
-                const bossScale = 3;
-                this.boss = this.add.sprite(width * 0.8, height * 0.75, 'boss_Fly');
-
-                this.boss
-                    .setScale(-bossScale, bossScale)
-                    .setOrigin(0.5, 1)
-                    .setAlpha(0)
-                    .setDepth(Depth.boss)
-                    .setName('boss');
-
-                //==落石發射器
-                let particles = this.add.particles('bossRock')
-                    .setDepth(Depth.boss + 1);
-
-                let emitter = particles.createEmitter({
-                    x: () => Phaser.Math.Between(-100, width + 100),
-                    y: -100,
-                    angle: 90,
-                    speed: () => Phaser.Math.Between(100, 800),
-                    lifespan: 2000,
-                    frequency: 50,
-                    rotate: {
-                        onEmit: p => {
-                            p.keepRotate = Phaser.Math.Between(1, 5);
-                            return 0;
-                        },
-                        onUpdate: p => p.angle + p.keepRotate,
-                    },
-                    on: false,
-                });
-
-                let showAnims = () => {
-                    let boss = this.boss;
-                    let bossHPbar = boss.HPbar;
-
-                    //==出現
-                    let showDelay = flameCount * animeDelay;
-                    let barShowDelay = 500;
-
-                    this.tweens.add({
-                        targets: [boss].concat(bossHPbar.getChildren()),
-                        repeat: 0,
-                        ease: 'Back.easeInOut',
-                        delay: (t, tk, v, i) => showDelay + (i > 0 ? barShowDelay : 0),
-                        duration: animeDelay,
-                        alpha: { from: 0, to: 1 },
-                    });
-
-                    //==出現血條
-                    let bossHP = boss.stats.HP;
-                    this.tweens.addCounter({
-                        from: 0,
-                        to: bossHP,
-                        loop: 0,
-                        delay: showDelay + barShowDelay,
-                        duration: animeDelay * 3,
-                        onUpdate: (t, v) => {
-                            boss.stats.HP = v.value;
-                            bossHPbar.updateFlag = true;
-                        },
-                    });
-
-                    //==飛
-                    let flyRepeat = 2, yoyoFlag = true;
-                    this.tweens.add({
-                        targets: boss,
-                        repeat: flyRepeat - 1,
-                        ease: 'Quadratic.InOut',
-                        delay: showDelay,
-                        duration: animeDelay,
-                        yoyo: yoyoFlag,
-                        y: { from: this.boss.y, to: this.boss.y - 15 },
-                    });
-
-                    //==攻擊動畫
-                    let attackDelay = (flameCount + flyRepeat * (yoyoFlag ? 2 : 1)) * animeDelay;
-                    this.time.delayedCall(attackDelay, () => boss.play('boss_Attack'), [], this);
-
-                    //==說話
-                    let speakDelay = attackDelay + 500;
-                    let bossContent = localeJSON.Lines.boss[0];
-                    this.time.delayedCall(speakDelay, async () => {
-                        //==對話完才開始問題
-                        await new Promise(resolve => this.RexUI.newDialog(bossContent, {
-                            character: 'boss',
-                            pageendEvent: true,
-                        }, resolve));
-                        this.gameTimer.paused = false;
-                        boss.play('boss_Idle');
-                        this.time.delayedCall(animeDelay, () => initQuiz(), [], this);
-
-                    }, [], this);
-
-                };
-                let attackAnims = (resolve) => {
-                    let boss = this.boss;
-                    let attackType = Phaser.Math.Between(1, 2);
-                    let duration = 1000;
-
-                    let attack = (type) => {
-                        if (type == 1) {
-                            let quakeT1 = 1500, quakeT2 = 2000;
-                            duration += (quakeT1 + quakeT2);
-                            boss.play('boss_Attack');
-                            this.time.delayedCall(quakeT1, () => {
-                                //==quake
-                                this.cameras.main.shake(quakeT2, 0.015);
-
-                                //==falling rock
-                                emitter.start();
-
-                                //==player got hurt
-                                this.tweens.addCounter({
-                                    from: 0,
-                                    to: 1,
-                                    loop: Math.ceil(quakeT2 / 1000),
-                                    duration: 1000,
-                                    onLoop: () => {
-                                        this.player.statsChangeHandler({ HP: -boss.stats.attackPower }, this);
-                                        emitter.stop();
-                                    },
-                                });
-                                this.time.delayedCall(quakeT2, () => boss.play('boss_Idle'), [], this);
-                            }, [], this);
-                        }
-                        else {
-                            let flyT1 = 1000, flyT2 = 1000;
-                            duration += (flyT1 + flyT2 * 2);
-                            boss.play('boss_Fly');
-
-                            let otiginX = boss.x;
-                            this.tweens.add({
-                                targets: boss,
-                                ease: 'Expo.InOut',
-                                delay: flyT2,
-                                duration: flyT1,
-                                x: { from: otiginX, to: -boss.displayWidth },
-                                onComplete: () => {
-                                    this.tweens.add({
-                                        targets: boss,
-                                        ease: 'Quadratic.InOut',
-                                        duration: flyT2,
-                                        x: { from: width + boss.displayWidth, to: otiginX },
-                                    });
-                                },
-                            });
-
-                            this.time.delayedCall((flyT1 + flyT2) * 0.8, () => {
-                                this.player.statsChangeHandler({ HP: -boss.stats.attackPower * 1.5 }, this);
-                            }, [], this);
-
-                            this.time.delayedCall(flyT1 + flyT2 * 2, () => boss.play('boss_Idle'), [], this);
-                        };
-                    };
-                    attack(attackType);
-
-                    this.time.delayedCall(duration, () => resolve(), [], this);
-                };
-                let gotHurtAnims = (duration) => {
-                    let boss = this.boss;
-                    // let bossHP = boss.stats.HP - this.player.stats.attackPower * 4;
-                    let bossHP = boss.stats.HP - 400;//3次死
-
-                    this.tweens.addCounter({
-                        from: boss.stats.HP,
-                        to: bossHP,
-                        loop: 0,
-                        duration: duration,
-                        onUpdate: (t, v) => {
-                            boss.stats.HP = v.value;
-                            boss.HPbar.updateFlag = true;
-                        },
-                    });
-
-                    if (bossHP <= 0) {
-                        boss.play('boss_Death');
-                        this.tweens.add({
-                            targets: boss.HPbar.getChildren(),
-                            repeat: 0,
-                            ease: 'Back.easeInOut',
-                            duration: duration * 2,
-                            alpha: { from: t => t.alpha, to: 0 },
-                        });
-
-                        this.player.winAnims();
-                    }
-                    else {
-                        boss.play('boss_Hurt');
-                        this.time.delayedCall(duration, () => boss.play('boss_Idle'), [], this);
-                    };
-
-                    // console.debug(boss.stats.HP);
-                };
-
-                this.scene.add(null, new UIScene('statsBar', this, this.boss), true);
-                let newStats = { ...GameObjectStats.creature['boss'] };
-                Object.assign(this.boss, {
-                    attackAnims: attackAnims,
-                    gotHurtAnims: gotHurtAnims,
-                    stats: Object.assign(newStats, {
-                        maxHP: newStats.HP,
-                    }),
-                });
-
-                showAnims();
-            };
-            let initCamera = () => {
-                this.cameras.main.setBounds(0, 0, width * 2, height);
-                this.cameras.main.flash(500, 0, 0, 0);
-            };
-            let initLines = () => {
-                let initSubtitle = () => {
-
-                    // let text = localeJSON.Intro.intro;
-                    // let rexBBText = new RexPlugins.UI.BBCodeText(this, width * 0.5, height * 0.5, text,
-                    //     {
-                    //         // fixedWidth: fixedWidth,
-                    //         // fixedHeight: fixedHeight,
-                    //         fontSize: '20px',
-                    //         // color: (character == 'doctor' || character == 'playerHint') ?
-                    //         //     '#272727' : '#fff',
-                    //         color: '#fff',
-                    //         wrap: {
-                    //             mode: 2,// 0|'none'|1|'word'|2|'char'|'character'
-                    //             // width: wrapWidth
-                    //         },
-                    //         underline: {
-                    //             color: '#9D9D9D',  // css string, or number
-                    //             thickness: 2,
-                    //             offset: 6
-                    //         },
-                    //         // maxLines: 3,
-                    //         lineSpacing: 10,
-                    //         // padding: padding,
-                    //         valign: 'center',
-                    //     });
-                };
-                let characterLines = () => {
+                let playLines = () => {
                     //==臺詞
-                    let lines = this.gameData.localeJSON.Lines.start;
+                    let lines = this.gameData.localeJSON.Lines.start['space'];
                     let playerName = this.gameData.playerCustom.name,
                         sidekickName = this.gameData.sidekick.type;
 
-                    //==
-
-
-                    let dialogCode = await new Promise(resolve => this.RexUI.newDialog(line, { character, pageendEvent }, resolve));
-
-
+                    //==特效相關
+                    const effectScene = this.boss.effectScene;
                     const camera = this.cameras.main;
+                    const blackOut = this.blackOut;
+
+
+                    this.RexUI.scene.bringToTop();
+                    effectScene.scene.bringToTop();
+
                     const speakDelay = 500;
                     this.time.delayedCall(speakDelay, async () => {
 
@@ -5493,17 +5136,52 @@ class GameStartScene extends Phaser.Scene {
                                     //     }, [], this);
 
                                     // }, [], this);
+
+
+
+
                                     break;
                                 case 1:
-                                    camera.pan(width * 2, height * 0.5, 2000, 'Power2', true);
+
                                     break;
                                 case 2:
                                     break;
                                 case 3:
+
                                     break;
                                 case 4:
+
+                                    break;
+                                case 5:
+                                    this.player.play('player_idle');
+                                    break;
+                                case 6:
+                                    break;
+                                case 7:
+                                    break;
+                                case 8:
+                                    this.boss.flyTweens.restart();
+                                    camera.pan(width * 2, height * 0.5, speakDelay * 4, 'Power2', true);
+
+                                    //==停頓在說
+                                    await new Promise(resolve => this.time.delayedCall(speakDelay * 4, () => resolve()));
+                                    break;
+                                case 9:
+                                    this.boss.flyTweens.stop(0);
+                                    this.boss.play('boss_flyAttack');
+                                    effectScene.effect1.play('boss_effect1');
+
+                                    blackOut.scene.setVisible(true);
+                                    blackOut.fadeOutTween.restart();
+
+                                    break;
+                                case 10:
+                                    blackOut.fadeInTween.restart();
+                                    blackOut.scene.setVisible(false);
+                                    camera.pan(width * 0.5, height * 0.5, speakDelay * 4, 'Power2', true);
                                     break;
                             };
+
 
                             let dialogCode = await new Promise(resolve => this.RexUI.newDialog(line, { character, pageendEvent }, resolve));
                             // console.debug(dialogCode);
@@ -5512,20 +5190,384 @@ class GameStartScene extends Phaser.Scene {
                             else if (dialogCode === 1) i = i - 2 < 0 ? -1 : i - 2;
                         };
 
+                        blackOut.scene.setVisible(false);
+                        blackOut.fadeOutTween.restart();
 
-                        this.cameras.main.fadeOut(500, 0, 0, 0);
+                        this.cameras.main.fadeOut(speakDelay, 0, 0, 0);
                         this.time.delayedCall(speakDelay, () => initTutorial());
                     }, [], this);
 
+
+                };
+                let playSubtitle = (index = 0, animes = false) => {
+                    let text = localeJSON.Lines.start.intro[index];
+                    console.debug(text);
+
+                    let textPlayer = this.RexUI.newTextPlayer({
+                        x: width * 0.5,
+                        y: height * 0.5,
+                        width: width * 0.8,
+                        height: height * 0.5,
+                        speed: 200,
+                        animation: animes,
+                    }).setName('subtitle');
+                    this.sceneGroup.add(textPlayer);
+                    // console.debug(textPlayer);
+                    return textPlayer.playPromise(text);
                 };
 
-                initSubtitle();
-                characterLines();
+
+                //==主角在森林
+                let scene1 = () => {
+                    let forest = () => {
+                        let resources = BackGroundResources.GameStart[this.background[0]];
+
+                        // console.debug(resources)
+                        resources.static.forEach((res, i) => {
+                            let img = this.add.image(width * 0.5, height * 0.5, 'staticBG_scene1_' + i);
+                            img
+                                .setScale(width / img.width, height / img.height)
+                                .setDepth(resources.depth.static[i]);
+
+                            this.sceneGroup.add(img);
+                        });
+
+                        resources.dynamic.forEach((res, i) => {
+                            let thing = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, 'dynamicBG_scene1_' + i);
+
+                            thing
+                                .setScale(width / thing.width, height / thing.height)
+                                .setDepth(resources.depth.dynamic[i]);
+
+                            //==tweens
+                            let movingDuration = Phaser.Math.Between(10, 15) * 1000;//==第一次移動5到20秒
+                            let animType = resources.animType[i];
+                            //==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
+
+                            this.tweens.add(
+                                Object.assign({
+                                    targets: thing,
+                                    repeat: -1,
+                                    duration: movingDuration + i * movingDuration * 0.5,
+                                },
+                                    animType == 1 ?
+                                        { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
+                                        animType == 2 ? { alpha: { start: 0, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
+                                            animType == 3 ? { scaleX: { start: t => t.scaleX, to: t => t.scaleX * 1.5 }, scaleY: { start: t => t.scaleY, to: t => t.scaleY * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
+                                                { alpha: { start: 0, to: 1 }, ease: 'Bounce', yoyo: true }
+
+                                ));
+
+                            this.sceneGroup.add(thing);
+
+                        });
+
+                    };
+                    let apple = () => {
+                        let appleTree = this.add.image(width * 0.6, height * 0.45, 'appleTree')
+                            .setScale(0.6)
+                            .setName('appleTree')
+                            .setDepth(Depth.appleTree);
+
+                        let apple = this.add.image(appleTree.x - 90, height * 0.4, 'apple')
+                            .setScale(0.6)
+                            .setName('apple')
+                            .setDepth(Depth.apple);
+
+                        this.sceneGroup.add(appleTree);
+                        this.sceneGroup.add(apple);
+                    };
+                    let animStart = () => {
+                        let apple = getChildByName('apple');
+
+                        playSubtitle(0).then(() => {
+                            //==蘋果掉落
+                            this.tweens.add({
+                                targets: apple,
+                                repeat: 0,
+                                ease: 'Cubic.In',
+                                duration: animeDelay,
+                                delay: animeDelay * 3,
+                                y: { from: apple.y, to: this.player.y },
+                                onComplete: () => apple.setVisible(false),
+                            });
+
+                            //==玩家跑
+                            this.tweens.add({
+                                targets: this.player,
+                                repeat: 0,
+                                ease: 'Linear',
+                                duration: animeDelay * 4,
+                                x: { from: -this.player.displayWidth, to: apple.x },
+                                onStart: () => this.player.play('player_run'),
+                                onComplete: () => {
+                                    this.player.play('player_death');
+
+                                    this.time.delayedCall(animeDelay * 3, () => {
+                                        this.cameras.main.fade(animeDelay, 0, 0, 0);
+                                        this.time.delayedCall(animeDelay, () => {
+                                            this.sceneGroup.clear(true, true);
+                                            scene2();
+                                        });
+                                    }, [], this);
+
+                                },
+                            });
+
+                        });
+
+                    };
+
+                    forest();
+                    apple();
+                    animStart();
+
+                };
+
+                //==主角到異世界
+                let scene2 = () => {
+                    let space = () => {
+                        let resources = BackGroundResources.GameStart[this.background[1]];
+
+                        // console.debug(resources)
+                        resources.static.forEach((res, i) => {
+                            let img = this.add.image(0, height * 0.5, 'staticBG_scene2_' + i);
+                            img
+                                .setScale(width * 2 / img.width, height / img.height)
+                                .setOrigin(0, 0.5)
+                                .setDepth(resources.depth.static[i]);
+
+                            this.sceneGroup.add(img);
+                        });
+
+                        resources.dynamic.forEach((res, i) => {
+                            let thing = this.add.tileSprite(0, height * 0.5, 0, 0, 'dynamicBG_scene2_' + i);
+
+                            thing
+                                .setScale(width * 2 / thing.width, height / thing.height)
+                                .setOrigin(0, 0.5)
+                                .setDepth(resources.depth.dynamic[i]);
+
+                            //==tweens
+                            let movingDuration = Phaser.Math.Between(10, 15) * 1000;//==第一次移動5到20秒
+                            let animType = resources.animType[i];
+                            //==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
+
+                            this.tweens.add(
+                                Object.assign({
+                                    targets: thing,
+                                    repeat: -1,
+                                    duration: movingDuration + i * movingDuration * 0.5,
+                                },
+                                    animType == 1 ?
+                                        { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
+                                        animType == 2 ? { alpha: { start: 0, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
+                                            animType == 3 ? { scaleX: { start: t => t.scaleX, to: t => t.scaleX * 1.5 }, scaleY: { start: t => t.scaleY, to: t => t.scaleY * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
+                                                { alpha: { start: 0, to: 1 }, ease: 'Bounce', yoyo: true }
+
+                                ));
+
+                            this.sceneGroup.add(thing);
+
+                        });
+
+                    };
+                    let planet = () => {
+                        let animsCreate = () => {
+                            this.anims.create({
+                                key: 'earth_spin',
+                                frames: this.anims.generateFrameNumbers('planetEarth'),
+                                frameRate: 8,
+                                repeat: -1,
+                            });
+                            this.anims.create({
+                                key: 'earth_destory',
+                                frames: this.anims.generateFrameNumbers('planetMars'),
+                                frameRate: 5,
+                                repeat: -1,
+                            });
+                        };
+                        animsCreate();
+                        let earth = this.add.sprite(width * 0.5, height * 0.5, 'planetEarth')
+                            .setScale(1.2)
+                            .setOrigin(0.5, 0.4)
+                            .setName('earth')
+                            .setDepth(Depth.earth)
+                            .play('earth_spin');
+
+                        this.sceneGroup.add(earth);
+                        // this.cameras.main.zoomTo(0.5, 1000);
+
+                    };
+
+                    let animStart = () => {
+                        playSubtitle(1, true)
+                            .then(() => {
+                                //===字幕移除
+                                this.cameras.main.fadeIn(animeDelay * 2, 0, 0, 0);
+                                this.sceneGroup.remove(getChildByName('subtitle'), true, true);
+
+
+                                //==博士動畫
+                                this.doctor
+                                    .setPosition(width * 0.8, height * 0.6)
+                                    .play('doctor_idle');
+
+                                //===玩家動畫
+                                this.player.setPosition(width * 0.2, height * 0.6);
+                                this.time.delayedCall(animeDelay * 4, () => {
+                                    this.player.playReverse('player_death');
+                                    playLines();
+
+                                });
+                            });
+                        // playLines();
+                    };
+
+                    space();
+                    planet();
+                    animStart();
+                };
+
+                scene1();
+                // scene2();
+            };
+            let initPlayer = () => {
+                let animsCreate = () => {
+                    const player = this.gameData.playerRole,
+                        frameRate = GameObjectFrame[player].frameRate;
+
+                    this.anims.create({
+                        key: 'player_run',
+                        frames: this.anims.generateFrameNumbers(player + '_run'),
+                        frameRate: frameRate.run,
+                        repeat: -1,
+                    });
+                    this.anims.create({
+                        key: 'player_idle',
+                        frames: this.anims.generateFrameNumbers(player + '_idle'),
+                        frameRate: frameRate.idle,
+                        repeat: -1,
+                    });
+                    this.anims.create({
+                        key: 'player_death',
+                        frames: this.anims.generateFrameNumbers(player + '_death'),
+                        frameRate: frameRate.death,
+                        repeat: 0,
+                    });
+
+                };
+                animsCreate();
+
+                this.player = this.add.existing(new Player(this))
+                    .setPosition(0, height * 0.7)
+                    .setDepth(Depth.player);
+            };
+            let initSidekick = () => {
+                let animsCreate = () => {
+                    this.anims.create({
+                        key: 'doctor_idle',
+                        frames: this.anims.generateFrameNumbers('doctor_idle'),
+                        frameRate: 8,
+                        repeat: -1,
+                    });
+                    this.anims.create({
+                        key: 'doctor_fly',
+                        frames: this.anims.generateFrameNumbers('doctor_idle'),
+                        frameRate: 10,
+                        repeat: -1,
+                    });
+                };
+                animsCreate();
+
+                this.doctor = this.add.sprite(0, 0)
+                    .setScale(2)
+                    .setDepth(Depth.player);
+
+                // this.sidekick = this.add.existing(new Sidekick(this, this.gameData.sidekick.type))
+                //     .setPosition(width * 0.1, height * 0.65)
+                //     .setDepth(Depth.player);
+
+            };
+            let initBoss = () => {
+                let animsCreate = () => {
+                    this.anims.create({
+                        key: 'boss_flyAttack',
+                        frames: this.anims.generateFrameNumbers('boss_flyAttack'),
+                        frameRate: 3,
+                        repeat: 0
+                    });
+
+                    //==
+                    this.anims.create({
+                        key: 'boss_effect1',
+                        frames: this.anims.generateFrameNumbers('boss_effect1'),
+                        frameRate: 8,
+                        repeat: -1
+                    });
+
+                };
+                animsCreate();
+
+                this.boss = this.add.sprite(width * 1.8, height * 0.4, 'boss_flyAttack')
+                    .setScale(3)
+                    .setFlipX(true)
+                    .setDepth(Depth.boss);
+
+                Object.assign(this.boss, {
+                    flyTweens: this.tweens.add({
+                        targets: this.boss,
+                        repeat: -1,
+                        ease: 'Quadratic.InOut',
+                        duration: animeDelay,
+                        yoyo: true,
+                        y: { from: this.boss.y, to: this.boss.y - 15 },
+                    }),
+                    effectScene: this.scene.add(null, new Phaser.Scene("bossEffect"), true),
+                });
+
+                //==== effectScene
+                Object.assign(this.boss.effectScene, {
+                    effect1: this.add.sprite(this.boss.x + 40, this.boss.y - 40)
+                        .setScale(1.5)
+                        .setDepth(Depth.boss + 1),
+                })
+                console.debug(this.boss.effectScene)
+                // this.boss.effect1.play('boss_effect1');
+
+                //==落石發射器
+                // let particles = this.add.particles('bossRock')
+                //     .setDepth(Depth.boss + 1);
+
+                // let emitter = particles.createEmitter({
+                //     x: () => Phaser.Math.Between(-100, width + 100),
+                //     y: -100,
+                //     angle: 90,
+                //     speed: () => Phaser.Math.Between(100, 800),
+                //     lifespan: 2000,
+                //     frequency: 50,
+                //     rotate: {
+                //         onEmit: p => {
+                //             p.keepRotate = Phaser.Math.Between(1, 5);
+                //             return 0;
+                //         },
+                //         onUpdate: p => p.angle + p.keepRotate,
+                //     },
+                //     on: false,
+                // });
+
+            };
+            let initCamera = () => {
+                // this.cameras.main.fade(0, 0, 0, 0);
+                this.cameras.main.setBounds(0, 0, width * 2, height);
+                // this.cameras.main.fade(500, 0, 0, 0);
             };
 
-            initEnvironment();
-            initPlayer();
             initCamera();
+            initPlayer();
+            initSidekick();
+            initBoss();
+            initScene();
         };
 
 
@@ -5538,8 +5580,8 @@ class GameStartScene extends Phaser.Scene {
 
 
         //==gameScene
-        // initCreatorUI();
-        initStartAnime();
+        initCreatorUI();
+        // initStartAnime();
         // initTutorial();
         // initBackground();
         // initButton();
@@ -5693,16 +5735,25 @@ class LoadingScene extends Phaser.Scene {
                             { frameWidth: planetW, frameHeight: planetW }
                         );
                     };
-                    background(gameScene.creatorObj.background);
-                    background(gameScene.background, 'space');
+                    let apple = () => {
+                        this.load.image('appleTree', startDir + 'appleTree.png');
+                        this.load.image('apple', startDir + 'apple.png');
+                    };
 
+                    background(gameScene.creatorObj.background);
+
+                    //===開頭好幾個場景
+                    gameScene.background.forEach((bg, i) =>
+                        background(bg, `scene${i + 1}_`));
+
+                    apple();
                     planet();
                 }
                 else if (packNum == 1) {
                     let station = () => {
                         const dir = envDir + 'station/';
                         this.load.image('station', dir + 'station.png');
-                        this.load.image('title', dir + 'title.png');
+                        // this.load.image('title', dir + 'title.png');
                     };
                     let orb = () => {
                         const dir = envDir + 'orb/';
@@ -5926,22 +5977,51 @@ class LoadingScene extends Phaser.Scene {
                     const sidekicks = gameScene.creatorObj.sidekicks;
 
                     let sprite = () => {
-                        const playerDir = assetsDir + 'gameObj/player/';
+                        let player = () => {
+                            const playerDir = gameObjDir + 'player/';
 
-                        characters.forEach(chara => {
-                            let dir = playerDir + chara + '/';
-                            const playerFrame = GameObjectFrame[chara];
-                            const frameObj = playerFrame.frameObj;
-                            const effectFrameObj = playerFrame.effect;
+                            characters.forEach(chara => {
+                                let dir = playerDir + chara + '/';
+                                const playerFrame = GameObjectFrame[chara];
+                                const frameObj = playerFrame.frameObj;
+                                const effectFrameObj = playerFrame.effect;
 
-                            this.load.spritesheet(chara + '_idle', dir + 'idle.png', frameObj);
-                            this.load.spritesheet(chara + '_run', dir + 'run.png', frameObj);
-                            this.load.spritesheet(chara + '_doubleJump', dir + 'doubleJump.png', frameObj);
-                            this.load.spritesheet(chara + '_attack', dir + 'attack.png', frameObj);
-                            this.load.spritesheet(chara + '_swordSwing', dir + 'swordSwing.png', { frameWidth: effectFrameObj.attack[0], frameHeight: effectFrameObj.attack[1] });
+                                this.load.spritesheet(chara + '_idle', dir + 'idle.png', frameObj);
+                                this.load.spritesheet(chara + '_run', dir + 'run.png', frameObj);
+                                this.load.spritesheet(chara + '_doubleJump', dir + 'doubleJump.png', frameObj);
+                                this.load.spritesheet(chara + '_attack', dir + 'attack.png', frameObj);
+                                this.load.spritesheet(chara + '_death', dir + 'death.png', frameObj);
+                                this.load.spritesheet(chara + '_swordSwing', dir + 'swordSwing.png', { frameWidth: effectFrameObj.attack[0], frameHeight: effectFrameObj.attack[1] });
 
-                        });
+                            });
+                        };
+                        let doctor = () => {
+                            let dir = gameObjDir + 'sidekick/doctor/';
+                            const frameObj = {
+                                frameWidth: 80,
+                                frameHeight: 60
+                            };
+                            this.load.spritesheet('doctor_idle', dir + 'owl_idle.png', frameObj);
+                            this.load.spritesheet('doctor_fly', dir + 'owl_fly.png', frameObj);
 
+
+                        };
+                        let boss = () => {
+                            let bossDir = gameObjDir + 'boss/';
+                            this.load.spritesheet('boss_flyAttack',
+                                bossDir + 'flyAttack.png',
+                                { frameWidth: 100, frameHeight: 100 },
+                            );
+                            this.load.spritesheet('boss_effect1',
+                                bossDir + 'effect1.png',
+                                { frameWidth: 320, frameHeight: 253 },
+                            );
+
+
+                        };
+                        player();
+                        doctor();
+                        boss();
                     };
                     let avatar = () => {
                         const AvatarDir = assetsDir + 'avatar/';

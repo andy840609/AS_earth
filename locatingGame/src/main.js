@@ -2179,7 +2179,7 @@ function locatingGame() {
                         stopClickFlag = false;
                     }, quakeDuration * 6);
                 }
-                else if (GameData.playerStats.HP == 0) {
+                else if (GameData.playerStats.HP < 1) {
                     stopClickFlag = true;
                     const restTimeCost = 1 * 60000;//1min=60000ms    
                     const restAnimDelay = 3000;

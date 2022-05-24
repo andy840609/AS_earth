@@ -2271,12 +2271,15 @@ class UIScene extends Phaser.Scene {
                                         ease: 'Bounce.easeInOut',
                                         duration: 200,
                                         scale: { from: 1, to: 1.5 },
-                                        onStart: () => this.play(chara + '_run'),
+                                        onStart: () => {
+                                            this.play(chara + '_run');
+                                            statsBlock.setVisible(true);
+                                        },
                                     });
                                 })
                                 .on('pointerout', function (p) {
                                     if (this.scene.form && this.scene.form.active) return;
-
+                                    // console.debug(p);
                                     this.scene.tweens.add({
                                         targets: this,
                                         repeat: 0,
@@ -2285,13 +2288,16 @@ class UIScene extends Phaser.Scene {
                                         scale: { from: this.scale, to: 1 },
                                         //==被點擊時播放不同動畫
                                         onStart: () => {
-                                            if (p) this.play(chara + '_idle');
+                                            if (p) {
+                                                this.play(chara + '_idle');
+                                            }
                                             else {
                                                 this.play(chara + '_attack');
                                                 weapon
                                                     .setAlpha(1)
                                                     .play(chara + '_swordSwing');
                                             };
+                                            statsBlock.setVisible(false);
 
                                         },
                                     });
@@ -2305,7 +2311,6 @@ class UIScene extends Phaser.Scene {
 
                                     //==角色復原
                                     this.emit('pointerout', false);
-                                    // this.play(chara + '_run');
 
                                     //===camera effect
                                     cameras.panEffect.reset();
@@ -2367,12 +2372,77 @@ class UIScene extends Phaser.Scene {
                                 .setOrigin(0.45, 0.35)
                                 .setDepth(9);
 
+                            //===能力值框
+                            let getStatsBlock = (chara) => {
+                                let group = this.add.group();
+
+                                let block = this.add.image(character.x, character.y - 50, 'statsBlock')
+                                    .setScale(0.4)
+                                    .setOrigin(0.5, 1)
+                                    .setDepth(Depth.UI + 2);
+
+                                const stats = ['HP', 'attackPower', 'attackRange'];
+                                const textX = block.x - block.displayWidth * 0.5 + 20,
+                                    textY = block.y - block.displayHeight,
+                                    textH = block.displayHeight / stats.length * 0.8;
+
+
+                                stats.forEach((sta, i) => {
+                                    let text = this.add.text(textX, textY + textH * i, UItextJSON[sta],
+                                        {
+                                            fontSize: '24px',
+                                            fill: '#000000',
+                                            padding: {
+                                                top: 5,
+                                                bottom: 5,
+                                            },
+                                        })
+                                        .setOrigin(0, -0.3)
+                                        .setDepth(Depth.UI + 3);
+
+                                    let value = GameObjectStats.player[chara][sta];
+                                    let text2 = this.add.text(text.x + 50, text.y, value,
+                                        {
+                                            fontSize: '24px',
+                                            fill: '#000000',
+                                            padding: {
+                                                top: 5,
+                                                bottom: 5,
+                                            },
+                                        })
+                                        .setOrigin(0, -0.3)
+                                        .setDepth(Depth.UI + 3);
+
+
+                                    // statsStar
+                                    group.add(text);
+                                    group.add(text2);
+                                });
+
+
+                                group.add(block);
+
+                                return group;
+                            };
+                            let statsBlock = getStatsBlock(chara)
+                                .setVisible(false);
+
                             return character;
 
                         });
                     };
                     let title = () => {
-                        this.title = this.add.text(width * 0.5, height * 0.3, UItextJSON['chooseCharacter'],
+
+                        // gameTitle
+
+                        let gameTitle = this.add.image(width * 0.5, 0, 'gameTitle')
+                            .setOrigin(0.5, 0)
+                            .setVisible(false)
+                            .setDepth(Depth.UI + 1);
+                        const titleScale = height * 0.4 / gameTitle.height;
+
+
+                        let subTitle = this.add.text(width * 0.5, 0, UItextJSON['chooseCharacter'],
                             {
                                 fontSize: '48px',
                                 fill: '#000000',
@@ -2394,21 +2464,32 @@ class UIScene extends Phaser.Scene {
 
 
 
-                        this.title.showHandler = () => {
-                            const showDuration = 1500;
+                        let showTitle = () => {
+                            const showDura = 1500;
 
                             this.tweens.add({
-                                targets: this.title,
-                                alpha: { start: 0, to: 1 },
-                                duration: showDuration,
+                                targets: gameTitle,
+                                y: { start: -gameTitle.displayHeight, to: height * 0.1 },
+                                scale: { start: titleScale * 3, to: titleScale },
+                                duration: showDura,
                                 repeat: 0,
-                                ease: 'Linear',
-                                // onStart: () => this.dialog.start(hint, 50),//==(text,typeSpeed(ms per word))
-                                // onComplete: () => this.talkingCallback = null,
+                                ease: 'Bounce.Out',
+                                onStart: () => gameTitle.setVisible(true),
+                            });
+
+                            this.tweens.add({
+                                targets: subTitle,
+                                alpha: { start: 0, to: 1 },
+                                duration: showDura * 0.5,
+                                repeat: -1,
+                                delay: showDura,
+                                yoyo: true,
+                                ease: 'Linear.Out',
+                                onStart: () => subTitle.setY(height * 0.1 + gameTitle.displayHeight),
                             });
                         };
 
-                        this.title.showHandler();
+                        showTitle();
                     };
                     let initCamera = () => {
                         this.cameras.main.setBounds(0, 0, width, height);
@@ -4739,12 +4820,6 @@ class UIScene extends Phaser.Scene {
                             case 1://是放置物品
                                 // console.debug('是放置物品');
                                 if (gameScene.name === 'boss') return;
-                                // let trap = gameScene.physics.add.image(gameScene.player.x, gameScene.player.y, 'item_' + itemName)
-                                //     .setName(itemName)
-                                //     .setDepth(Depth.wave);
-                                // trap.setScale(blockW / trap.width, blockW / trap.height);
-                                // trap.collider = gameScene.physics.add.collider(trap, gameScene.platforms);
-
                                 let trap = gameScene.add.existing(
                                     new Item(gameScene, itemName, gameScene.player.x, gameScene.player.y, false, true));
                                 gameScene.itemOnFloor.push(trap);
@@ -4760,8 +4835,6 @@ class UIScene extends Phaser.Scene {
                                         case 'seeds':
                                             enemyName = 'dove';
                                             break;
-                                        // case '':
-                                        //     break;
                                     };
                                     // console.debug(enemyName);
                                     gameScene.enemy.children.iterate((child, i) =>
@@ -5558,9 +5631,8 @@ class GameStartScene extends Phaser.Scene {
 
             };
             let initCamera = () => {
-                // this.cameras.main.fade(0, 0, 0, 0);
                 this.cameras.main.setBounds(0, 0, width * 2, height);
-                // this.cameras.main.fade(500, 0, 0, 0);
+                this.cameras.main.fadeIn(500, 0, 0, 0);
             };
 
             initCamera();
@@ -5723,31 +5795,44 @@ class LoadingScene extends Phaser.Scene {
                 };
 
                 if (packNum == 0) {
-                    let startDir = envDir + 'start/';
-                    let planet = () => {
-                        const planetW = 512;
-                        this.load.spritesheet('planetEarth',
-                            startDir + 'earth.png',
-                            { frameWidth: planetW, frameHeight: planetW }
-                        );
-                        this.load.spritesheet('planetMars',
-                            startDir + 'mars.png',
-                            { frameWidth: planetW, frameHeight: planetW }
-                        );
+                    let scene = () => {
+                        let startDir = envDir + 'start/';
+                        let planet = () => {
+                            const planetW = 512;
+                            this.load.spritesheet('planetEarth',
+                                startDir + 'earth.png',
+                                { frameWidth: planetW, frameHeight: planetW }
+                            );
+                            this.load.spritesheet('planetMars',
+                                startDir + 'mars.png',
+                                { frameWidth: planetW, frameHeight: planetW }
+                            );
+                        };
+                        let apple = () => {
+                            this.load.image('appleTree', startDir + 'appleTree.png');
+                            this.load.image('apple', startDir + 'apple.png');
+                        };
+
+                        background(gameScene.creatorObj.background);
+
+                        //===開頭好幾個場景
+                        gameScene.background.forEach((bg, i) =>
+                            background(bg, `scene${i + 1}_`));
+
+                        apple();
+                        planet();
                     };
-                    let apple = () => {
-                        this.load.image('appleTree', startDir + 'appleTree.png');
-                        this.load.image('apple', startDir + 'apple.png');
+                    let start = () => {
+                        let dir = assetsDir + 'ui/game/';
+                        this.load.image('gameTitle', dir + 'gameTitle.png');
+                        this.load.image('statsBlock', dir + 'statsBlock.png');
+                        this.load.image('statsStar', dir + 'star.png');
+
                     };
 
-                    background(gameScene.creatorObj.background);
+                    start();
+                    scene();
 
-                    //===開頭好幾個場景
-                    gameScene.background.forEach((bg, i) =>
-                        background(bg, `scene${i + 1}_`));
-
-                    apple();
-                    planet();
                 }
                 else if (packNum == 1) {
                     let station = () => {

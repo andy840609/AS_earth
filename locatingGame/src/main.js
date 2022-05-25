@@ -121,8 +121,8 @@ function locatingGame() {
         };
 
         const eventArr = ajaxReadFile({ url: datafileDir + 'event/eventList.txt', async: false }).responseText.split('\n');
-        // const event = eventArr[2];//之後能選
-        const event = eventArr[getRandom(eventArr.length)];
+        const event = eventArr[eventArr.length - 1];//之後能選
+        // const event = eventArr[getRandom(eventArr.length)];
         const eventCatlog = (value ? value : datafileDir + 'event/') + event + '/';
         const channel = ['BHE', 'BHN', 'BHZ'];//不一定BH的話還要有檔案得到
         const fileExtension = '.xy';
@@ -224,7 +224,7 @@ function locatingGame() {
             tmp.event = event;
             return tmp;
         });
-
+        console.log(eventArr);
         // console.debug(data);
         return game;
     };

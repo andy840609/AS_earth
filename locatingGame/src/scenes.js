@@ -2381,42 +2381,55 @@ class UIScene extends Phaser.Scene {
                                     .setOrigin(0.5, 1)
                                     .setDepth(Depth.UI + 2);
 
-                                const stats = ['HP', 'attackPower', 'attackRange'];
+                                const stats = ['HP', 'attackPower', 'attackRange', 'movementSpeed'];
+                                // const stats = ['HP',];
                                 const textX = block.x - block.displayWidth * 0.5 + 20,
                                     textY = block.y - block.displayHeight,
                                     textH = block.displayHeight / stats.length * 0.8;
 
 
                                 stats.forEach((sta, i) => {
-                                    let text = this.add.text(textX, textY + textH * i, UItextJSON[sta],
+                                    let text = this.add.text(textX, textY + textH * i + 30, UItextJSON[sta],
                                         {
-                                            fontSize: '24px',
+                                            font: 'bold 16px sans-serif',
                                             fill: '#000000',
                                             padding: {
                                                 top: 5,
-                                                bottom: 5,
                                             },
                                         })
-                                        .setOrigin(0, -0.3)
+                                        .setOrigin(0, 0.5)
                                         .setDepth(Depth.UI + 3);
 
                                     let value = GameObjectStats.player[chara][sta];
-                                    let text2 = this.add.text(text.x + 50, text.y, value,
-                                        {
-                                            fontSize: '24px',
-                                            fill: '#000000',
-                                            padding: {
-                                                top: 5,
-                                                bottom: 5,
-                                            },
-                                        })
-                                        .setOrigin(0, -0.3)
-                                        .setDepth(Depth.UI + 3);
+                                    //==算幾顆星
+                                    let starAmount = 0;
+                                    switch (stats[i]) {
+                                        case 'HP':
+                                            starAmount = parseInt(value / 50);
+                                            break;
+                                        case 'attackPower':
+                                            starAmount = parseInt(value / 30);
+                                            break;
+                                        case 'attackRange':
+                                            starAmount = parseInt(value / 300);
+                                            break;
+                                        case 'movementSpeed':
+                                            starAmount = parseInt(value / 120);
+                                            break;
+                                    };
+                                    starAmount = starAmount < 1 ? 1 :
+                                        starAmount > 3 ? 3 : starAmount;
+                                    Array.from(new Array(starAmount), (d, i) => i).forEach(i => {
+                                        let star = this.add.image(block.x + 5 + i * 30, text.y, 'statsStar')
+                                            .setScale(0.5)
+                                            .setOrigin(0.5)
+                                            .setDepth(Depth.UI + 3);
+                                        group.add(star);
+                                    });
+                                    // console.debug()
 
-
-                                    // statsStar
                                     group.add(text);
-                                    group.add(text2);
+
                                 });
 
 
@@ -5178,13 +5191,16 @@ class GameStartScene extends Phaser.Scene {
                     const effectScene = this.boss.effectScene;
                     const camera = this.cameras.main;
                     const blackOut = this.blackOut;
-
+                    //boss特效scene一起移動
+                    let cameraPan = (panRight) => {
+                        camera.pan(panRight ? width * 2 : width * 0.5, height * 0.5, animeDelay * 4, 'Power2', true);
+                    };
 
                     this.RexUI.scene.bringToTop();
                     effectScene.scene.bringToTop();
 
-                    const speakDelay = 500;
-                    this.time.delayedCall(speakDelay, async () => {
+
+                    this.time.delayedCall(animeDelay, async () => {
 
                         for (let i = 0; i < Object.keys(lines).length; i++) {
                             let line = lines[i].line,
@@ -5198,7 +5214,7 @@ class GameStartScene extends Phaser.Scene {
 
                                     //     // this.cameras.main.shake(shakeDura, 0.015);
                                     //     // this.cameras.main.setZoom(4);
-                                    //     camera.pan(width * 2, height * 0.5, 2000, 'Power2', true);
+
 
                                     //     // console.debug(camera)
                                     //     // camera.on('PAN_START', (cam, b) => {
@@ -5216,42 +5232,85 @@ class GameStartScene extends Phaser.Scene {
                                     break;
                                 case 1:
 
-                                    break;
-                                case 2:
-                                    break;
-                                case 3:
+                                    //     break;
+                                    // case 2:
+                                    //     break;
+                                    // case 3:
 
-                                    break;
-                                case 4:
+                                    //     break;
+                                    // case 4:
 
-                                    break;
-                                case 5:
-                                    this.player.play('player_idle');
-                                    break;
-                                case 6:
-                                    break;
-                                case 7:
-                                    break;
-                                case 8:
+                                    //     break;
+                                    // case 5:
+                                    //     this.player.play('player_idle');
+                                    //     break;
+                                    // case 6:
+                                    //     break;
+                                    // case 7:
+                                    //     break;
+                                    // case 8:
                                     this.boss.flyTweens.restart();
-                                    camera.pan(width * 2, height * 0.5, speakDelay * 4, 'Power2', true);
-
+                                    cameraPan(true);
                                     //==停頓在說
-                                    await new Promise(resolve => this.time.delayedCall(speakDelay * 4, () => resolve()));
-                                    break;
-                                case 9:
+                                    await new Promise(resolve => this.time.delayedCall(animeDelay * 4, () => resolve()));
+                                    //     break;
+                                    // case 9:
                                     this.boss.flyTweens.stop(0);
                                     this.boss.play('boss_flyAttack');
-                                    effectScene.effect1.play('boss_effect1');
+
+
+                                    //集氣
+                                    this.tweens.add({
+                                        targets: effectScene.effect1,
+                                        alpha: { from: 0, to: 1 },
+                                        duration: animeDelay * 2,
+                                        delay: animeDelay,
+                                        repeat: 0,
+                                        ease: 'Quadratic.InOut',
+                                        onStart: () => {
+                                            effectScene.effect1.play('boss_effect1');
+                                        },
+                                        // onComplete: () => {
+                                        //     camera.shake(animeDelay * 10, 0.015);
+                                        // },
+                                    });
+
+                                    //波
+                                    this.time.delayedCall(animeDelay * 4, () => {
+                                        this.tweens.add({
+                                            targets: effectScene.effect1,
+                                            alpha: { from: 1, to: 0 },
+                                            duration: animeDelay * 2,
+                                            repeat: 0,
+                                            ease: 'Quadratic.InOut',
+                                            // onStart: () => {
+                                            //     camera.shake(animeDelay * 10, 0.015);
+                                            // },
+                                            onComplete: () => {
+                                                effectScene.effect1.stop();
+
+                                                let effect2 = effectScene.effect2;
+                                                effect2
+                                                    .play('boss_effect2')
+                                                    .setScale((this.boss.x - width) / effect2.width, 1.5);
+                                                // console.debug(this.boss.x, width);
+                                                camera.shake(animeDelay * 10, 0.03);
+                                            },
+                                        });
+
+                                    });
+
+
 
                                     blackOut.scene.setVisible(true);
                                     blackOut.fadeOutTween.restart();
-
+                                    await new Promise(resolve => this.time.delayedCall(animeDelay * 10, () => resolve()));
                                     break;
                                 case 10:
                                     blackOut.fadeInTween.restart();
                                     blackOut.scene.setVisible(false);
-                                    camera.pan(width * 0.5, height * 0.5, speakDelay * 4, 'Power2', true);
+                                    cameraPan(false);
+
                                     break;
                             };
 
@@ -5266,22 +5325,23 @@ class GameStartScene extends Phaser.Scene {
                         blackOut.scene.setVisible(false);
                         blackOut.fadeOutTween.restart();
 
-                        this.cameras.main.fadeOut(speakDelay, 0, 0, 0);
-                        this.time.delayedCall(speakDelay, () => initTutorial());
+                        this.cameras.main.fadeOut(animeDelay, 0, 0, 0);
+                        this.time.delayedCall(animeDelay, () => initTutorial());
                     }, [], this);
 
 
                 };
                 let playSubtitle = (index = 0, animes = false) => {
                     let text = localeJSON.Lines.start.intro[index];
-                    console.debug(text);
+                    // console.debug(text);
 
                     let textPlayer = this.RexUI.newTextPlayer({
                         x: width * 0.5,
                         y: height * 0.5,
                         width: width * 0.8,
                         height: height * 0.5,
-                        speed: 200,
+                        // speed: 200,
+                        speed: 10,
                         animation: animes,
                     }).setName('subtitle');
                     this.sceneGroup.add(textPlayer);
@@ -5502,8 +5562,8 @@ class GameStartScene extends Phaser.Scene {
                     animStart();
                 };
 
-                scene1();
-                // scene2();
+                // scene1();
+                scene2();
             };
             let initPlayer = () => {
                 let animsCreate = () => {
@@ -5579,6 +5639,13 @@ class GameStartScene extends Phaser.Scene {
                         repeat: -1
                     });
 
+                    this.anims.create({
+                        key: 'boss_effect2',
+                        frames: this.anims.generateFrameNumbers('boss_effect2'),
+                        frameRate: 8,
+                        repeat: 0
+                    });
+
                 };
                 animsCreate();
 
@@ -5600,12 +5667,21 @@ class GameStartScene extends Phaser.Scene {
                 });
 
                 //==== effectScene
-                Object.assign(this.boss.effectScene, {
-                    effect1: this.add.sprite(this.boss.x + 40, this.boss.y - 40)
+                let effectScene = this.boss.effectScene;
+                Object.assign(effectScene, {
+                    effect1: effectScene.add.sprite(this.boss.x + 40 - width, this.boss.y - 40)
                         .setScale(1.5)
                         .setDepth(Depth.boss + 1),
+                    effect2: effectScene.add.sprite(this.boss.x - 100 - width, this.boss.y - 40)
+                        .setFlipX(true)
+                        .setOrigin(1, 0.5)
+                        .setDepth(Depth.boss + 1),
+                    // effect3: effectScene.add.sprite(width * 0.5, height * 0.4, 'boss_flyAttack')
+                    //     .setScale(3)
+                    //     .setFlipX(true)
+                    //     .setDepth(Depth.boss),
                 })
-                console.debug(this.boss.effectScene)
+                console.debug(effectScene);
                 // this.boss.effect1.play('boss_effect1');
 
                 //==落石發射器
@@ -5652,8 +5728,8 @@ class GameStartScene extends Phaser.Scene {
 
 
         //==gameScene
-        initCreatorUI();
-        // initStartAnime();
+        // initCreatorUI();
+        initStartAnime();
         // initTutorial();
         // initBackground();
         // initButton();
@@ -5807,6 +5883,7 @@ class LoadingScene extends Phaser.Scene {
                                 startDir + 'mars.png',
                                 { frameWidth: planetW, frameHeight: planetW }
                             );
+
                         };
                         let apple = () => {
                             this.load.image('appleTree', startDir + 'appleTree.png');
@@ -6101,7 +6178,10 @@ class LoadingScene extends Phaser.Scene {
                                 bossDir + 'effect1.png',
                                 { frameWidth: 320, frameHeight: 253 },
                             );
-
+                            this.load.spritesheet('boss_effect2',
+                                bossDir + 'bossBeam.png',
+                                { frameWidth: 500, frameHeight: 230 }
+                            );
 
                         };
                         player();

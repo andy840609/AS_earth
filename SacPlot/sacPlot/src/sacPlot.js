@@ -294,10 +294,6 @@ function sacPlots() {
         </form>
                 `);
 
-            $(document).ready(function () {
-                $('input[name ="plotType"][value="trace"]').trigger('change');
-            });
-
             $('button[name ="normalize"]').click(function (e) {
                 // console.debug(pre_xdomain);
                 // console.debug(this.value);
@@ -311,7 +307,7 @@ function sacPlots() {
                 // console.debug("referenceTime=" + referenceTime);
                 // if (referenceTime) data.forEach(d => d.data.forEach(p => p.x = 1000 * p.x + referenceTime));
 
-                printChart($('input[name ="plotType"]:checked').val());
+                printChart();
             });
             $('input[name ="plotType"]').change(function (e) {
                 // console.debug(this.value);
@@ -320,10 +316,10 @@ function sacPlots() {
                 else
                     pre_xdomain = null;
 
-                printChart(this.value);
+                printChart();
             });
         };
-        async function printChart(plotType) {
+        async function printChart() {
             $('#charts').children().remove();
 
             let i = 1;
@@ -3083,33 +3079,37 @@ function sacPlots() {
                 return svg.node();
             };
 
-            if (plotType == 'window') {
-                getChartMenu('wf_plot');
-                let cloneArray = data.slice(0);
-                $('#chart' + i).append(windowChart(cloneArray.reverse()));
-                contextSelectionSide();
-            }
-            else if (plotType == 'overlay') {
-                getChartMenu('wf_plot');
-                // let cloneArray = data.slice(0);
-                $('#chart' + i).append(overlayChart());
-                contextSelectionSide();
-            }
-            else {
-                // console.debug(data);
-                let chartNodes = trace();
-                data.forEach(d => {
-                    getChartMenu(d.fileName);
-                    $('#chart' + i).append(chartNodes[i - 1]);
-                    i++;
-                })
+            let plotType = $('input[name ="plotType"]:checked').val();
+            switch (plotType) {
+                default:
+                case 'trace':
+                    let chartNodes = trace();
+                    data.forEach(d => {
+                        getChartMenu(d.fileName);
+                        $('#chart' + i).append(chartNodes[i - 1]);
+                        i++;
+                    })
+                    break;
+                case 'window':
+                    getChartMenu('wf_plot');
+                    let cloneArray = data.slice(0);
+                    $('#chart' + i).append(windowChart(cloneArray.reverse()));
+                    contextSelectionSide();
+                    break;
+                case 'overlay':
+                    getChartMenu('wf_plot');
+                    // let cloneArray = data.slice(0);
+                    $('#chart' + i).append(overlayChart());
+                    contextSelectionSide();
+                    break;
 
             };
-            MenuEvents();
+
         };
 
         if (!($('#form-chart').length >= 1))
             init();
+        printChart();
     };
 
     return chart;

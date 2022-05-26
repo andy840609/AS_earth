@@ -5562,8 +5562,8 @@ class GameStartScene extends Phaser.Scene {
                     animStart();
                 };
 
-                // scene1();
-                scene2();
+                scene1();
+                // scene2();
             };
             let initPlayer = () => {
                 let animsCreate = () => {
@@ -5728,8 +5728,8 @@ class GameStartScene extends Phaser.Scene {
 
 
         //==gameScene
-        // initCreatorUI();
-        initStartAnime();
+        initCreatorUI();
+        // initStartAnime();
         // initTutorial();
         // initBackground();
         // initButton();

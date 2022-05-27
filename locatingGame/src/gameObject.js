@@ -1709,7 +1709,7 @@ const Sidekick = new Phaser.Class({
                     break;
                 case 'tutorial':
                     if (!hintType && !hintIdx)
-                        hint = this.hints[hintType][hintIdx].replace(replaceStr, this.name);
+                        hint = this.hints[hintType][hintIdx].replace(replaceStr, scene.gameData.localeJSON.UI[this.name]);
                     else
                         hint = this.hints[hintType][hintIdx];
                     break;
@@ -2083,7 +2083,7 @@ class RexTextBox extends RexPlugins.UI.TextBox {
         const padding = {
             left: 3,
             right: 3,
-            top: 5,
+            top: 8,
             bottom: 3,
         };
         const iconW = tips ? 0 : 200;//==扣掉頭像和按鈕的空間

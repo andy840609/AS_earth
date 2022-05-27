@@ -5192,8 +5192,8 @@ class GameStartScene extends Phaser.Scene {
                     const camera = this.cameras.main;
                     const blackOut = this.blackOut;
                     //boss特效scene一起移動
-                    let cameraPan = (panRight) => {
-                        camera.pan(panRight ? width * 2 : width * 0.5, height * 0.5, animeDelay * 4, 'Power2', true);
+                    let cameraPan = (panRight, duration = animeDelay * 4) => {
+                        camera.pan(panRight ? width * 2 : width * 0.5, height * 0.5, duration, 'Power2', true);
                     };
 
                     this.RexUI.scene.bringToTop();
@@ -5209,46 +5209,45 @@ class GameStartScene extends Phaser.Scene {
 
                             switch (i) {
                                 case 0:
-                                    // this.time.delayedCall(2000, () => {
-                                    //     const shakeDura = 3000;
-
-                                    //     // this.cameras.main.shake(shakeDura, 0.015);
-                                    //     // this.cameras.main.setZoom(4);
-
-
-                                    //     // console.debug(camera)
-                                    //     // camera.on('PAN_START', (cam, b) => {
-                                    //     //     console.debug(cam, b)
-                                    //     // });
-                                    //     this.time.delayedCall(shakeDura, () => {
-                                    //         this.earth.play('earth_destory');
-                                    //     }, [], this);
-
-                                    // }, [], this);
-
-
-
-
                                     break;
                                 case 1:
 
-                                    //     break;
-                                    // case 2:
-                                    //     break;
-                                    // case 3:
+                                    break;
+                                case 2:
+                                    break;
+                                case 3:
+                                    this.player.play('player_think');
+                                    break;
+                                case 4:
+                                    line = line.replace('\t', this.gameData.timeMultiplier);
+                                    break;
+                                case 5:
+                                    this.player.play('player_idle');
+                                    this.doctor.setFlipX(false);
+                                    this.doctor.shockMark.setVisible(false);
+                                    this.player.shockMark.setVisible(false);
+                                    // this.RexUI.cameras.main.shake(0, 0);
+                                    break;
+                                case 6:
 
-                                    //     break;
-                                    // case 4:
+                                    this.RexUI.cameras.main.shake(animeDelay * 4, 0.03);
+                                    this.player.play('player_death')
+                                        .anims
+                                        .stopOnFrame(this.player.anims.currentAnim.frames[1]);
 
-                                    //     break;
-                                    // case 5:
-                                    //     this.player.play('player_idle');
-                                    //     break;
-                                    // case 6:
-                                    //     break;
-                                    // case 7:
-                                    //     break;
-                                    // case 8:
+                                    this.player.shockMark
+                                        .setPosition(this.player.x + 60, this.player.y - 100)
+                                        .setVisible(true);
+
+                                    this.doctor
+                                        .setFlipX(true)
+                                        .shockMark
+                                        .setPosition(this.doctor.x + 60, this.doctor.y - 100)
+                                        .setVisible(true);
+
+                                    this.boss.anims.stop();
+                                    break;
+                                case 7:
                                     this.boss.flyTweens.restart();
                                     cameraPan(true);
                                     //==停頓在說
@@ -5262,7 +5261,7 @@ class GameStartScene extends Phaser.Scene {
                                     //集氣
                                     this.tweens.add({
                                         targets: effectScene.effect1,
-                                        alpha: { from: 0, to: 1 },
+                                        alpha: { from: 0.5, to: 1 },
                                         duration: animeDelay * 2,
                                         delay: animeDelay,
                                         repeat: 0,
@@ -5304,13 +5303,27 @@ class GameStartScene extends Phaser.Scene {
 
                                     blackOut.scene.setVisible(true);
                                     blackOut.fadeOutTween.restart();
-                                    await new Promise(resolve => this.time.delayedCall(animeDelay * 10, () => resolve()));
-                                    break;
-                                case 10:
-                                    blackOut.fadeInTween.restart();
-                                    blackOut.scene.setVisible(false);
-                                    cameraPan(false);
+                                    await new Promise(resolve => this.time.delayedCall(animeDelay * 13, () => {
+                                        camera.fadeOut(animeDelay * 3);
+                                        this.time.delayedCall(animeDelay * 3, () => {
+                                            cameraPan(false, 0);
+                                            blackOut.scene.setVisible(false);
+                                            this.doctor.setFlipX(false);
+                                            this.doctor.shockMark.setVisible(false);
+                                            this.player.shockMark.setVisible(false);
+                                            getChildByName('earth').play('earth_destory');
+                                            camera.fadeIn(animeDelay * 3);
 
+                                            resolve();
+                                        });
+
+                                    }));
+                                    break;
+                                case 8:
+                                    this.player.play('player_idle');
+                                    break;
+                                case 9:
+                                    this.doctor.play('doctor_attack');
                                     break;
                             };
 
@@ -5325,7 +5338,7 @@ class GameStartScene extends Phaser.Scene {
                         blackOut.scene.setVisible(false);
                         blackOut.fadeOutTween.restart();
 
-                        this.cameras.main.fadeOut(animeDelay, 0, 0, 0);
+                        camera.fadeOut(animeDelay, 255, 255, 255);
                         this.time.delayedCall(animeDelay, () => initTutorial());
                     }, [], this);
 
@@ -5340,8 +5353,8 @@ class GameStartScene extends Phaser.Scene {
                         y: height * 0.5,
                         width: width * 0.8,
                         height: height * 0.5,
-                        // speed: 200,
-                        speed: 10,
+                        speed: 200,
+                        // speed: 10,
                         animation: animes,
                     }).setName('subtitle');
                     this.sceneGroup.add(textPlayer);
@@ -5516,7 +5529,7 @@ class GameStartScene extends Phaser.Scene {
                             this.anims.create({
                                 key: 'earth_destory',
                                 frames: this.anims.generateFrameNumbers('planetMars'),
-                                frameRate: 5,
+                                frameRate: 3,
                                 repeat: -1,
                             });
                         };
@@ -5588,13 +5601,24 @@ class GameStartScene extends Phaser.Scene {
                         frameRate: frameRate.death,
                         repeat: 0,
                     });
-
+                    this.anims.create({
+                        key: 'player_think',
+                        frames: this.anims.generateFrameNumbers(player + '_attack', { frames: [0] }),
+                        frameRate: frameRate.attack,
+                        repeat: 0,
+                    });
                 };
                 animsCreate();
 
                 this.player = this.add.existing(new Player(this))
                     .setPosition(0, height * 0.7)
                     .setDepth(Depth.player);
+
+                this.player.shockMark = this.add.image(0, 0, 'shockMark')
+                    .setScale(0.3)
+                    .setVisible(false)
+                    .setDepth(Depth.player);
+
             };
             let initSidekick = () => {
                 let animsCreate = () => {
@@ -5606,7 +5630,13 @@ class GameStartScene extends Phaser.Scene {
                     });
                     this.anims.create({
                         key: 'doctor_fly',
-                        frames: this.anims.generateFrameNumbers('doctor_idle'),
+                        frames: this.anims.generateFrameNumbers('doctor_fly'),
+                        frameRate: 10,
+                        repeat: -1,
+                    });
+                    this.anims.create({
+                        key: 'doctor_attack',
+                        frames: this.anims.generateFrameNumbers('doctor_attack'),
                         frameRate: 10,
                         repeat: -1,
                     });
@@ -5615,6 +5645,11 @@ class GameStartScene extends Phaser.Scene {
 
                 this.doctor = this.add.sprite(0, 0)
                     .setScale(2)
+                    .setDepth(Depth.player);
+
+                this.doctor.shockMark = this.add.image(0, 0, 'shockMark')
+                    .setScale(0.3)
+                    .setVisible(false)
                     .setDepth(Depth.player);
 
                 // this.sidekick = this.add.existing(new Sidekick(this, this.gameData.sidekick.type))
@@ -6155,6 +6190,7 @@ class LoadingScene extends Phaser.Scene {
                                 this.load.spritesheet(chara + '_death', dir + 'death.png', frameObj);
                                 this.load.spritesheet(chara + '_swordSwing', dir + 'swordSwing.png', { frameWidth: effectFrameObj.attack[0], frameHeight: effectFrameObj.attack[1] });
 
+                                this.load.image('shockMark', playerDir + 'effect/exclamation.png');
                             });
                         };
                         let doctor = () => {
@@ -6165,7 +6201,7 @@ class LoadingScene extends Phaser.Scene {
                             };
                             this.load.spritesheet('doctor_idle', dir + 'owl_idle.png', frameObj);
                             this.load.spritesheet('doctor_fly', dir + 'owl_fly.png', frameObj);
-
+                            this.load.spritesheet('doctor_attack', dir + 'owl_attack.png', frameObj);
 
                         };
                         let boss = () => {
@@ -6184,6 +6220,7 @@ class LoadingScene extends Phaser.Scene {
                             );
 
                         };
+
                         player();
                         doctor();
                         boss();
@@ -6204,10 +6241,14 @@ class LoadingScene extends Phaser.Scene {
                             sidekicks.forEach(side =>
                                 this.load.image(side + '_avatar', AvatarDir + side + '.png'));
                             this.load.image('doctorAvatar', AvatarDir + 'Doctor.png');
+                            // this.load.image('doctorAvatar', AvatarDir + 'Doctor.png');
                         };
-
+                        let boss = () => {
+                            this.load.image('bossAvatar', AvatarDir + 'boss.jpg');
+                        };
                         player();
                         sidekick();
+                        boss();
                     };
                     sprite();
                     avatar();
@@ -6389,10 +6430,10 @@ class LoadingScene extends Phaser.Scene {
         };
         let makeProgressBar = () => {
             //==開場不要讀取條
-            if (packNum == 0) {
-                this.load.on('complete', () => this.resolve());
-                return;
-            };
+            // if (packNum == 0) {
+            //     this.load.on('complete', () => this.resolve());
+            //     return;
+            // };
             const canvas = gameScene.sys.game.canvas;
             const width = canvas.width;
             const height = canvas.height;
@@ -7300,7 +7341,7 @@ class DefendScene extends Phaser.Scene {
                                     pageendEvent = true;
                                     break;
                                 case 1:
-                                    line = line.replace('\t', playerName).replace('\t', sidekickName);
+                                    line = line.replace('\t', playerName).replace('\t', this.gameData.localeJSON.UI[sidekickName]);
                                     break;
                                 //====================教學==========================================
                                 case 2: //==0.人物操作說明              

@@ -399,10 +399,10 @@ function locatingGame() {
             };
 
             function initGameData() {
-                let playerRole = 'maleAdventurer';//==之後能選其他[femalePerson,maleAdventurer]
+                let playerRole = 'femalePerson';//==之後能選其他[femalePerson,maleAdventurer]
                 let sidekick = 'Dude';//=='Owlet,Dude,Pink'
 
-                let playerName = '勇者',
+                let playerName = '',
                     avatarIndex = 0,//==自選頭像
                     avatarBgColor = 0x5B5B5B;//
 
@@ -595,7 +595,7 @@ function locatingGame() {
                                 };
 
                                 let share = async (profilePromise = null) => {
-                                    const server = "https://tecdc.earth.sinica.edu.tw/tecdc/Game/locating/";
+                                    const server = "https://tecdc.earth.sinica.edu.tw/tecdc/Game/location/";
                                     const certificateDir = server + "certificate/";
 
                                     // let imgName = await getSharingImg(await profilePromise);

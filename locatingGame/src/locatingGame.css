@@ -153,7 +153,7 @@ svg {
     left: 30px;
     border-radius: 50px;
     border: 2px solid #7B7B7B;
-    background: rgba(224, 224, 224, 0.5);
+    background: rgba(224, 224, 224, 0.3);
     pointer-events: auto;
 }
 
@@ -266,7 +266,7 @@ svg {
     position: absolute;
     font: small-caps bold 24px sans-serif;
     top: 85px;
-    left: 80px;
+    left: 70px;
 }
 
 

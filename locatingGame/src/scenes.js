@@ -2162,6 +2162,7 @@ class UIScene extends Phaser.Scene {
                             .setScale(0.8)
                             .setOrigin(1, 0.5)
                             .setAlpha(0)
+                            .setDepth(Depth.UI + 1)
                             .play('guideArrow_moving');
 
                     };
@@ -3902,7 +3903,7 @@ class UIScene extends Phaser.Scene {
                     initPlayer();
                     initSidekick();
 
-                    console.debug(this);
+                    // console.debug(this);
                 };
                 update = () => {
                     let updatePlayer = () => {
@@ -4192,10 +4193,10 @@ class UIScene extends Phaser.Scene {
 
                             }, menuScene)
                             .on('popup.complete', function (subMenu) {
-                                console.log('popup.complete')
+                                // console.log('popup.complete')
                             })
                             .on('scaledown.complete', function () {
-                                console.log('scaledown.complete')
+                                // console.log('scaledown.complete')
                             });
 
                         menuScene.input.on('pointerdown', function (pointer) {
@@ -4698,7 +4699,7 @@ class UIScene extends Phaser.Scene {
                         .add(rightPannel, { expand: true })
                         .layout();
 
-                    console.debug(this);
+                    // console.debug(this);
                     //==關閉背包下拉選單同時移除
                     this.events
                         .on('create', () => {
@@ -4876,6 +4877,8 @@ class UIScene extends Phaser.Scene {
 
 
                     };
+
+                    this.hotKeyBar = hotKeyBar;
                     gameScene.hotKeyUI = this;
                 };
                 update = () => {
@@ -4963,7 +4966,7 @@ class GameStartScene extends Phaser.Scene {
             resolve: other.resolve,
         });
 
-        console.debug(this);
+        // console.debug(this);
     };
     preload() {
         // let UI = () => {
@@ -5137,9 +5140,6 @@ class GameStartScene extends Phaser.Scene {
             this.scene.add(null, new UIScene('blackOut', this), true);
             this.RexUI.rankingData = this.rankingData;
         };
-        let initCursors = () => {
-            this.scene.add(null, new UIScene('cursors', this), true);
-        };
         let initCreatorUI = () => {
             let creator = this.scene.add(null, new UIScene('creator', this), true);
             creator.events.on('destroy', () => initStartAnime());
@@ -5305,7 +5305,7 @@ class GameStartScene extends Phaser.Scene {
                                     blackOut.fadeOutTween.restart();
                                     await new Promise(resolve => this.time.delayedCall(animeDelay * 13, () => {
                                         camera.fadeOut(animeDelay * 3);
-                                        this.time.delayedCall(animeDelay * 3, () => {
+                                        this.time.delayedCall(animeDelay * 3, async () => {
                                             cameraPan(false, 0);
                                             blackOut.scene.setVisible(false);
                                             this.doctor.setFlipX(false);
@@ -5314,6 +5314,8 @@ class GameStartScene extends Phaser.Scene {
                                             getChildByName('earth').play('earth_destory');
                                             camera.fadeIn(animeDelay * 3);
 
+                                            //==停頓在說
+                                            await new Promise(resolve => this.time.delayedCall(animeDelay * 4, () => resolve()));
                                             resolve();
                                         });
 
@@ -5716,7 +5718,7 @@ class GameStartScene extends Phaser.Scene {
                     //     .setFlipX(true)
                     //     .setDepth(Depth.boss),
                 })
-                console.debug(effectScene);
+                // console.debug(effectScene);
                 // this.boss.effect1.play('boss_effect1');
 
                 //==落石發射器
@@ -5745,7 +5747,11 @@ class GameStartScene extends Phaser.Scene {
                 this.cameras.main.setBounds(0, 0, width * 2, height);
                 this.cameras.main.fadeIn(500, 0, 0, 0);
             };
+            let initCursors = () => {
+                this.scene.add(null, new UIScene('cursors', this), true);
+            };
 
+            initCursors();
             initCamera();
             initPlayer();
             initSidekick();
@@ -5757,7 +5763,6 @@ class GameStartScene extends Phaser.Scene {
 
 
         //==UI
-        initCursors();
         // initIconBar();
         initRexUI();
 
@@ -6655,7 +6660,7 @@ class DefendScene extends Phaser.Scene {
         this.aliveEnemy = Object.keys(enemyStats).filter(enemy => enemyStats[enemy].HP > 0);
         this.background = stationStats.background;
 
-        console.debug(this);
+        // console.debug(this);
     };
     preload() {
         this.plugins.get('rexawaitloaderplugin').addToScene(this);
@@ -7310,12 +7315,19 @@ class DefendScene extends Phaser.Scene {
                     // console.debug(playerName);
 
                     //==人物操作按鍵
+                    let getHotkeyName = (key) => {
+                        let keyName = this.gameData.localeJSON.UI[key];
+                        return keyName ? keyName : key;
+                    };
                     const controllCursor = this.gameData.controllCursor;
-                    let upKey = controllCursor['up'],
-                        downKey = controllCursor['down'],
-                        leftKey = controllCursor['left'],
-                        rightKey = controllCursor['right'],
-                        attackKey = controllCursor['attack'];
+                    let upKey = getHotkeyName(controllCursor['up']),
+                        downKey = getHotkeyName(controllCursor['down']),
+                        leftKey = getHotkeyName(controllCursor['left']),
+                        rightKey = getHotkeyName(controllCursor['right']),
+                        attackKey = getHotkeyName(controllCursor['attack']),
+                        hotkey1 = getHotkeyName(controllCursor['hotkey1']),
+                        hotkey2 = getHotkeyName(controllCursor['hotkey2']),
+                        hotkey3 = getHotkeyName(controllCursor['hotkey3']);
 
                     //==各個UIScene
                     let blackOut = this.blackOut;
@@ -7324,6 +7336,7 @@ class DefendScene extends Phaser.Scene {
                     let playerUI = this.game.scene.getScene('playerUI');
                     let timerUI = this.game.scene.getScene('timerUI');
                     let iconBar = this.game.scene.getScene('iconBar');
+                    let hotKeyUI = this.game.scene.getScene('hotKeyUI');
 
                     let guideArrow = RexUI.guideArrow.setAlpha(1),
                         arrowWidth = guideArrow.displayWidth,
@@ -7370,7 +7383,19 @@ class DefendScene extends Phaser.Scene {
                                         .setFlipX(false)
                                         .setPosition(detectorUI.detector.x - arrowWidth * 0.5, detectorUI.detector.y);
                                     break;
-                                case 5: //==3.HP/MP
+                                case 5: //==3.快捷鍵
+                                    blackOut.scene.bringToTop();
+                                    RexUI.scene.bringToTop();
+                                    hotKeyUI.scene.bringToTop();
+
+                                    guideArrow
+                                        .setFlipX(false)
+                                        .setPosition(hotKeyUI.hotKeyBar.x - arrowWidth * 1.1, hotKeyUI.hotKeyBar.y - arrowHeight * 0.5);
+
+                                    line = line.replace('\t', hotkey1).replace('\t', hotkey2)
+                                        .replace('\t', hotkey3);
+                                    break;
+                                case 6: //==4.HP/MP
                                     blackOut.scene.bringToTop();
                                     playerUI.scene.bringToTop();
                                     RexUI.scene.bringToTop();
@@ -7379,7 +7404,7 @@ class DefendScene extends Phaser.Scene {
                                         .setPosition(playerUI.HPbar.x + arrowWidth * 2.5, playerUI.HPbar.y + arrowHeight * 0.2);
 
                                     break;
-                                case 6: //==4.time remain
+                                case 7: //==5.time remain
                                     blackOut.scene.setVisible(true).bringToTop();
                                     timerUI.scene.bringToTop();
                                     RexUI.scene.bringToTop();
@@ -7387,17 +7412,17 @@ class DefendScene extends Phaser.Scene {
                                         .setVisible(true)
                                         .setPosition(timerUI.hourglass.x + arrowWidth * 2, timerUI.hourglass.y);
                                     break;
-                                case 7:
+                                case 8:
                                     blackOut.scene.setVisible(false);
                                     guideArrow.setVisible(false);
                                     //==停頓在說
                                     await new Promise(resolve => this.time.delayedCall(speakDelay * 0.5, () => resolve()));
                                     pageendEvent = true;
                                     break;
-                                case 8:
+                                case 9:
                                     pageendEvent = true;
                                     break;
-                                case 9:
+                                case 10:
                                     pageendEvent = true;
                                     break;
 
@@ -7617,7 +7642,7 @@ class DigScene extends Phaser.Scene {
             },
         });
         // console.debug(placeData);
-        console.debug(this);
+        // console.debug(this);
     };
     preload() {
         this.plugins.get('rexawaitloaderplugin').addToScene(this);
@@ -8325,7 +8350,7 @@ class BossScene extends Phaser.Scene {
                 resolve: other.resolve,
             },
         });
-        console.debug(this);
+        // console.debug(this);
     };
     preload() {
         this.plugins.get('rexawaitloaderplugin').addToScene(this);

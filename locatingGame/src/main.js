@@ -121,8 +121,8 @@ function locatingGame() {
         };
 
         const eventArr = ajaxReadFile({ url: datafileDir + 'event/eventList.txt', async: false }).responseText.split('\n');
-        const event = eventArr[eventArr.length - 1];//之後能選
-        // const event = eventArr[getRandom(eventArr.length)];
+        // const event = eventArr[eventArr.length - 1];//之後能選
+        const event = eventArr[getRandom(eventArr.length)];
         const eventCatlog = (value ? value : datafileDir + 'event/') + event + '/';
         const channel = ['BHE', 'BHN', 'BHZ'];//不一定BH的話還要有檔案得到
         const fileExtension = '.xy';
@@ -210,7 +210,7 @@ function locatingGame() {
                         score: parseInt(col[2])
                     };
                 });
-                // console.debug(data);
+                console.debug(data);
                 resolve(data);
             })
         );
@@ -224,7 +224,7 @@ function locatingGame() {
             tmp.event = event;
             return tmp;
         });
-        console.log(eventArr);
+        // console.log(eventArr);
         // console.debug(data);
         return game;
     };
@@ -272,7 +272,7 @@ function locatingGame() {
             let gameDisplay = (display) => {
                 if (display) {
                     gameOuterDiv.fadeIn();
-                    $(bigMap).hide();
+                    // $(bigMap).hide();
 
                     //==遊戲開始UI關閉
                     gameUI.find('.UIicon').toggleClass('clicked', false);
@@ -284,7 +284,7 @@ function locatingGame() {
                 }
                 else {
                     gameOuterDiv.fadeOut();
-                    $(bigMap).show();
+                    // $(bigMap).show();
                 };
                 gameStartFlag = display;
             };
@@ -432,27 +432,27 @@ function locatingGame() {
                         doneTalking: false,
                         stopHotkey: false,//==對話完空白鍵不再出現對話（只能滑鼠點）
                     },
-                    // backpack: {//==道具裝備相關
-                    //     hotKey: [],//快捷鍵
-                    //     item: [//消耗品
-
-                    //     ],
-                    //     equip: [],//背包中裝備
-                    //     onEquip: [],//人物裝備中
-                    // },
                     backpack: {//==道具裝備相關
-                        hotKey: ['catfood', 'bone', 'seeds'],//快捷鍵
+                        hotKey: ['bread', 'bone', 'catfood'],//快捷鍵
                         item: [//消耗品
-                            { name: 'okra', amount: 999 },
-                            { name: 'sunny', amount: 12 },
-                            { name: 'bone', amount: 999 },
-                            { name: 'catfood', amount: 999 },
-                            { name: 'seeds', amount: 999 },
 
                         ],
-                        equip: ['syringe', 'medicalKit', 'scientistCard'],//背包中裝備[]
-                        onEquip: ['medicalKit'],//人物裝備中
+                        equip: [],//背包中裝備
+                        onEquip: [],//人物裝備中
                     },
+                    // backpack: {//==道具裝備相關
+                    //     hotKey: ['catfood', 'bone', 'seeds'],//快捷鍵
+                    //     item: [//消耗品
+                    //         { name: 'okra', amount: 999 },
+                    //         { name: 'sunny', amount: 12 },
+                    //         { name: 'bone', amount: 999 },
+                    //         { name: 'catfood', amount: 999 },
+                    //         { name: 'seeds', amount: 999 },
+
+                    //     ],
+                    //     equip: ['syringe', 'medicalKit', 'scientistCard'],//背包中裝備[]
+                    //     onEquip: ['scientistCard'],//人物裝備中
+                    // },
                 };
             };
             function initStartScene() {
@@ -473,31 +473,32 @@ function locatingGame() {
                     GameData.getLanguageJSON = getLanguageJSON;
 
                     //==test
-                    gameDisplay(true);
-                    let doneTutorial = await new Promise((resolve, reject) => {
-                        const config = Object.assign(getPhaserConfig(width, height), {
-                            scene: new GameStartScene(GameData, {
-                                getWaveImg: getWaveImg,
-                                tutorialData: data.tutorialData,
-                                resolve: resolve,
-                                getLanguageJSON: getLanguageJSON,
-                                rankingData: rankingData,//排行榜
-                            }),
-                        });
-                        new Phaser.Game(config);
-                    });
-                    // console.debug(doneTutorial);
-                    gameDisplay(false);
-                    //==test
+                    // gameDisplay(true);
+                    // let doneTutorial = await new Promise((resolve, reject) => {
+                    //     const config = Object.assign(getPhaserConfig(width, height), {
+                    //         scene: new GameStartScene(GameData, {
+                    //             getWaveImg: getWaveImg,
+                    //             tutorialData: data.tutorialData,
+                    //             resolve: resolve,
+                    //             getLanguageJSON: getLanguageJSON,
+                    //             rankingData: rankingData,//排行榜
+                    //         }),
+                    //     });
+                    //     new Phaser.Game(config);
+                    // });
+                    // // console.debug(doneTutorial);
+                    // gameDisplay(false);
+                    // //==test
 
-                    if (1) {//doneTutorial     
-                        const gainItems = [['pan', 0], ['bread', 5], ['bone', 3]];
-                        hintTextAnime('itemGain1', gainItems);
-                    };
+                    // if (doneTutorial) {//doneTutorial     
+                    //     const gainItems = [['pan', 0], ['bread', 5], ['bone', 3]];
+                    //     hintTextAnime('itemGain1', gainItems);
+                    // };
                     initMap();
                     //==test
                     // gameStart('defend');
                     // gameStart('dig');
+                    // initEndScene(true);
                     //==test
                 };
                 startScene();
@@ -1260,7 +1261,9 @@ function locatingGame() {
                                                     content = content.replace('\t', getImgHTML('1.gif'));
                                                     break;
                                                 case 2:
-                                                    content = content.replace('\t', getImgHTML('2.png', 0.8));
+                                                    content = content.replace('\t', getImgHTML('2.png', 0.8))
+                                                        .replace('[link]', `<a target="_blank" href="https://www.cwb.gov.tw/Data/service/Newsbb/CH/1081218earthquakepress.pdf">`)
+                                                        .replace('[/link]', '</a>');
                                                     break;
                                                 case 5:
                                                     content = content.replace('\t', getImgHTML('3.png', 0.8));
@@ -1580,7 +1583,7 @@ function locatingGame() {
 
 
                                         });
-                                        console.debug(GameData);
+                                        // console.debug(GameData);
 
                                         $(window).on('click', e => {
                                             if (!e.target.classList.contains('item'))
@@ -1787,12 +1790,12 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
-                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             let lat = e.latlng.lat,
                                 lng = e.latlng.lng
 
                             let distToEpicenter = distanceByLnglat([lat, lng], data.epicenter.coordinate);
-                            console.debug(distToEpicenter);
+                            // console.debug(distToEpicenter);
                             //==找到震央布林值 
                             let bingo = distToEpicenter <= allowedErro;
 
@@ -2252,11 +2255,45 @@ function locatingGame() {
                                 bigMapOffset = bigMap.getBoundingClientRect();
 
                                 gameUI.find('.guideArrow')
-                                    .css('top', targetOffset.top - bigMapOffset.top)
+                                    .css('top', targetOffset.top - bigMapOffset.top + 100)
                                     .css('left', targetOffset.left - bigMapOffset.left + 50);
 
+                                replaceHTML = `<img src='${assetsDir}icon/backpack.png' width='50px'></img>`;
+                                line = line.replace('\t', replaceHTML);
                                 break;
                             case '1_3':
+                                targetOffset = gameUI.find('.UIbar').offset();
+                                bigMapOffset = bigMap.getBoundingClientRect();
+
+                                gameUI.find('.guideArrow')
+                                    .css('top', targetOffset.top - bigMapOffset.top + 180)
+                                    .css('left', targetOffset.left - bigMapOffset.left + 50);
+
+                                replaceHTML = `<img src='${assetsDir}icon/velocityChart.png' width='50px'></img>`;
+                                line = line.replace('\t', replaceHTML);
+                                break;
+                            case '1_4':
+                                targetOffset = gameUI.find('.UIbar').offset();
+                                bigMapOffset = bigMap.getBoundingClientRect();
+
+                                gameUI.find('.guideArrow')
+                                    .css('top', targetOffset.top - bigMapOffset.top + 260)
+                                    .css('left', targetOffset.left - bigMapOffset.left + 50);
+
+                                replaceHTML = `<img src='${assetsDir}icon/questInfo.png' width='50px'></img>`;
+                                line = line.replace('\t', replaceHTML);
+                                break;
+                            // case '1_2':
+                            //     targetOffset = gameUI.find('.UIbar').offset();
+                            //     bigMapOffset = bigMap.getBoundingClientRect();
+
+                            //     gameUI.find('.guideArrow')
+                            //         .css('top', targetOffset.top - bigMapOffset.top)
+                            //         .css('left', targetOffset.left - bigMapOffset.left + 50);
+
+                            //     break;
+
+                            case '1_5':
                                 $('#blackout').fadeOut();
                                 gameUI.find('.guideArrow').hide();
                                 data.forEach(d => {
@@ -2268,7 +2305,9 @@ function locatingGame() {
                                     updateStation(markerObj, { icon: 'default' });
                                 });
                                 break;
-                            case '1_4':
+                            case '1_6':
+                                replaceHTML = `<img src='${assetsDir}icon/questInfo.png' width='50px'></img>`;
+                                line = line.replace('\t', replaceHTML);
                                 replaceHTML = `<img src='${assetsDir}icon/home.png' width='50px'></img>`;
                                 line = line.replace('\t', replaceHTML);
                                 replaceHTML = `<img src='${assetsDir}ui/map/sidekick/Doctor.png' width='50px'></img>`;
@@ -2462,7 +2501,7 @@ function locatingGame() {
                             new Phaser.Game(config);
                         });
 
-                        console.debug(gameResult);
+                        // console.debug(gameResult);
                         let playerInfo = gameResult.playerInfo;
 
                         //===更新人物資料
@@ -2482,7 +2521,7 @@ function locatingGame() {
                             });
                             new Phaser.Game(config);
                         });
-                        console.debug(gameResult);
+                        // console.debug(gameResult);
                         let playerInfo = gameResult.playerInfo;
 
                         //===更新人物資料
@@ -2515,8 +2554,8 @@ function locatingGame() {
         initForm();
         data = await data;
         rankingData = await rankingData;
-        console.log(data);
-        console.log(rankingData);
+        // console.log(data);
+        // console.log(rankingData);
         gameGenerate();
 
     };
@@ -3199,7 +3238,7 @@ function locatingGame() {
 
             let getGapGroupData = () => {
                 let gapGroupData = Array.from(new Array(groupCount), () => 0);
-                console.debug(rankingData);
+                // console.debug(rankingData);
                 rankingData.forEach(d => {
                     let groupIndex = Math.ceil(d.timeUse / gap) - 1;
                     if (groupIndex < 0) groupIndex = 0;//==0時index會是-1
@@ -3844,7 +3883,12 @@ function locatingGame() {
                                 imageX = 0;
                                 imageY = 0;
                                 break;
-
+                            case 'gameTitle'://==素材
+                                imageWidth = 350;
+                                imageHeight = 175;
+                                imageX = canvas.width * 0.5 - 80;
+                                imageY = margin.top - 50;
+                                break;
 
                         };
 
@@ -4024,6 +4068,7 @@ function locatingGame() {
                 foot_line: certificateDir + 'foot_line.png',
                 ribbon: certificateDir + 'ribbon.png',
 
+                gameTitle: assetsDir + 'ui/game/gameTitle.png',
                 rankChart: rankChart.cloneNode(true),
                 words: svg.node().cloneNode(true),
                 photo: profile ? profile.picture.data.url : await composeCertificate(null, null, 'avatar'),

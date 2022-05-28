@@ -1680,7 +1680,8 @@ const Sidekick = new Phaser.Class({
             switch (scene.name) {
                 case 'defend':
                     let pickUpKey = controllCursor['down'];
-
+                    pickUpKey = scene.gameData.localeJSON.UI[pickUpKey] ?
+                        scene.gameData.localeJSON.UI[pickUpKey] : pickUpKey;
                     //==有些提示不合時機就不出現
                     if (scene.gameOver.gameClear) {
                         hint = this.hints[2][0];

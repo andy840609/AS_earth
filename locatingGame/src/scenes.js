@@ -388,11 +388,11 @@ class UIScene extends Phaser.Scene {
                     });
 
                     this.events.on('destroy', function () {
-                        if (gameScene.gameOver.flag) return;//避免離開多扣時間                   
                         gameScene.scene.resume();
+                        RexUI.scene.resume();
+                        if (gameScene.gameOver.flag) return;//避免離開多扣時間     
                         timerUI.scene.resume();
                         timerUI.gameTimer.paused = false;
-                        RexUI.scene.resume();
                         hotKeyUI.scene.resume();
                         iconBar.scene.resume();
                         if (doctorUI) doctorUI.scene.resume();
@@ -2729,6 +2729,7 @@ class UIScene extends Phaser.Scene {
                         };
                         let button = () => {
                             const buttons = [gameScene.name == 'GameStart' ? 'skip' : 'close', 'previous', 'next', 'info1', 'info2'];
+                            // console.debug(gameScene.blackOut)
                             let blackOut = gameScene.blackOut;
                             blackOut.scene.bringToTop();
 
@@ -5800,7 +5801,6 @@ class GameOverScene extends Phaser.Scene {
         const UIDir = assetsDir + 'ui/game/Transitions/';
         this.load.image('gameOverScene', UIDir + 'gameOverScene.jpg');
         this.load.image('startButton', UIDir + 'startButton.png');
-
     };
     create() {
         const canvas = this.sys.game.canvas;
@@ -5870,7 +5870,7 @@ class GameOverScene extends Phaser.Scene {
 
             });
 
-        }
+        };
         background();
         button();
     };
@@ -7257,8 +7257,8 @@ class DefendScene extends Phaser.Scene {
         let initRexUI = () => {
             this.scene.add(null, new UIScene('RexUI', this), true);
 
-            if (this.firstTimeEvent.isFirstTime)
-                this.scene.add(null, new UIScene('blackOut', this), true);
+            // if (this.firstTimeEvent.isFirstTime)
+            this.scene.add(null, new UIScene('blackOut', this), true);
         };
         let initHotKey = () => {
             this.scene.add(null, new UIScene('hotKeyUI', this), true);
@@ -7437,7 +7437,7 @@ class DefendScene extends Phaser.Scene {
 
                         //===結束教學
                         iconBar.scene.bringToTop();//不讓探測器蓋過
-                        blackOut.scene.remove();
+                        // blackOut.scene.remove();
                         guideArrow.destroy();
 
                         this.firstTimeEvent.eventComplete = true;
@@ -7560,13 +7560,45 @@ class DefendScene extends Phaser.Scene {
                 },
             };
 
-            this.time.delayedCall(gameDestroyDelay * 0.8, () => camera.fadeOut(500, 0, 0, 0), [], this);
-            this.gameOver.delayedCall = this.time.delayedCall(gameDestroyDelay, () => {
-                //===time remove
-                // this.gameTimer.remove();
-                this.game.destroy(true, false);
-                this.gameOver.resolve(gameResult);
-            }, [], this);
+
+
+            let exit = () => {
+                this.time.delayedCall(gameDestroyDelay * 0.8, () => camera.fadeOut(500, 0, 0, 0), [], this);
+                this.gameOver.delayedCall = this.time.delayedCall(gameDestroyDelay, () => {
+                    //===time remove
+                    // this.gameTimer.remove();
+                    this.game.destroy(true, false);
+                    this.gameOver.resolve(gameResult);
+                }, [], this);
+            };
+
+            if (gameResult.stationInfo.clear) {
+                const canvas = this.sys.game.canvas;
+                const width = canvas.width;
+                const height = canvas.height;
+                const localeJSON = this.gameData.localeJSON.UI;
+
+                let text = `${localeJSON['pTime']} : `
+                let textPlayer = this.RexUI.newTextPlayer({
+                    x: width * 0.5,
+                    y: height * 0.5,
+                    width: width * 0.8,
+                    height: height * 0.5,
+
+                    // x: 200,
+                    // y: 200,
+                    // width: 100,
+                    // height: 100,
+                    speed: 200,
+                    // speed: 10,
+                    animation: false,
+                }).playPromise('AAAAAAA').then(() => {
+                    exit();
+                });
+            } else exit();
+            // console.debug(orbStats, gameResult.stationInfo)
+            // exit();
+
 
         };
 

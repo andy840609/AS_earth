@@ -1,44 +1,21 @@
 const assetsDir = 'data/assets/';
 const datafileDir = 'data/datafile/';
 
-const defaultControllCursor = {
-    up: 'UP',
-    down: 'DOWN',
-    left: 'LEFT',
-    right: 'RIGHT',
-    attack: 'SPACE',
-    //==UI controll
-    pause: 'P',
-    backpack: 'I',
-    detector: 'O',
-    shiftLeft: 'Q',
-    shiftRight: 'W',
-    shiftUp: 'E',
-    shiftDown: 'D',
-    functionKey: 'A',
-    reset: 'R',
-    exit: 'ESC',
-    //==道具快捷鍵
-    hotkey1: 'ONE',
-    hotkey2: 'TWO',
-    hotkey3: 'THREE',
-};
-
 // const defaultControllCursor = {
-//     up: 'W',
-//     down: 'S',
-//     left: 'A',
-//     right: 'D',
+//     up: 'UP',
+//     down: 'DOWN',
+//     left: 'LEFT',
+//     right: 'RIGHT',
 //     attack: 'SPACE',
 //     //==UI controll
 //     pause: 'P',
 //     backpack: 'I',
 //     detector: 'O',
-//     shiftUp: 'UP',
-//     shiftDown: 'DOWN',
-//     shiftLeft: 'LEFT',
-//     shiftRight: 'RIGHT',
-//     functionKey: 'E',
+//     shiftLeft: 'Q',
+//     shiftRight: 'W',
+//     shiftUp: 'E',
+//     shiftDown: 'D',
+//     functionKey: 'A',
 //     reset: 'R',
 //     exit: 'ESC',
 //     //==道具快捷鍵
@@ -46,6 +23,29 @@ const defaultControllCursor = {
 //     hotkey2: 'TWO',
 //     hotkey3: 'THREE',
 // };
+
+const defaultControllCursor = {
+    up: 'W',
+    down: 'S',
+    left: 'A',
+    right: 'D',
+    attack: 'SPACE',
+    //==UI controll
+    pause: 'P',
+    backpack: 'I',
+    detector: 'O',
+    shiftUp: 'UP',
+    shiftDown: 'DOWN',
+    shiftLeft: 'LEFT',
+    shiftRight: 'RIGHT',
+    functionKey: 'E',
+    reset: 'R',
+    exit: 'ESC',
+    //==道具快捷鍵
+    hotkey1: 'ONE',
+    hotkey2: 'TWO',
+    hotkey3: 'THREE',
+};
 //載入字型
 // function loadFont(name, url) {
 //     let newStyle = document.createElement('style');

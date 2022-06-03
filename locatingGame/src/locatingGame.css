@@ -129,6 +129,13 @@ svg {
     fill: rgba(238, 255, 0, 0.404);
 }
 
+.text-below-marker {
+    min-width: 100px;
+    left: -50px;
+    text-align: center;
+    min-height: 1.2em;
+    border: 1px solid red;
+}
 /* ====================================== UI ============================================= */
 
 #gameUI {

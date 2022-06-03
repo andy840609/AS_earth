@@ -7534,7 +7534,7 @@ class DefendScene extends Phaser.Scene {
             // this.RexUI.scene.remove();
 
             //===get gameResult 
-            let orbStats = this.orbGroup.getChildren().map(orb => orb.orbStats);
+            let orbStats = this.orbGroup.getChildren().map(orb => orb.orbStats).sort((a, b) => a.time - b.time);
 
             let stationStats = this.gameData.stationData.stationStats;
             let enemyStats = stationStats.enemyStats;
@@ -7562,42 +7562,38 @@ class DefendScene extends Phaser.Scene {
 
 
 
-            let exit = () => {
+
+
+
+            let clear = gameResult.stationInfo.clear;
+            this.gameOver.delayedCall = this.time.delayedCall(clear ? 0 : gameDestroyDelay, async () => {
+
+                if (clear) {
+                    const canvas = this.sys.game.canvas;
+                    const width = canvas.width;
+                    const height = canvas.height;
+                    const localeJSON = this.gameData.localeJSON.UI;
+
+                    let timeGap = Math.abs(orbStats.reduce((acc, cur) => acc.time - cur.time));
+                    let text = `[color=red]${localeJSON['pTime']} : [size=48][b]${orbStats[0].time.toFixed(2)}[/b][/size]s[/color][r][color=blue]${localeJSON['sTime']} : [size=48][b]${orbStats[1].time.toFixed(2)}[/b][/size]s[/color][r][color=green]${localeJSON['timeGap']} : [size=96][b][speed=100]${timeGap.toFixed(2)}[/speed][/b][/size]s[wait=1500]`
+                    let textPlayer = await this.RexUI.newTextPlayer({
+                        x: width * 0.5,
+                        y: height * 0.5,
+                        width: width * 0.8,
+                        height: height * 0.5,
+                        speed: 50,
+                        animation: true,
+                    }).playPromise(text);
+                };
+
                 this.time.delayedCall(gameDestroyDelay * 0.8, () => camera.fadeOut(500, 0, 0, 0), [], this);
-                this.gameOver.delayedCall = this.time.delayedCall(gameDestroyDelay, () => {
-                    //===time remove
-                    // this.gameTimer.remove();
-                    this.game.destroy(true, false);
-                    this.gameOver.resolve(gameResult);
-                }, [], this);
-            };
+                this.game.destroy(true, false);
+                this.gameOver.resolve(gameResult);
+            }, [], this);
 
-            if (gameResult.stationInfo.clear) {
-                const canvas = this.sys.game.canvas;
-                const width = canvas.width;
-                const height = canvas.height;
-                const localeJSON = this.gameData.localeJSON.UI;
 
-                let text = `${localeJSON['pTime']} : `
-                let textPlayer = this.RexUI.newTextPlayer({
-                    x: width * 0.5,
-                    y: height * 0.5,
-                    width: width * 0.8,
-                    height: height * 0.5,
 
-                    // x: 200,
-                    // y: 200,
-                    // width: 100,
-                    // height: 100,
-                    speed: 200,
-                    // speed: 10,
-                    animation: false,
-                }).playPromise('AAAAAAA').then(() => {
-                    exit();
-                });
-            } else exit();
-            // console.debug(orbStats, gameResult.stationInfo)
-            // exit();
+
 
 
         };

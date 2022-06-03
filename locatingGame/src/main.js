@@ -210,7 +210,7 @@ function locatingGame() {
                         score: parseInt(col[2])
                     };
                 });
-                console.debug(data);
+                // console.debug(data);
                 resolve(data);
             })
         );
@@ -488,7 +488,7 @@ function locatingGame() {
                     // });
                     // // console.debug(doneTutorial);
                     // gameDisplay(false);
-                    // //==test
+                    //==test
 
                     // if (doneTutorial) {//doneTutorial     
                     //     const gainItems = [['pan', 0], ['bread', 5], ['bone', 3]];
@@ -496,7 +496,7 @@ function locatingGame() {
                     // };
                     initMap();
                     //==test
-                    gameStart('defend');
+                    // gameStart('defend');
                     // gameStart('dig');
                     // initEndScene(true);
                     //==test
@@ -763,7 +763,7 @@ function locatingGame() {
                     // console.debug(geoJSON);
                 };
                 async function addStation() {
-                    // console.debug(data);
+                    console.debug(data);
                     const backgroundArr = Object.keys(BackGroundResources.defend);
                     const enemyArr = Object.keys(GameObjectStats.creature).filter(c => c != 'boss' && c != 'zombie');
                     let copyEnemyArr = [...enemyArr].sort(() => 0.5 - Math.random());//===確保每種敵人出現一次
@@ -845,15 +845,26 @@ function locatingGame() {
                             opacity: 0,
                         });
 
+                        //==label
+                        let label = document.createElement("p");
+
+
                         Object.assign(d, {
                             markerObj: marker,
                             circleObj: circle,
+                            labelObj: label
                         });
-                        // console.debug(marker.getIcon())
+
 
                         // markerArr.push(marker);
                         // circleArr.push(circle);
                         // updateStation(marker, { icon: 'default' });
+                        // marker.addTo(mapObj);
+
+                        // console.debug(marker.getIcon())
+                        // console.debug(marker._icon.style)
+                        // getAttribute("align")
+                        // marker._icon
                     });
 
                     // L.layerGroup(markerArr, { key: 'markerGroup' }).addTo(mapObj);
@@ -916,6 +927,8 @@ function locatingGame() {
 
                     assumedEpicenter.getElement().style.display = 'none';
                     // console.debug(assumedEpicenter.getElement())
+
+
 
                 };
                 async function addUI() {
@@ -2019,6 +2032,7 @@ function locatingGame() {
                     }, delay);
                 };
 
+                let data = stationMarker.options.data;
                 if (stationMarker) {
                     //==完成測站動畫
                     if (updateObj.icon) {
@@ -2032,10 +2046,26 @@ function locatingGame() {
                                 break;
                         };
                         iconUpDownAnime(stationMarker, icon);
+
+
+                        //===ps label
+                        let markerNode = stationMarker._icon;
+                        let labelObj = data.labelObj;
+                        labelObj.innerHTML = "New Heading";
+                        Object.assign(labelObj.style, {
+                            color: 'red',
+                            position: 'absolute',
+                            transform: markerNode.style.transform,
+                        });
+                        markerNode.parentNode.append(labelObj);
+
+                        console.debug(data);
+                        // console.debug();
+
                     };
                     //==delta更新動畫
                     if (!isNaN(updateObj.circleRadius)) {
-                        let data = stationMarker.options.data;
+
                         let circleObj = data.circleObj;
                         circleAnime(circleObj, updateObj.circleRadius);
                     };

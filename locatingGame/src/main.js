@@ -399,7 +399,7 @@ function locatingGame() {
             };
 
             function initGameData() {
-                let playerRole = 'femalePerson';//==之後能選其他[femalePerson,maleAdventurer]
+                let playerRole = 'maleAdventurer';//==之後能選其他[femalePerson,maleAdventurer]
                 let sidekick = 'Dude';//=='Owlet,Dude,Pink'
 
                 let playerName = '',
@@ -432,27 +432,27 @@ function locatingGame() {
                         doneTalking: false,
                         stopHotkey: false,//==對話完空白鍵不再出現對話（只能滑鼠點）
                     },
-                    backpack: {//==道具裝備相關
-                        hotKey: ['bread', 'bone', 'catfood'],//快捷鍵
-                        item: [//消耗品
-
-                        ],
-                        equip: [],//背包中裝備
-                        onEquip: [],//人物裝備中
-                    },
                     // backpack: {//==道具裝備相關
-                    //     hotKey: ['catfood', 'bone', 'seeds'],//快捷鍵
+                    //     hotKey: ['bread', 'bone', 'catfood'],//快捷鍵
                     //     item: [//消耗品
-                    //         { name: 'okra', amount: 999 },
-                    //         { name: 'sunny', amount: 12 },
-                    //         { name: 'bone', amount: 999 },
-                    //         { name: 'catfood', amount: 999 },
-                    //         { name: 'seeds', amount: 999 },
 
                     //     ],
-                    //     equip: ['syringe', 'medicalKit', 'scientistCard'],//背包中裝備[]
-                    //     onEquip: ['scientistCard'],//人物裝備中
+                    //     equip: [],//背包中裝備
+                    //     onEquip: [],//人物裝備中
                     // },
+                    backpack: {//==道具裝備相關
+                        hotKey: ['catfood', 'bone', 'seeds'],//快捷鍵
+                        item: [//消耗品
+                            { name: 'okra', amount: 999 },
+                            { name: 'sunny', amount: 12 },
+                            { name: 'bone', amount: 999 },
+                            { name: 'catfood', amount: 999 },
+                            { name: 'seeds', amount: 999 },
+
+                        ],
+                        equip: ['syringe', 'medicalKit', 'scientistCard', 'pan'],//背包中裝備[]
+                        onEquip: ['scientistCard'],//人物裝備中
+                    },
                 };
             };
             function initStartScene() {
@@ -473,21 +473,21 @@ function locatingGame() {
                     GameData.getLanguageJSON = getLanguageJSON;
 
                     //==test
-                    // gameDisplay(true);
-                    // let doneTutorial = await new Promise((resolve, reject) => {
-                    //     const config = Object.assign(getPhaserConfig(width, height), {
-                    //         scene: new GameStartScene(GameData, {
-                    //             getWaveImg: getWaveImg,
-                    //             tutorialData: data.tutorialData,
-                    //             resolve: resolve,
-                    //             getLanguageJSON: getLanguageJSON,
-                    //             rankingData: rankingData,//排行榜
-                    //         }),
-                    //     });
-                    //     new Phaser.Game(config);
-                    // });
-                    // // console.debug(doneTutorial);
-                    // gameDisplay(false);
+                    gameDisplay(true);
+                    let doneTutorial = await new Promise((resolve, reject) => {
+                        const config = Object.assign(getPhaserConfig(width, height), {
+                            scene: new GameStartScene(GameData, {
+                                getWaveImg: getWaveImg,
+                                tutorialData: data.tutorialData,
+                                resolve: resolve,
+                                getLanguageJSON: getLanguageJSON,
+                                rankingData: rankingData,//排行榜
+                            }),
+                        });
+                        new Phaser.Game(config);
+                    });
+                    // console.debug(doneTutorial);
+                    gameDisplay(false);
                     //==test
 
                     // if (doneTutorial) {//doneTutorial     
@@ -1295,7 +1295,7 @@ function locatingGame() {
                                             return `<div class="tab-pane fade ${i === 0 ? 'show active' : ''}" id="questInfo${i}" role="tabpanel" style="white-space: pre-line">
                                                 <div>${content}</div>
                                                 <div class="d-flex justify-content-end questFooter">
-                                                    <button type="button" class="btn btn-primary questButton">${ GameData.localeJSON.UI['quickAnswer']}</button>
+                                                    <button type="button" class="btn btn-primary questButton">${GameData.localeJSON.UI['quickAnswer']}</button>
                                                     <img class="questComplete" src="${assetsDir}ui/map/missionAccomplished.png">
                                                 </div>
                                             </div>`;
@@ -1803,12 +1803,12 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
-                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             let lat = e.latlng.lat,
                                 lng = e.latlng.lng
 
                             let distToEpicenter = distanceByLnglat([lat, lng], data.epicenter.coordinate);
-                            // console.debug(distToEpicenter);
+                            console.debug(distToEpicenter);
                             //==找到震央布林值 
                             let bingo = distToEpicenter <= allowedErro;
 
@@ -1828,6 +1828,20 @@ function locatingGame() {
                         })
                         .on('move', function (e) {
                             confirmWindow.fadeOut(fadeOutDuration);
+                        })
+                        .on('zoomstart', function (e) {
+                            data.forEach(d => d.labelObj.style.display = 'none');
+                        })
+                        .on('zoomend', function (e) {
+                            data.forEach(d => {
+                                let markerNode = d.markerObj._icon;
+                                let labelObj = d.labelObj;
+                                Object.assign(labelObj.style, {
+                                    transform: markerNode.style.transform,
+                                    display: 'inline',
+                                });
+                            });
+
                         });
 
 
@@ -2046,28 +2060,6 @@ function locatingGame() {
                                 break;
                         };
                         iconUpDownAnime(stationMarker, icon);
-
-
-                        //===ps label
-                        let markerNode = stationMarker._icon;
-                        let labelObj = data.labelObj;
-                        labelObj.innerHTML = "New Heading";
-                        Object.assign(labelObj.style, {
-                            color: 'red',
-                            position: 'absolute',
-                            transform: markerNode.style.transform,
-                        });
-                        markerNode.parentNode.append(labelObj);
-
-                        console.debug(data);
-                        // console.debug();
-
-                    };
-                    //==delta更新動畫
-                    if (!isNaN(updateObj.circleRadius)) {
-
-                        let circleObj = data.circleObj;
-                        circleAnime(circleObj, updateObj.circleRadius);
                     };
                     //==mousehover動畫
                     if (updateObj.hasOwnProperty('mouseEvent')) {
@@ -2080,7 +2072,80 @@ function locatingGame() {
                     if (updateObj.hasOwnProperty('gameOver')) {
                         iconBrokenAnime(stationMarker, updateObj.duration);
                     };
+                    //===update station
+                    if (updateObj.hasOwnProperty('stationInfo')) {
+                        let stationStats = data.stationStats;
+                        if (updateObj.stationInfo.clear) {
+                            //==第一次更新測站圖案
+                            if (!stationStats.clear) iconUpDownAnime(stationMarker, clearIconUrl);
 
+                            //==tooltip label
+                            stationStats = updateObj.stationInfo;
+                            let orbStats = stationStats.orbStats;
+                            if (orbStats) {//orbStats
+                                //==tooltip
+                                let timeGap = Math.abs(orbStats.reduce((acc, cur) => acc.time - cur.time));
+                                orbStats.timeGap = timeGap;
+                                //距離=時間*速度,km換算成m;
+                                let radius = timeGap * GameData.velocity * 1000;
+
+                                //==半徑跟之前相差大於1不作動畫
+                                let pre_radius = data.circleObj.getRadius();
+                                if (Math.abs(radius - pre_radius) > 1)
+                                    //== circle更新動畫
+                                    circleAnime(data.circleObj, radius);
+
+                                //==更新tooltip
+                                let tooltipContent = `
+                                    <text class='staName'>${GameData.localeJSON.UI['station'] + ' : ' + data.station}</text><br>
+                                    <text class='pTime'>${GameData.localeJSON.UI['pTime'] + ' : ' + parseFloat((orbStats[0].time).toFixed(2)) + ' s'}</text><br>
+                                    <text class='sTime'>${GameData.localeJSON.UI['sTime'] + ' : ' + parseFloat((orbStats[1].time).toFixed(2)) + ' s'}</text><br>
+                                    <text class='timeGap'>${GameData.localeJSON.UI['timeGap'] + ' : ' + parseFloat(timeGap.toFixed(2)) + ' s'}</text><br>
+                                    <text class='preDistance'>${GameData.localeJSON.UI['preDistance'] + ' : ' + parseFloat((radius / 1000).toFixed(1)) + ' km'}</text><br>
+                                    
+                                    ${stationStats.liberate ? '' :
+                                        `<text class='enmeyType'>${GameData.localeJSON.UI['enmey'] + ' : '}</text>
+                                    ${Object.keys(stationStats.enemyStats).map(e =>
+                                            stationStats.enemyStats[e].HP >= 0 ?
+                                                `<img src='${assetsDir + 'icon/' + e + '.png'}' width='25px'></img>` : '').join(' ')}<br>`}
+                                `;
+                                stationMarker.setTooltipContent(tooltipContent);
+
+                                //==label
+                                let markerNode = stationMarker._icon;
+                                let labelObj = data.labelObj;
+
+                                labelObj.innerHTML = parseFloat(timeGap.toFixed(2)) + '(s)';
+                                Object.assign(labelObj.style, {
+                                    transform: markerNode.style.transform,
+                                    font: 'bold 16px sans-serif',
+                                    color: 'red',
+                                    position: 'absolute',
+                                    top: '-20px',
+                                    left: '20px',
+                                });
+                                markerNode.parentNode.append(labelObj);
+                            };
+                        };
+                        Object.assign(data.stationStats, updateObj.stationInfo);
+                    };
+
+
+                    //==label test
+                    // let markerNode = stationMarker._icon;
+                    // let labelObj = data.labelObj;
+
+                    // labelObj.innerHTML = "AAAA";
+                    // Object.assign(labelObj.style, {
+                    //     transform: markerNode.style.transform,
+                    //     font: 'bold 16px sans-serif',
+                    //     color: 'red',
+                    //     position: 'absolute',
+                    //     top: '-20px',
+                    //     left: '20px',
+                    //     // 'text-align': 'start',
+                    // });
+                    // markerNode.parentNode.append(labelObj);
                 };
 
             };
@@ -2445,54 +2510,8 @@ function locatingGame() {
                     let stationInfo = gameResult.stationInfo;
                     let playerInfo = gameResult.playerInfo;
 
-                    //===update icon
-                    // console.debug(stationInfo.clear, !stationData.stationStats.clear)
-                    if (stationInfo.clear && !stationData.stationStats.clear)
-                        updateStation(siteData, { icon: 'clear' });
-
-                    //===update circle
-                    if (stationInfo.clear) {//stationInfo.clear
-                        let timeGap = Math.abs(stationInfo.orbStats.reduce((acc, cur) => acc.time - cur.time));
-
-                        //距離=時間*速度,km換算成m;
-                        let radius = timeGap * GameData.velocity * 1000;
-
-                        //==半徑跟之前相差大於1不作動畫
-                        // console.debug(siteData);
-                        let pre_radius = siteData.options.data.circleObj.getRadius();
-                        if (Math.abs(radius - pre_radius) > 1)
-                            updateStation(siteData, { circleRadius: radius });
-
-                        //==更新tooltip
-                        // console.debug(siteData, stationInfo.liberate);
-                        let tooltipContent = `
-                            <text class='staName'>${GameData.localeJSON.UI['station'] + ' : ' + stationData.station}</text><br>
-                            <text class='pTime'>${GameData.localeJSON.UI['pTime'] + ' : ' + parseFloat((stationInfo.orbStats[0].time).toFixed(2)) + ' s'}</text><br>
-                            <text class='sTime'>${GameData.localeJSON.UI['sTime'] + ' : ' + parseFloat((stationInfo.orbStats[1].time).toFixed(2)) + ' s'}</text><br>
-                            <text class='timeGap'>${GameData.localeJSON.UI['timeGap'] + ' : ' + parseFloat(timeGap.toFixed(2)) + ' s'}</text><br>
-                            <text class='preDistance'>${GameData.localeJSON.UI['preDistance'] + ' : ' + parseFloat((radius / 1000).toFixed(1)) + ' km'}</text><br>
-                           
-                           ${stationInfo.liberate ? '' :
-                                `<text class='enmeyType'>${GameData.localeJSON.UI['enmey'] + ' : '}</text>
-                           ${Object.keys(stationInfo.enemyStats).map(e =>
-                                    stationInfo.enemyStats[e].HP >= 0 ?
-                                        `<img src='${assetsDir + 'icon/' + e + '.png'}' width='25px'></img>` : '').join(' ')}<br>`}
-                        `;
-
-
-
-
-                        siteData.setTooltipContent(tooltipContent);
-
-
-
-                    };
-
-
-
                     //===更新測站情報
-                    Object.assign(stationData.stationStats, stationInfo);
-
+                    updateStation(siteData, { stationInfo });
                     //===更新人物資料
                     updateMapUI(playerInfo, 1000);
                 }

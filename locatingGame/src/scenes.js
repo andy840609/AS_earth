@@ -2323,10 +2323,8 @@ class UIScene extends Phaser.Scene {
                                     let RexUIscene = gameScene.RexUI;
                                     scene.form = RexUIscene.newForm(chara);
                                     RexUIscene.scene.bringToTop();
-                                    // console.debug(gameScene);
 
                                     scene.form
-                                        .setPosition(width - scene.form.width * 1.1, height * 0.5)
                                         .on('destroy', (form) => {
 
                                             if (form.formConfirm) {
@@ -5181,7 +5179,6 @@ class GameStartScene extends Phaser.Scene {
             let initScene = () => {
                 this.sceneGroup = this.add.group();
 
-
                 let playLines = () => {
                     //==臺詞
                     let lines = this.gameData.localeJSON.Lines.start['space'];
@@ -5365,7 +5362,6 @@ class GameStartScene extends Phaser.Scene {
                     return textPlayer.playPromise(text);
                 };
 
-
                 //==主角在森林
                 let scene1 = () => {
                     let forest = () => {
@@ -5548,7 +5544,6 @@ class GameStartScene extends Phaser.Scene {
                         // this.cameras.main.zoomTo(0.5, 1000);
 
                     };
-
                     let animStart = () => {
                         playSubtitle(1, true)
                             .then(() => {
@@ -5572,7 +5567,6 @@ class GameStartScene extends Phaser.Scene {
                             });
                         // playLines();
                     };
-
                     space();
                     planet();
                     animStart();
@@ -7437,7 +7431,7 @@ class DefendScene extends Phaser.Scene {
 
                         //===結束教學
                         iconBar.scene.bringToTop();//不讓探測器蓋過
-                        // blackOut.scene.remove();
+                        blackOut.scene.setVisible(false);
                         guideArrow.destroy();
 
                         this.firstTimeEvent.eventComplete = true;
@@ -7560,11 +7554,6 @@ class DefendScene extends Phaser.Scene {
                 },
             };
 
-
-
-
-
-
             let clear = gameResult.stationInfo.clear;
             this.gameOver.delayedCall = this.time.delayedCall(clear ? 0 : gameDestroyDelay, async () => {
 
@@ -7575,7 +7564,14 @@ class DefendScene extends Phaser.Scene {
                     const localeJSON = this.gameData.localeJSON.UI;
 
                     let timeGap = Math.abs(orbStats.reduce((acc, cur) => acc.time - cur.time));
-                    let text = `[color=red]${localeJSON['pTime']} : [size=48][b]${orbStats[0].time.toFixed(2)}[/b][/size]s[/color][r][color=blue]${localeJSON['sTime']} : [size=48][b]${orbStats[1].time.toFixed(2)}[/b][/size]s[/color][r][color=green]${localeJSON['timeGap']} : [size=96][b][speed=100]${timeGap.toFixed(2)}[/speed][/b][/size]s[wait=1500]`
+                    let text = `[color=red]${localeJSON['pTime']} : [size=48][b]${orbStats[0].time.toFixed(2)}[/b][/size]s[/color][r][color=blue]${localeJSON['sTime']} : [size=48][b]${orbStats[1].time.toFixed(2)}[/b][/size]s[/color][r][color=green]${localeJSON['timeGap']} : [size=96][b][speed=100]${timeGap.toFixed(2)}[/speed][/b][/size]s[wait=1500]`;
+
+                    this.time.delayedCall(gameDestroyDelay * 0.5, () => {
+                        this.blackOut.scene.setVisible(true);
+                        this.blackOut.fadeOutTween.restart();
+                    }, [], this);
+
+                    this.RexUI.scene.bringToTop();
                     let textPlayer = await this.RexUI.newTextPlayer({
                         x: width * 0.5,
                         y: height * 0.5,

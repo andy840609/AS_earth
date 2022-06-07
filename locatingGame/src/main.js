@@ -121,8 +121,8 @@ function locatingGame() {
         };
 
         const eventArr = ajaxReadFile({ url: datafileDir + 'event/eventList.txt', async: false }).responseText.split('\n');
-        // const event = eventArr[eventArr.length - 1];//之後能選
-        const event = eventArr[getRandom(eventArr.length)];
+        const event = eventArr[eventArr.length - 1];//之後能選
+        // const event = eventArr[getRandom(eventArr.length)];
         const eventCatlog = (value ? value : datafileDir + 'event/') + event + '/';
         const channel = ['BHE', 'BHN', 'BHZ'];//不一定BH的話還要有檔案得到
         const fileExtension = '.xy';
@@ -473,21 +473,21 @@ function locatingGame() {
                     GameData.getLanguageJSON = getLanguageJSON;
 
                     //==test
-                    gameDisplay(true);
-                    let doneTutorial = await new Promise((resolve, reject) => {
-                        const config = Object.assign(getPhaserConfig(width, height), {
-                            scene: new GameStartScene(GameData, {
-                                getWaveImg: getWaveImg,
-                                tutorialData: data.tutorialData,
-                                resolve: resolve,
-                                getLanguageJSON: getLanguageJSON,
-                                rankingData: rankingData,//排行榜
-                            }),
-                        });
-                        new Phaser.Game(config);
-                    });
-                    // console.debug(doneTutorial);
-                    gameDisplay(false);
+                    // gameDisplay(true);
+                    // let doneTutorial = await new Promise((resolve, reject) => {
+                    //     const config = Object.assign(getPhaserConfig(width, height), {
+                    //         scene: new GameStartScene(GameData, {
+                    //             getWaveImg: getWaveImg,
+                    //             tutorialData: data.tutorialData,
+                    //             resolve: resolve,
+                    //             getLanguageJSON: getLanguageJSON,
+                    //             rankingData: rankingData,//排行榜
+                    //         }),
+                    //     });
+                    //     new Phaser.Game(config);
+                    // });
+                    // // console.debug(doneTutorial);
+                    // gameDisplay(false);
                     //==test
 
                     // if (doneTutorial) {//doneTutorial     

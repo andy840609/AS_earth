@@ -3744,7 +3744,9 @@ class RexForm extends RexPlugins.UI.Sizer {
             .setOrigin(0, 0.5)
             .layout();
 
-        // console.debug(this);
+        this
+            .setScale(config.sceneHeight * 0.9 / this.height)
+            .setPosition(config.sceneWidth - this.displayWidth * 1.1, config.sceneHeight * 0.5);
 
     };
 };

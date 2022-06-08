@@ -121,8 +121,8 @@ function locatingGame() {
         };
 
         const eventArr = ajaxReadFile({ url: datafileDir + 'event/eventList.txt', async: false }).responseText.split('\n');
-        const event = eventArr[eventArr.length - 1];//之後能選
-        // const event = eventArr[getRandom(eventArr.length)];
+        // const event = eventArr[eventArr.length - 1];//之後能選
+        const event = eventArr[getRandom(eventArr.length)];
         const eventCatlog = (value ? value : datafileDir + 'event/') + event + '/';
         const channel = ['BHE', 'BHN', 'BHZ'];//不一定BH的話還要有檔案得到
         const fileExtension = '.xy';
@@ -214,7 +214,6 @@ function locatingGame() {
                 resolve(data);
             })
         );
-
 
         data = Promise.all([stationData, epicenterData, tutorialData]).then(sucess => {
             // console.debug(sucess);
@@ -432,27 +431,27 @@ function locatingGame() {
                         doneTalking: false,
                         stopHotkey: false,//==對話完空白鍵不再出現對話（只能滑鼠點）
                     },
-                    // backpack: {//==道具裝備相關
-                    //     hotKey: ['bread', 'bone', 'catfood'],//快捷鍵
-                    //     item: [//消耗品
-
-                    //     ],
-                    //     equip: [],//背包中裝備
-                    //     onEquip: [],//人物裝備中
-                    // },
                     backpack: {//==道具裝備相關
-                        hotKey: ['catfood', 'bone', 'seeds'],//快捷鍵
+                        hotKey: ['bread', 'bone', 'catfood'],//快捷鍵
                         item: [//消耗品
-                            { name: 'okra', amount: 999 },
-                            { name: 'sunny', amount: 12 },
-                            { name: 'bone', amount: 999 },
-                            { name: 'catfood', amount: 999 },
-                            { name: 'seeds', amount: 999 },
 
                         ],
-                        equip: ['syringe', 'medicalKit', 'scientistCard', 'pan'],//背包中裝備[]
-                        onEquip: ['scientistCard'],//人物裝備中
+                        equip: [],//背包中裝備
+                        onEquip: [],//人物裝備中
                     },
+                    // backpack: {//==道具裝備相關
+                    //     hotKey: ['catfood', 'bone', 'seeds'],//快捷鍵
+                    //     item: [//消耗品
+                    //         { name: 'okra', amount: 999 },
+                    //         { name: 'sunny', amount: 12 },
+                    //         { name: 'bone', amount: 999 },
+                    //         { name: 'catfood', amount: 999 },
+                    //         { name: 'seeds', amount: 999 },
+
+                    //     ],
+                    //     equip: ['syringe', 'medicalKit', 'scientistCard', 'pan'],//背包中裝備[]
+                    //     onEquip: ['scientistCard'],//人物裝備中
+                    // },
                 };
             };
             function initStartScene() {
@@ -473,27 +472,27 @@ function locatingGame() {
                     GameData.getLanguageJSON = getLanguageJSON;
 
                     //==test
-                    // gameDisplay(true);
-                    // let doneTutorial = await new Promise((resolve, reject) => {
-                    //     const config = Object.assign(getPhaserConfig(width, height), {
-                    //         scene: new GameStartScene(GameData, {
-                    //             getWaveImg: getWaveImg,
-                    //             tutorialData: data.tutorialData,
-                    //             resolve: resolve,
-                    //             getLanguageJSON: getLanguageJSON,
-                    //             rankingData: rankingData,//排行榜
-                    //         }),
-                    //     });
-                    //     new Phaser.Game(config);
-                    // });
-                    // // console.debug(doneTutorial);
-                    // gameDisplay(false);
+                    gameDisplay(true);
+                    let doneTutorial = await new Promise((resolve, reject) => {
+                        const config = Object.assign(getPhaserConfig(width, height), {
+                            scene: new GameStartScene(GameData, {
+                                getWaveImg: getWaveImg,
+                                tutorialData: data.tutorialData,
+                                resolve: resolve,
+                                getLanguageJSON: getLanguageJSON,
+                                rankingData: rankingData,//排行榜
+                            }),
+                        });
+                        new Phaser.Game(config);
+                    });
+                    // console.debug(doneTutorial);
+                    gameDisplay(false);
                     //==test
 
-                    // if (doneTutorial) {//doneTutorial     
-                    //     const gainItems = [['pan', 0], ['bread', 5], ['bone', 3]];
-                    //     hintTextAnime('itemGain1', gainItems);
-                    // };
+                    if (doneTutorial) {//doneTutorial     
+                        const gainItems = [['pan', 0], ['bread', 5], ['bone', 3]];
+                        hintTextAnime('itemGain1', gainItems);
+                    };
                     initMap();
                     //==test
                     // gameStart('defend');
@@ -1282,7 +1281,7 @@ function locatingGame() {
                                                     content = content.replace('\t', getImgHTML('3.png', 0.8));
                                                     break;
                                                 case 6:
-                                                    content = content.replace('\t', getImgHTML('4.png'));
+                                                    content = content.replace('\t', getImgHTML('4.png', 0.9));
                                                     break;
                                                 case 7:
                                                     content = content.replace('\t', getImgHTML('5.png')).replace('\t', getImgHTML('6.png', 0.8));
@@ -1627,6 +1626,28 @@ function locatingGame() {
                                         break;
                                 };
 
+
+                                let closeBtn = UI
+                                    .append(`<div class="closeBtn">✖</div>`)
+                                    .find(`.closeBtn`);
+
+                                closeBtn
+                                    .css('cursor', 'pointer')
+                                    .on('mouseover', (e) => {
+                                        $(e.target).animate({
+                                            backgroundColor: "#FF2D2D",
+                                        }, 100);
+                                    })
+                                    .on('mouseout', (e) => {
+                                        $(e.target).stop(true)
+                                            .animate({
+                                                backgroundColor: "#FFFFFF",
+                                            }, 100);
+                                    })
+                                    .on('click', function (e) {
+                                        $(`#${btn}`).toggleClass('clicked', false);
+                                        UI.hide();
+                                    });
                             });
 
                         };
@@ -1803,7 +1824,7 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
-                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             let lat = e.latlng.lat,
                                 lng = e.latlng.lng
 
@@ -4050,7 +4071,7 @@ function locatingGame() {
                             .attr("y", height - margin.bottom + 20)
                             .text(`${localeJSON['certLabel3']} ： ${new Date().toISOString().substring(0, 10)}`);
 
-                        let webSite = 'https://tecdc.earth.sinica.edu.tw/tecdc/Game/locating';
+                        let webSite = 'https://tecdc.earth.sinica.edu.tw/tecdc/Game/location';
                         g
                             .append('text')
                             .attr("fill", textColor)

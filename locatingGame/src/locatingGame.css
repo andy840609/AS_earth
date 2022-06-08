@@ -136,6 +136,7 @@ svg {
     min-height: 1.2em;
     border: 1px solid red;
 }
+
 /* ====================================== UI ============================================= */
 
 #gameUI {
@@ -223,6 +224,18 @@ svg {
     /* border-radius: 10px;
     background-image: url(../data/assets/ui/mapUIBG.jpg);
     background-size: 100%; */
+}
+
+#gameUI .closeBtn {
+    text-align: center;
+    padding-bottom: 20px;
+    background: #FFFFFF;
+    border: 3px solid rgb(0, 0, 0);
+    width: 25px;
+    height: 25px;
+    position: absolute;
+    top: -6px;
+    right: -6px;
 }
 
 #gameUI .sidekickUI {

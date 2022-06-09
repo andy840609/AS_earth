@@ -1,0 +1,92 @@
+#question {
+    padding: 20px;
+    text-align: center;
+    font-style: bold;
+    /* font-size: 48px; */
+    min-height: 120px;
+    font-family: 標楷體;
+    width: 100%;
+    line-height: 100%;
+    background-color: #FFEFD5;
+    color: #428bca;
+}
+
+#selection {
+    height: 370px;
+    width: 80%;
+    max-width: 500px;
+    margin: 0 auto;
+    color: #000080;
+    background-color: #FAF0E6;
+    /* white-space: nowrap; */
+    font-size: calc(12px + 1.5vw);
+}
+
+.navbar {
+    background-color: purple;
+    color: #FFFFFF;
+    font-size: 28px;
+    padding: 5px;
+
+}
+
+.jumbotron {
+    background-color: #00CED1;
+
+}
+
+.card {
+    margin-bottom: 20px;
+    padding: 20px;
+}
+
+footer {
+    text-align: center;
+}
+
+#submitdiv {
+    top: 250px;
+    margin: 0 auto;
+    height: auto;
+    /* 150px; */
+    width: 200px;
+    display: none;
+    position: absolute;
+    z-index: 5;
+    border-style: solid;
+    border-width: 3px;
+    border-color: gray;
+    background-color: #dcdcdc;
+    left: 50%;
+    transform: translate(-50%, 0);
+
+}
+
+#submitdiv p {
+    padding: 10px;
+    text-align: center;
+}
+
+#resultdiv {
+    margin: 0 auto;
+    top: 80px;
+    left: 50%;
+    transform: translate(-50%, 0);
+    height: auto;
+    width: 500px;
+    display: none;
+    position: absolute;
+    z-index: 6;
+    border-style: solid;
+    border-width: 3px;
+    border-color: gray;
+    background-color: #FFFFF0;
+    color: #000000;
+    font-size: 16px;
+
+}
+
+#resultdiv p {
+    padding: 5px;
+    text-align: center;
+}

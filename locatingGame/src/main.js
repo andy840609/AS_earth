@@ -487,12 +487,12 @@ function locatingGame() {
                     });
                     // console.debug(doneTutorial);
                     gameDisplay(false);
-                    //==test
+                    // //==test
 
-                    if (doneTutorial) {//doneTutorial     
-                        const gainItems = [['pan', 0], ['bread', 5], ['bone', 3]];
-                        hintTextAnime('itemGain1', gainItems);
-                    };
+                    // if (doneTutorial) {//doneTutorial     
+                    //     const gainItems = [['pan', 0], ['bread', 5], ['bone', 3]];
+                    //     hintTextAnime('itemGain1', gainItems);
+                    // };
                     initMap();
                     //==test
                     // gameStart('defend');

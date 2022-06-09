@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="">
+	<meta name="author" content="">
+	<link rel="shortcut icon" href="favicon.ico">
+
+	<title>「動手玩地震」問答遊戲</title>
+
+	<!-- Bootstrap core CSS -->
+	<!-- <link href="bootstrap.css" rel="stylesheet"> -->
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+		integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+	<link href="stylesheet.css" rel="stylesheet">
+
+
+	<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+	<!--[if lt IE 9]>
+      <script src="../../assets/js/html5shiv.js"></script>
+      <script src="../../assets/js/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+	<div class="navbar navbar navbar-fixed-top">
+		<div class="container">
+			<div class="navbar-header">
+
+				<p>　「動手玩地震」問答遊戲 </p>
+			</div>
+
+		</div>
+	</div>
+
+	<!-- Main jumbotron for a primary marketing message or call to action -->
+	<div class="jumbotron ">
+
+		<div class="container card">
+			<h1 id="question"></h1>
+		</div>
+
+		<div class="container card">
+			<!-- Example row of columns -->
+			<div class="row">
+				<div class="col-lg-12">
+
+					<div class="form-group card" id="selection">
+
+					</div><!-- /input-group -->
+
+
+					<!-- Example row of columns -->
+					<div class="row d-flex justify-content-center">
+						<div class="col-lg-5">
+							<p><a class="btn btn-primary pull-left" id="backButton"
+									href="javascript:addRadio('back')">上一題 &raquo;</a></p>
+						</div>
+
+						<div class="col-12">
+							<p>
+							<div class="text-center" id="questionnumber"></div>
+							</p>
+						</div>
+
+						<div class="col-lg-3 col-md-6 col-12">
+
+							<div><a class="btn btn-primary" id="nextButton" href="javascript:addRadio('next')">下一題
+									&raquo;</a></div>
+
+							<div> <a class="btn btn-danger" id="submitButton" style="display:none;" id="submit"
+									href="javascript:submitScore()">送出 &raquo;</a>
+							</div>
+
+						</div>
+					</div>
+				</div><!-- /.col-lg-6 -->
+			</div><!-- /.row -->
+		</div>
+
+
+		<div id="submitdiv"></div>
+		<div id="resultdiv"></div>
+
+		<footer>
+			<p><img src="sinica_logo.PNG" alt="中央研究院" width="100" height="100">&nbsp; 中央研究院
+				地球科學研究所&nbsp&nbsp;&nbsp;<img src="logo.png" alt="地球科學研究所" width="100" height="75"></p>
+
+			<p>
+				<!--2015/10/31//-->
+			</p>
+		</footer>
+
+
+		<!-- Bootstrap core JavaScript
+    ================================================== -->
+		<!-- Placed at the end of the document so the pages load faster -->
+		<!-- <script src="jquery.js"></script> -->
+		<!-- <script src="bootstrap.js"></script> -->
+		<script src="https://code.jquery.com/jquery-3.4.1.min.js"
+			integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+			integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+			crossorigin="anonymous"></script>
+</body>
+
+</html>
+
+<script>
+
+	var index = 0;
+	//2015-10-29 //2013-10-19
+	var questionArray = [
+
+		[["在台灣地震活動分布立體模型上，圓形的大小代表地震的"], ["深度", "規模", "距離", "震度"], ["1"]],
+
+		[["在台灣地震活動分布立體模型上，圓形的顏色代表地震的"], ["深度", "規模", "距離", "震度"], ["0"]],
+
+		[["台灣位於哪兩個板塊的交界處？"], ["太平洋板塊", " 北美洲板塊", "歐亞板塊", "印澳板塊", " 菲律賓海板塊", "非洲板塊"], ["2", "4"]],
+
+		[["根據深源地震的分布剖面來看，台灣鄰近地區有幾個隱沒系統?"], ["1", " 2", "3"], ["1"], ["個"]],
+
+		[["台灣南端的隱沒系統是菲律賓海板塊<br>隱沒到歐亞板塊底下?"], ["是", " 否"], ["1"]],
+
+		[["台灣北端的隱沒系統是"], ["菲律賓海板塊隱沒到歐亞板塊下", " 歐亞板塊隱沒到菲律賓海板塊之下"], ["0"]],
+
+		[["台灣地震主要發生在台灣的"], ["東", " 西", "南", "北"], ["0"], ["部"]],
+
+		[["台灣深震(深於100公里)主要發生在台灣的"], ["東北部", " 西北部", "西南部", "中部",], ["0"]],
+
+		[["在台灣鄰近地區，最深的地震可深達多少公里?"], ["150", " 200", "300"], ["2"], ["公里"]],
+
+		[["台灣本島上的地震多屬於"], ["深源地震 (深度>70 公里)", " 淺源地震 (深度<70 公里)"], ["1"]]
+
+	];
+
+	var answerArray = new Array(questionArray.length);
+	addRadio(0);
+
+
+
+
+	function addRadio(direction) {
+
+		var checkedValue = [];
+
+
+		$("#selection input").each(function (idx, elem) {
+			var is_checked = $(this).prop("checked");
+			if (is_checked == true) {
+				checkedValue.push(String(idx));
+			}
+			// Do something with is_checked
+		});
+
+		answerArray[index] = checkedValue;
+
+
+		if (direction == "back" && index > 0) {
+			index--;
+		}
+
+
+
+		if (direction == "next") {
+
+			index++;
+		}
+
+		if (index == 0) {
+			document.getElementById("backButton").style.display = "none";
+		}
+
+
+		if (index > 0) {
+			//document.getElementById("backButton").style.display="block";
+		}
+
+
+		if (index + 1 == questionArray.length) {
+			document.getElementById("nextButton").style.display = "none";
+			document.getElementById("submitButton").style.display = "block";
+
+		}
+
+		if (index + 1 < questionArray.length) {
+			document.getElementById("nextButton").style.display = "block";
+			document.getElementById("submitButton").style.display = "none";
+
+		}
+
+
+
+		$("#selection").html("");
+
+
+		$("#question").html(questionArray[index][0]);
+
+		var arrayLength = questionArray[index][1].length;
+
+		if (questionArray[index][3]) {
+			var endPhrase = questionArray[index][3];
+		}
+
+		else
+
+			var endPhrase = "";
+
+		if (questionArray[index][2].length > 1) {
+			$("#selection").append("「複選」" + "<br>");
+
+			for (var i = 0; i < arrayLength; i++) {
+				var sel = 'sel' + i;
+				//var prefix= "複選" + "<br>";
+				let option = questionArray[index][1][i];
+				let radioButton = `<div class="form-check pt-2"><input type='checkbox' class="form-check-input"  name='selectbox[]' id='option${i}' value='${option}'/><label class="form-check-label" for="option${i}">${option}</label></div>`;
+
+				// var radioButton = "<input type='checkbox' name='selectbox[]' value='" + option + "'/> " + questionArray[index][1][i] + endPhrase + "<br>";
+
+
+				//$(prefix).appendTo("#selection");
+				//$(radioButton).appendTo("#selection");
+
+
+				$("#selection").append(radioButton);
+			}
+
+		}
+
+		else {
+			for (var i = 0; i < arrayLength; i++) {
+				var sel = 'sel' + i;
+				// var radioButton = "<input type='radio' name='selectbox[]' value='" + questionArray[index][1][i] + "'/> " + questionArray[index][1][i] + endPhrase + "<br>";
+				let option = questionArray[index][1][i];
+
+				let radioButton = `<div class="form-check pt-2"><input type='radio' class="form-check-input" name='selectbox[]' id='option${i}' value='${option}'/><label class="form-check-label" for="option${i}">${option}</label></div>`;
+
+
+
+				$(radioButton).appendTo("#selection");
+			}
+
+		}
+
+		var qnumber = index + 1;
+		$("#questionnumber").html("第 " + qnumber + " 題 / 共 " + questionArray.length + " 題");
+
+	}
+
+	function submitScore() {
+		addRadio(index);
+
+
+		var scoreCounter = 0;
+
+		for (var i = 0; i < answerArray.length; i++) {
+			if (answerArray[i].toString() == questionArray[i][2].toString()) {
+				scoreCounter++;
+			}
+
+		}
+
+		$("#submitdiv").html("<p>" + "您答對 : " + scoreCounter + " 題" + "</p>" + "<p>" + "<input type='button' value='顯示答案' onclick='javascript:showResults()'/>" + "</p>");
+		$("#submitdiv").show();
+
+
+	}
+
+	function showResults() {
+		for (i in questionArray) {
+			var answerIndex = questionArray[i][2];
+
+			if (questionArray[i][3]) {
+				var ending = questionArray[i][3];
+			}
+
+			else
+
+				var ending = "";
+
+			if (questionArray[i][2].length > 1) {
+				var answerString = questionArray[i][1][answerIndex[0]];
+
+				answerString += ", &nbsp;" + questionArray[i][1][answerIndex[1]];
+
+				if (questionArray[i][1][answerArray[i][0]]) {
+					var resultString = questionArray[i][1][answerArray[i][0]];
+
+				}
+
+				else
+
+					var resultString = "沒有回答 !";
+
+
+
+				if (questionArray[i][1][answerArray[i][1]]) {
+					resultString += ", &nbsp;" + questionArray[i][1][answerArray[i][1]] + " " + ending;
+				}
+
+				else
+
+					resultString += ending;
+
+			}
+			else
+				if (questionArray[i][2].length == 1) {
+					var answerString = questionArray[i][1][answerIndex];
+
+
+					if (questionArray[i][1][answerArray[i]]) {
+						var resultString = questionArray[i][1][answerArray[i]] + " " + ending;
+
+					}
+
+					else
+
+						var resultString = "沒有回答 !";
+
+				}
+
+			$("#resultdiv").append("<p>" + questionArray[i][0] + "<br> &nbsp; <font color=red>正確答案: </font>" + answerString + ending + " <br> &nbsp; &nbsp;" + "<font color=green>你的答案: </font>" + " " + resultString);
+
+		}
+
+		$("#resultdiv").append("<p><input type='button' value='結束問答' onclick='javascript:location.reload();'/></p>");
+
+
+		$("#resultdiv").show();
+
+	}
+
+</script>

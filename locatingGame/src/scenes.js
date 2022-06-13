@@ -1567,7 +1567,7 @@ class UIScene extends Phaser.Scene {
             case 'doctorUI':
                 preload = () => { };
                 create = () => {
-                    this.doctor = this.add.existing(new Doctor(this, gameScene.gameData.localeJSON.Tips))
+                    this.doctor = this.add.existing(new Doctor(this, gameScene.gameData.localeJSON.Doctor))
                         .setDepth(Depth.UI);
 
                     this.doctor.setPosition(-30, height - this.doctor.displayHeight);

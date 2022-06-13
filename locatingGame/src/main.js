@@ -471,23 +471,23 @@ function locatingGame() {
                     GameData.localeJSON = await getLanguageJSON();
                     GameData.getLanguageJSON = getLanguageJSON;
 
-                    //==test
-                    gameDisplay(true);
-                    let doneTutorial = await new Promise((resolve, reject) => {
-                        const config = Object.assign(getPhaserConfig(width, height), {
-                            scene: new GameStartScene(GameData, {
-                                getWaveImg: getWaveImg,
-                                tutorialData: data.tutorialData,
-                                resolve: resolve,
-                                getLanguageJSON: getLanguageJSON,
-                                rankingData: rankingData,//排行榜
-                            }),
-                        });
-                        new Phaser.Game(config);
-                    });
-                    // console.debug(doneTutorial);
-                    gameDisplay(false);
                     // //==test
+                    // gameDisplay(true);
+                    // let doneTutorial = await new Promise((resolve, reject) => {
+                    //     const config = Object.assign(getPhaserConfig(width, height), {
+                    //         scene: new GameStartScene(GameData, {
+                    //             getWaveImg: getWaveImg,
+                    //             tutorialData: data.tutorialData,
+                    //             resolve: resolve,
+                    //             getLanguageJSON: getLanguageJSON,
+                    //             rankingData: rankingData,//排行榜
+                    //         }),
+                    //     });
+                    //     new Phaser.Game(config);
+                    // });
+                    // // console.debug(doneTutorial);
+                    // gameDisplay(false);
+                    // // //==test
 
                     // if (doneTutorial) {//doneTutorial     
                     //     const gainItems = [['pan', 0], ['bread', 5], ['bone', 3]];
@@ -495,7 +495,7 @@ function locatingGame() {
                     // };
                     initMap();
                     //==test
-                    // gameStart('defend');
+                    gameStart('defend');
                     // gameStart('dig');
                     // initEndScene(true);
                     //==test
@@ -1202,12 +1202,44 @@ function locatingGame() {
                                                         <b id="velocityStr" style="color:Tomato;font-size:60px;">${GameData.velocity.toFixed(2)}</b> km/s
                                                     </div>
                                                 </h2>
-                                            </div>
+                                            </div>                  
                                             `)
                                             .append(getVelocityChart())
                                             .find('svg')
                                             .width(height * 0.4)
                                             .height(height * 0.4);
+
+                                        UI
+                                            .append(`
+                                            <div class="btn-group dropright">
+                                                <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                    ${GameData.localeJSON.UI['showCircle']}
+                                                </button>
+                                                <div class="dropdown-menu">
+                                                  <div class="stations d-flex flex-row flex-wrap">
+
+                                                  </div>
+                                                </div>
+                                            </div>
+                                            `);
+
+                                        UI.on('addDropdownItem', (e, data) => {
+                                            // console.debug(data);
+                                            let station = data.station;
+                                            let dropdown = UI.find('.stations');
+                                            let html = `<div class="form-check col-6" style="text-align: left; display: inline;">
+                                                            <input class="form-check-input  col-4" type="checkbox" id="display_${station}" name="display" value="${station}" checked>
+                                                            <label class="col-8" for="display_${station}" style="display: block; text-indent: -5px;">${station} </label>
+                                                        </div>`;
+                                            dropdown.append(html).find(`#display_${station}`)
+                                                .change(function () {
+                                                    data.circleObj._path.style.display =
+                                                        this.checked ? 'inline' : 'none';
+                                                });
+
+                                            UI.find('.dropdown-menu')
+                                                .on("click.bs.dropdown", (e) => e.stopPropagation());
+                                        });
 
                                         break;
                                     case 'questInfo':
@@ -1681,7 +1713,7 @@ function locatingGame() {
                                 })
                                 .on('click', function (e) {
                                     //==速度參數要完成兩站才能調整
-                                    if (this.id == 'velocityChart' && !GameData.stationClear.chartUnlock) return;
+                                    // if (this.id == 'velocityChart' && !GameData.stationClear.chartUnlock) return;
 
                                     let button = $(this);
                                     let ckick = button.hasClass('clicked');
@@ -1824,7 +1856,7 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
-                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             let lat = e.latlng.lat,
                                 lng = e.latlng.lng
 
@@ -1837,14 +1869,31 @@ function locatingGame() {
 
                             lat = lat.toFixed(2);
                             lng = lng.toFixed(2);
+                            let coordinate = [lat, lng];
 
                             confirmWindow.fadeIn(fadeInDuration)
                                 .find('.placeStr')
                                 .text(`${lat} , ${lng}`)
                                 .data('gameStartParameters', ['dig', {
-                                    coordinate: [lat, lng],
+                                    coordinate,
                                     depth: bingo ? data.epicenter.depth : null,
                                 }]);
+
+
+                            //==顯示假設點
+                            assumedEpicenter
+                                .setLatLng(coordinate)
+                                .getTooltip()
+                                .setContent(`${GameData.localeJSON.UI['assumedEpicenter']} : ${coordinate.join(' , ')}`)
+                            assumedEpicenter.getElement().style.display = 'inline';
+
+                            GameData.playerEpicenter = coordinate;
+
+                            if (gameUI.find('#velocityChartUI').is(':visible'))
+                                d3.select(`#velocityChartUI>svg`).dispatch('updateEvt');
+                            else
+                                gameUI.find('#velocityChart').trigger('click');
+
 
                         })
                         .on('move', function (e) {
@@ -1970,7 +2019,6 @@ function locatingGame() {
 
                     let size = 0, step = 0;
                     interval = setInterval(() => {
-
                         let part = parseInt(step / eachPartStep);
 
                         switch (part) {
@@ -2097,8 +2145,11 @@ function locatingGame() {
                     if (updateObj.hasOwnProperty('stationInfo')) {
                         let stationStats = data.stationStats;
                         if (updateObj.stationInfo.clear) {
-                            //==第一次更新測站圖案
-                            if (!stationStats.clear) iconUpDownAnime(stationMarker, clearIconUrl);
+                            //==第一次更新測站圖案和在圓圈選單裡增加該站
+                            if (!stationStats.clear) {
+                                iconUpDownAnime(stationMarker, clearIconUrl);
+                                gameUI.find(`#velocityChartUI`).trigger('addDropdownItem', data);
+                            };
 
                             //==tooltip label
                             stationStats = updateObj.stationInfo;
@@ -2553,14 +2604,14 @@ function locatingGame() {
                             depth: siteData.depth ? siteData.depth : null,
                         };
 
-                        //==顯示假設點
-                        assumedEpicenter
-                            .setLatLng(coordinate)
-                            .getTooltip()
-                            .setContent(`${GameData.localeJSON.UI['assumedEpicenter']} : ${coordinate.join(' , ')}`)
-                        assumedEpicenter.getElement().style.display = 'inline';
+                        // //==顯示假設點
+                        // assumedEpicenter
+                        //     .setLatLng(coordinate)
+                        //     .getTooltip()
+                        //     .setContent(`${GameData.localeJSON.UI['assumedEpicenter']} : ${coordinate.join(' , ')}`)
+                        // assumedEpicenter.getElement().style.display = 'inline';
 
-                        GameData.playerEpicenter = coordinate;
+                        // GameData.playerEpicenter = coordinate;
 
                         gameResult = await new Promise((resolve, reject) => {
                             const config = Object.assign(getPhaserConfig(width, height), {

@@ -1744,7 +1744,7 @@ const Doctor = new Phaser.Class({
     Extends: Phaser.GameObjects.Sprite,
 
     initialize:
-        function Doctor(scene, tips) {
+        function Doctor(scene, lines) {
             Phaser.GameObjects.Sprite.call(this, scene, 0, 0, 'doctorOwl');
 
             this
@@ -1765,10 +1765,10 @@ const Doctor = new Phaser.Class({
                 character: this.name
             }).setAlpha(0);
 
-
-            this.tips = tips;
+            this.tips = lines.Tips;
             this.tipAmount = Object.keys(this.tips).length - 1; //==tips總數量
-
+            this.emergencies = lines.Emergencies;
+            this.emerAmount = Object.keys(this.emergencies).length - 1; //==emergencies總數量
         },
     talkingCallback: null,
     behavior: null,
@@ -1804,7 +1804,6 @@ const Doctor = new Phaser.Class({
                     // onYoyo: () => console.debug(this.alpha)
 
                 });
-
                 //==開始打字
                 scene.tweens.add({
                     targets: this.dialog,
@@ -1824,8 +1823,6 @@ const Doctor = new Phaser.Class({
 
 
         };
-
-
 
     },
 });

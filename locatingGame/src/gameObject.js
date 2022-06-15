@@ -1779,47 +1779,94 @@ const Doctor = new Phaser.Class({
         this.dialog.setPosition(this.x + this.displayWidth * 1.9, this.y + this.displayHeight * 0.5);
 
         if (!this.talkingCallback) {
-            const
-                tipIdx = Phaser.Math.Between(0, this.tipAmount),  //==tip index
-                tipText = this.tips[tipIdx];
+            if (false) {
+                const
+                    tipIdx = Phaser.Math.Between(0, this.tipAmount),  //==tip index
+                    tipText = this.tips[tipIdx];
 
-            const
-                tipDuration = tipText.length * 300,//==對話框持續時間(包含淡入淡出時間)一個字x秒
-                tipDelay = Phaser.Math.Between(2, 5) * 1000;//==每則知識間隔
-            // tipDelay = 500;//==每則知識間隔
+                const
+                    tipDuration = tipText.length * 300,//==對話框持續時間(包含淡入淡出時間)一個字x秒
+                    tipDelay = Phaser.Math.Between(2, 5) * 1000;//==每則知識間隔
+                // tipDelay = 500;//==每則知識間隔
 
-            // console.debug(tipDuration,)
-            this.talkingCallback = scene.time.delayedCall(tipDelay, () => {
+                // console.debug(tipDuration,)
+                this.talkingCallback = scene.time.delayedCall(tipDelay, () => {
 
-                //==博士出現
-                scene.tweens.add({
-                    targets: this,
-                    alpha: { start: 0, to: 1 },
-                    x: 0,
-                    duration: tipDuration * 0.1,
-                    repeat: 0,
-                    yoyo: true,
-                    hold: tipDuration * 0.6,//==yoyo delay
-                    ease: 'Linear',
-                    // onYoyo: () => console.debug(this.alpha)
+                    //==博士出現
+                    scene.tweens.add({
+                        targets: this,
+                        alpha: { start: 0, to: 1 },
+                        x: 0,
+                        duration: tipDuration * 0.1,
+                        repeat: 0,
+                        yoyo: true,
+                        hold: tipDuration * 0.6,//==yoyo delay
+                        ease: 'Linear',
+                        // onYoyo: () => console.debug(this.alpha)
 
-                });
-                //==開始打字
-                scene.tweens.add({
-                    targets: this.dialog,
-                    alpha: { start: 0, to: 1 },
-                    duration: tipDuration * 0.1 - 200,
-                    repeat: 0,
-                    yoyo: true,
-                    hold: tipDuration * 0.6,//==yoyo delay
-                    ease: 'Linear',
-                    delay: 200,
-                    onStart: () => this.dialog.start(tipText, 70),//==(text,typeSpeed(ms per word))
-                    onComplete: () => this.talkingCallback = null,//==一次對話結束
-                    // onActive: () => console.debug('onUpdate'),
-                });
+                    });
+                    //==開始打字
+                    scene.tweens.add({
+                        targets: this.dialog,
+                        alpha: { start: 0, to: 1 },
+                        duration: tipDuration * 0.1 - 200,
+                        repeat: 0,
+                        yoyo: true,
+                        hold: tipDuration * 0.6,//==yoyo delay
+                        ease: 'Linear',
+                        delay: 200,
+                        onStart: () => this.dialog.start(tipText, 70),//==(text,typeSpeed(ms per word))
+                        onComplete: () => this.talkingCallback = null,//==一次對話結束
+                        // onActive: () => console.debug('onUpdate'),
+                    });
 
-            }, [], scene);
+                }, [], scene);
+
+            } else {
+                const
+                    eventIdx = Phaser.Math.Between(0, this.emerAmount),  //==tip index
+                    event = this.emergencies[eventIdx];
+
+                event.forEach()
+
+
+                const
+                    tipDuration = tipText.length * 300,//==對話框持續時間(包含淡入淡出時間)一個字x秒
+                    tipDelay = Phaser.Math.Between(2, 5) * 1000;//==每則知識間隔
+
+                this.talkingCallback = scene.time.delayedCall(tipDelay, () => {
+
+                    //==博士出現
+                    scene.tweens.add({
+                        targets: this,
+                        alpha: { start: 0, to: 1 },
+                        x: 0,
+                        duration: tipDuration * 0.1,
+                        repeat: 0,
+                        yoyo: true,
+                        hold: tipDuration * 0.6,//==yoyo delay
+                        ease: 'Linear',
+                        // onYoyo: () => console.debug(this.alpha)
+
+                    });
+                    //==開始打字
+                    scene.tweens.add({
+                        targets: this.dialog,
+                        alpha: { start: 0, to: 1 },
+                        duration: tipDuration * 0.1 - 200,
+                        repeat: 0,
+                        yoyo: true,
+                        hold: tipDuration * 0.6,//==yoyo delay
+                        ease: 'Linear',
+                        delay: 200,
+                        onStart: () => this.dialog.start(tipText, 70),//==(text,typeSpeed(ms per word))
+                        onComplete: () => this.talkingCallback = null,//==一次對話結束
+                        // onActive: () => console.debug('onUpdate'),
+                    });
+
+                }, [], scene);
+
+            };
 
 
         };

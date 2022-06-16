@@ -1824,17 +1824,15 @@ const Doctor = new Phaser.Class({
 
             } else {
                 const
-                    eventIdx = Phaser.Math.Between(0, this.emerAmount),  //==tip index
+                    eventIdx = Phaser.Math.Between(0, this.emerAmount),
                     event = this.emergencies[eventIdx];
-
-                event.forEach()
 
 
                 const
-                    tipDuration = tipText.length * 300,//==對話框持續時間(包含淡入淡出時間)一個字x秒
+                    eventDuration = 10000,
                     tipDelay = Phaser.Math.Between(2, 5) * 1000;//==每則知識間隔
 
-                this.talkingCallback = scene.time.delayedCall(tipDelay, () => {
+                this.talkingCallback = scene.time.delayedCall(eventDuration, async () => {
 
                     //==博士出現
                     scene.tweens.add({
@@ -1847,22 +1845,33 @@ const Doctor = new Phaser.Class({
                         hold: tipDuration * 0.6,//==yoyo delay
                         ease: 'Linear',
                         // onYoyo: () => console.debug(this.alpha)
+                    });
 
-                    });
-                    //==開始打字
-                    scene.tweens.add({
-                        targets: this.dialog,
-                        alpha: { start: 0, to: 1 },
-                        duration: tipDuration * 0.1 - 200,
-                        repeat: 0,
-                        yoyo: true,
-                        hold: tipDuration * 0.6,//==yoyo delay
-                        ease: 'Linear',
-                        delay: 200,
-                        onStart: () => this.dialog.start(tipText, 70),//==(text,typeSpeed(ms per word))
-                        onComplete: () => this.talkingCallback = null,//==一次對話結束
-                        // onActive: () => console.debug('onUpdate'),
-                    });
+
+                    for (let i = 0; i < Object.keys(event.rules).length; i++) {
+                        event.rules[i]
+
+
+                    };
+
+
+
+
+
+                    // //==開始打字
+                    // scene.tweens.add({
+                    //     targets: this.dialog,
+                    //     alpha: { start: 0, to: 1 },
+                    //     duration: tipDuration * 0.1 - 200,
+                    //     repeat: 0,
+                    //     yoyo: true,
+                    //     hold: tipDuration * 0.6,//==yoyo delay
+                    //     ease: 'Linear',
+                    //     delay: 200,
+                    //     onStart: () => this.dialog.start(tipText, 70),//==(text,typeSpeed(ms per word))
+                    //     onComplete: () => this.talkingCallback = null,//==一次對話結束
+                    //     // onActive: () => console.debug('onUpdate'),
+                    // });
 
                 }, [], scene);
 

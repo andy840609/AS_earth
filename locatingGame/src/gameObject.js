@@ -1829,49 +1829,64 @@ const Doctor = new Phaser.Class({
 
 
                 const
-                    eventDuration = 10000,
-                    tipDelay = Phaser.Math.Between(2, 5) * 1000;//==每則知識間隔
+                    eventDelay = 3000,//事件開始
+                    eventDuration = 30000;
 
-                this.talkingCallback = scene.time.delayedCall(eventDuration, async () => {
+                this.talkingCallback = scene.time.delayedCall(eventDelay, async () => {
+                    scene.time.delayedCall(eventDuration, () => {
+                        this.dialog.setAlpha(0);
+                        this.talkingCallback = null;
+                    }, [], scene);
+
+
+                    //==黑幕
+                    let gameScene = scene.game.scene.getScene('gameScene'),
+                        blackOut = gameScene.blackOut;
+                    // console.debug(gameScene);
+                    blackOut.scene.setVisible(true);
+                    blackOut.fadeOutTween.restart();
+                    scene.scene.bringToTop();
 
                     //==博士出現
                     scene.tweens.add({
                         targets: this,
                         alpha: { start: 0, to: 1 },
                         x: 0,
-                        duration: tipDuration * 0.1,
+                        duration: 1000,
                         repeat: 0,
                         yoyo: true,
-                        hold: tipDuration * 0.6,//==yoyo delay
+                        hold: eventDuration,
                         ease: 'Linear',
                         // onYoyo: () => console.debug(this.alpha)
                     });
 
+                    //==規則逐條說明
+                    let rulesCount = Object.keys(event.rules).length;
+                    for (let i = 0; i < rulesCount; i++) {
+                        //==開始打字
+                        const text = event.rules[i],
+                            textDura = text.length * 300;//==對話框持續時間(包含淡入淡出時間)一個字x秒
 
-                    for (let i = 0; i < Object.keys(event.rules).length; i++) {
-                        event.rules[i]
-
+                        await new Promise(resolve => {
+                            scene.tweens.add({
+                                targets: this.dialog,
+                                alpha: { start: 0, to: 1 },
+                                duration: textDura * 0.1 - 200,
+                                repeat: 0,
+                                yoyo: i === rulesCount - 1 ? false : true,
+                                hold: i === rulesCount - 1 ? false : textDura * 0.6,//==yoyo delay
+                                ease: 'Linear',
+                                delay: 200,
+                                onStart: () => {
+                                    this.dialog.start(text, 70);//==(text,typeSpeed(ms per word))
+                                    this.setAlpha(1);
+                                },
+                                onComplete: () => resolve(),//==一次對話結束
+                                // onActive: () => console.debug('onUpdate'),
+                            });
+                        });
 
                     };
-
-
-
-
-
-                    // //==開始打字
-                    // scene.tweens.add({
-                    //     targets: this.dialog,
-                    //     alpha: { start: 0, to: 1 },
-                    //     duration: tipDuration * 0.1 - 200,
-                    //     repeat: 0,
-                    //     yoyo: true,
-                    //     hold: tipDuration * 0.6,//==yoyo delay
-                    //     ease: 'Linear',
-                    //     delay: 200,
-                    //     onStart: () => this.dialog.start(tipText, 70),//==(text,typeSpeed(ms per word))
-                    //     onComplete: () => this.talkingCallback = null,//==一次對話結束
-                    //     // onActive: () => console.debug('onUpdate'),
-                    // });
 
                 }, [], scene);
 

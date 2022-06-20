@@ -1447,7 +1447,8 @@ const Player = new Phaser.Class({
 
 
     },
-
+    //==事件觸發
+    emergFlag: false
 
 });
 
@@ -1830,22 +1831,41 @@ const Doctor = new Phaser.Class({
 
                 const
                     eventDelay = 3000,//事件開始
-                    eventDuration = 30000;
+                    eventDuration = 20 * 1000;//幾秒
+
+                let gameScene = scene.game.scene.getScene('gameScene'),
+                    blackOut = gameScene.blackOut;
 
                 this.talkingCallback = scene.time.delayedCall(eventDelay, async () => {
                     scene.time.delayedCall(eventDuration, () => {
                         this.dialog.setAlpha(0);
+                        blackOut.fadeInTween.restart();
                         this.talkingCallback = null;
+                        gameScene.enemy.children.iterate(child => child.behavior = '');
+                        // gameScene.add.existing(gameScene.player);
                     }, [], scene);
 
 
                     //==黑幕
-                    let gameScene = scene.game.scene.getScene('gameScene'),
-                        blackOut = gameScene.blackOut;
                     // console.debug(gameScene);
                     blackOut.scene.setVisible(true);
                     blackOut.fadeOutTween.restart();
                     scene.scene.bringToTop();
+                    //==敵人暫停
+                    gameScene.enemy.children.iterate(child => child.behavior = 'worship');
+
+                    //==玩家到最上層
+                    // scene.add.existing(gameScene.player);
+                    gameScene.player.emergFlag = true;
+                    gameScene.sys.updateList.remove(gameScene.player);
+                    gameScene.sys.displayList.remove(gameScene.player);
+
+                    scene.sys.updateList.add(gameScene.player);
+                    scene.sys.displayList.add(gameScene.player);
+                    // gameScene.scene.pause();
+
+                    // gameScene.player.removedFromScene();
+                    console.debug(gameScene.player);
 
                     //==博士出現
                     scene.tweens.add({

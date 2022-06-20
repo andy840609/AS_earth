@@ -8,6 +8,7 @@ function waveXdist() {
         return chart;
     };
     chart.dataPath = (value) => {
+        // console.debug(value);
         let fileXY_paths = value.data;
         let staAz_paths = value.az;
         let staDist_paths = value.dist;
@@ -840,9 +841,17 @@ function waveXdist() {
 
                     let pathObj = {};
                     pathsKey.forEach((key, i) => {
-                        pathObj[key] = i === 0 ?
-                            event.fileXY.map(file => dataPath + catalog + "/" + event.folder + "/" + file) :
-                            dataPath + catalog + "/" + key + fileExtension;
+                        if (i === 0) {
+                            // pathObj[key] = event.fileXY.map(file => dataPath + catalog + "/" + event.folder + "/" + file)
+                            let tmp = Object.keys(event.network).map(network =>
+                                event.network[network].map(file =>
+                                    dataPath + catalog + "/" + event.xyFolder + "/" + network + "/" + file)
+                            );
+                            pathObj[key] = [].concat.apply([], tmp);
+                        }
+                        else {
+                            pathObj[key] = dataPath + catalog + "/" + key + fileExtension;
+                        };
                     });
 
                     return pathObj;

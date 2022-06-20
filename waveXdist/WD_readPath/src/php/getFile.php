@@ -22,17 +22,24 @@ foreach ($output as $catalog) {
     foreach ($folders as $f)
         if (substr($f, 0, strlen($folderStr)) === $folderStr) {
             // echo $catalog . '  ';
-            $folder = $f;
-            exec($CMD . $catalog . '/' . $folder, $fileXY, $rev);
+            $xyFolder = $f;
+            exec($CMD . $catalog . '/' . $xyFolder, $networkDir, $rev);
             // echo $fileXY[0] . '  ';
-            $obj = [
-                'catalog' => $catalog,
-                'folder' => $folder,
-                'fileXY' => $fileXY,
-            ];
-            $resultArr[] = $obj;
 
-            unset($fileXY);
+            $networkList = [];
+            foreach ($networkDir as $network) {
+                exec($CMD . $catalog . '/' . $xyFolder .  '/' . $network, $xyFiles, $r);
+                $networkList[$network] = $xyFiles;
+                unset($xyFiles);
+            };
+
+            $resultArr[] = [
+                'catalog' => $catalog,
+                'xyFolder' => $xyFolder,
+                'network' => $networkList,
+            ];
+
+            unset($networkDir);
             unset($folders);
         }
 

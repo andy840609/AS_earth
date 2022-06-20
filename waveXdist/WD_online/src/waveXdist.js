@@ -8,6 +8,7 @@ function waveXdist() {
         return chart;
     }
     chart.dataPath = (value) => {
+        console.debug(value);
         let fileXY_paths = value.data;
         let staAz_paths = value.az;
         let staDist_paths = value.dist;

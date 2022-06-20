@@ -1594,6 +1594,24 @@ class UIScene extends Phaser.Scene {
                         this.doctor.alpha = 0.6;
                     };
 
+                    //===事件相關
+                    let updatePlayer = () => {
+                        let player = gameScene.player;
+                        if (!player.emergFlag) return;
+
+                        player.movingHadler(gameScene);
+                        // player.pickingHadler(this);
+                        // player.attackHandler(gameScene);
+
+                        let playerStats = player.stats;
+                        if (playerStats.MP < playerStats.maxMP)
+                            player.statsChangeHandler({ MP: playerStats.manaRegen / 100 }, gameScene);//自然回魔
+                        if (playerStats.healthRegen > 0 && playerStats.HP < playerStats.maxHP)
+                            player.statsChangeHandler({ HP: playerStats.healthRegen / 100 }, gameScene);//回血
+                        //==狀態對話框
+                        player.dialog.setPosition(player.x, player.y - player.displayHeight * 0.3);
+                    };
+                    updatePlayer();
                 };
                 break;
             case 'statsBar':
@@ -7444,7 +7462,7 @@ class DefendScene extends Phaser.Scene {
             };
         };
         let updatePlayer = () => {
-
+            if (this.player.emergFlag) return;
             this.player.movingHadler(this);
             this.player.pickingHadler(this);
             this.player.attackHandler(this);

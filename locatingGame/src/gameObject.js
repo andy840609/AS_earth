@@ -1842,7 +1842,13 @@ const Doctor = new Phaser.Class({
                         blackOut.fadeInTween.restart();
                         this.talkingCallback = null;
                         gameScene.enemy.children.iterate(child => child.behavior = '');
-                        // gameScene.add.existing(gameScene.player);
+                        // gameScene.add.existing(player);
+                        player.emergFlag = false;
+                        scene.sys.updateList.remove(player);
+                        scene.sys.displayList.remove(player);
+
+                        gameScene.sys.updateList.add(player);
+                        gameScene.sys.displayList.add(player);
                     }, [], scene);
 
 
@@ -1855,17 +1861,22 @@ const Doctor = new Phaser.Class({
                     gameScene.enemy.children.iterate(child => child.behavior = 'worship');
 
                     //==玩家到最上層
-                    // scene.add.existing(gameScene.player);
-                    gameScene.player.emergFlag = true;
-                    gameScene.sys.updateList.remove(gameScene.player);
-                    gameScene.sys.displayList.remove(gameScene.player);
+                    // scene.add.existing(player);
+                    player.emergFlag = true;
 
-                    scene.sys.updateList.add(gameScene.player);
-                    scene.sys.displayList.add(gameScene.player);
+
+                    // scene.sys.updateList.add(player);
+                    // scene.sys.displayList.add(player);
+
+                    // gameScene.sys.updateList.remove(player);
+                    // gameScene.sys.displayList.remove(player);
+
+                    gameScene.sys.updateList.remove(player);
+                    gameScene.sys.displayList.remove(player);
                     // gameScene.scene.pause();
 
-                    // gameScene.player.removedFromScene();
-                    console.debug(gameScene.player);
+                    // player.removedFromScene();
+                    console.debug(player);
 
                     //==博士出現
                     scene.tweens.add({

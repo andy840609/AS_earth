@@ -5215,9 +5215,36 @@ class GameStartScene extends Phaser.Scene {
                     this.RexUI.scene.bringToTop();
                     effectScene.scene.bringToTop();
 
-
                     this.time.delayedCall(animeDelay, async () => {
 
+                        let showEmote = (character, emoji) => {
+                            if (emoji)
+                                this.tweens.add({
+                                    targets: character.emote,
+                                    alpha: { from: 0.5, to: 1 },
+                                    scale: { from: 0, to: 1.5 },
+                                    duration: animeDelay * 0.5,
+                                    repeat: 0,
+                                    ease: 'Quadratic.InOut',
+                                    onStart: () => {
+                                        character.emote
+                                            .setTexture(emoji)
+                                            .setVisible(true);
+                                    },
+                                });
+                            else
+                                this.tweens.add({
+                                    targets: character.emote,
+                                    alpha: { from: 1, to: 0 },
+                                    scale: { from: 1.5, to: 0 },
+                                    duration: animeDelay * 0.5,
+                                    repeat: 0,
+                                    ease: 'Quadratic.InOut',
+                                    onComplete: () => {
+                                        character.emote.setVisible(false);
+                                    },
+                                });
+                        };
                         for (let i = 0; i < Object.keys(lines).length; i++) {
                             let line = lines[i].line,
                                 character = lines[i].character,
@@ -5225,23 +5252,28 @@ class GameStartScene extends Phaser.Scene {
 
                             switch (i) {
                                 case 0:
+                                    showEmote(this.player, null);
                                     break;
                                 case 1:
-
+                                    showEmote(this.player, 'emoteConfuse');
                                     break;
                                 case 2:
+                                    showEmote(this.player, null);
                                     break;
                                 case 3:
                                     this.player.play('player_think');
+                                    showEmote(this.player, 'emoteDrops');
                                     break;
                                 case 4:
                                     line = line.replace('\t', this.gameData.timeMultiplier);
+                                    showEmote(this.player, null);
                                     break;
                                 case 5:
+                                    showEmote(this.player, 'emoteHappy');
                                     this.player.play('player_idle');
                                     this.doctor.setFlipX(false);
-                                    this.doctor.shockMark.setVisible(false);
-                                    this.player.shockMark.setVisible(false);
+                                    this.doctor.emote.setVisible(false);
+                                    this.player.emote.setVisible(false);
                                     // this.RexUI.cameras.main.shake(0, 0);
                                     break;
                                 case 6:
@@ -5251,16 +5283,10 @@ class GameStartScene extends Phaser.Scene {
                                         .anims
                                         .stopOnFrame(this.player.anims.currentAnim.frames[1]);
 
-                                    this.player.shockMark
-                                        .setPosition(this.player.x + 60, this.player.y - 100)
-                                        .setVisible(true);
+                                    this.doctor.setFlipX(true);
 
-                                    this.doctor
-                                        .setFlipX(true)
-                                        .shockMark
-                                        .setPosition(this.doctor.x + 60, this.doctor.y - 100)
-                                        .setVisible(true);
-
+                                    showEmote(this.player, 'emoteShock');
+                                    showEmote(this.doctor, 'emoteShock');
                                     this.boss.anims.stop();
                                     break;
                                 case 7:
@@ -5325,8 +5351,8 @@ class GameStartScene extends Phaser.Scene {
                                             cameraPan(false, 0);
                                             blackOut.scene.setVisible(false);
                                             this.doctor.setFlipX(false);
-                                            this.doctor.shockMark.setVisible(false);
-                                            this.player.shockMark.setVisible(false);
+                                            showEmote(this.player, null);
+                                            showEmote(this.doctor, null);
                                             getChildByName('earth').play('earth_destory');
                                             camera.fadeIn(animeDelay * 3);
 
@@ -5338,9 +5364,11 @@ class GameStartScene extends Phaser.Scene {
                                     }));
                                     break;
                                 case 8:
+                                    showEmote(this.player, 'emoteIdea');
                                     this.player.play('player_idle');
                                     break;
                                 case 9:
+                                    showEmote(this.player, null);
                                     this.doctor.play('doctor_attack');
                                     break;
                             };
@@ -5577,11 +5605,25 @@ class GameStartScene extends Phaser.Scene {
 
                                 //===玩家動畫
                                 this.player.setPosition(width * 0.2, height * 0.6);
+
                                 this.time.delayedCall(animeDelay * 4, () => {
                                     this.player.playReverse('player_death');
                                     playLines();
-
                                 });
+
+
+                                //===emoji
+                                this.player.emote
+                                    .setVisible(true)
+                                    .setPosition(this.player.x, this.player.y - 70);
+                                this.doctor.emote
+                                    .setPosition(this.doctor.x, this.doctor.y - 70);
+
+                                [...Array(3).keys()].forEach(i =>
+                                    this.time.delayedCall(animeDelay * 1.3 * i, () => {
+                                        this.player.emote.setTexture('emoteDots' + (i + 1));
+                                    }));
+
                             });
                         // playLines();
                     };
@@ -5629,8 +5671,8 @@ class GameStartScene extends Phaser.Scene {
                     .setPosition(0, height * 0.7)
                     .setDepth(Depth.player);
 
-                this.player.shockMark = this.add.image(0, 0, 'shockMark')
-                    .setScale(0.3)
+                this.player.emote = this.add.image(0, 0)
+                    .setScale(1.5)
                     .setVisible(false)
                     .setDepth(Depth.player);
 
@@ -5662,8 +5704,8 @@ class GameStartScene extends Phaser.Scene {
                     .setScale(2)
                     .setDepth(Depth.player);
 
-                this.doctor.shockMark = this.add.image(0, 0, 'shockMark')
-                    .setScale(0.3)
+                this.doctor.emote = this.add.image(0, 0)
+                    .setScale(1.5)
                     .setVisible(false)
                     .setDepth(Depth.player);
 
@@ -6207,7 +6249,16 @@ class LoadingScene extends Phaser.Scene {
                                 this.load.spritesheet(chara + '_death', dir + 'death.png', frameObj);
                                 this.load.spritesheet(chara + '_swordSwing', dir + 'swordSwing.png', { frameWidth: effectFrameObj.attack[0], frameHeight: effectFrameObj.attack[1] });
 
-                                this.load.image('shockMark', playerDir + 'effect/exclamation.png');
+                                let effectDir = playerDir + 'effect/';
+                                this.load.image('emoteDots1', effectDir + 'dots1.png');
+                                this.load.image('emoteDots2', effectDir + 'dots2.png');
+                                this.load.image('emoteDots3', effectDir + 'dots3.png');
+                                this.load.image('emoteShock', effectDir + 'exclamation.png');
+                                this.load.image('emoteDrops', effectDir + 'drops.png');
+                                this.load.image('emoteConfuse', effectDir + 'question.png');
+                                this.load.image('emoteHappy', effectDir + 'happy.png');
+                                this.load.image('emoteIdea', effectDir + 'idea.png');
+
                             });
                         };
                         let doctor = () => {
@@ -6298,7 +6349,14 @@ class LoadingScene extends Phaser.Scene {
 
                     });
                 };
+                let emergence = () => {
+                    const dir = gameObjDir + 'environment/emergence/';
+
+                    this.load.image('emergTable', dir + 'table.png');
+
+                };
                 enemy();
+                emergence();
             };
         };
         let UI = () => {
@@ -7117,8 +7175,6 @@ class DefendScene extends Phaser.Scene {
                     }, [], this);
 
                 };
-
-
                 // foe.anims.play('dog_Attack', true);
             };
             this.physics.add.collider(this.enemy, this.platforms);

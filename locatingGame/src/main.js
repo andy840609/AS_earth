@@ -41,7 +41,7 @@ function locatingGame() {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 300 },
-                    // debug: true,
+                    debug: true,
                 },
             },
             dom: {//==for rexUI:rexTextEdit
@@ -487,7 +487,7 @@ function locatingGame() {
                     // });
                     // // console.debug(doneTutorial);
                     // gameDisplay(false);
-                    // // //==test
+                    // //==test
 
                     // if (doneTutorial) {//doneTutorial     
                     //     const gainItems = [['pan', 0], ['bread', 5], ['bone', 3]];

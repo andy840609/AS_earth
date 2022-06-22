@@ -1592,7 +1592,10 @@ const Sidekick = new Phaser.Class({
                 hold: hintDuration * 0.6,//==yoyo delay
                 ease: 'Linear',
                 onStart: () => this.dialog.start(hint, 50),//==(text,typeSpeed(ms per word))
-                onComplete: () => this.talkingCallback = null,
+                onComplete: () => {
+                    console.debug('onComplete');
+                    this.talkingCallback = null
+                },
             });
         }, [], scene);
 
@@ -1759,7 +1762,6 @@ const Doctor = new Phaser.Class({
                 tipWrapH = 100;
 
             this.dialog = new RexTextBox(scene, {
-
                 wrapWidth: tipWrapW,
                 fixedWidth: tipWrapW,
                 fixedHeight: tipWrapH,
@@ -1828,7 +1830,6 @@ const Doctor = new Phaser.Class({
                     eventIdx = Phaser.Math.Between(0, this.emerAmount),
                     event = this.emergencies[eventIdx];
 
-
                 const
                     eventDelay = 3000,//事件開始
                     eventDuration = 20 * 1000;//幾秒
@@ -1837,6 +1838,7 @@ const Doctor = new Phaser.Class({
                     blackOut = gameScene.blackOut;
 
                 this.talkingCallback = scene.time.delayedCall(eventDelay, async () => {
+                    //==事件結束回復原狀
                     scene.time.delayedCall(eventDuration, () => {
                         this.dialog.setAlpha(0);
                         blackOut.fadeInTween.restart();
@@ -1849,34 +1851,59 @@ const Doctor = new Phaser.Class({
 
                         gameScene.sys.updateList.add(player);
                         gameScene.sys.displayList.add(player);
+
+                        this.dialog.getElement('background')
+                            .setFillStyle(0xD9B300, 1);
+
+                        gameScene.sidekick.talkingCallback = false;
                     }, [], scene);
 
+                    //==緊急事件物品
+                    let emergItems = gameScene.physics.add.group();
+
+
+                    let table = scene.physics.add.sprite(500, 200, 'emergTable')
+                        .setScale(0.2)
+                    // .setDepth(99)
+                    emergItems.add(table);
+
+                    gameScene.physics.add.collider(emergItems, gameScene.platforms, (item, platforms) => {
+                        // console.debug(i, p)
+                        item.setMaxVelocity(0);
+                    });
+
+
+                    //==助手暫停說話
+                    let sidekick = gameScene.sidekick;
+                    if (sidekick.talkingCallback) {
+                        if (sidekick.talkingTween) sidekick.talkingTween.remove();
+                        sidekick.talkingCallback.remove();
+                        sidekick.dialog.alpha = 0;
+                    };
+                    sidekick.talkingCallback = true;
 
                     //==黑幕
-                    // console.debug(gameScene);
+                    console.debug(gameScene);
                     blackOut.scene.setVisible(true);
                     blackOut.fadeOutTween.restart();
                     scene.scene.bringToTop();
-                    //==敵人暫停
-                    gameScene.enemy.children.iterate(child => child.behavior = 'worship');
 
                     //==玩家到最上層
-                    // scene.add.existing(player);
                     player.emergFlag = true;
+                    scene.sys.updateList.add(player);
+                    scene.sys.displayList.add(player);
 
+                    //==要有間隔不然執行會有問題
+                    scene.time.delayedCall(100, () => {
+                        //==敵人暫停
+                        gameScene.enemy.children.iterate(child => child.behavior = 'worship');
+                        gameScene.sys.updateList.remove(player);
+                        gameScene.sys.displayList.remove(player);
+                    });
 
-                    // scene.sys.updateList.add(player);
-                    // scene.sys.displayList.add(player);
-
-                    // gameScene.sys.updateList.remove(player);
-                    // gameScene.sys.displayList.remove(player);
-
-                    gameScene.sys.updateList.remove(player);
-                    gameScene.sys.displayList.remove(player);
                     // gameScene.scene.pause();
-
                     // player.removedFromScene();
-                    console.debug(player);
+                    // console.debug(player);
 
                     //==博士出現
                     scene.tweens.add({
@@ -1895,8 +1922,17 @@ const Doctor = new Phaser.Class({
                     let rulesCount = Object.keys(event.rules).length;
                     for (let i = 0; i < rulesCount; i++) {
                         //==開始打字
-                        const text = event.rules[i],
+                        let text = event.rules[i],
                             textDura = text.length * 300;//==對話框持續時間(包含淡入淡出時間)一個字x秒
+
+                        if (i === rulesCount - 1) {
+                            let gameData = gameScene.gameData;
+                            let downKey = gameData.controllCursor['down'];
+                            downKey = gameData.localeJSON.UI[downKey] ?
+                                gameData.localeJSON.UI[downKey] : downKey;
+                            // console.debug(downKey);
+                            text = text.replace('\t', downKey);
+                        };
 
                         await new Promise(resolve => {
                             scene.tweens.add({
@@ -1909,6 +1945,11 @@ const Doctor = new Phaser.Class({
                                 ease: 'Linear',
                                 delay: 200,
                                 onStart: () => {
+                                    if (i === 0) {
+                                        this.dialog.getElement('background')
+                                            .setFillStyle(0xCE0000, 1);
+                                        this.dialog.shake(3000, 5);
+                                    };
                                     this.dialog.start(text, 70);//==(text,typeSpeed(ms per word))
                                     this.setAlpha(1);
                                 },

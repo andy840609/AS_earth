@@ -1837,6 +1837,9 @@ const Doctor = new Phaser.Class({
                 let gameScene = scene.game.scene.getScene('gameScene'),
                     blackOut = gameScene.blackOut;
 
+                //==緊急事件物品
+                let emergItems = gameScene.physics.add.group();
+
                 this.talkingCallback = scene.time.delayedCall(eventDelay, async () => {
                     //==事件結束回復原狀
                     scene.time.delayedCall(eventDuration, () => {
@@ -1856,22 +1859,18 @@ const Doctor = new Phaser.Class({
                             .setFillStyle(0xD9B300, 1);
 
                         gameScene.sidekick.talkingCallback = false;
+                        emergItems.destroy(true);
                     }, [], scene);
 
-                    //==緊急事件物品
-                    let emergItems = gameScene.physics.add.group();
 
 
                     let table = scene.physics.add.sprite(500, 200, 'emergTable')
-                        .setScale(0.2)
-                    // .setDepth(99)
-                    emergItems.add(table);
+                        .setScale(0.2);
 
+                    emergItems.add(table);
                     gameScene.physics.add.collider(emergItems, gameScene.platforms, (item, platforms) => {
-                        // console.debug(i, p)
                         item.setMaxVelocity(0);
                     });
-
 
                     //==助手暫停說話
                     let sidekick = gameScene.sidekick;

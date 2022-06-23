@@ -7594,7 +7594,6 @@ class DefendScene extends Phaser.Scene {
             };
 
             //==助手對話框不顯示
-            if (this.sidekick.talkingCallback) this.sidekick.talkingCallback.remove();
             if (this.doctor.talkingCallback) this.doctor.talkingCallback.remove();
             this.sidekick.dialog.setAlpha(0);
             this.doctor.setAlpha(0);

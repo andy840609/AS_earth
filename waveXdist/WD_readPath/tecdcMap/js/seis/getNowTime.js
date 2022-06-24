@@ -24,7 +24,7 @@ function calDateUTC() {
     dd.setDate(dd.getDate() + AddDayCount);
     let yy = dd.getFullYear();
     let mm = (dd.getMonth() + 1) < 10 ? "0" + (dd.getMonth() + 1) : (dd.getMonth() + 1);
-    let dday = (dd.getDate()) < 10 ? "0" + (dd.getDate()): (dd.getDate());
+    let dday = (dd.getDate()) < 10 ? "0" + (dd.getDate()) : (dd.getDate());
     let day_90 = yy + "-" + mm + "-" + dday;
     dd = {};
     dd['todayUTC'] = todayUTC;

@@ -4740,7 +4740,6 @@ class UIScene extends Phaser.Scene {
                 update = () => { };
                 break;
             case 'hotKeyUI'://==道具快捷鍵
-
                 const COLOR_PRIMARY = 0x141414;
                 const COLOR_LIGHT = 0x474747;
                 const COLOR_DARK = 0x292929;
@@ -6157,6 +6156,7 @@ class LoadingScene extends Phaser.Scene {
                     this.load.spritesheet('player_runAttack', dir + 'runAttack.png', frameObj);
                     this.load.spritesheet('player_timesUp', dir + 'timesUp.png', frameObj);
                     this.load.spritesheet('player_cheer', dir + 'cheer.png', frameObj);
+                    this.load.spritesheet('player_crouch', dir + 'crouch.png', frameObj);
 
                     //==effect
                     const effectDir = gameObjDir + 'player/effect/';
@@ -7564,6 +7564,8 @@ class DefendScene extends Phaser.Scene {
         // console.debug(enemy.children.entries);
 
         if (this.gameOver.flag) {
+            //==緊急事件先結束
+            if (this.doctor.behavior === 'emerg') this.doctor.emit('emergEnd');
             const status = this.gameOver.status;
             const gameDestroyDelay = status == 0 ? 1500 : 4000;
 
@@ -7576,6 +7578,7 @@ class DefendScene extends Phaser.Scene {
             // camera.on("PAN_COMPLETE", (e) => {
             //     console.debug('AAAA');
             // });
+
 
             if (this.gameOver.delayedCall) return;
             this.gameTimer.paused = true;

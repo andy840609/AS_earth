@@ -408,7 +408,7 @@ function addLayerToMap(data, circleSize, isTesis = false) {
 
         marker = L.circleMarker([row.Latitude, row.Longitude], { radius: size, color: colorcode }
         ).bindPopup(row.Date + "<br>" + row.Time +
-            "<br>Depth: " + row.Depth + " km <br>ML: " + row.ML + "<br>" + `<button type="button" class="btn btn-secondary" onClick="changeWaveform()">Show waveform</button>`
+            "<br>Depth: " + row.Depth + " km <br>ML: " + row.ML + "<br>" + `<button type="button" class="btn btn-secondary" onClick="selectCatlog('${row.catlog}')">Show waveform</button>`
         );
 
 
@@ -552,6 +552,7 @@ function get_events() {
 
         })
         .catch((error) => {
+            console.debug(error);
             $('#load').hide();
             getError(1)
         });

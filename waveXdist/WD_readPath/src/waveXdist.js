@@ -1,7 +1,7 @@
 function waveXdist() {
-    var selector = 'body';
-    var data;
-    var stringObj;
+    let selector = 'body';
+    let data;
+    let stringObj;
 
     chart.selector = (value) => {
         selector = value;
@@ -21,14 +21,14 @@ function waveXdist() {
         const channelIndex = 9;
 
         //==異步讀檔,回傳一個promise而非結果
-        var readTextFile = (file, fileDataKey) => {
+        let readTextFile = (file, fileDataKey) => {
             // console.debug(fileDataKey);
-            var tmpData = [];
+            let tmpData = [];
 
-            var pushData;
+            let pushData;
             if (fileDataKey.length > 1) {//一行有兩列以上的資料則作物件陣列
                 pushData = (row) => {
-                    var col = row.trim().split(/\s+/);
+                    let col = row.trim().split(/\s+/);
                     // console.debug(col);
                     let obj = {};
                     col.forEach((c, index) => obj[fileDataKey[index]] = (isNaN(c) ? c : parseFloat(c)));
@@ -42,22 +42,22 @@ function waveXdist() {
             }
 
             return new Promise((resolve, reject) => {
-                var rawFile = new XMLHttpRequest();
+                let rawFile = new XMLHttpRequest();
                 rawFile.open("GET", file, true);
                 // rawFile.open("GET", file, false);
                 rawFile.onreadystatechange = function () {
                     if (rawFile.readyState === 4) {
                         if (rawFile.status === 200 || rawFile.status == 0) {
-                            var rows = rawFile.responseText.split("\n");
+                            let rows = rawFile.responseText.split("\n");
                             rows.forEach(row => {
                                 if (row != '') {
                                     pushData(row);
                                 }
                             })
-                            var startStr = '/';
-                            var startIndex = file.lastIndexOf(startStr) + startStr.length;
-                            var fileName = file.substring(startIndex);
-                            var fileData = { fileName: fileName, data: tmpData };
+                            let startStr = '/';
+                            let startIndex = file.lastIndexOf(startStr) + startStr.length;
+                            let fileName = file.substring(startIndex);
+                            let fileData = { fileName: fileName, data: tmpData };
                             // console.debug(fileData);
                             resolve(fileData);
                         }
@@ -85,7 +85,7 @@ function waveXdist() {
             //===(不用了)
             //===兩種同步資料方法
             //A.每個測站資料的時間點都要相同，如果其他測站少時間點就要補上時間點並給undefine值(event讀同個時間資料才不出錯)
-            var syncALLDataTiming = (fileData) => {
+            let syncALLDataTiming = (fileData) => {
                 // console.debug(fileData);
                 let chartData;
 
@@ -94,7 +94,7 @@ function waveXdist() {
                 let dataArr = fileData.map(() => []);
                 let timeArr = [];
 
-                var syncALL = () => {
+                let syncALL = () => {
 
 
                     let i = 0;
@@ -191,7 +191,7 @@ function waveXdist() {
                 return chartData;
             }
             //B.先找第一點時間漂亮的測站當標準來取時間陣列(沒有則選第一個讀取的檔案)，在用最少點的測站當標準資料點數
-            var sliceSamePoint = (fileData) => {
+            let sliceSamePoint = (fileData) => {
                 let Datakey_time = fileData[0].column[0];
                 let Datakey_vaule = fileData[0].column[1];
                 // console.debug(fileData);
@@ -273,26 +273,26 @@ function waveXdist() {
         //==2.az、3.dist 都是單個檔案
         const dataKey_staAz = [dataKey[1], dataKey[5]];
         const dataKey_staDist = [dataKey[1], dataKey[4]];
-        var azPromise = readTextFile(staAz_paths, dataKey_staAz);
-        var distPromise = readTextFile(staDist_paths, dataKey_staDist);
+        let azPromise = readTextFile(staAz_paths, dataKey_staAz);
+        let distPromise = readTextFile(staDist_paths, dataKey_staDist);
 
         //==4.時間x
         //4種檔案都讀取完才能整理成圖表要的完整資料
         const dataKey_Taxis = ['time'];
-        var TaxisPromise = readTextFile(Taxis_paths, dataKey_Taxis);
+        let TaxisPromise = readTextFile(Taxis_paths, dataKey_Taxis);
 
         //==eventlist.txt
-        var eventlistPromise = readTextFile(eventlist_paths, ['date', 'time', 'lat', 'lng', 'depth', 'ML']);
+        let eventlistPromise = readTextFile(eventlist_paths, ['date', 'time', 'lat', 'lng', 'depth', 'ML']);
 
 
 
         data = Promise.all([getXYData(), azPromise, distPromise, TaxisPromise, eventlistPromise]).then(success => {
             // console.debug(success);
-            var xyData = success[0];
-            var sta_az = success[1];
-            var sta_dist = success[2];
-            var Taxis = success[3];
-            var eventlist = success[4];
+            let xyData = success[0];
+            let sta_az = success[1];
+            let sta_dist = success[2];
+            let Taxis = success[3];
+            let eventlist = success[4];
 
             console.log("xyData = ");
             console.log(xyData);
@@ -353,7 +353,7 @@ function waveXdist() {
             compositeData.column = dataKey;
 
             Object.assign(compositeData, eventlist.data[0]);
-            // console.debug();
+            // console.debug(eventlist.data[0]);
             // console.debug(compositeData);
 
             return compositeData;
@@ -370,7 +370,6 @@ function waveXdist() {
     };
 
     function chart() {
-
         const chartContainerJQ = $(selector);
         const chartContainerD3 = d3.select(selector);
 
@@ -661,7 +660,7 @@ function waveXdist() {
             // })
 
             //================
-            var mousedownFlag = false;
+            let mousedownFlag = false;
             $(window)
                 //==用來關閉dropdown menu
                 .on('click', e => {
@@ -675,7 +674,7 @@ function waveXdist() {
 
 
             //================station list數量變畫會自動捲動（還沒找到解法）
-            // var pageController = chartContainerJQ.find('.pageController');
+            // let pageController = chartContainerJQ.find('.pageController');
 
             // pageController.on('focus', e => { console.debug(e.target); })
             // pageController.find('button')
@@ -703,7 +702,7 @@ function waveXdist() {
                 });
 
             //==用來判斷 rangeTextBox是否Focus(不要關dropdown)
-            var rangeTextBoxFocus = false;
+            let rangeTextBoxFocus = false;
             xAxisName_dropdownMenu.find('input[name ="xAxisRange"]')
                 .on('focus', e => rangeTextBoxFocus = true)
                 .on('blur', e => rangeTextBoxFocus = false);
@@ -758,9 +757,9 @@ function waveXdist() {
                 // e.preventDefault();
             });
             //====================normalize
-            var normalizeScale = [1, 2, 5, 10];
+            let normalizeScale = [1, 2, 5, 10];
 
-            var default_normalizeScaleIdx = 1;
+            let default_normalizeScaleIdx = 1;
 
             chartContainerJQ.find('#normalizeScale')
                 .val(normalizeScale[default_normalizeScaleIdx])
@@ -802,7 +801,7 @@ function waveXdist() {
 
             function getFileData() {
                 //===get floder name(catalog) to make option
-                var catalogArr;
+                let catalogArr;
                 const dataPath = "../data/";
                 const folderStr = 'xy_';
 
@@ -835,7 +834,7 @@ function waveXdist() {
                     },
                 });
 
-                var getPaths = (optionValue) => {
+                let getPaths = (optionValue) => {
                     let event = catalogArr[optionValue];
                     let catalog = event.catalog;
 
@@ -874,8 +873,9 @@ function waveXdist() {
         };
         function WD_Charts(xAxisScale = 'linear', xAxisName = 'dist') {
             console.debug(data);
+
             // console.debug(xAxisName)
-            var colorPalette = {};//to fixed color for each station
+            let colorPalette = {};//to fixed color for each station
             const dataKeys = data.column;//0: "network", 1: "station", 2: "channel", 3: "data", 4: "dist", 5:"az"
             // console.debug(dataKeys);
 
@@ -891,22 +891,23 @@ function waveXdist() {
             const timeArr = data.timeArr;
             console.debug(groupData);
 
-            // console.debug(data);
-            var referenceTime = `${data.date}T${data.time}`,
+
+            let referenceTime = `${data.date}T${data.time}`,
                 title = `${referenceTime}(UTC)  M${data.ML}`;
+
             if (stringObj) {
                 referenceTime = stringObj.referenceTime ? stringObj.referenceTime : referenceTime;
                 title = stringObj.title ?
                     stringObj.title :
                     (referenceTime.includes('.') ?
                         referenceTime.substring(0, referenceTime.lastIndexOf('.')) : referenceTime) + " (UTC)";
-            } else
-                stringObj = { referenceTime: referenceTime };
+            };
+
 
 
             const getMargin = (yAxisDomain = null) => {
                 // console.debug(yAxisDomain);
-                var top = 30, right = 30, bottom = 70, left = 50;
+                let top = 30, right = 30, bottom = 70, left = 50;
                 if (yAxisDomain) {
                     let yAxisMaxTick = parseInt(Math.max(...yAxisDomain.map(domain => Math.abs(domain))));
                     let tickLength = yAxisMaxTick.toString().length;
@@ -916,7 +917,7 @@ function waveXdist() {
                 return { top: top, right: right, bottom: bottom, left: left };
             };
             const getColor = (key) => {
-                var color;
+                let color;
                 if (colorPalette[key])
                     color = colorPalette[key];
                 else {
@@ -990,21 +991,21 @@ function waveXdist() {
             const pathGroup = svg.append("g").attr('class', 'paths').attr("clip-path", "url(#clip)");
 
 
-            var margin, x, y, path_x;
-            var newDataObj;
+            let margin, x, y, path_x;
+            let newDataObj;
 
             //===for range
-            var distRange_slider, azRange_slider;//for event control slider
-            var dist_domain, az_domain;//range選擇範圍
+            let distRange_slider, azRange_slider;//for event control slider
+            let dist_domain, az_domain;//range選擇範圍
 
 
             //===for station select
-            var unselected_band = [];
+            let unselected_band = [];
             const unselected_color = 'grey', unselected_opacity = .3;
             const staionDropDownMenu = chartContainerD3.selectAll('#displayDropDownMenu');
 
-            var staionSelectPage = 0;//當前頁數
-            var updateStaionDropDownMenu = () => {
+            let staionSelectPage = 0;//當前頁數
+            let updateStaionDropDownMenu = () => {
 
                 // console.debug(xAxisName);
                 let sortingKey = xAxisName;
@@ -1012,19 +1013,19 @@ function waveXdist() {
 
                 //===分頁
                 const NumOfEachPage = 10;//一頁顯示筆數
-                var totalPages = Math.ceil(data.length / NumOfEachPage) - 1;
+                let totalPages = Math.ceil(data.length / NumOfEachPage) - 1;
 
                 // //頁數超出範圍要修正
                 if (staionSelectPage > totalPages) staionSelectPage = totalPages;
                 else if (staionSelectPage < 0 && totalPages >= 0) staionSelectPage = 0;
 
-                var startIndex = staionSelectPage * NumOfEachPage;
-                var endIndex = startIndex + NumOfEachPage - 1;
+                let startIndex = staionSelectPage * NumOfEachPage;
+                let endIndex = startIndex + NumOfEachPage - 1;
                 // console.debug(startIndex, endIndex);
                 //===分頁
                 // console.debug(staionSelectPage + '/' + totalPages);
 
-                var stationsDiv = staionDropDownMenu.select('.stations')
+                let stationsDiv = staionDropDownMenu.select('.stations')
                     .selectAll('div')
                     .data(data)
                     .join('div')
@@ -1120,10 +1121,10 @@ function waveXdist() {
                     network_selectArr = controlObj.hasOwnProperty('network_selectArr') ? controlObj.network_selectArr : newDataObj.network_selectArr,
                     channel_selectGroup = controlObj.hasOwnProperty('channel_selectGroup') ? controlObj.channel_selectGroup : newDataObj.channel_selectGroup;
 
-                var newData, newTimeArr;
+                let newData, newTimeArr;
                 // console.debug(xAxis_domainObj);
 
-                var newData_normalize = (newData) => {
+                let newData_normalize = (newData) => {
                     // console.debug('***normalize...***');
                     newData.forEach(d => {
                         let originData = groupData[d[dataKeys[0]]][channel_selectGroup].find(od => od[dataKeys[1]] == d[dataKeys[1]]);
@@ -1136,13 +1137,13 @@ function waveXdist() {
                     })
 
                 };
-                var getArr_of_channel_select = (channel_selectGroup) => {
+                let getArr_of_channel_select = (channel_selectGroup) => {
                     return isNaN(channel_selectGroup) ?
                         [] : [].concat(...network_selectArr.map(net => groupData[net][channel_selectGroup].map(d => ({ ...d }))));
                 };
 
-                var dataBeenReset = false;
-                var get_newData = (xAxis_domainObj) => {
+                let dataBeenReset = false;
+                let get_newData = (xAxis_domainObj) => {
 
                     let newData = getArr_of_channel_select(channel_selectGroup);
 
@@ -1176,7 +1177,7 @@ function waveXdist() {
                     // console.debug(newData);
                     return newData;
                 };
-                var get_newTimeArr_and_update_newData = (yAxis_domain) => {
+                let get_newTimeArr_and_update_newData = (yAxis_domain) => {
                     let newTimeArr;
 
                     //3.根據y軸的時間選擇範圍重新選擇newData陣列裡各物件的data數值陣列
@@ -1224,7 +1225,6 @@ function waveXdist() {
             function updateChart(trans = false) {
 
                 function init() {
-
                     svg
                         .append("g")
                         .attr("class", "title")
@@ -1320,8 +1320,8 @@ function waveXdist() {
                     updateStaionDropDownMenu();
 
                     // console.debug(groupData);
-                    var rangeInit = function () {
-                        var get_niceDomain = (domain) => {
+                    let rangeInit = function () {
+                        let get_niceDomain = (domain) => {
                             return d3.scaleLinear().domain(domain).nice().domain();
                         };
 
@@ -1376,6 +1376,7 @@ function waveXdist() {
                         // data.forEach(d => console.debug(d[sortingKey]))
                         return data;
                     };
+
                     const newData = sort_newData(newDataObj.newData, xAxisName);
                     const newTimeArr = newDataObj.newTimeArr;
                     const xAxis_domainObj = newDataObj.xAxis_domainObj;
@@ -1408,7 +1409,7 @@ function waveXdist() {
                         // .nice()
                         .range([height - margin.bottom, margin.top]);
                     // console.debug(x.domain())
-                    var refreshText = () => {
+                    let refreshText = () => {
                         xAxis
                             .select('.axis_name')
                             .attr("y", margin.bottom - 20)
@@ -1429,8 +1430,8 @@ function waveXdist() {
                             .attr("y", margin.top / 2);
 
                     }
-                    var updateAxis = () => {
-                        var makeXAxis = g => g
+                    let updateAxis = () => {
+                        let makeXAxis = g => g
                             .attr("transform", `translate(0,${height - margin.bottom})`)
                             .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0))
                             .call(g => {
@@ -1443,7 +1444,7 @@ function waveXdist() {
                                         .attr("transform", "rotate(90)");
                             });
 
-                        var makeYAxis = g => g
+                        let makeYAxis = g => g
                             .attr("transform", `translate(${margin.left},0)`)
                             .call(d3.axisLeft(y).ticks(height / 30))
                             .call(g => g.select(".domain").attr('display', 'none'))
@@ -1455,24 +1456,25 @@ function waveXdist() {
                         xAxis.call(makeXAxis);
                         yAxis.call(makeYAxis);
                     }
-                    var updatePaths = () => {
+                    let updatePaths = () => {
 
-                        // var transitionDuration = 500;
-                        var dataDomain = {
+                        // let transitionDuration = 500;
+                        let dataDomain = {
                             true: [-1, 1],
                             false: d3.extent([].concat(...data.map(d => d3.extent(d.data)))),
                         }[normalize]
                             .reverse();//改成左邊y值爲正
-                        var dataDomainMean = (dataDomain[1] + dataDomain[0]) * 0.5;//linear時將第一點移至正中間             
-                        var xAxisLength = x.range()[1] - x.range()[0];
+                        let dataDomainMean = (dataDomain[1] + dataDomain[0]) * 0.5;//linear時將第一點移至正中間             
+                        let xAxisLength = x.range()[1] - x.range()[0];
 
                         const eachDataGap = xAxisLength / data.length;
 
+                        let normalizeScale = 1;
                         if (normalize) {
                             let textBoxValue = chartContainerD3.selectAll('#normalizeScale').node().value;
-                            var normalizeScale = (textBoxValue == '') ? 1 : textBoxValue;
+                            normalizeScale = (textBoxValue == '') ? 1 : textBoxValue;
                         }
-                        var dataRange = {
+                        let dataRange = {
                             true: [-0.5 * eachDataGap * normalizeScale, 0.5 * eachDataGap * normalizeScale],
                             false: [-0.5 * eachDataGap, 0.5 * eachDataGap],
                         }[normalize];
@@ -1482,8 +1484,8 @@ function waveXdist() {
                             .domain(dataDomain)
                             .range(dataRange);
 
-                        var line = (data, gapPath = false) => {
-                            var pathAttr;
+                        let line = (data, gapPath = false) => {
+                            let pathAttr;
 
                             let segmentLine = d3.line()
                                 .defined(d => !isNaN(d))
@@ -1513,7 +1515,7 @@ function waveXdist() {
                             return pathAttr;
                         }
 
-                        var makePaths = pathGroup => pathGroup
+                        let makePaths = pathGroup => pathGroup
                             .selectAll("g")
                             .data(newData)
                             .join("g")
@@ -1528,12 +1530,16 @@ function waveXdist() {
                                     let opacity = isUnselected ? unselected_opacity : 1;
 
                                     //波形移到x軸位置(1.dist/az 2.波形第一點離中心點偏移位置修正)
-                                    var getTransX = () => {
+                                    let getTransX = () => {
                                         // console.debug('getTransX');
                                         let getDataFirstPointIndex = () => {
                                             let firstPointIndex = 0;
-                                            while (isNaN(d.data[firstPointIndex]))
+                                            // console.debug(i, firstPointIndex);
+                                            while (isNaN(d.data[firstPointIndex])) {
                                                 firstPointIndex++;
+                                                if (firstPointIndex >= d.data.length) break;
+                                            };
+                                            // console.debug(i, firstPointIndex);
                                             return firstPointIndex;
                                         };
 
@@ -1546,7 +1552,7 @@ function waveXdist() {
 
                                         //===2.
                                         let shiftMean = path_x(dataDomainMean) - path_x(d.data[getDataFirstPointIndex()]);
-                                        // console.debug(shiftMean);
+                                        // console.debug(i, shiftMean);
 
                                         return translate_x + shiftMean;
                                     };
@@ -1609,6 +1615,7 @@ function waveXdist() {
                     });
                     init();
                 };
+
                 render();
                 loadingEffect('hide');
             };
@@ -1617,14 +1624,14 @@ function waveXdist() {
             updateChart();
 
             function events() {
-                var yAxis_domain = null,
+                let yAxis_domain = null,
                     normalize = chartContainerD3.selectAll('#normalize').property("checked"),
                     normalizeScale = chartContainerD3.selectAll('#normalizeScale').property("value"),
                     xAxis_domainObj = {};
 
                 //===分開updateObj讓圖表更新不受到mousemove...事件影響
-                var chartUpdateObj = { updateFlag: true, updateTimeOut: null, updateDelay: 10 };
-                var updateHandler = (action, updateObj = chartUpdateObj, parameter = null, mustDone = false) => {
+                let chartUpdateObj = { updateFlag: true, updateTimeOut: null, updateDelay: 10 };
+                let updateHandler = (action, updateObj = chartUpdateObj, parameter = null, mustDone = false) => {
                     // console.debug(parameter)
                     // console.debug(chartUpdateObj.updateFlag);
 
@@ -1698,29 +1705,29 @@ function waveXdist() {
 
                 //===tooltip分頁控制
                 const NumOfEachPage = 4;//一頁顯示筆數
-                var totalPages, currentPage = 0;//當前頁數
-                var startIndex, endIndex, pageData;//當前頁的i1,i2和資料(用來畫mousemove的圈圈)
-                var mouseOnIdx = 0;//資料陣列的索引(滑鼠移動控制)
+                let totalPages, currentPage = 0;//當前頁數
+                let startIndex, endIndex, pageData;//當前頁的i1,i2和資料(用來畫mousemove的圈圈)
+                let mouseOnIdx = 0;//資料陣列的索引(滑鼠移動控制)
 
                 //用來判斷tooltip應該在滑鼠哪邊
                 const chart_center = [x.range().reduce((a, b) => a + b) * 0.5, y.range().reduce((a, b) => a + b) * 0.5];
                 const tooltipMouseGap = 50;//tooltip與滑鼠距離
 
-                var tooltipUpdateObj = { updateFlag: true, updateTimeOut: null, updateDelay: 10 };
+                let tooltipUpdateObj = { updateFlag: true, updateTimeOut: null, updateDelay: 10 };
                 //===更新tooltip和圓圈
-                var updateTooltip = () => {
-                    var newTimeArr = newDataObj.newTimeArr;
-                    var newData = newDataObj.newData;
-                    var network_selectArr = newDataObj.network_selectArr;
-                    var channel_selectGroup = newDataObj.channel_selectGroup;
+                let updateTooltip = () => {
+                    let newTimeArr = newDataObj.newTimeArr;
+                    let newData = newDataObj.newData;
+                    let network_selectArr = newDataObj.network_selectArr;
+                    let channel_selectGroup = newDataObj.channel_selectGroup;
 
                     //==沒選中的挑掉不顯示資料
-                    var selectedData = newData.filter(d => !unselected_band.includes(d[dataKeys[1]]));
+                    let selectedData = newData.filter(d => !unselected_band.includes(d[dataKeys[1]]));
                     // console.debug(selectedData);
                     // console.debug(newData);
-                    var floatShorter = (val, digit) => parseFloat(val.toFixed(digit));//小數後幾位四捨五入
+                    let floatShorter = (val, digit) => parseFloat(val.toFixed(digit));//小數後幾位四捨五入
 
-                    var getCurrentPageData = function () {
+                    let getCurrentPageData = function () {
 
                         totalPages = Math.ceil(selectedData.length / NumOfEachPage) - 1;
                         // console.debug(currentPage + '/' + totalPages)
@@ -1784,7 +1791,7 @@ function waveXdist() {
                     const lineStroke2 = "0.5px";
 
                     //==用來取得dist/az和第一點偏差的位移值,挑掉未選的
-                    var pathGCollection = pathGroup.selectAll('g').nodes().filter(g =>
+                    let pathGCollection = pathGroup.selectAll('g').nodes().filter(g =>
                         !unselected_band.includes(g.__data__[dataKeys[1]]));
                     // console.debug(pathGCollection)
 
@@ -1844,7 +1851,7 @@ function waveXdist() {
                 };
 
                 //===select Mode controll
-                var dragBehavior, mouseMoveBehavior;
+                let dragBehavior, mouseMoveBehavior;
 
 
                 function pathEvent() {
@@ -1880,7 +1887,7 @@ function waveXdist() {
                             .on('mouseleave', e => { // on mouse out hide line, circles and text
                                 // console.log('mouseleave');
                                 // console.debug(e);
-                                var action = () => {
+                                let action = () => {
                                     mouseG.style("display", "none");
                                     tooltip.style("display", "none");
                                 }
@@ -1890,10 +1897,10 @@ function waveXdist() {
                             .on('mousemove', function (e) { // update tooltip content, line, circles and text when mouse moves
                                 // console.debug(e.target);
                                 // console.debug(e);
-                                var action = () => {
+                                let action = () => {
                                     e.preventDefault();
 
-                                    var newTimeArr = newDataObj.newTimeArr;
+                                    let newTimeArr = newDataObj.newTimeArr;
                                     const pointer = d3.pointer(e, this);
                                     const ym = y.invert(pointer[1]);
                                     mouseOnIdx = d3.bisectCenter(newTimeArr, ym);
@@ -1949,7 +1956,7 @@ function waveXdist() {
                     }
                     // //====================================zoom==================================================
                     function mouseDrag() {
-                        var selectionRect = {
+                        let selectionRect = {
                             element: null,
                             previousElement: null,
                             currentY: 0,
@@ -1961,10 +1968,10 @@ function waveXdist() {
                                 this.element = ele;
                             },
                             getNewAttributes: function () {
-                                var x = this.currentX < this.originX ? this.currentX : this.originX;
-                                var y = this.currentY < this.originY ? this.currentY : this.originY;
-                                var width = Math.abs(this.currentX - this.originX);
-                                var height = Math.abs(this.currentY - this.originY);
+                                let x = this.currentX < this.originX ? this.currentX : this.originX;
+                                let y = this.currentY < this.originY ? this.currentY : this.originY;
+                                let width = Math.abs(this.currentX - this.originX);
+                                let height = Math.abs(this.currentY - this.originY);
                                 return {
                                     x: x,
                                     y: y,
@@ -1974,10 +1981,10 @@ function waveXdist() {
                             },
                             getCurrentAttributes: function () {
                                 // use plus sign to convert string into number
-                                var x = +this.element.attr("x");
-                                var y = +this.element.attr("y");
-                                var width = +this.element.attr("width");
-                                var height = +this.element.attr("height");
+                                let x = +this.element.attr("x");
+                                let y = +this.element.attr("y");
+                                let width = +this.element.attr("width");
+                                let height = +this.element.attr("height");
                                 return {
                                     x1: x,
                                     y1: y,
@@ -1986,11 +1993,11 @@ function waveXdist() {
                                 };
                             },
                             // getCurrentAttributesAsText: function () {
-                            //     var attrs = this.getCurrentAttributes();
+                            //     let attrs = this.getCurrentAttributes();
                             //     return "x1: " + attrs.x1 + " x2: " + attrs.x2 + " y1: " + attrs.y1 + " y2: " + attrs.y2;
                             // },
                             init: function (newX, newY) {
-                                var rectElement = svg
+                                let rectElement = svg
                                     .append("rect")
                                     .attr('rx', 0)
                                     .attr('ry', 0)
@@ -2047,7 +2054,7 @@ function waveXdist() {
                             })
                             .on("drag", e => {
                                 // console.log("dragMove");
-                                var action = () => {
+                                let action = () => {
                                     const p = d3.pointer(e, eventRect.node());
                                     // console.debug(p);
                                     if (p[1] < margin.top)
@@ -2201,7 +2208,7 @@ function waveXdist() {
                                             })
                                             .on('click', e => {
 
-                                                var action = () => {
+                                                let action = () => {
                                                     let thisG = e.target.parentNode;
                                                     let thisStation = thisG.__data__[dataKeys[1]];
 
@@ -2241,7 +2248,7 @@ function waveXdist() {
                                             });
 
 
-                                        var hover = (target) => {
+                                        let hover = (target) => {
                                             let thisG = target.parentNode;
                                             let thisStation = thisG.__data__[dataKeys[1]];
                                             if (unselected_band.includes(thisStation)) return;//未選的不用處理
@@ -2267,7 +2274,7 @@ function waveXdist() {
                                                 );
                                         };
 
-                                        var leave = () => {
+                                        let leave = () => {
                                             //==恢復所有除了未選中path透明度
                                             pathGroup.selectAll('g')
 
@@ -2471,7 +2478,7 @@ function waveXdist() {
 
 
                                     //避免更新太頻繁LAG
-                                    var action = () => {
+                                    let action = () => {
                                         newDataObj = getNewData({ normalize: normalize, yAxis_domain: yAxis_domain, xAxis_domainObj: xAxis_domainObj });
                                         updateChart();
                                         updateStaionDropDownMenu();
@@ -2515,7 +2522,7 @@ function waveXdist() {
                             if (!isNaN(e.target.value)) {
 
                                 loadingEffect('show');
-                                var action = () => {
+                                let action = () => {
                                     normalizeScale = e.target.value;
                                     updateChart();
                                 }
@@ -2613,35 +2620,35 @@ function waveXdist() {
             chartContainerJQ.find('sub.az').text('');
             chartContainerJQ.find('#charts').children().remove();
 
-            var i = 1;
+            let i = 1;
 
-            var getChartMenu = () => {
+            let getChartMenu = () => {
                 // console.log(d.data);
-                var div = document.createElement("div");
+                let div = document.createElement("div");
                 div.setAttribute("id", "chart" + i);
                 div.setAttribute("class", "chart col-md-12 col-sm-12");
                 div.setAttribute("style", "position:relative");
 
-                var nav = document.createElement('nav');
+                let nav = document.createElement('nav');
                 nav.setAttribute("id", "nav" + i);
                 nav.setAttribute("class", "toggle-menu");
                 nav.setAttribute("style", "position:absolute");
                 nav.style.right = "0";
 
-                var a = document.createElement('a');
+                let a = document.createElement('a');
                 a.setAttribute("class", "toggle-nav");
                 a.setAttribute("href", "#");
                 a.innerHTML = "&#9776;";
                 nav.append(a);
 
-                var ul = document.createElement("ul");
+                let ul = document.createElement("ul");
                 ul.classList.add("active");
                 nav.append(ul);
 
-                var chartDropDown = ['bigimg', 'svg', 'png', 'jpg'];
+                let chartDropDown = ['bigimg', 'svg', 'png', 'jpg'];
                 chartDropDown.forEach(option => {
-                    var li = document.createElement("li");
-                    var item = document.createElement("a");
+                    let li = document.createElement("li");
+                    let item = document.createElement("a");
                     item.href = "javascript:void(0)";
 
                     if (option != chartDropDown[0])
@@ -2666,9 +2673,9 @@ function waveXdist() {
                 document.querySelector('#charts').append(div);
                 document.querySelector('#chart' + i).append(nav);
             };
-            var MenuEvents = () => {
-                var charts = document.getElementById('charts');
-                var stopPropagation = (e) => {
+            let MenuEvents = () => {
+                let charts = document.getElementById('charts');
+                let stopPropagation = (e) => {
                     e.stopPropagation();
                 }
 
@@ -2717,12 +2724,12 @@ function waveXdist() {
                     });
                 });
             };
-            var downloadSvg = (svgArr, fileName, option) => {
+            let downloadSvg = (svgArr, fileName, option) => {
 
                 function getSvgUrl(svgNode) {
-                    var svgData = (new XMLSerializer()).serializeToString(svgNode);
-                    var svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-                    var svgUrl = URL.createObjectURL(svgBlob);
+                    let svgData = (new XMLSerializer()).serializeToString(svgNode);
+                    let svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+                    let svgUrl = URL.createObjectURL(svgBlob);
                     return svgUrl;
                 }
                 function getCanvas(resize) {
@@ -2730,16 +2737,16 @@ function waveXdist() {
                     let canvas = document.createElement('canvas');
                     let context = canvas.getContext('2d');
 
-                    var svgWidth = svgArr[0].viewBox.baseVal.width;
-                    var svgHeight = svgArr[0].viewBox.baseVal.height * svgArr.length;
-                    var canvasWidth, canvasHeight;
+                    let svgWidth = svgArr[0].viewBox.baseVal.width;
+                    let svgHeight = svgArr[0].viewBox.baseVal.height * svgArr.length;
+                    let canvasWidth, canvasHeight;
                     //檢視時縮放,下載時放大
                     if (resize) {
-                        var windowW = window.innerWidth;//获取当前窗口宽度 
-                        var windowH = window.innerHeight;//获取当前窗口高度 
+                        let windowW = window.innerWidth;//获取当前窗口宽度 
+                        let windowH = window.innerHeight;//获取当前窗口高度 
 
-                        var width, height;
-                        var scale = 0.9;//缩放尺寸
+                        let width, height;
+                        let scale = 0.9;//缩放尺寸
                         height = windowH * scale;
                         width = height / svgHeight * svgWidth;
                         while (width > windowW * scale) {//如宽度扔大于窗口宽度 
@@ -2750,7 +2757,7 @@ function waveXdist() {
                         canvasHeight = height;
                     }
                     else {
-                        var scale = 1.5;
+                        let scale = 1.5;
                         canvasWidth = svgWidth * scale;
                         canvasHeight = svgHeight * scale;
                     }
@@ -2764,7 +2771,7 @@ function waveXdist() {
 
                 }
                 function download(href, name) {
-                    var downloadLink = document.createElement("a");
+                    let downloadLink = document.createElement("a");
                     downloadLink.href = href;
                     downloadLink.download = name;
                     document.body.appendChild(downloadLink);
@@ -2804,38 +2811,38 @@ function waveXdist() {
 
                 if (option == 'svg') {
                     //==============merge svg
-                    var newSvg = document.createElement('svg');
+                    let newSvg = document.createElement('svg');
 
 
                     svgArr.forEach(queryStr => {
-                        var svgjQobj = $(queryStr);
+                        let svgjQobj = $(queryStr);
                         svgjQobj.clone().appendTo(newSvg);
                     });
                     // console.debug(newSvg);
-                    var svgUrl = getSvgUrl(newSvg);
+                    let svgUrl = getSvgUrl(newSvg);
                     download(svgUrl, fileName + '.' + option);
                 }
                 else {
                     //==============each svg draw to canvas
-                    var CanvasObjArr = getCanvas(option == 'bigimg');
+                    let CanvasObjArr = getCanvas(option == 'bigimg');
 
-                    var canvas = CanvasObjArr[0];
-                    var context = CanvasObjArr[1];
-                    var imageWidth = canvas.width;
-                    var imageHeight = canvas.height / svgArr.length;
+                    let canvas = CanvasObjArr[0];
+                    let context = CanvasObjArr[1];
+                    let imageWidth = canvas.width;
+                    let imageHeight = canvas.height / svgArr.length;
 
 
                     svgArr.forEach((queryStr, index) => {
-                        var svgNode = $(queryStr)[0];
-                        var svgUrl = getSvgUrl(svgNode);
-                        var image = new Image();
+                        let svgNode = $(queryStr)[0];
+                        let svgUrl = getSvgUrl(svgNode);
+                        let image = new Image();
                         image.src = svgUrl;
                         image.onload = () => {
                             context.drawImage(image, 0, index * imageHeight, imageWidth, imageHeight);
 
                             //done drawing and output
                             if (index == svgArr.length - 1) {
-                                var imgUrl;
+                                let imgUrl;
                                 if (option == 'bigimg') {
                                     show(imageWidth, imageHeight);
                                 }

@@ -34,7 +34,7 @@ ajaxReadFile({ url: recordsDir }).then(success => {
             { data: 'timeUse', title: "消耗時間" },
         ],
         "paging": false,
-    })
+    });
 
 
-})
+});

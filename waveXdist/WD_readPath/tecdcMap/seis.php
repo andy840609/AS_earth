@@ -254,11 +254,18 @@
 <!--map控制圖表目錄-->
 <script>
   document.querySelector('#filter').style.display = "none";
-  let waveform = document.getElementById('iframe').contentWindow.document;
-  let catalog = waveform.querySelector("#catalog");
 
-  let selectCatlog = () => {
-    console.debug('changeWaveform')
+
+  let selectCatlog = (catlog) => {
+    let waveform = document.getElementById('iframe').contentWindow.document;
+    let selector = waveform.querySelector("#form-chart #catalog");
+    let option = Array.from(selector.children).find(option => option.text === catlog);
+
+    if (option) {
+      selector.selectedIndex = option.value;
+      selector.dispatchEvent(new Event('change'));
+    };
+
   };
 </script>
 

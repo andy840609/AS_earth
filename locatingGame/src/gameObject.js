@@ -981,6 +981,13 @@ const Player = new Phaser.Class({
                     repeat: -1,
                 });
 
+                scene.anims.create({
+                    key: 'player_crouch',
+                    frames: scene.anims.generateFrameNumbers('player_crouch'),
+                    frameRate: frameRate.crouch,
+                    repeat: 0,
+                });
+
                 //==effect
                 scene.anims.create({
                     key: 'player_jumpDust',
@@ -1167,6 +1174,11 @@ const Player = new Phaser.Class({
             if (this.flipX) this.filpHandler(false);
             if (isBusy) return;
             this.anims.play(!this.body.touching.down ? 'player_jump' : 'player_run', true);
+        }
+        else if (cursors[controllCursor['down']].isDown) {
+            this.setVelocityX(0);
+            if (isBusy) return;
+            this.anims.play('player_crouch', true);
         }
         else {
             this.setVelocityX(0);
@@ -1837,40 +1849,64 @@ const Doctor = new Phaser.Class({
                 let gameScene = scene.game.scene.getScene('gameScene'),
                     blackOut = gameScene.blackOut;
 
+                const canvas = gameScene.sys.game.canvas;
+                const width = canvas.width;
+                const height = canvas.height;
+
+                //==事件結束回復原狀
+                this.behavior = 'emerg';
+                this.once('emergEnd', function () {
+                    this.dialog.setAlpha(0);
+                    blackOut.fadeInTween.restart();
+                    this.talkingCallback = null;
+                    gameScene.enemy.children.iterate(child => child.behavior = '');
+                    // gameScene.add.existing(player);
+                    player.emergFlag = false;
+                    scene.sys.updateList.remove(player);
+                    scene.sys.displayList.remove(player);
+
+                    gameScene.sys.updateList.add(player);
+                    gameScene.sys.displayList.add(player);
+
+                    this.dialog.getElement('background')
+                        .setFillStyle(0xD9B300, 1);
+
+                    gameScene.sidekick.talkingCallback = false;
+                    emergItems.clear(true, true);
+                    this.behavior = null;
+                });
                 //==緊急事件物品
                 let emergItems = gameScene.physics.add.group();
+                gameScene.physics.add.collider(emergItems, gameScene.platforms, (item, platforms) => {
+                    item.setMaxVelocity(0);
+                });
 
                 this.talkingCallback = scene.time.delayedCall(eventDelay, async () => {
-                    //==事件結束回復原狀
-                    scene.time.delayedCall(eventDuration, () => {
-                        this.dialog.setAlpha(0);
-                        blackOut.fadeInTween.restart();
-                        this.talkingCallback = null;
-                        gameScene.enemy.children.iterate(child => child.behavior = '');
-                        // gameScene.add.existing(player);
-                        player.emergFlag = false;
-                        scene.sys.updateList.remove(player);
-                        scene.sys.displayList.remove(player);
+                    //==地震發生
+                    scene.time.delayedCall(eventDuration * 0.85, () => {
+                        const quakeDura = eventDuration * 0.15;
+                        gameScene.cameras.main.shake(quakeDura, 0.03);
+                        scene.cameras.main.shake(quakeDura, 0.03);
 
-                        gameScene.sys.updateList.add(player);
-                        gameScene.sys.displayList.add(player);
-
-                        this.dialog.getElement('background')
-                            .setFillStyle(0xD9B300, 1);
-
-                        gameScene.sidekick.talkingCallback = false;
-                        emergItems.destroy(true);
+                        let takeShelter = player.anims.getName() === 'player_crouch';
+                        if (!takeShelter) {
+                            const
+                                hurtDura = 1200,
+                                hurtHp = 20;
+                            scene.tweens.addCounter({
+                                from: 0,
+                                to: 1,
+                                loop: Math.ceil(quakeDura / hurtDura),
+                                duration: hurtDura,
+                                onLoop: () => {
+                                    player.statsChangeHandler({ HP: -hurtHp }, scene);
+                                },
+                            });
+                        }
                     }, [], scene);
+                    //==事件結束
+                    scene.time.delayedCall(eventDuration, () => this.emit('emergEnd'), [], scene);
 
-
-
-                    let table = scene.physics.add.sprite(500, 200, 'emergTable')
-                        .setScale(0.2);
-
-                    emergItems.add(table);
-                    gameScene.physics.add.collider(emergItems, gameScene.platforms, (item, platforms) => {
-                        item.setMaxVelocity(0);
-                    });
 
                     //==助手暫停說話
                     let sidekick = gameScene.sidekick;
@@ -1900,9 +1936,14 @@ const Doctor = new Phaser.Class({
                         gameScene.sys.displayList.remove(player);
                     });
 
-                    // gameScene.scene.pause();
-                    // player.removedFromScene();
-                    // console.debug(player);
+                    //===防災物品
+                    let getItems = () => {
+                        let table = scene.physics.add.sprite(width * 0.5, height * 0.5, 'emergTable')
+                            .setScale(0.2);
+
+                        emergItems.add(table);
+                    };
+
 
                     //==博士出現
                     scene.tweens.add({
@@ -1917,6 +1958,8 @@ const Doctor = new Phaser.Class({
                         // onYoyo: () => console.debug(this.alpha)
                     });
 
+
+
                     //==規則逐條說明
                     let rulesCount = Object.keys(event.rules).length;
                     for (let i = 0; i < rulesCount; i++) {
@@ -1924,13 +1967,23 @@ const Doctor = new Phaser.Class({
                         let text = event.rules[i],
                             textDura = text.length * 300;//==對話框持續時間(包含淡入淡出時間)一個字x秒
 
-                        if (i === rulesCount - 1) {
-                            let gameData = gameScene.gameData;
-                            let downKey = gameData.controllCursor['down'];
-                            downKey = gameData.localeJSON.UI[downKey] ?
-                                gameData.localeJSON.UI[downKey] : downKey;
-                            // console.debug(downKey);
-                            text = text.replace('\t', downKey);
+                        switch (i) {
+                            case 0:
+                                getItems();
+                                break;
+                            case 1:
+                                break;
+                            case 2:
+
+                                break;
+                            case 3:
+                                let gameData = gameScene.gameData;
+                                let downKey = gameData.controllCursor['down'];
+                                downKey = gameData.localeJSON.UI[downKey] ?
+                                    gameData.localeJSON.UI[downKey] : downKey;
+                                // console.debug(downKey);
+                                text = text.replace('\t', downKey);
+                                break;
                         };
 
                         await new Promise(resolve => {
@@ -1965,6 +2018,8 @@ const Doctor = new Phaser.Class({
 
 
         };
+
+
 
     },
 });

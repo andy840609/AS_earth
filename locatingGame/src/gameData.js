@@ -58,22 +58,22 @@ const GameObjectStats = {
     creature: {
         dog: {
             HP: 1000,
-            attackPower: 8,
+            attackPower: 80,
             movementSpeed: 200,
             jumpingPower: 0,
         },
-        cat: {
-            HP: 800,
-            attackPower: 10,
-            movementSpeed: 200,
-            jumpingPower: 200,
-        },
-        dove: {
-            HP: 500,
-            attackPower: 5,
-            movementSpeed: 400,
-            jumpingPower: 0,
-        },
+        // cat: {
+        //     HP: 800,
+        //     attackPower: 10,
+        //     movementSpeed: 200,
+        //     jumpingPower: 200,
+        // },
+        // dove: {
+        //     HP: 500,
+        //     attackPower: 5,
+        //     movementSpeed: 400,
+        //     jumpingPower: 0,
+        // },
         zombie: {
             HP: 800,
             attackPower: 10,

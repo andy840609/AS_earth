@@ -1403,6 +1403,7 @@ const Player = new Phaser.Class({
                     //==死
                     else {
                         this.invincibleFlag = true;
+                        this.stopCursorsFlag = true;
                         this.body.reset(this.x, this.y);
 
                         this.stats.HP = 0;
@@ -1605,8 +1606,8 @@ const Sidekick = new Phaser.Class({
                 ease: 'Linear',
                 onStart: () => this.dialog.start(hint, 50),//==(text,typeSpeed(ms per word))
                 onComplete: () => {
-                    console.debug('onComplete');
-                    this.talkingCallback = null
+                    // console.debug('onComplete');
+                    this.talkingCallback = null;
                 },
             });
         }, [], scene);
@@ -1788,8 +1789,6 @@ const Doctor = new Phaser.Class({
     talkingCallback: null,
     behavior: null,
     behaviorHandler: function (player, scene) {
-        // console.debug(this.body.speed);
-
         //==Doctor知識補充
         this.dialog.setPosition(this.x + this.displayWidth * 1.9, this.y + this.displayHeight * 0.5);
 
@@ -1884,25 +1883,26 @@ const Doctor = new Phaser.Class({
                 this.talkingCallback = scene.time.delayedCall(eventDelay, async () => {
                     //==地震發生
                     scene.time.delayedCall(eventDuration * 0.85, () => {
+                        title.destroy();
                         const quakeDura = eventDuration * 0.15;
                         gameScene.cameras.main.shake(quakeDura, 0.03);
                         scene.cameras.main.shake(quakeDura, 0.03);
 
-                        let takeShelter = player.anims.getName() === 'player_crouch';
-                        if (!takeShelter) {
-                            const
-                                hurtDura = 1200,
-                                hurtHp = 20;
-                            scene.tweens.addCounter({
-                                from: 0,
-                                to: 1,
-                                loop: Math.ceil(quakeDura / hurtDura),
-                                duration: hurtDura,
-                                onLoop: () => {
+                        const
+                            hurtDura = 1000,
+                            hurtHp = 20;
+
+                        scene.tweens.addCounter({
+                            from: 0,
+                            to: 1,
+                            loop: Math.ceil(quakeDura / hurtDura),
+                            duration: hurtDura,
+                            onLoop: () => {
+                                let takeShelter = player.anims.getName() === 'player_crouch';
+                                if (!takeShelter)
                                     player.statsChangeHandler({ HP: -hurtHp }, scene);
-                                },
-                            });
-                        }
+                            },
+                        });
                     }, [], scene);
                     //==事件結束
                     scene.time.delayedCall(eventDuration, () => this.emit('emergEnd'), [], scene);
@@ -1944,6 +1944,47 @@ const Doctor = new Phaser.Class({
                         emergItems.add(table);
                     };
 
+                    //==規則字幕
+                    let title = scene.add.text(width * 0.5, height * 0.2, '',
+                        {
+                            fontSize: '48px',
+                            fill: '#fff',
+                            stroke: '#000',
+                            strokeThickness: 1,
+                            shadow: {
+                                offsetX: 5,
+                                offsetY: 5,
+                                color: '#000',
+                                blur: 3,
+                                stroke: true,
+                                fill: true
+                            },
+                            padding: {
+                                top: 5,
+                                bottom: 5,
+                            },
+                        })
+                        .setOrigin(0.5);
+                    let showTitle = (rules) => {
+                        let gameData = gameScene.gameData;
+                        let downKey = gameData.controllCursor['down'];
+                        downKey = gameData.localeJSON.UI[downKey] ?
+                            gameData.localeJSON.UI[downKey] : downKey;
+                        // console.debug(downKey);
+                        rules = rules.replace('\t', downKey);
+
+                        const showDura = 1500;
+                        let tween = scene.tweens.add({
+                            targets: title,
+                            alpha: { start: 0, to: 1 },
+                            duration: showDura * 0.5,
+                            repeat: -1,
+                            yoyo: true,
+                            ease: 'Linear.Out',
+                            onStart: () => { title.setText(rules) },
+                        });
+                        title.once('destroy', () => tween.remove());
+                    };
 
                     //==博士出現
                     scene.tweens.add({
@@ -1955,16 +1996,14 @@ const Doctor = new Phaser.Class({
                         yoyo: true,
                         hold: eventDuration,
                         ease: 'Linear',
-                        // onYoyo: () => console.debug(this.alpha)
+                        onStart: () => showTitle(event.rules),
                     });
 
-
-
-                    //==規則逐條說明
-                    let rulesCount = Object.keys(event.rules).length;
+                    //==博士說明
+                    let rulesCount = Object.keys(event.lines).length;
                     for (let i = 0; i < rulesCount; i++) {
                         //==開始打字
-                        let text = event.rules[i],
+                        let text = event.lines[i],
                             textDura = text.length * 300;//==對話框持續時間(包含淡入淡出時間)一個字x秒
 
                         switch (i) {
@@ -1977,12 +2016,7 @@ const Doctor = new Phaser.Class({
 
                                 break;
                             case 3:
-                                let gameData = gameScene.gameData;
-                                let downKey = gameData.controllCursor['down'];
-                                downKey = gameData.localeJSON.UI[downKey] ?
-                                    gameData.localeJSON.UI[downKey] : downKey;
-                                // console.debug(downKey);
-                                text = text.replace('\t', downKey);
+
                                 break;
                         };
 

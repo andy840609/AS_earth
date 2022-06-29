@@ -1576,7 +1576,7 @@ class UIScene extends Phaser.Scene {
                     gameScene.doctor = this.doctor;
                 };
                 update = () => {
-                    if (gameScene.gameTimer.paused) return;
+                    if (gameScene.gameTimer.paused || gameScene.gameOver.flag) return;
 
                     this.doctor.behaviorHandler(gameScene.player, this);
 
@@ -7579,7 +7579,7 @@ class DefendScene extends Phaser.Scene {
             //     console.debug('AAAA');
             // });
 
-
+            console.debug(this.doctor.talkingCallback);
             if (this.gameOver.delayedCall) return;
             this.gameTimer.paused = true;
 

@@ -7563,6 +7563,7 @@ class DefendScene extends Phaser.Scene {
         // console.debug(gameTimer.getOverallProgress());
         // console.debug(enemy.children.entries);
 
+
         if (this.gameOver.flag) {
             //==緊急事件先結束
             if (this.doctor.behavior === 'emerg') this.doctor.emit('emergEnd');
@@ -7579,7 +7580,7 @@ class DefendScene extends Phaser.Scene {
             //     console.debug('AAAA');
             // });
 
-            console.debug(this.doctor.talkingCallback);
+
             if (this.gameOver.delayedCall) return;
             this.gameTimer.paused = true;
 

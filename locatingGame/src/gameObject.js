@@ -500,7 +500,6 @@ const Enemy = new Phaser.Class({
                     switch (this.behavior) {
                         case 'hurt':
                             // console.debug(this.body);
-
                             this.anims.play('cat_Hurt', true);
                             const knockBackDuration = 200;
 
@@ -519,7 +518,6 @@ const Enemy = new Phaser.Class({
                             break;
                         case 'scratch':
                             // console.debug('cat_Attack');
-
                             this.anims.play('cat_Attack', true);
                             this.anims.msPerFrame = 30;
                             const attackDuration = 500;
@@ -1842,8 +1840,8 @@ const Doctor = new Phaser.Class({
                     event = this.emergencies[eventIdx];
 
                 const
-                    eventDelay = 3000,//事件開始
-                    eventDuration = 20 * 1000;//幾秒
+                    eventDelay = 500,//事件開始3000
+                    eventDuration = 10 * 1000;//幾秒20
 
                 let gameScene = scene.game.scene.getScene('gameScene'),
                     blackOut = gameScene.blackOut;
@@ -1852,61 +1850,147 @@ const Doctor = new Phaser.Class({
                 const width = canvas.width;
                 const height = canvas.height;
 
-                //==事件結束回復原狀
                 this.behavior = 'emerg';
-                this.once('emergEnd', function () {
-                    this.dialog.setAlpha(0);
-                    blackOut.fadeInTween.restart();
-                    this.talkingCallback = null;
-                    gameScene.enemy.children.iterate(child => child.behavior = '');
-                    // gameScene.add.existing(player);
-                    player.emergFlag = false;
-                    scene.sys.updateList.remove(player);
-                    scene.sys.displayList.remove(player);
-
-                    gameScene.sys.updateList.add(player);
-                    gameScene.sys.displayList.add(player);
-
-                    this.dialog.getElement('background')
-                        .setFillStyle(0xD9B300, 1);
-
-                    gameScene.sidekick.talkingCallback = false;
-                    emergItems.clear(true, true);
-                    this.behavior = null;
-                });
                 //==緊急事件物品
-                let emergItems = gameScene.physics.add.group();
-                gameScene.physics.add.collider(emergItems, gameScene.platforms, (item, platforms) => {
-                    item.setMaxVelocity(0);
+                let emergItems = gameScene.physics.add.group({
+                    allowGravity: false,
+                    immovable: true,
                 });
+                gameScene.physics.add.collider(emergItems, gameScene.platforms);
 
-                this.talkingCallback = scene.time.delayedCall(eventDelay, async () => {
-                    //==地震發生
-                    scene.time.delayedCall(eventDuration * 0.85, () => {
-                        title.destroy();
-                        const quakeDura = eventDuration * 0.15;
-                        gameScene.cameras.main.shake(quakeDura, 0.03);
-                        scene.cameras.main.shake(quakeDura, 0.03);
+                //==規則字幕
+                this.ruleText = scene.add.text(width * 0.5, height * 0.2, '', {
+                    fontSize: '48px',
+                    fill: '#fff',
+                    stroke: '#000',
+                    strokeThickness: 1,
+                    shadow: {
+                        offsetX: 5,
+                        offsetY: 5,
+                        color: '#000',
+                        blur: 3,
+                        stroke: true,
+                        fill: true
+                    },
+                    padding: {
+                        top: 5,
+                        bottom: 5,
+                    },
+                    align: 'center',
+                }).setOrigin(0.5);
+                let showTitle = (rules) => {
+                    let gameData = gameScene.gameData;
+                    let downKey = gameData.controllCursor['down'];
+                    downKey = gameData.localeJSON.UI[downKey] ?
+                        gameData.localeJSON.UI[downKey] : downKey;
+                    // console.debug(downKey);
+                    rules = rules.replace('\t', downKey);
 
-                        const
-                            hurtDura = 1000,
-                            hurtHp = 20;
+                    const showDura = 1500;
+                    let tween = scene.tweens.add({
+                        targets: this.ruleText,
+                        alpha: { start: 0, to: 1 },
+                        duration: showDura * 0.5,
+                        repeat: -1,
+                        yoyo: true,
+                        ease: 'Linear.Out',
+                        onStart: () => { this.ruleText.setText(rules) },
+                    });
+                    this.ruleText.once('destroy', () => tween.remove());
+                };
+                let eventClear = false;
 
-                        scene.tweens.addCounter({
-                            from: 0,
-                            to: 1,
-                            loop: Math.ceil(quakeDura / hurtDura),
-                            duration: hurtDura,
-                            onLoop: () => {
-                                let takeShelter = player.anims.getName() === 'player_crouch';
-                                if (!takeShelter)
-                                    player.statsChangeHandler({ HP: -hurtHp }, scene);
-                            },
+                //==不同事件的處理方法
+                let eventAction, getItems;
+                switch (eventIdx) {
+                    case 0://===躲避地震
+                        //==事件結束回復原狀
+                        this.once('emergEnd', function () {
+                            // console.debug(this.this.ruleText)
+                            this.ruleText.destroy();
+                            this.dialog.setAlpha(0);
+                            blackOut.fadeInTween.restart();
+                            if (!gameScene.gameOver.flag) this.talkingCallback = null;
+                            gameScene.enemy.children.iterate(child => child.behavior = '');
+                            // gameScene.add.existing(player);
+                            player.emergFlag = false;
+                            scene.sys.updateList.remove(player);
+                            scene.sys.displayList.remove(player);
+
+                            gameScene.sys.updateList.add(player);
+                            gameScene.sys.displayList.add(player);
+
+                            this.dialog.getElement('background')
+                                .setFillStyle(0xD9B300, 1);
+
+                            gameScene.sidekick.talkingCallback = false;
+                            emergItems.clear(true, true);
+                            this.behavior = null;
                         });
-                    }, [], scene);
-                    //==事件結束
-                    scene.time.delayedCall(eventDuration, () => this.emit('emergEnd'), [], scene);
+                        eventAction = () => {
+                            //==地震發生
+                            scene.time.delayedCall(eventDuration * 0.8, () => {
+                                this.ruleText.destroy();
+                                const quakeDura = eventDuration * 0.1;
+                                gameScene.cameras.main.shake(quakeDura, 0.03);
+                                scene.cameras.main.shake(quakeDura, 0.03);
 
+                                const
+                                    hurtTimes = 3,
+                                    hurtDura = Math.floor(quakeDura / hurtTimes),
+                                    hurtHp = 20;
+
+                                let getHurt = false;
+                                scene.tweens.addCounter({
+                                    from: 0,
+                                    to: 1,
+                                    loop: hurtTimes,
+                                    duration: hurtDura,
+                                    onLoop: () => {
+                                        let table = emergItems.getChildren()[0];
+                                        let takeShelter =
+                                            (player.anims.getName() === 'player_crouch') &&//==蹲下
+                                            (Math.abs(player.x - table.x) < table.displayWidth / 2);//==在桌子附近
+
+                                        if (!takeShelter) {
+                                            player.statsChangeHandler({ HP: -hurtHp }, scene);
+                                            getHurt = true;
+                                        };
+                                    },
+                                    onComplete: () => eventClear = !getHurt,
+                                });
+
+
+                            }, [], scene);
+                        };
+                        //===防災物品
+                        getItems = () => {
+                            const platformY = gameScene.platforms.getChildren()[0].y;
+                            let table = scene.physics.add.sprite(0, 0, 'emergTable')
+                                .setName('table')
+                                .setScale(0.2)
+                                .setAlpha(0);
+                            table.setPosition(width * 0.5, platformY - table.displayHeight);
+                            emergItems.add(table);
+                        };
+                        break;
+                    case 1:
+                        break;
+                };
+
+                this.talkingCallback = scene.time.delayedCall(eventDelay, () => {
+                    eventAction();
+
+                    //==事件結束
+                    scene.time.delayedCall(eventDuration, async () => {
+
+                        //==獎勵
+                        if (eventClear) {
+                            scene.add.existing(new Item(gameScene, 'sunny', 200, 200, true));
+                        };
+
+                        this.emit('emergEnd');
+                    }, [], scene);
 
                     //==助手暫停說話
                     let sidekick = gameScene.sidekick;
@@ -1918,7 +2002,7 @@ const Doctor = new Phaser.Class({
                     sidekick.talkingCallback = true;
 
                     //==黑幕
-                    console.debug(gameScene);
+                    // console.debug(gameScene);
                     blackOut.scene.setVisible(true);
                     blackOut.fadeOutTween.restart();
                     scene.scene.bringToTop();
@@ -1927,7 +2011,6 @@ const Doctor = new Phaser.Class({
                     player.emergFlag = true;
                     scene.sys.updateList.add(player);
                     scene.sys.displayList.add(player);
-
                     //==要有間隔不然執行會有問題
                     scene.time.delayedCall(100, () => {
                         //==敵人暫停
@@ -1935,56 +2018,6 @@ const Doctor = new Phaser.Class({
                         gameScene.sys.updateList.remove(player);
                         gameScene.sys.displayList.remove(player);
                     });
-
-                    //===防災物品
-                    let getItems = () => {
-                        let table = scene.physics.add.sprite(width * 0.5, height * 0.5, 'emergTable')
-                            .setScale(0.2);
-
-                        emergItems.add(table);
-                    };
-
-                    //==規則字幕
-                    let title = scene.add.text(width * 0.5, height * 0.2, '',
-                        {
-                            fontSize: '48px',
-                            fill: '#fff',
-                            stroke: '#000',
-                            strokeThickness: 1,
-                            shadow: {
-                                offsetX: 5,
-                                offsetY: 5,
-                                color: '#000',
-                                blur: 3,
-                                stroke: true,
-                                fill: true
-                            },
-                            padding: {
-                                top: 5,
-                                bottom: 5,
-                            },
-                        })
-                        .setOrigin(0.5);
-                    let showTitle = (rules) => {
-                        let gameData = gameScene.gameData;
-                        let downKey = gameData.controllCursor['down'];
-                        downKey = gameData.localeJSON.UI[downKey] ?
-                            gameData.localeJSON.UI[downKey] : downKey;
-                        // console.debug(downKey);
-                        rules = rules.replace('\t', downKey);
-
-                        const showDura = 1500;
-                        let tween = scene.tweens.add({
-                            targets: title,
-                            alpha: { start: 0, to: 1 },
-                            duration: showDura * 0.5,
-                            repeat: -1,
-                            yoyo: true,
-                            ease: 'Linear.Out',
-                            onStart: () => { title.setText(rules) },
-                        });
-                        title.once('destroy', () => tween.remove());
-                    };
 
                     //==博士出現
                     scene.tweens.add({
@@ -1994,59 +2027,69 @@ const Doctor = new Phaser.Class({
                         duration: 1000,
                         repeat: 0,
                         yoyo: true,
-                        hold: eventDuration,
+                        hold: eventDuration * 1.1,//0.1獎勵時間
                         ease: 'Linear',
-                        onStart: () => showTitle(event.rules),
+                        onStart: async () => {
+                            showTitle(event.rules);
+                            getItems();
+                            //==博士說明
+                            let rulesCount = Object.keys(event.lines).length;
+                            for (let i = 0; i < rulesCount; i++) {
+                                //==開始打字
+                                let text = event.lines[i],
+                                    textDura = text.length * 300;//==對話框持續時間(包含淡入淡出時間)一個字x秒
+
+                                switch (i) {
+                                    case 0:
+                                        // console.debug(emergItems)
+                                        // emergItems.setAlpha(0)
+                                        scene.tweens.add({
+                                            targets: emergItems.getChildren(),
+                                            alpha: { start: 0, to: 1 },
+                                            duration: 1000,
+                                            repeat: 0,
+                                            ease: 'Linear.In',
+                                        });
+                                        break;
+                                    case 1:
+                                        break;
+                                    case 2:
+                                        break;
+                                    case 3:
+                                        break;
+                                };
+
+                                await new Promise(resolve => {
+                                    scene.tweens.add({
+                                        targets: this.dialog,
+                                        alpha: { start: 0, to: 1 },
+                                        duration: textDura * 0.1 - 200,
+                                        repeat: 0,
+                                        yoyo: i === rulesCount - 1 ? false : true,
+                                        hold: i === rulesCount - 1 ? false : textDura * 0.6,//==yoyo delay
+                                        ease: 'Linear',
+                                        delay: 200,
+                                        onStart: () => {
+                                            if (i === 0) {
+                                                this.dialog.getElement('background')
+                                                    .setFillStyle(0xCE0000, 1);
+                                                this.dialog.shake(3000, 5);
+                                            };
+                                            this.dialog.start(text, 70);//==(text,typeSpeed(ms per word))
+                                            this.setAlpha(1);
+                                        },
+                                        onComplete: () => resolve(),//==一次對話結束
+                                        // onActive: () => console.debug('onUpdate'),
+                                    });
+                                });
+                            };
+                        },
+
                     });
 
-                    //==博士說明
-                    let rulesCount = Object.keys(event.lines).length;
-                    for (let i = 0; i < rulesCount; i++) {
-                        //==開始打字
-                        let text = event.lines[i],
-                            textDura = text.length * 300;//==對話框持續時間(包含淡入淡出時間)一個字x秒
-
-                        switch (i) {
-                            case 0:
-                                getItems();
-                                break;
-                            case 1:
-                                break;
-                            case 2:
-
-                                break;
-                            case 3:
-
-                                break;
-                        };
-
-                        await new Promise(resolve => {
-                            scene.tweens.add({
-                                targets: this.dialog,
-                                alpha: { start: 0, to: 1 },
-                                duration: textDura * 0.1 - 200,
-                                repeat: 0,
-                                yoyo: i === rulesCount - 1 ? false : true,
-                                hold: i === rulesCount - 1 ? false : textDura * 0.6,//==yoyo delay
-                                ease: 'Linear',
-                                delay: 200,
-                                onStart: () => {
-                                    if (i === 0) {
-                                        this.dialog.getElement('background')
-                                            .setFillStyle(0xCE0000, 1);
-                                        this.dialog.shake(3000, 5);
-                                    };
-                                    this.dialog.start(text, 70);//==(text,typeSpeed(ms per word))
-                                    this.setAlpha(1);
-                                },
-                                onComplete: () => resolve(),//==一次對話結束
-                                // onActive: () => console.debug('onUpdate'),
-                            });
-                        });
-
-                    };
 
                 }, [], scene);
+
 
             };
 

@@ -1600,6 +1600,8 @@ class UIScene extends Phaser.Scene {
                         if (!player.emergFlag) return;
 
                         player.movingHadler(gameScene);
+                        player.pickingHadler(gameScene);
+
                         // player.pickingHadler(this);
                         // player.attackHandler(gameScene);
 
@@ -3791,8 +3793,10 @@ class UIScene extends Phaser.Scene {
                                 visible: false,
                                 enable: false,
                             });
-                            this.orbGroup.children.iterate((child, i) => {
 
+
+                            this.orbGroup.children.iterate((child, i) => {
+                                child.setName('orb');
                                 child.body.setSize(100, 100, true);
                                 //=====custom
 
@@ -6162,9 +6166,7 @@ class LoadingScene extends Phaser.Scene {
                     const effectDir = gameObjDir + 'player/effect/';
                     const effectFrameObj = playerFrame.effect;
 
-
                     this.load.spritesheet('player_jumpDust', effectDir + 'jump_dust.png', { frameWidth: 38, frameHeight: 60 });
-
                     this.load.spritesheet('player_attackEffect', dir + 'swordSwing.png',
                         { frameWidth: effectFrameObj.attack[0], frameHeight: effectFrameObj.attack[1] });
                     this.load.spritesheet('player_jumpAttackEffect', dir + 'jumpAttackEffect.png',
@@ -6179,7 +6181,6 @@ class LoadingScene extends Phaser.Scene {
                         this.load.spritesheet('player_bullet2', dir + 'bullet2.png',
                             { frameWidth: effectFrameObj.bullet[0], frameHeight: effectFrameObj.bullet[1] });
                     };
-
 
                     if (packNum == 3)
                         this.load.spritesheet('player_ultAttackEffect', effectDir + 'ult_effect.png',
@@ -6351,9 +6352,12 @@ class LoadingScene extends Phaser.Scene {
                 };
                 let emergence = () => {
                     const dir = gameObjDir + 'environment/emergence/';
-
                     this.load.image('emergTable', dir + 'table.png');
 
+                    //==緊急救難包物品
+                    this.load.image('emergBag', dir + 'emergBag.png');
+                    emergencyKitItems.forEach(item =>
+                        this.load.image(item, dir + item + '.png'));
                 };
                 enemy();
                 emergence();
@@ -6906,7 +6910,9 @@ class DefendScene extends Phaser.Scene {
                         // console.debug(child.orbStats);
                     };
 
-                    child.setPosition(orbPosition, height * 0.8);
+                    child
+                        .setPosition(orbPosition, height * 0.8)
+                        .setName('orb');
                     child.body.setSize(100, 100, true);
 
                     //=====custom
@@ -7534,10 +7540,8 @@ class DefendScene extends Phaser.Scene {
         let updateSidekick = () => {
             this.sidekick.behaviorHandler(this.player, this);
         };
-        let updateOrb = () => {
-
+        let updatePickUpObj = () => {//==撿取物跟著玩家
             let pickUpObj = this.player.pickUpObj;
-
             if (pickUpObj)
                 pickUpObj.setPosition(this.player.x + 20, this.player.y + 30);
         };
@@ -7558,7 +7562,7 @@ class DefendScene extends Phaser.Scene {
 
         updatePlayer();
         updateSidekick();
-        updateOrb();
+        updatePickUpObj();
         updateEnemy();
         // console.debug(gameTimer.getOverallProgress());
         // console.debug(enemy.children.entries);

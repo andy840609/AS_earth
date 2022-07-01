@@ -1233,34 +1233,46 @@ const Player = new Phaser.Class({
 
         if (Phaser.Input.Keyboard.JustDown(cursors[controllCursor['down']])) {
 
-            // console.debug('pick');
             if (this.pickUpObj) {  //==put down
-                this.pickUpObj.statusHadler(this, false, this.pickUpObj.orbStats.isInRange);
-                this.pickUpObj = null;
+                // console.debug(this.pickUpObj);
+                //==光球特殊參數，非光球則為非
+                let orbParameter = this.pickUpObj.name === 'orb' ?
+                    this.pickUpObj.orbStats.isInRange : false;
 
+                this.pickUpObj.statusHadler(this, false, orbParameter);
+                this.pickUpObj = null;
             }
             else {  //==pick up
-                const piclUpDistance = 70;
-                // console.debug(this.pickUpObj);
-
-                let colsestOrb;
-                scene.orbGroup.children.iterate(child => {
+                const pickUpDistance = 70;
+                let pickUpList = function () {//==可撿取清單
+                    let list = [];
+                    if (scene.player.emergFlag) {
+                        //==去掉不能撿的
+                        list = scene.doctor.emergItems.getChildren()
+                            .filter(item => item.name !== 'emergTable' && item.name !== 'emergBag');
+                    } else {
+                        list = scene.orbGroup.getChildren();
+                    };
+                    return list;
+                }();
+                // console.debug(pickUpList);
+                let nearbyItem;
+                pickUpList.forEach(child => {
                     // console.debug(Phaser.Math.Distance.BetweenPoints(this, child));
-                    if (Phaser.Math.Distance.BetweenPoints(this, child) <= piclUpDistance)
-                        if (colsestOrb)
-                            colsestOrb =
+                    if (Phaser.Math.Distance.BetweenPoints(this, child) <= pickUpDistance)
+                        if (nearbyItem)
+                            nearbyItem =
                                 Phaser.Math.Distance.BetweenPoints(this, child) <
-                                    Phaser.Math.Distance.BetweenPoints(this, colsestOrb) ?
-                                    child : colsestOrb;
+                                    Phaser.Math.Distance.BetweenPoints(this, nearbyItem) ?
+                                    child : nearbyItem;
                         else
-                            colsestOrb = child;
+                            nearbyItem = child;
 
                 });
-                if (colsestOrb) {
-                    // console.debug(colsestOrb);
-                    this.pickUpObj = colsestOrb;
+                if (nearbyItem) {
+                    // console.debug(nearbyItem);
+                    this.pickUpObj = nearbyItem;
                     this.pickUpObj.statusHadler(this, true);
-
                 };
             };
 
@@ -1780,9 +1792,9 @@ const Doctor = new Phaser.Class({
             }).setAlpha(0);
 
             this.tips = lines.Tips;
-            this.tipAmount = Object.keys(this.tips).length - 1; //==tips總數量
+            this.tipAmount = Object.keys(this.tips).length; //==tips總數量
             this.emergencies = lines.Emergencies;
-            this.emerAmount = Object.keys(this.emergencies).length - 1; //==emergencies總數量
+            this.emerAmount = Object.keys(this.emergencies).length; //==emergencies總數量
         },
     talkingCallback: null,
     behavior: null,
@@ -1793,7 +1805,7 @@ const Doctor = new Phaser.Class({
         if (!this.talkingCallback) {
             if (false) {
                 const
-                    tipIdx = Phaser.Math.Between(0, this.tipAmount),  //==tip index
+                    tipIdx = Phaser.Math.Between(0, this.tipAmount - 1),  //==tip index
                     tipText = this.tips[tipIdx];
 
                 const
@@ -1836,12 +1848,16 @@ const Doctor = new Phaser.Class({
 
             } else {
                 const
-                    eventIdx = Phaser.Math.Between(0, this.emerAmount),
+                    eventIdx = !isNaN(this.lastEventIdx) ?
+                        Phaser.Math.RND.pick([...Array(this.emerAmount).keys()].filter(i => i !== this.lastEventIdx)) :
+                        Phaser.Math.Between(0, this.emerAmount - 1),
+                    // eventIdx = 1,
                     event = this.emergencies[eventIdx];
+                this.lastEventIdx = eventIdx;//==一樣事件不連續
 
                 const
-                    eventDelay = 500,//事件開始3000
-                    eventDuration = 10 * 1000;//幾秒20
+                    eventDelay = 2000,//事件開始3000
+                    eventDuration = 30 * 1000;//幾秒20
 
                 let gameScene = scene.game.scene.getScene('gameScene'),
                     blackOut = gameScene.blackOut;
@@ -1853,10 +1869,14 @@ const Doctor = new Phaser.Class({
                 this.behavior = 'emerg';
                 //==緊急事件物品
                 let emergItems = gameScene.physics.add.group({
-                    allowGravity: false,
+                    // allowGravity: false,
                     immovable: true,
                 });
-                gameScene.physics.add.collider(emergItems, gameScene.platforms);
+                gameScene.physics.add.collider(emergItems, gameScene.platforms, (item, platforms) => {
+                    // console.debug(item)
+                    item.body.setMaxVelocityY(0);
+                });
+                this.emergItems = emergItems;
 
                 //==規則字幕
                 this.ruleText = scene.add.text(width * 0.5, height * 0.2, '', {
@@ -1878,6 +1898,8 @@ const Doctor = new Phaser.Class({
                     },
                     align: 'center',
                 }).setOrigin(0.5);
+                let hintTexts = scene.add.group();//==提示文字
+
                 let showTitle = (rules) => {
                     let gameData = gameScene.gameData;
                     let downKey = gameData.controllCursor['down'];
@@ -1898,35 +1920,87 @@ const Doctor = new Phaser.Class({
                     });
                     this.ruleText.once('destroy', () => tween.remove());
                 };
+                let getDialog = (text, lineType = 1) => {
+                    //==lineType: 0:第一句振動特效 1:一般 2:最後淡出
+                    let textDura = text.length * 300;//==對話框持續時間(包含淡入淡出時間)一個字x秒
+                    return new Promise(resolve => {
+                        scene.tweens.add({
+                            targets: this.dialog,
+                            alpha: { start: 0, to: 1 },
+                            duration: textDura * 0.1 - 200,
+                            repeat: 0,
+                            yoyo: lineType === 2 ? false : true,
+                            hold: lineType === 2 ? false : textDura * 0.6,//==yoyo delay
+                            ease: 'Linear',
+                            delay: 200,
+                            onStart: () => {
+                                if (lineType === 0) {
+                                    this.dialog.getElement('background')
+                                        .setFillStyle(0xCE0000, 1);
+                                    this.dialog.shake(3000, 5);
+                                };
+                                this.dialog.start(text, 70);//==(text,typeSpeed(ms per word))
+                                this.setAlpha(1);
+                            },
+                            onComplete: () => resolve(),//==一次對話結束
+                        });
+                    });
+                };
+                let dropPlayerItem = () => {//==玩家撿起的東西要先放下
+                    if (player.pickUpObj) {  //==put down
+                        //==光球特殊參數，非光球則為非
+                        let orbParameter = player.pickUpObj.name === 'orb' ?
+                            player.pickUpObj.orbStats.isInRange : false;
+                        player.pickUpObj.statusHadler(player, false, orbParameter);
+                        player.pickUpObj = null;
+                    };
+                };
+                const clearDura = 3000;//通關獎勵時間
                 let eventClear = false;
+                //==事件結束回復原狀
+                this.once('emergEnd', function () {
+                    // console.debug(this.this.ruleText)
+                    this.ruleText.destroy();
+                    this.dialog.setAlpha(0);
+                    blackOut.fadeInTween.restart();
+                    // gameScene.add.existing(player);
+                    player.emergFlag = false;
+                    scene.sys.updateList.remove(player);
+                    scene.sys.displayList.remove(player);
+
+                    gameScene.sys.updateList.add(player);
+                    gameScene.sys.displayList.add(player);
+
+                    //===防災物品銷燬
+                    dropPlayerItem();
+                    scene.tweens.add({
+                        targets: emergItems.getChildren().concat(hintTexts.getChildren()),
+                        alpha: { start: 1, to: 0 },
+                        duration: 1000,
+                        repeat: 0,
+                        ease: 'Linear.Out',
+                        onComplete: () => {
+                            emergItems.clear(true, true);
+                            hintTexts.clear(true, true);
+                        },
+                    });
+
+                    this.behavior = null;
+                    this.dialog.getElement('background')
+                        .setFillStyle(0xD9B300, 1);
+                    if (!gameScene.gameOver.flag) this.talkingCallback = null;
+                    gameScene.enemy.children.iterate(child => child.behavior = '');
+                    gameScene.sidekick.talkingCallback = false;
+                });
 
                 //==不同事件的處理方法
+                const
+                    platform = gameScene.platforms.getChildren()[0],//==物品出現在地上
+                    floorY = height - platform.displayHeight;
                 let eventAction, getItems;
+
                 switch (eventIdx) {
                     case 0://===躲避地震
-                        //==事件結束回復原狀
-                        this.once('emergEnd', function () {
-                            // console.debug(this.this.ruleText)
-                            this.ruleText.destroy();
-                            this.dialog.setAlpha(0);
-                            blackOut.fadeInTween.restart();
-                            if (!gameScene.gameOver.flag) this.talkingCallback = null;
-                            gameScene.enemy.children.iterate(child => child.behavior = '');
-                            // gameScene.add.existing(player);
-                            player.emergFlag = false;
-                            scene.sys.updateList.remove(player);
-                            scene.sys.displayList.remove(player);
-
-                            gameScene.sys.updateList.add(player);
-                            gameScene.sys.displayList.add(player);
-
-                            this.dialog.getElement('background')
-                                .setFillStyle(0xD9B300, 1);
-
-                            gameScene.sidekick.talkingCallback = false;
-                            emergItems.clear(true, true);
-                            this.behavior = null;
-                        });
                         eventAction = () => {
                             //==地震發生
                             scene.time.delayedCall(eventDuration * 0.8, () => {
@@ -1965,16 +2039,109 @@ const Doctor = new Phaser.Class({
                         };
                         //===防災物品
                         getItems = () => {
-                            const platformY = gameScene.platforms.getChildren()[0].y;
-                            let table = scene.physics.add.sprite(0, 0, 'emergTable')
-                                .setName('table')
+                            let table = scene.physics.add.sprite(width * 0.5, floorY, 'emergTable')
+                                .setName('emergTable')
                                 .setScale(0.2)
+                                .setOrigin(0.5, 0.9)
                                 .setAlpha(0);
-                            table.setPosition(width * 0.5, platformY - table.displayHeight);
+
                             emergItems.add(table);
                         };
                         break;
                     case 1:
+                        eventAction = () => { };
+                        getItems = () => {
+                            const itemHints = event.items;
+                            const getHint = (item) => {
+                                let string = item.name === 'emergBag' ?
+                                    `${itemHints[item.name]} 0 / 3` :
+                                    itemHints[item.name];
+
+                                let hint = scene.add.text(item.x, item.y - item.displayHeight, string, {
+                                    fontSize: '24px',
+                                    fill: '#fff',
+                                    stroke: '#000',
+                                    strokeThickness: 1,
+                                    shadow: {
+                                        offsetX: 5,
+                                        offsetY: 5,
+                                        color: '#000',
+                                        blur: 3,
+                                        stroke: true,
+                                        fill: true
+                                    },
+                                    padding: {
+                                        top: 5,
+                                        bottom: 5,
+                                    },
+                                    align: 'center',
+                                })
+                                    .setOrigin(0.5, 1)
+                                    .setDepth(1);
+
+                                hintTexts.add(hint);
+                            };
+
+                            //==防災包
+                            let emergBag = scene.physics.add.sprite(width * 0.5, floorY, 'emergBag')
+                                .setName('emergBag')
+                                .setScale(0.8)
+                                .setOrigin(0.5, 0.9)
+                                .setAlpha(0);
+                            emergItems.add(emergBag);
+                            getHint(emergBag);
+
+                            let list = [...emergencyKitItems].sort(() => 0.5 - Math.random());//==拷貝陣列
+                            let amount = 6;//=物品數量
+                            [...Array(amount).keys()].forEach(i => {
+                                let
+                                    itemKey = list.pop(),
+                                    itemX = width / (amount + 3) * (i + 1 + (i > 2 ? 2 : 0));
+
+                                let item = scene.physics.add.sprite(itemX, floorY, itemKey)
+                                    .setName(itemKey)
+                                    .setScale(0.4)
+                                    .setOrigin(0.5, 0.9)
+                                    .setAlpha(0);
+
+
+                                //==控制撿起的
+                                Object.assign(item, {
+                                    beholding: false,
+                                    statusHadler: function (pickUper = null, beholding = false) {
+                                        if (beholding) {//pick up                         
+                                            this.body.setMaxVelocityY(0);
+                                            this.setDepth(gameScene.Depth.pickUpObj);
+                                        }
+                                        else {//put down
+                                            this.body.setMaxVelocityY(1000);
+                                            this.setDepth(0);
+                                        };
+                                        this.beholding = beholding;
+                                    },
+                                });
+
+                                emergItems.add(item);
+                                getHint(item);
+
+                                scene.physics.add.collider(emergBag, item, (emergBag, item) => {
+                                    // console.debug(item, emergBag)
+                                    if (!item.beholding) {
+                                        emergItems.remove(item);
+                                        scene.tweens.add({
+                                            targets: item,
+                                            alpha: { start: 1, to: 0 },
+                                            duration: 350,
+                                            repeat: 0,
+                                            ease: 'Linear',
+                                            onComplete: () => item.destroy(),
+                                        });
+
+                                    };
+                                });
+                            });
+
+                        };
                         break;
                 };
 
@@ -1983,13 +2150,34 @@ const Doctor = new Phaser.Class({
 
                     //==事件結束
                     scene.time.delayedCall(eventDuration, async () => {
-
                         //==獎勵
                         if (eventClear) {
-                            scene.add.existing(new Item(gameScene, 'sunny', 200, 200, true));
+                            let itemAmount = Phaser.Math.Between(2, 5);//==獎勵數量隨機
+                            let itemList = Object.keys(GameItemData)//==消耗品清單
+                                .filter(item => GameItemData[item].type === 0 || GameItemData[item].type === 1);
+                            // console.debug(itemList)
+                            [...Array(itemAmount).keys()].forEach(i => {
+                                let itemIdx = Phaser.Math.Between(0, itemList.length - 1);//獎勵清單中抽一個
+                                let itemPosition = [
+                                    Phaser.Math.Between(width * 0.1, width * 0.9),
+                                    Phaser.Math.Between(height * 0.5, height * 0.9)
+                                ];
+                                scene.time.delayedCall(i * 650, () =>//==掉落間隔時間
+                                    scene.add.existing(new Item(gameScene, itemList[itemIdx], ...itemPosition, true)))
+                            });
+
+                            await getDialog(event.clear, 2);
                         };
 
-                        this.emit('emergEnd');
+                        scene.tweens.add({
+                            targets: this,
+                            alpha: { start: 1, to: 0 },
+                            duration: 1000,
+                            delay: eventClear ? clearDura : 0,
+                            repeat: 0,
+                            ease: 'Linear',
+                            onComplete: () => this.emit('emergEnd'),
+                        });
                     }, [], scene);
 
                     //==助手暫停說話
@@ -2006,6 +2194,9 @@ const Doctor = new Phaser.Class({
                     blackOut.scene.setVisible(true);
                     blackOut.fadeOutTween.restart();
                     scene.scene.bringToTop();
+
+                    //==玩家有拿光球就放下
+                    dropPlayerItem();
 
                     //==玩家到最上層
                     player.emergFlag = true;
@@ -2026,71 +2217,32 @@ const Doctor = new Phaser.Class({
                         x: 0,
                         duration: 1000,
                         repeat: 0,
-                        yoyo: true,
-                        hold: eventDuration * 1.1,//0.1獎勵時間
                         ease: 'Linear',
                         onStart: async () => {
                             showTitle(event.rules);
                             getItems();
+
+                            scene.tweens.add({
+                                targets: emergItems.getChildren(),
+                                alpha: { start: 0, to: 1 },
+                                duration: 1000,
+                                repeat: 0,
+                                ease: 'Linear.In',
+                            });
                             //==博士說明
                             let rulesCount = Object.keys(event.lines).length;
                             for (let i = 0; i < rulesCount; i++) {
                                 //==開始打字
-                                let text = event.lines[i],
-                                    textDura = text.length * 300;//==對話框持續時間(包含淡入淡出時間)一個字x秒
-
-                                switch (i) {
-                                    case 0:
-                                        // console.debug(emergItems)
-                                        // emergItems.setAlpha(0)
-                                        scene.tweens.add({
-                                            targets: emergItems.getChildren(),
-                                            alpha: { start: 0, to: 1 },
-                                            duration: 1000,
-                                            repeat: 0,
-                                            ease: 'Linear.In',
-                                        });
-                                        break;
-                                    case 1:
-                                        break;
-                                    case 2:
-                                        break;
-                                    case 3:
-                                        break;
-                                };
-
-                                await new Promise(resolve => {
-                                    scene.tweens.add({
-                                        targets: this.dialog,
-                                        alpha: { start: 0, to: 1 },
-                                        duration: textDura * 0.1 - 200,
-                                        repeat: 0,
-                                        yoyo: i === rulesCount - 1 ? false : true,
-                                        hold: i === rulesCount - 1 ? false : textDura * 0.6,//==yoyo delay
-                                        ease: 'Linear',
-                                        delay: 200,
-                                        onStart: () => {
-                                            if (i === 0) {
-                                                this.dialog.getElement('background')
-                                                    .setFillStyle(0xCE0000, 1);
-                                                this.dialog.shake(3000, 5);
-                                            };
-                                            this.dialog.start(text, 70);//==(text,typeSpeed(ms per word))
-                                            this.setAlpha(1);
-                                        },
-                                        onComplete: () => resolve(),//==一次對話結束
-                                        // onActive: () => console.debug('onUpdate'),
-                                    });
-                                });
+                                let text = event.lines[i];
+                                let lineType = i === 0 ? 0 :
+                                    i === rulesCount - 1 ? 2 : 1;
+                                await getDialog(text, lineType);
                             };
                         },
-
                     });
 
 
                 }, [], scene);
-
-
             };
 
 

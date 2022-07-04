@@ -2064,7 +2064,42 @@ class UIScene extends Phaser.Scene {
                             alphaGL: { from: 0, to: 0.7 },
                         }).stop(0);
 
+
+                        // Object.assign(this, {
+                        //     fadeIn: (alpha = camera.backgroundColor.alphaGL, duration = 1500) => {
+                        //         // this.tweens.add({
+                        //         //     targets: camera.backgroundColor,
+                        //         //     // ease: 'Quadratic.InOut',
+                        //         //     duration: duration,
+                        //         //     repeat: 0,
+                        //         //     alphaGL: { from: alpha, to: 0 },
+                        //         // });
+                        //     },
+                        //     fadeOut: (alpha = 0.7, duration = 1500) => {
+                        //         // this.tweens.add({
+                        //         //     targets: camera.backgroundColor,
+                        //         //     // ease: 'Quadratic.InOut',
+                        //         //     duration: duration,
+                        //         //     repeat: 0,
+                        //         //     alphaGL: { from: camera.backgroundColor.alphaGL, to: alpha },
+                        //         // });
+                        //         // console.debug(Phaser.Tweens)
+                        //         // Phaser.Tweens.Tween.setStateFromStart(this.fadeOutTween, {
+                        //         //     alphaGL: alpha,
+                        //         //     duration: duration,
+                        //         // });
+                        //         // this.fadeOutTween.setStateFromStart(this.fadeOutTween, {
+                        //         //     alphaGL: alpha,
+                        //         //     duration: duration,
+                        //         // });
+                        //         this.fadeOutTween.updateTo('alphaGL', alpha)
+                        //         this.fadeOutTween.updateTo('duration', duration)
+                        //         this.fadeOutTween.restart();
+                        //     },
+                        // });
+
                         gameScene.blackOut = this;
+                        // console.debug(this);
                     };
                     init();
                 };

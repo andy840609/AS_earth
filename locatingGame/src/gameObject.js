@@ -1848,10 +1848,10 @@ const Doctor = new Phaser.Class({
 
             } else {
                 const
-                    eventIdx = !isNaN(this.lastEventIdx) ?
-                        Phaser.Math.RND.pick([...Array(this.emerAmount).keys()].filter(i => i !== this.lastEventIdx)) :
-                        Phaser.Math.Between(0, this.emerAmount - 1),
-                    // eventIdx = 1,
+                    // eventIdx = !isNaN(this.lastEventIdx) ?
+                    //     Phaser.Math.RND.pick([...Array(this.emerAmount).keys()].filter(i => i !== this.lastEventIdx)) :
+                    //     Phaser.Math.Between(0, this.emerAmount - 1),
+                    eventIdx = 0,
                     event = this.emergencies[eventIdx];
                 this.lastEventIdx = eventIdx;//==一樣事件不連續
 
@@ -1959,11 +1959,10 @@ const Doctor = new Phaser.Class({
                 let eventClear = false;
                 //==事件結束回復原狀
                 this.once('emergEnd', function () {
-                    // console.debug(this.this.ruleText)
+
                     this.ruleText.destroy();
                     this.dialog.setAlpha(0);
                     blackOut.fadeInTween.restart();
-                    // gameScene.add.existing(player);
                     player.emergFlag = false;
                     scene.sys.updateList.remove(player);
                     scene.sys.displayList.remove(player);
@@ -1976,7 +1975,7 @@ const Doctor = new Phaser.Class({
                     scene.tweens.add({
                         targets: emergItems.getChildren().concat(hintTexts.getChildren()),
                         alpha: { start: 1, to: 0 },
-                        duration: 1000,
+                        duration: 200,
                         repeat: 0,
                         ease: 'Linear.Out',
                         onComplete: () => {
@@ -1984,7 +1983,7 @@ const Doctor = new Phaser.Class({
                             hintTexts.clear(true, true);
                         },
                     });
-
+                    // console.debug('emergEnd')
                     this.behavior = null;
                     this.dialog.getElement('background')
                         .setFillStyle(0xD9B300, 1);
@@ -2193,6 +2192,7 @@ const Doctor = new Phaser.Class({
                     // console.debug(gameScene);
                     blackOut.scene.setVisible(true);
                     blackOut.fadeOutTween.restart();
+                    // blackOut.fadeOut(1, 3000);
                     scene.scene.bringToTop();
 
                     //==玩家有拿光球就放下

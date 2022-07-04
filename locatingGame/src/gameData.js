@@ -600,5 +600,5 @@ const GameItemData = {
 
 //緊急救難包物品
 const emergencyKitItems = [
-    'emergBattery', 'emergFlashlight', 'emergFood', 'emergWater', 'emergTissue', 'emergShoes', 'emergHat', 'emergKit'
+    'emergBattery', 'emergFlashlight', 'emergFood', 'emergWater', 'emergTissue', 'emergKit'
 ];

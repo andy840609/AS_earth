@@ -398,7 +398,7 @@ function locatingGame() {
             };
 
             function initGameData() {
-                let playerRole = 'maleAdventurer';//==之後能選其他[femalePerson,maleAdventurer]
+                let playerRole = 'femalePerson';//==之後能選其他[femalePerson,maleAdventurer]
                 let sidekick = 'Dude';//=='Owlet,Dude,Pink'
 
                 let playerName = '',
@@ -495,14 +495,14 @@ function locatingGame() {
                     // };
                     initMap();
                     //==test
-                    gameStart('defend');
+                    // gameStart('defend');
                     // gameStart('dig');
-                    // initEndScene(true);
+                    initEndScene(true);
                     //==test
                 };
                 startScene();
             };
-            function initEndScene(win = false) {
+            function initEndScene(clear = false) {
 
                 let gameOverScene = async () => {
                     gameDisplay(true);
@@ -510,7 +510,7 @@ function locatingGame() {
 
                     let newGameData = await new Promise((resolve, reject) => {
                         const config = Object.assign(getPhaserConfig(width, height), {
-                            scene: new GameOverScene(GameData, resolve),
+                            scene: new GameOverScene(GameData, { clear, resolve }),
                         });
                         new Phaser.Game(config);
                     });
@@ -518,13 +518,19 @@ function locatingGame() {
                     // Object.assign(GameData, newGameData);
                     gameDisplay(false);
 
-                    updateMapUI({ timeRemain: rewindTime }, 800);
-                    updateSidekick(0, 2, true);
+                    if (clear) {
+                        congratsScene();
+                    }
+                    else {
+                        updateMapUI({ timeRemain: rewindTime }, 800);
+                        updateSidekick(0, 2, true);
 
-                    data.forEach(d => {
-                        let icon = d.stationStats.clear ? 'clear' : 'default';
-                        updateStation(d.markerObj, { icon: icon });
-                    });
+                        data.forEach(d => {
+                            let icon = d.stationStats.clear ? 'clear' : 'default';
+                            updateStation(d.markerObj, { icon: icon });
+                        });
+
+                    };
 
                 };
                 let congratsScene = async () => {
@@ -655,7 +661,7 @@ function locatingGame() {
                             });
                         endMenu.find('#surveyButton')
                             .on('click', () => {
-                                window.open('https://forms.gle/UZjB2T6fvY27PE5y8');
+                                window.open('https://docs.google.com/forms/d/e/1FAIpQLSfwCKL5kVIqeUxJD7QTBj0VcSonCJBrud2QGGfPfd_AQvZuRg/viewform?usp=sf_link');
                             });
                     };
 
@@ -663,8 +669,7 @@ function locatingGame() {
                     initRankChart();
                     initMenu();
                 };
-                win ? congratsScene() : gameOverScene();
-
+                gameOverScene();
             };
             function initMap() {
                 const fadeInDuration = 300;
@@ -2663,7 +2668,6 @@ function locatingGame() {
                 gameDisplay(false);
 
             };
-
             initGameData();
             initStartScene();
         };

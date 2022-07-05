@@ -229,7 +229,7 @@ const GameObjectFrame = {
             runAttackEffect: 8,
             ultAttackEffect: 7,
             pickSwing: 15,
-            crouch: 4,
+            crouch: 15,
         },
         effect: {
             attack: [120, 130],
@@ -263,7 +263,7 @@ const GameObjectFrame = {
             runAttackEffect: 15,
             ultAttackEffect: 7,
             pickSwing: 15,
-            crouch: 4,
+            crouch: 15,
         },
         effect: {
             attack: [120, 130],

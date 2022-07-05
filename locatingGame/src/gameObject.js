@@ -1142,7 +1142,7 @@ const Player = new Phaser.Class({
     //==移動
     movingHadler: function (scene) {
         this.equip.setPosition(this.x, this.y - this.height * 0.35);
-
+        // this.body.setSize(45, 100);//蹲下改變撞擊box
         if (this.stopCursorsFlag) return;
 
         let cursors = scene.cursors;
@@ -1177,6 +1177,7 @@ const Player = new Phaser.Class({
             this.setVelocityX(0);
             if (isBusy) return;
             this.anims.play('player_crouch', true);
+            // this.body.setSize(45, 80);
         }
         else {
             this.setVelocityX(0);
@@ -1803,7 +1804,10 @@ const Doctor = new Phaser.Class({
         this.dialog.setPosition(this.x + this.displayWidth * 1.9, this.y + this.displayHeight * 0.5);
 
         if (!this.talkingCallback) {
-            if (false) {
+            let inEmergency = Phaser.Math.Between(1, 5) === 1;
+            // console.debug(inEmergency)
+            // inEmergency = false;
+            if (!inEmergency) {
                 const
                     tipIdx = Phaser.Math.Between(0, this.tipAmount - 1),  //==tip index
                     tipText = this.tips[tipIdx];
@@ -1848,10 +1852,10 @@ const Doctor = new Phaser.Class({
 
             } else {
                 const
-                    // eventIdx = !isNaN(this.lastEventIdx) ?
-                    //     Phaser.Math.RND.pick([...Array(this.emerAmount).keys()].filter(i => i !== this.lastEventIdx)) :
-                    //     Phaser.Math.Between(0, this.emerAmount - 1),
-                    eventIdx = 0,
+                    eventIdx = !isNaN(this.lastEventIdx) ?
+                        Phaser.Math.RND.pick([...Array(this.emerAmount).keys()].filter(i => i !== this.lastEventIdx)) :
+                        Phaser.Math.Between(0, this.emerAmount - 1),
+                    // eventIdx = 1,
                     event = this.emergencies[eventIdx];
                 this.lastEventIdx = eventIdx;//==一樣事件不連續
 
@@ -1936,7 +1940,7 @@ const Doctor = new Phaser.Class({
                             onStart: () => {
                                 if (lineType === 0) {
                                     this.dialog.getElement('background')
-                                        .setFillStyle(0xCE0000, 1);
+                                        .setStrokeStyle(5, 0xCE0000, 1);
                                     this.dialog.shake(3000, 5);
                                 };
                                 this.dialog.start(text, 70);//==(text,typeSpeed(ms per word))
@@ -1962,7 +1966,7 @@ const Doctor = new Phaser.Class({
 
                     this.ruleText.destroy();
                     this.dialog.setAlpha(0);
-                    blackOut.fadeInTween.restart();
+                    blackOut.fadeIn(0);
                     player.emergFlag = false;
                     scene.sys.updateList.remove(player);
                     scene.sys.displayList.remove(player);
@@ -1972,179 +1976,195 @@ const Doctor = new Phaser.Class({
 
                     //===防災物品銷燬
                     dropPlayerItem();
-                    scene.tweens.add({
-                        targets: emergItems.getChildren().concat(hintTexts.getChildren()),
-                        alpha: { start: 1, to: 0 },
-                        duration: 200,
-                        repeat: 0,
-                        ease: 'Linear.Out',
-                        onComplete: () => {
-                            emergItems.clear(true, true);
-                            hintTexts.clear(true, true);
-                        },
-                    });
-                    // console.debug('emergEnd')
+                    if (gameScene.gameOver.flag) {
+                        emergItems.clear(true, true);
+                        hintTexts.clear(true, true);
+                    }
+                    else
+                        scene.tweens.add({
+                            targets: emergItems.getChildren().concat(hintTexts.getChildren()),
+                            alpha: { start: 1, to: 0 },
+                            duration: 200,
+                            repeat: 0,
+                            ease: 'Linear.Out',
+                            onComplete: () => {
+                                emergItems.clear(true, true);
+                                hintTexts.clear(true, true);
+                            },
+                        });
+                    // console.debug('emergEnd');
                     this.behavior = null;
                     this.dialog.getElement('background')
-                        .setFillStyle(0xD9B300, 1);
+                        .setStrokeStyle(2, 0xffffff, 1);
                     if (!gameScene.gameOver.flag) this.talkingCallback = null;
                     gameScene.enemy.children.iterate(child => child.behavior = '');
                     gameScene.sidekick.talkingCallback = false;
                 });
 
-                //==不同事件的處理方法
-                const
-                    platform = gameScene.platforms.getChildren()[0],//==物品出現在地上
-                    floorY = height - platform.displayHeight;
-                let eventAction, getItems;
+                this.talkingCallback = scene.time.delayedCall(eventDelay, () => {
+                    //==不同事件的處理方法
+                    const
+                        platform = gameScene.platforms.getChildren()[0],//==物品出現在地上
+                        floorY = height - platform.displayHeight;
+                    let eventAction, getItems;
+                    switch (eventIdx) {
+                        case 0://===躲避地震
+                            eventAction = () => {
+                                //==地震發生
+                                scene.time.delayedCall(eventDuration * 0.8, () => {
+                                    this.ruleText.destroy();
+                                    const quakeDura = eventDuration * 0.1;
+                                    gameScene.cameras.main.shake(quakeDura, 0.03);
+                                    scene.cameras.main.shake(quakeDura, 0.03);
 
-                switch (eventIdx) {
-                    case 0://===躲避地震
-                        eventAction = () => {
-                            //==地震發生
-                            scene.time.delayedCall(eventDuration * 0.8, () => {
-                                this.ruleText.destroy();
-                                const quakeDura = eventDuration * 0.1;
-                                gameScene.cameras.main.shake(quakeDura, 0.03);
-                                scene.cameras.main.shake(quakeDura, 0.03);
+                                    const
+                                        hurtTimes = 3,
+                                        hurtDura = Math.floor(quakeDura / hurtTimes),
+                                        hurtHp = 20;
 
-                                const
-                                    hurtTimes = 3,
-                                    hurtDura = Math.floor(quakeDura / hurtTimes),
-                                    hurtHp = 20;
+                                    let getHurt = false;
+                                    scene.tweens.addCounter({
+                                        from: 0,
+                                        to: 1,
+                                        loop: hurtTimes,
+                                        duration: hurtDura,
+                                        onLoop: () => {
+                                            let table = emergItems.getChildren()[0];
+                                            let takeShelter =
+                                                (player.anims.getName() === 'player_crouch') &&//==蹲下
+                                                (Math.abs(player.x - table.x) < table.displayWidth / 2);//==在桌子附近
 
-                                let getHurt = false;
-                                scene.tweens.addCounter({
-                                    from: 0,
-                                    to: 1,
-                                    loop: hurtTimes,
-                                    duration: hurtDura,
-                                    onLoop: () => {
-                                        let table = emergItems.getChildren()[0];
-                                        let takeShelter =
-                                            (player.anims.getName() === 'player_crouch') &&//==蹲下
-                                            (Math.abs(player.x - table.x) < table.displayWidth / 2);//==在桌子附近
-
-                                        if (!takeShelter) {
-                                            player.statsChangeHandler({ HP: -hurtHp }, scene);
-                                            getHurt = true;
-                                        };
-                                    },
-                                    onComplete: () => eventClear = !getHurt,
-                                });
+                                            if (!takeShelter) {
+                                                player.statsChangeHandler({ HP: -hurtHp }, scene);
+                                                getHurt = true;
+                                            };
+                                        },
+                                        onComplete: () => eventClear = !getHurt,
+                                    });
 
 
-                            }, [], scene);
-                        };
-                        //===防災物品
-                        getItems = () => {
-                            let table = scene.physics.add.sprite(width * 0.5, floorY, 'emergTable')
-                                .setName('emergTable')
-                                .setScale(0.2)
-                                .setOrigin(0.5, 0.9)
-                                .setAlpha(0);
-
-                            emergItems.add(table);
-                        };
-                        break;
-                    case 1:
-                        eventAction = () => { };
-                        getItems = () => {
-                            const itemHints = event.items;
-                            const getHint = (item) => {
-                                let string = item.name === 'emergBag' ?
-                                    `${itemHints[item.name]} 0 / 3` :
-                                    itemHints[item.name];
-
-                                let hint = scene.add.text(item.x, item.y - item.displayHeight, string, {
-                                    fontSize: '24px',
-                                    fill: '#fff',
-                                    stroke: '#000',
-                                    strokeThickness: 1,
-                                    shadow: {
-                                        offsetX: 5,
-                                        offsetY: 5,
-                                        color: '#000',
-                                        blur: 3,
-                                        stroke: true,
-                                        fill: true
-                                    },
-                                    padding: {
-                                        top: 5,
-                                        bottom: 5,
-                                    },
-                                    align: 'center',
-                                })
-                                    .setOrigin(0.5, 1)
-                                    .setDepth(1);
-
-                                hintTexts.add(hint);
+                                }, [], scene);
                             };
-
-                            //==防災包
-                            let emergBag = scene.physics.add.sprite(width * 0.5, floorY, 'emergBag')
-                                .setName('emergBag')
-                                .setScale(0.8)
-                                .setOrigin(0.5, 0.9)
-                                .setAlpha(0);
-                            emergItems.add(emergBag);
-                            getHint(emergBag);
-
-                            let list = [...emergencyKitItems].sort(() => 0.5 - Math.random());//==拷貝陣列
-                            let amount = 6;//=物品數量
-                            [...Array(amount).keys()].forEach(i => {
-                                let
-                                    itemKey = list.pop(),
-                                    itemX = width / (amount + 3) * (i + 1 + (i > 2 ? 2 : 0));
-
-                                let item = scene.physics.add.sprite(itemX, floorY, itemKey)
-                                    .setName(itemKey)
-                                    .setScale(0.4)
+                            //===防災物品
+                            getItems = () => {
+                                let table = scene.physics.add.sprite(width * 0.5, floorY, 'emergTable')
+                                    .setName('emergTable')
+                                    .setScale(0.2)
                                     .setOrigin(0.5, 0.9)
                                     .setAlpha(0);
 
+                                emergItems.add(table);
+                            };
+                            break;
+                        case 1://===撿防災物品
+                            eventAction = () => { };
+                            getItems = () => {
+                                const itemHints = event.items;
+                                const getHint = (item) => {
+                                    let string = item.name === 'emergBag' ?
+                                        `${itemHints[item.name]} 0 / ${emergencyKitItems.length}` :
+                                        itemHints[item.name];
 
-                                //==控制撿起的
-                                Object.assign(item, {
-                                    beholding: false,
-                                    statusHadler: function (pickUper = null, beholding = false) {
-                                        if (beholding) {//pick up                         
-                                            this.body.setMaxVelocityY(0);
-                                            this.setDepth(gameScene.Depth.pickUpObj);
-                                        }
-                                        else {//put down
-                                            this.body.setMaxVelocityY(1000);
-                                            this.setDepth(0);
+                                    let hint = scene.add.text(item.x, item.y - item.displayHeight, string, {
+                                        fontSize: '24px',
+                                        fill: '#fff',
+                                        stroke: '#000',
+                                        strokeThickness: 1,
+                                        shadow: {
+                                            offsetX: 5,
+                                            offsetY: 5,
+                                            color: '#000',
+                                            blur: 3,
+                                            stroke: true,
+                                            fill: true
+                                        },
+                                        padding: {
+                                            top: 5,
+                                            bottom: 5,
+                                        },
+                                        align: 'center',
+                                    })
+                                        .setOrigin(0.5, 1)
+                                        .setDepth(1);
+
+                                    hintTexts.add(hint);
+                                    return hint;
+                                };
+
+                                //==防災包
+                                let emergBag = scene.physics.add.sprite(width * 0.5, floorY, 'emergBag')
+                                    .setName('emergBag')
+                                    .setScale(0.8)
+                                    .setOrigin(0.5, 0.9)
+                                    .setAlpha(0);
+                                Object.assign(emergBag, {
+                                    itemCount: 0,
+                                    itemHint: getHint(emergBag),
+                                })
+                                emergItems.add(emergBag);
+
+
+                                let list = [...emergencyKitItems].sort(() => 0.5 - Math.random());//==拷貝陣列
+                                let amount = emergencyKitItems.length;//=物品數量
+                                [...Array(amount).keys()].forEach(i => {
+                                    let
+                                        itemKey = list.pop(),
+                                        itemX = width / (amount + 3) * (i + 1 + (i > 2 ? 2 : 0));
+
+                                    let item = scene.physics.add.sprite(itemX, floorY, itemKey)
+                                        .setName(itemKey)
+                                        .setScale(0.4)
+                                        .setOrigin(0.5, 0.9)
+                                        .setAlpha(0);
+
+
+                                    //==控制撿起的
+                                    Object.assign(item, {
+                                        beholding: false,
+                                        statusHadler: function (pickUper = null, beholding = false) {
+                                            if (beholding) {//pick up                         
+                                                this.body.setMaxVelocityY(0);
+                                                this.setDepth(gameScene.Depth.pickUpObj);
+                                            }
+                                            else {//put down
+                                                this.body.setMaxVelocityY(1000);
+                                                this.setDepth(0);
+                                            };
+                                            this.beholding = beholding;
+                                        },
+                                    });
+
+                                    emergItems.add(item);
+                                    getHint(item);
+
+                                    let collider = scene.physics.add.collider(emergBag, item, (emergBag, item) => {
+                                        // console.debug(item, emergBag)
+                                        if (!item.beholding) {
+                                            collider.destroy();
+                                            emergItems.remove(item);
+                                            scene.tweens.add({
+                                                targets: item,
+                                                alpha: { start: 1, to: 0 },
+                                                duration: 350,
+                                                repeat: 0,
+                                                ease: 'Linear',
+                                                onComplete: () => {
+                                                    item.destroy();
+                                                    emergBag.itemCount++;
+                                                    let text = `${itemHints[emergBag.name]} ${emergBag.itemCount} / ${amount}`;
+                                                    emergBag.itemHint.setText(text);
+                                                    eventClear = emergBag.itemCount === amount;
+                                                },
+                                            });
+
+
                                         };
-                                        this.beholding = beholding;
-                                    },
+                                    });
                                 });
 
-                                emergItems.add(item);
-                                getHint(item);
-
-                                scene.physics.add.collider(emergBag, item, (emergBag, item) => {
-                                    // console.debug(item, emergBag)
-                                    if (!item.beholding) {
-                                        emergItems.remove(item);
-                                        scene.tweens.add({
-                                            targets: item,
-                                            alpha: { start: 1, to: 0 },
-                                            duration: 350,
-                                            repeat: 0,
-                                            ease: 'Linear',
-                                            onComplete: () => item.destroy(),
-                                        });
-
-                                    };
-                                });
-                            });
-
-                        };
-                        break;
-                };
-
-                this.talkingCallback = scene.time.delayedCall(eventDelay, () => {
+                            };
+                            break;
+                    };
                     eventAction();
 
                     //==事件結束
@@ -2171,6 +2191,7 @@ const Doctor = new Phaser.Class({
                         scene.tweens.add({
                             targets: this,
                             alpha: { start: 1, to: 0 },
+                            y: height - this.displayHeight,
                             duration: 1000,
                             delay: eventClear ? clearDura : 0,
                             repeat: 0,
@@ -2191,8 +2212,7 @@ const Doctor = new Phaser.Class({
                     //==黑幕
                     // console.debug(gameScene);
                     blackOut.scene.setVisible(true);
-                    blackOut.fadeOutTween.restart();
-                    // blackOut.fadeOut(1, 3000);
+                    blackOut.fadeOut(0.95);
                     scene.scene.bringToTop();
 
                     //==玩家有拿光球就放下
@@ -2215,6 +2235,7 @@ const Doctor = new Phaser.Class({
                         targets: this,
                         alpha: { start: 0, to: 1 },
                         x: 0,
+                        y: height * 0.5,
                         duration: 1000,
                         repeat: 0,
                         ease: 'Linear',
@@ -2245,10 +2266,7 @@ const Doctor = new Phaser.Class({
                 }, [], scene);
             };
 
-
         };
-
-
 
     },
 });

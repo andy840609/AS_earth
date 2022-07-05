@@ -2041,65 +2041,44 @@ class UIScene extends Phaser.Scene {
                 create = () => {
                     let init = () => {
                         const camera = this.cameras.main;
-
-
                         camera.setBackgroundColor('rgb(0,0,0,0.7)');
+
                         this.scene.setVisible(false);
                         // this.backgroundColor = camera.backgroundColor;
-
 
                         this.fadeInTween = this.tweens.add({
                             targets: camera.backgroundColor,
                             // ease: 'Quadratic.InOut',
-                            duration: 1500,
+                            duration: (target, key, value, targetIndex, totalTargets, tween) => tween.custom.duration,
+                            alphaGL: (target, key, value, targetIndex, totalTargets, tween) => tween.custom.alphaGL,
                             repeat: 0,
-                            alphaGL: { from: 0.7, to: 0 },
                         }).stop(0);
-
                         this.fadeOutTween = this.tweens.add({
                             targets: camera.backgroundColor,
                             // ease: 'Quadratic.InOut',
-                            duration: 1500,
+                            duration: (target, key, value, targetIndex, totalTargets, tween) => tween.custom.duration,
+                            alphaGL: (target, key, value, targetIndex, totalTargets, tween) => tween.custom.alphaGL,
                             repeat: 0,
-                            alphaGL: { from: 0, to: 0.7 },
                         }).stop(0);
 
-
-                        // Object.assign(this, {
-                        //     fadeIn: (alpha = camera.backgroundColor.alphaGL, duration = 1500) => {
-                        //         // this.tweens.add({
-                        //         //     targets: camera.backgroundColor,
-                        //         //     // ease: 'Quadratic.InOut',
-                        //         //     duration: duration,
-                        //         //     repeat: 0,
-                        //         //     alphaGL: { from: alpha, to: 0 },
-                        //         // });
-                        //     },
-                        //     fadeOut: (alpha = 0.7, duration = 1500) => {
-                        //         // this.tweens.add({
-                        //         //     targets: camera.backgroundColor,
-                        //         //     // ease: 'Quadratic.InOut',
-                        //         //     duration: duration,
-                        //         //     repeat: 0,
-                        //         //     alphaGL: { from: camera.backgroundColor.alphaGL, to: alpha },
-                        //         // });
-                        //         // console.debug(Phaser.Tweens)
-                        //         // Phaser.Tweens.Tween.setStateFromStart(this.fadeOutTween, {
-                        //         //     alphaGL: alpha,
-                        //         //     duration: duration,
-                        //         // });
-                        //         // this.fadeOutTween.setStateFromStart(this.fadeOutTween, {
-                        //         //     alphaGL: alpha,
-                        //         //     duration: duration,
-                        //         // });
-                        //         this.fadeOutTween.updateTo('alphaGL', alpha)
-                        //         this.fadeOutTween.updateTo('duration', duration)
-                        //         this.fadeOutTween.restart();
-                        //     },
-                        // });
+                        Object.assign(this, {
+                            fadeIn: (alphaGL = 0, duration = 1500) => {
+                                Object.assign(this.fadeInTween.custom = {}, {
+                                    alphaGL,
+                                    duration,
+                                })
+                                this.fadeInTween.restart();
+                            },
+                            fadeOut: (alphaGL = 0.7, duration = 1500) => {
+                                Object.assign(this.fadeOutTween.custom = {}, {
+                                    alphaGL,
+                                    duration,
+                                })
+                                this.fadeOutTween.restart();
+                            },
+                        });
 
                         gameScene.blackOut = this;
-                        // console.debug(this);
                     };
                     init();
                 };
@@ -5203,8 +5182,6 @@ class GameStartScene extends Phaser.Scene {
         let initTutorial = () => {
             this.scene.add(null, new UIScene('tutorial', this), true);
         };
-
-
         let initStartAnime = () => {
             const Depth = {
                 earth: 3,
@@ -5382,7 +5359,7 @@ class GameStartScene extends Phaser.Scene {
 
 
                                     blackOut.scene.setVisible(true);
-                                    blackOut.fadeOutTween.restart();
+                                    blackOut.fadeOut();
                                     await new Promise(resolve => this.time.delayedCall(animeDelay * 13, () => {
                                         camera.fadeOut(animeDelay * 3);
                                         this.time.delayedCall(animeDelay * 3, async () => {
@@ -5420,8 +5397,7 @@ class GameStartScene extends Phaser.Scene {
                         };
 
                         blackOut.scene.setVisible(false);
-                        blackOut.fadeOutTween.restart();
-
+                        blackOut.fadeOut();
                         camera.fadeOut(animeDelay, 255, 255, 255);
                         this.time.delayedCall(animeDelay, () => initTutorial());
                     }, [], this);
@@ -5851,14 +5827,9 @@ class GameStartScene extends Phaser.Scene {
             initBoss();
             initScene();
         };
-
-
-
-
         //==UI
         // initIconBar();
         initRexUI();
-
 
         //==gameScene
         initCreatorUI();
@@ -5866,9 +5837,6 @@ class GameStartScene extends Phaser.Scene {
         // initTutorial();
         // initBackground();
         // initButton();
-
-
-
     };
     update() {
         let updateBGobj = () => {
@@ -5880,19 +5848,32 @@ class GameStartScene extends Phaser.Scene {
 };
 
 class GameOverScene extends Phaser.Scene {
-    constructor(GameData, resolve) {
-        super({ key: 'gameScene' });
+    constructor(GameData, other) {
+        super({
+            key: 'gameScene',
+            pack: {
+                files: [
+                    {//==讓preload()能await才create()[確定資源都讀取完成才執行create()]
+                        type: 'plugin',
+                        key: 'rexawaitloaderplugin',
+                        url: 'src/phaser-3.55.2/plugins/rexplugins/rexawaitloaderplugin.min.js',
+                        start: true,
+                    },
+                ]
+            },
+        });
 
         Object.assign(this, {
             name: 'GameOver',
             gameData: GameData,
-            resolve: resolve,
+            clear: other.clear,
+            resolve: other.resolve,
         });
     };
     preload() {
-        const UIDir = assetsDir + 'ui/game/Transitions/';
-        this.load.image('gameOverScene', UIDir + 'gameOverScene.jpg');
-        this.load.image('startButton', UIDir + 'startButton.png');
+        this.plugins.get('rexawaitloaderplugin').addToScene(this);
+        let callback = (resolve) => this.scene.add(null, new LoadingScene(this, resolve), true);
+        this.load.rexAwait(callback);//==等LoadingScene完成素材載入
     };
     create() {
         const canvas = this.sys.game.canvas;
@@ -5901,70 +5882,591 @@ class GameOverScene extends Phaser.Scene {
         const localeJSON = this.gameData.localeJSON;
 
         // console.debug(localeJSON);
-        let background = () => {
-            let img = this.add.image(width * 0.5, height * 0.5, 'gameOverScene');
-            img.setScale(width / img.width, height / img.height);
+
+        let failScene = () => {
+            let background = () => {
+                let img = this.add.image(width * 0.5, height * 0.5, 'gameOverScene');
+                img.setScale(width / img.width, height / img.height);
+            };
+            let button = () => {
+                // =menu buttons
+                const buttons = ['resurrect', 'giveup'];
+
+                const buttonGap = height * 0.5 / (buttons.length + 1);
+                const x = width * 0.5;
+
+                let buttonGroup = buttons.map((button, i) => {
+                    let y = height * 0.5 + buttonGap * (i + 1);
+                    let menuButton = this.add.image(x, y, 'startButton');
+                    let buttonText = this.add.text(x, y, localeJSON.UI[button], { font: '40px Arial', fill: '#ffffff' })
+                        .setOrigin(0.5);
+                    let buttonScale = buttonText.height * 2 / menuButton.height;
+
+                    menuButton
+                        .setScale(buttonScale)//menu.width / 4 / menuButton.width
+                        .setInteractive({ cursor: 'pointer' })
+                        .on('pointerover', function () {
+                            let scale = 1.2;
+                            this.setScale(buttonScale * scale);
+                            buttonText
+                                .setScale(scale)
+                                .setTint(0xFFFF37);
+                        })
+                        .on('pointerout', function () {
+                            this.setScale(buttonScale);
+                            buttonText
+                                .setScale(1)
+                                .clearTint();
+                        })
+                        .on('pointerdown', () => {
+                            // console.debug(button);
+                            switch (button) {
+                                case 'resurrect':
+
+                                    this.game.destroy(true, false);
+                                    this.resolve();
+
+                                    break;
+
+                                case 'giveup':
+                                    // this.setting
+
+                                    break;
+
+
+                            }
+                        });
+
+
+                    return {
+                        button: menuButton,
+                        text: buttonText,
+                    }
+
+                });
+
+            };
+            background();
+            button();
         };
-        let button = () => {
-            // =menu buttons
-            const buttons = ['resurrect', 'giveup'];
+        let initEndAnime = () => {
+            const Depth = {
+                earth: 3,
+                appleTree: 3,
+                apple: 4,
+                player: 10,
+                boss: 11,
+                UI: 20,
+                /*
+                Depth:
+                  0-4(background)
+                  5(laser)
+                  6(wave)
+                  7(orbs)
+                  9(enemy)
+                  10(player)
+                  11(orb pickUp)
+                  15(bullet)
+                  20(UI:HP bar...)
+                */
+            };
+            // this.Depth = Depth;//==gameObject.js用到
+            const animeDelay = 500;
+            let initScene = () => {
+                this.sceneGroup = this.add.group();
 
-            const buttonGap = height * 0.5 / (buttons.length + 1);
-            const x = width * 0.5;
+                let playLines = () => {
+                    //==臺詞
+                    let lines = this.gameData.localeJSON.Lines.start['space'];
+                    let playerName = this.gameData.playerCustom.name,
+                        sidekickName = this.gameData.sidekick.type;
 
-            let buttonGroup = buttons.map((button, i) => {
-                let y = height * 0.5 + buttonGap * (i + 1);
-                let menuButton = this.add.image(x, y, 'startButton');
-                let buttonText = this.add.text(x, y, localeJSON.UI[button], { font: '40px Arial', fill: '#ffffff' })
-                    .setOrigin(0.5);
-                let buttonScale = buttonText.height * 2 / menuButton.height;
+                    //==特效相關
+                    const effectScene = this.boss.effectScene;
+                    const camera = this.cameras.main;
+                    const blackOut = this.blackOut;
+                    //boss特效scene一起移動
+                    let cameraPan = (panRight, duration = animeDelay * 4) => {
+                        camera.pan(panRight ? width * 2 : width * 0.5, height * 0.5, duration, 'Power2', true);
+                    };
 
-                menuButton
-                    .setScale(buttonScale)//menu.width / 4 / menuButton.width
-                    .setInteractive({ cursor: 'pointer' })
-                    .on('pointerover', function () {
-                        let scale = 1.2;
-                        this.setScale(buttonScale * scale);
-                        buttonText
-                            .setScale(scale)
-                            .setTint(0xFFFF37);
-                    })
-                    .on('pointerout', function () {
-                        this.setScale(buttonScale);
-                        buttonText
-                            .setScale(1)
-                            .clearTint();
-                    })
-                    .on('pointerdown', () => {
-                        // console.debug(button);
-                        switch (button) {
-                            case 'resurrect':
+                    this.RexUI.scene.bringToTop();
+                    effectScene.scene.bringToTop();
 
-                                this.game.destroy(true, false);
-                                this.resolve();
+                    this.time.delayedCall(animeDelay, async () => {
 
-                                break;
+                        let showEmote = (character, emoji) => {
+                            if (emoji)
+                                this.tweens.add({
+                                    targets: character.emote,
+                                    alpha: { from: 0.5, to: 1 },
+                                    scale: { from: 0, to: 1.5 },
+                                    duration: animeDelay * 0.5,
+                                    repeat: 0,
+                                    ease: 'Quadratic.InOut',
+                                    onStart: () => {
+                                        character.emote
+                                            .setTexture(emoji)
+                                            .setVisible(true);
+                                    },
+                                });
+                            else
+                                this.tweens.add({
+                                    targets: character.emote,
+                                    alpha: { from: 1, to: 0 },
+                                    scale: { from: 1.5, to: 0 },
+                                    duration: animeDelay * 0.5,
+                                    repeat: 0,
+                                    ease: 'Quadratic.InOut',
+                                    onComplete: () => {
+                                        character.emote.setVisible(false);
+                                    },
+                                });
+                        };
+                        for (let i = 0; i < Object.keys(lines).length; i++) {
+                            let line = lines[i].line,
+                                character = lines[i].character,
+                                pageendEvent = false;
 
-                            case 'giveup':
-                                // this.setting
+                            switch (i) {
+                                case 0:
+                                    showEmote(this.player, null);
+                                    break;
+                                case 1:
+                                    showEmote(this.player, 'emoteConfuse');
+                                    break;
+                                case 2:
+                                    showEmote(this.player, null);
+                                    break;
+                                case 3:
+                                    this.player.play('player_think');
+                                    showEmote(this.player, 'emoteDrops');
+                                    break;
+                                case 4:
+                                    line = line.replace('\t', this.gameData.timeMultiplier);
+                                    showEmote(this.player, null);
+                                    break;
+                                case 5:
+                                    showEmote(this.player, 'emoteHappy');
+                                    this.player.play('player_idle');
+                                    this.doctor.setFlipX(false);
+                                    this.doctor.emote.setVisible(false);
+                                    this.player.emote.setVisible(false);
+                                    // this.RexUI.cameras.main.shake(0, 0);
+                                    break;
+                                case 6:
 
-                                break;
+                                    this.RexUI.cameras.main.shake(animeDelay * 4, 0.03);
+                                    this.player.play('player_death')
+                                        .anims
+                                        .stopOnFrame(this.player.anims.currentAnim.frames[1]);
+
+                                    this.doctor.setFlipX(true);
+
+                                    showEmote(this.player, 'emoteShock');
+                                    showEmote(this.doctor, 'emoteShock');
+                                    this.boss.anims.stop();
+                                    break;
+                                case 7:
+                                    this.boss.flyTweens.restart();
+                                    cameraPan(true);
+                                    //==停頓在說
+                                    await new Promise(resolve => this.time.delayedCall(animeDelay * 4, () => resolve()));
+                                    //     break;
+                                    // case 9:
+                                    this.boss.flyTweens.stop(0);
+                                    this.boss.play('boss_flyAttack');
 
 
-                        }
+                                    //集氣
+                                    this.tweens.add({
+                                        targets: effectScene.effect1,
+                                        alpha: { from: 0.5, to: 1 },
+                                        duration: animeDelay * 2,
+                                        delay: animeDelay,
+                                        repeat: 0,
+                                        ease: 'Quadratic.InOut',
+                                        onStart: () => {
+                                            effectScene.effect1.play('boss_effect1');
+                                        },
+                                        // onComplete: () => {
+                                        //     camera.shake(animeDelay * 10, 0.015);
+                                        // },
+                                    });
+
+                                    //波
+                                    this.time.delayedCall(animeDelay * 4, () => {
+                                        this.tweens.add({
+                                            targets: effectScene.effect1,
+                                            alpha: { from: 1, to: 0 },
+                                            duration: animeDelay * 2,
+                                            repeat: 0,
+                                            ease: 'Quadratic.InOut',
+                                            // onStart: () => {
+                                            //     camera.shake(animeDelay * 10, 0.015);
+                                            // },
+                                            onComplete: () => {
+                                                effectScene.effect1.stop();
+
+                                                let effect2 = effectScene.effect2;
+                                                effect2
+                                                    .play('boss_effect2')
+                                                    .setScale((this.boss.x - width) / effect2.width, 1.5);
+                                                // console.debug(this.boss.x, width);
+                                                camera.shake(animeDelay * 10, 0.03);
+                                            },
+                                        });
+
+                                    });
+
+
+
+                                    blackOut.scene.setVisible(true);
+                                    blackOut.fadeOut();
+                                    await new Promise(resolve => this.time.delayedCall(animeDelay * 13, () => {
+                                        camera.fadeOut(animeDelay * 3);
+                                        this.time.delayedCall(animeDelay * 3, async () => {
+                                            cameraPan(false, 0);
+                                            blackOut.scene.setVisible(false);
+                                            this.doctor.setFlipX(false);
+                                            showEmote(this.player, null);
+                                            showEmote(this.doctor, null);
+                                            getChildByName('earth').play('earth_destory');
+                                            camera.fadeIn(animeDelay * 3);
+
+                                            //==停頓在說
+                                            await new Promise(resolve => this.time.delayedCall(animeDelay * 4, () => resolve()));
+                                            resolve();
+                                        });
+
+                                    }));
+                                    break;
+                                case 8:
+                                    showEmote(this.player, 'emoteIdea');
+                                    this.player.play('player_idle');
+                                    break;
+                                case 9:
+                                    showEmote(this.player, null);
+                                    this.doctor.play('doctor_attack');
+                                    break;
+                            };
+
+
+                            let dialogCode = await new Promise(resolve => this.RexUI.newDialog(line, { character, pageendEvent }, resolve));
+                            // console.debug(dialogCode);
+
+                            if (dialogCode === 0) break;
+                            else if (dialogCode === 1) i = i - 2 < 0 ? -1 : i - 2;
+                        };
+
+                        blackOut.scene.setVisible(false);
+                        blackOut.fadeOut();
+                        camera.fadeOut(animeDelay, 255, 255, 255);
+                        this.time.delayedCall(animeDelay, () => initTutorial());
+                    }, [], this);
+
+
+                };
+                let playSubtitle = (index = 0, animes = false) => {
+                    let text = localeJSON.Lines.start.intro[index];
+                    // console.debug(text);
+
+                    let textPlayer = this.RexUI.newTextPlayer({
+                        x: width * 0.5,
+                        y: height * 0.5,
+                        width: width * 0.8,
+                        height: height * 0.5,
+                        speed: 200,
+                        // speed: 10,
+                        animation: animes,
+                    }).setName('subtitle');
+                    this.sceneGroup.add(textPlayer);
+                    // console.debug(textPlayer);
+                    return textPlayer.playPromise(text);
+                };
+
+                //==主角在森林
+                let scene1 = () => {
+                    let forest = () => {
+                        let resources = BackGroundResources.GameStart[this.background[0]];
+
+                        // console.debug(resources)
+                        resources.static.forEach((res, i) => {
+                            let img = this.add.image(width * 0.5, height * 0.5, 'staticBG_scene1_' + i);
+                            img
+                                .setScale(width / img.width, height / img.height)
+                                .setDepth(resources.depth.static[i]);
+
+                            this.sceneGroup.add(img);
+                        });
+
+                        resources.dynamic.forEach((res, i) => {
+                            let thing = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, 'dynamicBG_scene1_' + i);
+
+                            thing
+                                .setScale(width / thing.width, height / thing.height)
+                                .setDepth(resources.depth.dynamic[i]);
+
+                            //==tweens
+                            let movingDuration = Phaser.Math.Between(10, 15) * 1000;//==第一次移動5到20秒
+                            let animType = resources.animType[i];
+                            //==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
+
+                            this.tweens.add(
+                                Object.assign({
+                                    targets: thing,
+                                    repeat: -1,
+                                    duration: movingDuration + i * movingDuration * 0.5,
+                                },
+                                    animType == 1 ?
+                                        { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
+                                        animType == 2 ? { alpha: { start: 0, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
+                                            animType == 3 ? { scaleX: { start: t => t.scaleX, to: t => t.scaleX * 1.5 }, scaleY: { start: t => t.scaleY, to: t => t.scaleY * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
+                                                { alpha: { start: 0, to: 1 }, ease: 'Bounce', yoyo: true }
+
+                                ));
+
+                            this.sceneGroup.add(thing);
+
+                        });
+
+                    };
+                    let apple = () => {
+                        let appleTree = this.add.image(width * 0.6, height * 0.45, 'appleTree')
+                            .setScale(0.6)
+                            .setName('appleTree')
+                            .setDepth(Depth.appleTree);
+
+                        let apple = this.add.image(appleTree.x - 90, height * 0.4, 'apple')
+                            .setScale(0.6)
+                            .setName('apple')
+                            .setDepth(Depth.apple);
+
+                        this.sceneGroup.add(appleTree);
+                        this.sceneGroup.add(apple);
+                    };
+                    let animStart = () => {
+                        let apple = getChildByName('apple');
+
+                        playSubtitle(0).then(() => {
+                            //==蘋果掉落
+                            this.tweens.add({
+                                targets: apple,
+                                repeat: 0,
+                                ease: 'Cubic.In',
+                                duration: animeDelay,
+                                delay: animeDelay * 3,
+                                y: { from: apple.y, to: this.player.y },
+                                onComplete: () => apple.setVisible(false),
+                            });
+
+                            //==玩家跑
+                            this.tweens.add({
+                                targets: this.player,
+                                repeat: 0,
+                                ease: 'Linear',
+                                duration: animeDelay * 4,
+                                x: { from: -this.player.displayWidth, to: apple.x },
+                                onStart: () => this.player.play('player_run'),
+                                onComplete: () => {
+                                    this.player.play('player_death');
+
+                                    this.time.delayedCall(animeDelay * 3, () => {
+                                        this.cameras.main.fade(animeDelay, 0, 0, 0);
+                                        this.time.delayedCall(animeDelay, () => {
+                                            this.sceneGroup.clear(true, true);
+                                            scene2();
+                                        });
+                                    }, [], this);
+
+                                },
+                            });
+
+                        });
+
+                    };
+
+                    forest();
+                    apple();
+                    animStart();
+
+                };
+
+                //==主角到異世界
+                let scene2 = () => {
+                    let space = () => {
+                        let resources = BackGroundResources.GameStart[this.background[1]];
+
+                        // console.debug(resources)
+                        resources.static.forEach((res, i) => {
+                            let img = this.add.image(0, height * 0.5, 'staticBG_scene2_' + i);
+                            img
+                                .setScale(width * 2 / img.width, height / img.height)
+                                .setOrigin(0, 0.5)
+                                .setDepth(resources.depth.static[i]);
+
+                            this.sceneGroup.add(img);
+                        });
+
+                        resources.dynamic.forEach((res, i) => {
+                            let thing = this.add.tileSprite(0, height * 0.5, 0, 0, 'dynamicBG_scene2_' + i);
+
+                            thing
+                                .setScale(width * 2 / thing.width, height / thing.height)
+                                .setOrigin(0, 0.5)
+                                .setDepth(resources.depth.dynamic[i]);
+
+                            //==tweens
+                            let movingDuration = Phaser.Math.Between(10, 15) * 1000;//==第一次移動5到20秒
+                            let animType = resources.animType[i];
+                            //==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
+
+                            this.tweens.add(
+                                Object.assign({
+                                    targets: thing,
+                                    repeat: -1,
+                                    duration: movingDuration + i * movingDuration * 0.5,
+                                },
+                                    animType == 1 ?
+                                        { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
+                                        animType == 2 ? { alpha: { start: 0, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
+                                            animType == 3 ? { scaleX: { start: t => t.scaleX, to: t => t.scaleX * 1.5 }, scaleY: { start: t => t.scaleY, to: t => t.scaleY * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
+                                                { alpha: { start: 0, to: 1 }, ease: 'Bounce', yoyo: true }
+
+                                ));
+
+                            this.sceneGroup.add(thing);
+
+                        });
+
+                    };
+                    let planet = () => {
+                        let animsCreate = () => {
+                            this.anims.create({
+                                key: 'earth_spin',
+                                frames: this.anims.generateFrameNumbers('planetEarth'),
+                                frameRate: 8,
+                                repeat: -1,
+                            });
+                            this.anims.create({
+                                key: 'earth_destory',
+                                frames: this.anims.generateFrameNumbers('planetMars'),
+                                frameRate: 3,
+                                repeat: -1,
+                            });
+                        };
+                        animsCreate();
+                        let earth = this.add.sprite(width * 0.5, height * 0.5, 'planetEarth')
+                            .setScale(1.2)
+                            .setOrigin(0.5, 0.4)
+                            .setName('earth')
+                            .setDepth(Depth.earth)
+                            .play('earth_spin');
+
+                        this.sceneGroup.add(earth);
+                        // this.cameras.main.zoomTo(0.5, 1000);
+
+                    };
+                    let animStart = () => {
+                        playSubtitle(1, true)
+                            .then(() => {
+                                //===字幕移除
+                                this.cameras.main.fadeIn(animeDelay * 2, 0, 0, 0);
+                                this.sceneGroup.remove(getChildByName('subtitle'), true, true);
+
+
+                                //==博士動畫
+                                this.doctor
+                                    .setPosition(width * 0.8, height * 0.6)
+                                    .play('doctor_idle');
+
+                                //===玩家動畫
+                                this.player.setPosition(width * 0.2, height * 0.6);
+
+                                this.time.delayedCall(animeDelay * 4, () => {
+                                    this.player.playReverse('player_death');
+                                    playLines();
+                                });
+
+
+                                //===emoji
+                                this.player.emote
+                                    .setVisible(true)
+                                    .setPosition(this.player.x, this.player.y - 70);
+                                this.doctor.emote
+                                    .setPosition(this.doctor.x, this.doctor.y - 70);
+
+                                [...Array(3).keys()].forEach(i =>
+                                    this.time.delayedCall(animeDelay * 1.3 * i, () => {
+                                        this.player.emote.setTexture('emoteDots' + (i + 1));
+                                    }));
+
+                            });
+                        // playLines();
+                    };
+                    space();
+                    planet();
+                    animStart();
+                };
+
+                scene1();
+                // scene2();
+            };
+            let initPlayer = () => {
+                let animsCreate = () => {
+                    const player = this.gameData.playerRole,
+                        frameRate = GameObjectFrame[player].frameRate;
+
+                    this.anims.create({
+                        key: 'player_run',
+                        frames: this.anims.generateFrameNumbers(player + '_run'),
+                        frameRate: frameRate.run,
+                        repeat: -1,
                     });
+                    this.anims.create({
+                        key: 'player_idle',
+                        frames: this.anims.generateFrameNumbers(player + '_idle'),
+                        frameRate: frameRate.idle,
+                        repeat: -1,
+                    });
+                    this.anims.create({
+                        key: 'player_death',
+                        frames: this.anims.generateFrameNumbers(player + '_death'),
+                        frameRate: frameRate.death,
+                        repeat: 0,
+                    });
+                    this.anims.create({
+                        key: 'player_think',
+                        frames: this.anims.generateFrameNumbers(player + '_attack', { frames: [0] }),
+                        frameRate: frameRate.attack,
+                        repeat: 0,
+                    });
+                };
+                animsCreate();
 
+                this.player = this.add.existing(new Player(this))
+                    .setPosition(0, height * 0.7)
+                    .setDepth(Depth.player);
 
-                return {
-                    button: menuButton,
-                    text: buttonText,
-                }
+                this.player.emote = this.add.image(0, 0)
+                    .setScale(1.5)
+                    .setVisible(false)
+                    .setDepth(Depth.player);
 
-            });
+            };
+            let initCamera = () => {
+                this.cameras.main.setBounds(0, 0, width * 2, height);
+                this.cameras.main.fadeIn(500, 0, 0, 0);
+            };
 
+            initCamera();
+            // initPlayer();
+            // initScene();
+            this.game.destroy(true, false);
+            this.resolve();
         };
-        background();
-        button();
+
+        this.clear ? initEndAnime() : failScene();
     };
     update() {
 
@@ -5984,7 +6486,7 @@ class LoadingScene extends Phaser.Scene {
         const LoadtextJSON = gameData.localeJSON.Load;
 
         // console.debug(gameScene);
-        const packNum = { 'GameStart': 0, 'defend': 1, 'dig': 2, 'boss': 3 }[gameScene.name];
+        const packNum = { 'GameStart': 0, 'defend': 1, 'dig': 2, 'boss': 3, 'GameOver': 4, }[gameScene.name];
         let gameObjects = () => {
             let environment = () => {
                 const envDir = gameObjDir + 'environment/';
@@ -6002,176 +6504,188 @@ class LoadingScene extends Phaser.Scene {
 
                 };
 
-                if (packNum == 0) {
-                    let scene = () => {
-                        let startDir = envDir + 'start/';
-                        let planet = () => {
-                            const planetW = 512;
-                            this.load.spritesheet('planetEarth',
-                                startDir + 'earth.png',
-                                { frameWidth: planetW, frameHeight: planetW }
+                switch (packNum) {
+                    case 0:
+                        let scene = () => {
+                            let startDir = envDir + 'start/';
+                            let planet = () => {
+                                const planetW = 512;
+                                this.load.spritesheet('planetEarth',
+                                    startDir + 'earth.png',
+                                    { frameWidth: planetW, frameHeight: planetW }
+                                );
+                                this.load.spritesheet('planetMars',
+                                    startDir + 'mars.png',
+                                    { frameWidth: planetW, frameHeight: planetW }
+                                );
+
+                            };
+                            let apple = () => {
+                                this.load.image('appleTree', startDir + 'appleTree.png');
+                                this.load.image('apple', startDir + 'apple.png');
+                            };
+
+                            background(gameScene.creatorObj.background);
+
+                            //===開頭好幾個場景
+                            gameScene.background.forEach((bg, i) =>
+                                background(bg, `scene${i + 1}_`));
+
+                            apple();
+                            planet();
+                        };
+                        let start = () => {
+                            let dir = assetsDir + 'ui/game/';
+                            this.load.image('gameTitle', dir + 'gameTitle.png');
+                            this.load.image('statsBlock', dir + 'statsBlock.png');
+                            this.load.image('statsStar', dir + 'star.png');
+
+                        };
+
+                        start();
+                        scene();
+
+                        break;
+                    case 1:
+                        let station = () => {
+                            const dir = envDir + 'station/';
+                            this.load.image('station', dir + 'station.png');
+                            // this.load.image('title', dir + 'title.png');
+                        };
+                        let orb = () => {
+                            const dir = envDir + 'orb/';
+                            this.load.spritesheet('orb',
+                                dir + 'orb.png',
+                                { frameWidth: 256, frameHeight: 256 }
                             );
-                            this.load.spritesheet('planetMars',
-                                startDir + 'mars.png',
-                                { frameWidth: planetW, frameHeight: planetW }
+                            this.load.spritesheet('laser',
+                                dir + 'laser.png',
+                                { frameWidth: 512, frameHeight: 682.6 }
+                            );
+                            this.load.image('orbBox', dir + 'orbBox.png');
+
+                        };
+                        let wave = () => {
+                            let stationData = gameData.stationData;
+                            let xAxisDomain = stationData.stationStats.orbStats ? stationData.stationStats.orbStats.xAxisDomain : null;
+
+                            //==getWaveSVG
+                            gameScene.waveForm.getWaveImg(stationData, xAxisDomain).then(success => {
+                                this.load.svg('waveForm', success.svg, { scale: 1 });
+                                gameScene.waveForm.svgObj = success;
+                            });
+
+                            //==getOverviewSVG
+                            gameScene.waveForm.getWaveImg(stationData, null, true).then(success => {
+                                this.load.svg('overview_waveForm', success.svg, { scale: 1 });
+                                gameScene.waveForm.overviewSvgObj = success;
+                            });
+
+
+                        };
+
+                        background(gameScene.background);
+                        station();
+                        orb();
+                        wave();
+                        break;
+                    case 2:
+                        let groundMatters = () => {
+                            let terrainDir = envDir + 'terrain/'
+
+                            // this.load.image('sprSand', terrainDir + 'sprSand.png');
+                            // this.load.spritesheet('sprWater', terrainDir + 'sprWater.png',
+                            //     { frameWidth: 60, frameHeight: 60 });
+                            this.load.spritesheet('lava', terrainDir + 'lava.png',
+                                { frameWidth: 125, frameHeight: 125 });
+                            this.load.image('gateStone', terrainDir + 'gateStone.png');
+                            this.load.image('groundTile', terrainDir + '0.png');
+                            this.load.image('terrain1', terrainDir + '1.png');
+                            this.load.image('terrain2', terrainDir + '2.png');
+                            this.load.image('terrain3', terrainDir + '3.png');
+
+                        };
+                        let mineBackground = () => {
+                            let mineDir = envDir + 'background/mineBackground/';
+                            let resources = BackGroundResources['mine']['mineBackground'];
+                            let mineBG = resources.static[gameScene.mineBGindex];
+                            this.load.image('mineBG', mineDir + mineBG);
+                        };
+                        let mineObjs = () => {
+                            let mineObjDir = envDir + 'mineobject/';
+
+                            this.load.spritesheet('tileCrack', mineObjDir + 'tileCrack.png',
+                                { frameWidth: 100, frameHeight: 100 });
+
+
+                            if (gameScene.depthCounter.epicenter === null) return;
+
+                            //==魔王門素材              
+                            this.load.spritesheet('bossDoor',
+                                mineObjDir + 'bossDoor.png',
+                                { frameWidth: 100, frameHeight: 100 },
+                            );
+
+                            this.load.spritesheet('bossTorch',
+                                mineObjDir + 'bossTorch.png',
+                                { frameWidth: 320, frameHeight: 320 },
                             );
 
                         };
-                        let apple = () => {
-                            this.load.image('appleTree', startDir + 'appleTree.png');
-                            this.load.image('apple', startDir + 'apple.png');
+
+                        background(gameScene.background);
+                        groundMatters();
+                        mineBackground();
+                        mineObjs();
+                        break;
+                    case 3:
+                        let bossRoom = () => {
+                            let castleDir = envDir + 'castle/';
+                            this.load.spritesheet('bossFlame',
+                                castleDir + 'flame.png',
+                                { frameWidth: 1000, frameHeight: 1000 },
+                            );
+                            this.load.image('bossRock', castleDir + 'rock.png');
+                        };
+                        let boss = () => {
+                            let bossDir = gameObjDir + 'boss/';
+                            this.load.spritesheet('boss_Attack',
+                                bossDir + 'Attack.png',
+                                { frameWidth: 100, frameHeight: 100 },
+                            );
+                            this.load.spritesheet('boss_Death',
+                                bossDir + 'Death.png',
+                                { frameWidth: 100, frameHeight: 100 },
+                            );
+                            this.load.spritesheet('boss_Fly',
+                                bossDir + 'Fly.png',
+                                { frameWidth: 100, frameHeight: 100 },
+                            );
+                            this.load.spritesheet('boss_Idle',
+                                bossDir + 'Idle.png',
+                                { frameWidth: 100, frameHeight: 100 },
+                            );
+                        };
+                        let bossBar = () => {
+                            let bossBarDir = assetsDir + 'ui/game/bossBar/';
+                            this.load.image('bossBar', bossBarDir + 'bossBar.png');
                         };
 
-                        background(gameScene.creatorObj.background);
-
-                        //===開頭好幾個場景
-                        gameScene.background.forEach((bg, i) =>
-                            background(bg, `scene${i + 1}_`));
-
-                        apple();
-                        planet();
-                    };
-                    let start = () => {
-                        let dir = assetsDir + 'ui/game/';
-                        this.load.image('gameTitle', dir + 'gameTitle.png');
-                        this.load.image('statsBlock', dir + 'statsBlock.png');
-                        this.load.image('statsStar', dir + 'star.png');
-
-                    };
-
-                    start();
-                    scene();
-
-                }
-                else if (packNum == 1) {
-                    let station = () => {
-                        const dir = envDir + 'station/';
-                        this.load.image('station', dir + 'station.png');
-                        // this.load.image('title', dir + 'title.png');
-                    };
-                    let orb = () => {
-                        const dir = envDir + 'orb/';
-                        this.load.spritesheet('orb',
-                            dir + 'orb.png',
-                            { frameWidth: 256, frameHeight: 256 }
-                        );
-                        this.load.spritesheet('laser',
-                            dir + 'laser.png',
-                            { frameWidth: 512, frameHeight: 682.6 }
-                        );
-                        this.load.image('orbBox', dir + 'orbBox.png');
-
-                    };
-                    let wave = () => {
-                        let stationData = gameData.stationData;
-                        let xAxisDomain = stationData.stationStats.orbStats ? stationData.stationStats.orbStats.xAxisDomain : null;
-
-                        //==getWaveSVG
-                        gameScene.waveForm.getWaveImg(stationData, xAxisDomain).then(success => {
-                            this.load.svg('waveForm', success.svg, { scale: 1 });
-                            gameScene.waveForm.svgObj = success;
-                        });
-
-                        //==getOverviewSVG
-                        gameScene.waveForm.getWaveImg(stationData, null, true).then(success => {
-                            this.load.svg('overview_waveForm', success.svg, { scale: 1 });
-                            gameScene.waveForm.overviewSvgObj = success;
-                        });
-
-
-                    };
-
-                    background(gameScene.background);
-                    station();
-                    orb();
-                    wave();
-                }
-                else if (packNum == 2) {
-                    let groundMatters = () => {
-                        let terrainDir = envDir + 'terrain/'
-
-                        // this.load.image('sprSand', terrainDir + 'sprSand.png');
-                        // this.load.spritesheet('sprWater', terrainDir + 'sprWater.png',
-                        //     { frameWidth: 60, frameHeight: 60 });
-                        this.load.spritesheet('lava', terrainDir + 'lava.png',
-                            { frameWidth: 125, frameHeight: 125 });
-                        this.load.image('gateStone', terrainDir + 'gateStone.png');
-                        this.load.image('groundTile', terrainDir + '0.png');
-                        this.load.image('terrain1', terrainDir + '1.png');
-                        this.load.image('terrain2', terrainDir + '2.png');
-                        this.load.image('terrain3', terrainDir + '3.png');
-
-                    };
-                    let mineBackground = () => {
-                        let mineDir = envDir + 'background/mineBackground/';
-                        let resources = BackGroundResources['mine']['mineBackground'];
-                        let mineBG = resources.static[gameScene.mineBGindex];
-                        this.load.image('mineBG', mineDir + mineBG);
-                    };
-                    let mineObjs = () => {
-                        let mineObjDir = envDir + 'mineobject/';
-
-                        this.load.spritesheet('tileCrack', mineObjDir + 'tileCrack.png',
-                            { frameWidth: 100, frameHeight: 100 });
-
-
-                        if (gameScene.depthCounter.epicenter === null) return;
-
-                        //==魔王門素材              
-                        this.load.spritesheet('bossDoor',
-                            mineObjDir + 'bossDoor.png',
-                            { frameWidth: 100, frameHeight: 100 },
-                        );
-
-                        this.load.spritesheet('bossTorch',
-                            mineObjDir + 'bossTorch.png',
-                            { frameWidth: 320, frameHeight: 320 },
-                        );
-
-                    };
-
-                    background(gameScene.background);
-                    groundMatters();
-                    mineBackground();
-                    mineObjs();
-                }
-                else if (packNum == 3) {
-                    let bossRoom = () => {
-                        let castleDir = envDir + 'castle/';
-                        this.load.spritesheet('bossFlame',
-                            castleDir + 'flame.png',
-                            { frameWidth: 1000, frameHeight: 1000 },
-                        );
-                        this.load.image('bossRock', castleDir + 'rock.png');
-                    };
-                    let boss = () => {
-                        let bossDir = gameObjDir + 'boss/';
-                        this.load.spritesheet('boss_Attack',
-                            bossDir + 'Attack.png',
-                            { frameWidth: 100, frameHeight: 100 },
-                        );
-                        this.load.spritesheet('boss_Death',
-                            bossDir + 'Death.png',
-                            { frameWidth: 100, frameHeight: 100 },
-                        );
-                        this.load.spritesheet('boss_Fly',
-                            bossDir + 'Fly.png',
-                            { frameWidth: 100, frameHeight: 100 },
-                        );
-                        this.load.spritesheet('boss_Idle',
-                            bossDir + 'Idle.png',
-                            { frameWidth: 100, frameHeight: 100 },
-                        );
-                    };
-                    let bossBar = () => {
-                        let bossBarDir = assetsDir + 'ui/game/bossBar/';
-                        this.load.image('bossBar', bossBarDir + 'bossBar.png');
-                    };
-
-                    background(gameScene.background);
-                    bossRoom();
-                    boss();
-                    bossBar();
+                        background(gameScene.background);
+                        bossRoom();
+                        boss();
+                        bossBar();
+                        break;
+                    case 4:
+                        let fail = () => {
+                            const UIDir = assetsDir + 'ui/game/Transitions/';
+                            this.load.image('gameOverScene', UIDir + 'gameOverScene.jpg');
+                            this.load.image('startButton', UIDir + 'startButton.png');
+                        };
+                        let clear = () => { };
+                        console.debug(gameScene)
+                        gameScene.clear ? clear() : fail();
+                        break;
                 };
 
             };
@@ -6399,6 +6913,7 @@ class LoadingScene extends Phaser.Scene {
             };
         };
         let UI = () => {
+            if (packNum === 4) return;
             const uiDir = assetsDir + 'ui/game/';
             let UIButtons = () => {
                 const iconDir = assetsDir + 'icon/';
@@ -7684,7 +8199,7 @@ class DefendScene extends Phaser.Scene {
 
                     this.time.delayedCall(gameDestroyDelay * 0.5, () => {
                         this.blackOut.scene.setVisible(true);
-                        this.blackOut.fadeOutTween.restart();
+                        this.blackOut.fadeOut();
                     }, [], this);
 
                     this.RexUI.scene.bringToTop();

@@ -4943,8 +4943,6 @@ class UIScene extends Phaser.Scene {
             update: update,
             tooltip: tooltip,
         });
-
-
     };
     preload() {
         this.preload();
@@ -5162,7 +5160,6 @@ class GameStartScene extends Phaser.Scene {
                 //     delay: tweensDuration * 0.5,
                 //     alpha: { from: 0, to: 1 },
                 // });
-
 
             };
             let initIconBar = () => {
@@ -5402,7 +5399,6 @@ class GameStartScene extends Phaser.Scene {
                         this.time.delayedCall(animeDelay, () => initTutorial());
                     }, [], this);
 
-
                 };
                 let playSubtitle = (index = 0, animes = false) => {
                     let text = localeJSON.Lines.start.intro[index];
@@ -5605,7 +5601,7 @@ class GameStartScene extends Phaser.Scene {
 
                     };
                     let animStart = () => {
-                        playSubtitle(1, true)
+                        playSubtitle(1, 'jump')
                             .then(() => {
                                 //===字幕移除
                                 this.cameras.main.fadeIn(animeDelay * 2, 0, 0, 0);
@@ -5634,7 +5630,7 @@ class GameStartScene extends Phaser.Scene {
                                     .setPosition(this.doctor.x, this.doctor.y - 70);
 
                                 [...Array(3).keys()].forEach(i =>
-                                    this.time.delayedCall(animeDelay * 1.3 * i, () => {
+                                    this.time.delayedCall(animeDelay * 1.3 * i + 200, () => {
                                         this.player.emote.setTexture('emoteDots' + (i + 1));
                                     }));
 
@@ -5867,6 +5863,7 @@ class GameOverScene extends Phaser.Scene {
             name: 'GameOver',
             gameData: GameData,
             clear: other.clear,
+            background: ['dawn_1',],
             resolve: other.resolve,
         });
     };
@@ -5880,7 +5877,6 @@ class GameOverScene extends Phaser.Scene {
         const width = canvas.width;
         const height = canvas.height;
         const localeJSON = this.gameData.localeJSON;
-
         // console.debug(localeJSON);
 
         let failScene = () => {
@@ -5970,8 +5966,8 @@ class GameOverScene extends Phaser.Scene {
                   20(UI:HP bar...)
                 */
             };
-            // this.Depth = Depth;//==gameObject.js用到
-            const animeDelay = 500;
+            this.Depth = Depth;//==gameObject.js用到
+
             let initScene = () => {
                 this.sceneGroup = this.add.group();
 
@@ -6168,7 +6164,7 @@ class GameOverScene extends Phaser.Scene {
 
                 };
                 let playSubtitle = (index = 0, animes = false) => {
-                    let text = localeJSON.Lines.start.intro[index];
+                    let text = localeJSON.Lines.end[index];
                     // console.debug(text);
 
                     let textPlayer = this.RexUI.newTextPlayer({
@@ -6182,29 +6178,31 @@ class GameOverScene extends Phaser.Scene {
                     }).setName('subtitle');
                     this.sceneGroup.add(textPlayer);
                     // console.debug(textPlayer);
-                    return textPlayer.playPromise(text);
+
+                    return textPlayer.playPromise(text)
+                        .then(() => textPlayer.destroy());
                 };
 
-                //==主角在森林
+                //==主角在
                 let scene1 = () => {
-                    let forest = () => {
-                        let resources = BackGroundResources.GameStart[this.background[0]];
-
-                        // console.debug(resources)
+                    let space = () => {
+                        let resources = BackGroundResources.GameOver[this.background[0]];
+                        // console.debug(resources);
                         resources.static.forEach((res, i) => {
                             let img = this.add.image(width * 0.5, height * 0.5, 'staticBG_scene1_' + i);
                             img
                                 .setScale(width / img.width, height / img.height)
+                                // .setOrigin(0.5)
                                 .setDepth(resources.depth.static[i]);
 
                             this.sceneGroup.add(img);
                         });
-
                         resources.dynamic.forEach((res, i) => {
                             let thing = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, 'dynamicBG_scene1_' + i);
 
                             thing
                                 .setScale(width / thing.width, height / thing.height)
+                                // .setOrigin(0.5)
                                 .setDepth(resources.depth.dynamic[i]);
 
                             //==tweens
@@ -6227,119 +6225,49 @@ class GameOverScene extends Phaser.Scene {
                                 ));
 
                             this.sceneGroup.add(thing);
-
                         });
-
-                    };
-                    let apple = () => {
-                        let appleTree = this.add.image(width * 0.6, height * 0.45, 'appleTree')
-                            .setScale(0.6)
-                            .setName('appleTree')
-                            .setDepth(Depth.appleTree);
-
-                        let apple = this.add.image(appleTree.x - 90, height * 0.4, 'apple')
-                            .setScale(0.6)
-                            .setName('apple')
-                            .setDepth(Depth.apple);
-
-                        this.sceneGroup.add(appleTree);
-                        this.sceneGroup.add(apple);
                     };
                     let animStart = () => {
-                        let apple = getChildByName('apple');
+                        const animeDelay = 500;
 
-                        playSubtitle(0).then(() => {
-                            //==蘋果掉落
-                            this.tweens.add({
-                                targets: apple,
-                                repeat: 0,
-                                ease: 'Cubic.In',
-                                duration: animeDelay,
-                                delay: animeDelay * 3,
-                                y: { from: apple.y, to: this.player.y },
-                                onComplete: () => apple.setVisible(false),
-                            });
-
-                            //==玩家跑
+                        //==感謝字幕
+                        let credits = async () => {
+                            for (let i = 0; i < Object.keys(localeJSON.Lines.end).length; i++) {
+                                await playSubtitle(i, 'jump');
+                            };
+                        };
+                        //==玩家跑
+                        let playerRunning = () => {
                             this.tweens.add({
                                 targets: this.player,
                                 repeat: 0,
                                 ease: 'Linear',
-                                duration: animeDelay * 4,
-                                x: { from: -this.player.displayWidth, to: apple.x },
+                                duration: animeDelay * 2,
+                                x: { from: -this.player.displayWidth, to: width * 0.2 },
                                 onStart: () => this.player.play('player_run'),
                                 onComplete: () => {
-                                    this.player.play('player_death');
-
-                                    this.time.delayedCall(animeDelay * 3, () => {
-                                        this.cameras.main.fade(animeDelay, 0, 0, 0);
-                                        this.time.delayedCall(animeDelay, () => {
-                                            this.sceneGroup.clear(true, true);
-                                            scene2();
-                                        });
-                                    }, [], this);
-
+                                    credits();
+                                    // this.player.play('player_death');
+                                    // this.time.delayedCall(animeDelay * 3, () => {
+                                    //     this.cameras.main.fade(animeDelay, 0, 0, 0);
+                                    //     this.time.delayedCall(animeDelay, () => {
+                                    //         this.sceneGroup.clear(true, true);
+                                    //         // scene2();
+                                    //     });
+                                    // }, [], this);
                                 },
                             });
-
-                        });
+                        };
+                        playerRunning();
 
                     };
-
-                    forest();
-                    apple();
+                    space();
                     animStart();
 
                 };
-
                 //==主角到異世界
                 let scene2 = () => {
-                    let space = () => {
-                        let resources = BackGroundResources.GameStart[this.background[1]];
 
-                        // console.debug(resources)
-                        resources.static.forEach((res, i) => {
-                            let img = this.add.image(0, height * 0.5, 'staticBG_scene2_' + i);
-                            img
-                                .setScale(width * 2 / img.width, height / img.height)
-                                .setOrigin(0, 0.5)
-                                .setDepth(resources.depth.static[i]);
-
-                            this.sceneGroup.add(img);
-                        });
-
-                        resources.dynamic.forEach((res, i) => {
-                            let thing = this.add.tileSprite(0, height * 0.5, 0, 0, 'dynamicBG_scene2_' + i);
-
-                            thing
-                                .setScale(width * 2 / thing.width, height / thing.height)
-                                .setOrigin(0, 0.5)
-                                .setDepth(resources.depth.dynamic[i]);
-
-                            //==tweens
-                            let movingDuration = Phaser.Math.Between(10, 15) * 1000;//==第一次移動5到20秒
-                            let animType = resources.animType[i];
-                            //==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
-
-                            this.tweens.add(
-                                Object.assign({
-                                    targets: thing,
-                                    repeat: -1,
-                                    duration: movingDuration + i * movingDuration * 0.5,
-                                },
-                                    animType == 1 ?
-                                        { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
-                                        animType == 2 ? { alpha: { start: 0, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
-                                            animType == 3 ? { scaleX: { start: t => t.scaleX, to: t => t.scaleX * 1.5 }, scaleY: { start: t => t.scaleY, to: t => t.scaleY * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
-                                                { alpha: { start: 0, to: 1 }, ease: 'Bounce', yoyo: true }
-
-                                ));
-
-                            this.sceneGroup.add(thing);
-
-                        });
-
-                    };
                     let planet = () => {
                         let animsCreate = () => {
                             this.anims.create({
@@ -6368,7 +6296,7 @@ class GameOverScene extends Phaser.Scene {
 
                     };
                     let animStart = () => {
-                        playSubtitle(1, true)
+                        playSubtitle(1, 'jump')
                             .then(() => {
                                 //===字幕移除
                                 this.cameras.main.fadeIn(animeDelay * 2, 0, 0, 0);
@@ -6411,6 +6339,7 @@ class GameOverScene extends Phaser.Scene {
 
                 scene1();
                 // scene2();
+
             };
             let initPlayer = () => {
                 let animsCreate = () => {
@@ -6419,27 +6348,15 @@ class GameOverScene extends Phaser.Scene {
 
                     this.anims.create({
                         key: 'player_run',
-                        frames: this.anims.generateFrameNumbers(player + '_run'),
+                        frames: this.anims.generateFrameNumbers('player_run'),
                         frameRate: frameRate.run,
                         repeat: -1,
                     });
                     this.anims.create({
                         key: 'player_idle',
-                        frames: this.anims.generateFrameNumbers(player + '_idle'),
+                        frames: this.anims.generateFrameNumbers('player_idle'),
                         frameRate: frameRate.idle,
                         repeat: -1,
-                    });
-                    this.anims.create({
-                        key: 'player_death',
-                        frames: this.anims.generateFrameNumbers(player + '_death'),
-                        frameRate: frameRate.death,
-                        repeat: 0,
-                    });
-                    this.anims.create({
-                        key: 'player_think',
-                        frames: this.anims.generateFrameNumbers(player + '_attack', { frames: [0] }),
-                        frameRate: frameRate.attack,
-                        repeat: 0,
                     });
                 };
                 animsCreate();
@@ -6452,18 +6369,23 @@ class GameOverScene extends Phaser.Scene {
                     .setScale(1.5)
                     .setVisible(false)
                     .setDepth(Depth.player);
-
             };
             let initCamera = () => {
                 this.cameras.main.setBounds(0, 0, width * 2, height);
                 this.cameras.main.fadeIn(500, 0, 0, 0);
             };
+            let initRexUI = () => {
+                this.scene.add(null, new UIScene('RexUI', this), true);
+                this.scene.add(null, new UIScene('blackOut', this), true);
+                this.RexUI.rankingData = this.rankingData;
+            };
 
+            initRexUI();
             initCamera();
-            // initPlayer();
-            // initScene();
-            this.game.destroy(true, false);
-            this.resolve();
+            initPlayer();
+            initScene();
+            // this.game.destroy(true, false);
+            // this.resolve();
         };
 
         this.clear ? initEndAnime() : failScene();
@@ -6682,7 +6604,35 @@ class LoadingScene extends Phaser.Scene {
                             this.load.image('gameOverScene', UIDir + 'gameOverScene.jpg');
                             this.load.image('startButton', UIDir + 'startButton.png');
                         };
-                        let clear = () => { };
+                        let clear = () => {
+                            let scene = () => {
+                                let startDir = envDir + 'start/';
+                                let planet = () => {
+                                    const planetW = 512;
+                                    this.load.spritesheet('planetEarth',
+                                        startDir + 'earth.png',
+                                        { frameWidth: planetW, frameHeight: planetW }
+                                    );
+                                    this.load.spritesheet('planetMars',
+                                        startDir + 'mars.png',
+                                        { frameWidth: planetW, frameHeight: planetW }
+                                    );
+
+                                };
+                                let apple = () => {
+                                    this.load.image('appleTree', startDir + 'appleTree.png');
+                                    this.load.image('apple', startDir + 'apple.png');
+                                };
+
+                                //===開頭好幾個場景
+                                gameScene.background.forEach((bg, i) =>
+                                    background(bg, `scene${i + 1}_`));
+
+                                // apple();
+                                // planet();
+                            };
+                            scene();
+                        };
                         console.debug(gameScene)
                         gameScene.clear ? clear() : fail();
                         break;

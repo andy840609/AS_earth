@@ -509,6 +509,36 @@ const BackGroundResources = {
             animType: [1],
         },
     },
+    GameOver: {
+        space_1: {
+            static: ['bkgd_0.png'],
+            dynamic: ['bkgd_2.png', 'bkgd_3.png', 'bkgd_6.png', 'bkgd_7.png'],
+            depth: {
+                // static: [0, 0, 0, 0, 0, 0, 0],
+                static: [0],
+                dynamic: [0, 0, 0, 0, 0],
+            },
+            animType: [1, 1, 1, 1, 1, 1, 1],
+        },
+        desert_3: {
+            static: [],
+            dynamic: ['background1.png', 'background2.png', 'background3.png', 'background4.png', 'background5.png'],
+            depth: {
+                static: [0, 0, 0, 0, 0, 0, 0],
+                dynamic: [0, 0],
+            },
+            animType: [2, 1],
+        },
+        dawn_1: {
+            static: ['sunset.png'],
+            dynamic: [],
+            depth: {
+                static: [0, 0, 0, 0, 0, 0, 0],
+                dynamic: [0, 0],
+            },
+            animType: [0, 0],
+        },
+    }
 
 };
 //==道具設定(屬性、增加能力、道具說明)

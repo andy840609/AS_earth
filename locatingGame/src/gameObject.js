@@ -881,7 +881,7 @@ const Player = new Phaser.Class({
     initialize:
         function Player(scene) {
             Phaser.Physics.Arcade.Sprite.call(this, scene);
-            if (scene.name === 'GameStart') return;
+            if (scene.name === 'GameStart' || scene.name === 'GameOver') return;
             scene.physics.world.enableBody(this, 0);
 
             let gameData = scene.gameData;
@@ -4438,6 +4438,36 @@ class RexTextPlayer extends RexPlugins.UI.TextPlayer {
         const COLOR_SECONDARY = 0x750000;
         const COLOR_DARK = 0x000000;
 
+        let getAnim = (type = null) => {
+            let animObj;
+            switch (type) {
+                case 'jump':
+                    animObj = {
+                        duration: 1000,
+                        yoyo: true,
+                        onStart: function (char) {
+                            char
+                                .setVisible()
+                                .setData('y', char.y);
+                        },
+                        onProgress: function (char, t) {
+                            var p0 = char.getData('y');
+                            var p1 = p0 - 20;
+                            var value = Phaser.Math.Linear(p0, p1, Phaser.Math.Easing.Cubic.Out(t));
+                            char.setY(value);
+                        },
+                        onComplete: function (char) {
+                            // console.debug("onComplete");
+                        }
+                    };
+                    break;
+                default:
+                    animObj = false;
+                    break;
+            };
+            return animObj;
+        };
+
         const textPlayerConfig = {
             x: config.x,
             y: config.y,
@@ -4460,25 +4490,7 @@ class RexTextPlayer extends RexPlugins.UI.TextPlayer {
             },
             typing: {
                 speed: config.speed,  // 0: no-typing
-                animation: !config.animation ? false :
-                    {
-                        duration: 1000,
-                        yoyo: true,
-                        onStart: function (char) {
-                            char
-                                .setVisible()
-                                .setData('y', char.y);
-                        },
-                        onProgress: function (char, t) {
-                            var p0 = char.getData('y');
-                            var p1 = p0 - 20;
-                            var value = Phaser.Math.Linear(p0, p1, Phaser.Math.Easing.Cubic.Out(t));
-                            char.setY(value);
-                        },
-                        onComplete: function (char) {
-                            // console.debug("onComplete");
-                        }
-                    }
+                animation: getAnim(config.animation),
             },
             // images: {
             //     'dude': {

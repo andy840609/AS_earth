@@ -2174,8 +2174,11 @@ class UIScene extends Phaser.Scene {
                                 y: config.y ? config.y : DLconfig.dialogY,
                                 width: config.width ? config.width : DLconfig.dialogWidth,
                                 height: config.height ? config.height : DLconfig.dialogHeight,
+                                padding: config.padding ? config.padding : 20,
                                 speed: config.speed ? config.speed : 200,
                                 animation: config.animation ? config.animation : false,
+                                duration: config.duration ? config.duration : false,
+                                images: config.images ? config.images : false,
                             }, resolve);
                         };
                     };
@@ -4976,7 +4979,6 @@ class GameStartScene extends Phaser.Scene {
                 ]
             },
         };
-
         super(sceneConfig);
 
         Object.assign(this, {
@@ -5407,10 +5409,13 @@ class GameStartScene extends Phaser.Scene {
                     let textPlayer = this.RexUI.newTextPlayer({
                         x: width * 0.5,
                         y: height * 0.5,
-                        width: width * 0.8,
-                        height: height * 0.5,
+                        width: width,
+                        height: height,
+                        padding: {
+                            top: height * 0.3,
+                            left: width * 0.1,
+                        },
                         speed: 200,
-                        // speed: 10,
                         animation: animes,
                     }).setName('subtitle');
                     this.sceneGroup.add(textPlayer);
@@ -6170,11 +6175,21 @@ class GameOverScene extends Phaser.Scene {
                     let textPlayer = this.RexUI.newTextPlayer({
                         x: width * 0.5,
                         y: height * 0.5,
-                        width: width * 0.8,
-                        height: height * 0.5,
+                        width: width,
+                        height: height,
+                        padding: {
+                            top: height * 0.1,
+                            left: width * 0.2,
+                        },
                         speed: 200,
                         // speed: 10,
                         animation: animes,
+                        duration: 5000,
+                        images: {
+                            'DMClogo': {
+                                height: 24
+                            }
+                        }
                     }).setName('subtitle');
                     this.sceneGroup.add(textPlayer);
                     // console.debug(textPlayer);
@@ -6229,11 +6244,13 @@ class GameOverScene extends Phaser.Scene {
                     };
                     let animStart = () => {
                         const animeDelay = 500;
-
                         //==感謝字幕
                         let credits = async () => {
+                            const anims = ['marquee', 'fallout', 'fadein', 'spinscale'];
+                            // const anims = [];
                             for (let i = 0; i < Object.keys(localeJSON.Lines.end).length; i++) {
-                                await playSubtitle(i, 'jump');
+                                let animIdx = i % anims.length;
+                                await playSubtitle(i, anims[animIdx]);
                             };
                         };
                         //==玩家跑
@@ -6259,11 +6276,9 @@ class GameOverScene extends Phaser.Scene {
                             });
                         };
                         playerRunning();
-
                     };
                     space();
                     animStart();
-
                 };
                 //==主角到異世界
                 let scene2 = () => {
@@ -6623,13 +6638,16 @@ class LoadingScene extends Phaser.Scene {
                                     this.load.image('appleTree', startDir + 'appleTree.png');
                                     this.load.image('apple', startDir + 'apple.png');
                                 };
-
+                                let creditLogo = () => {
+                                    this.load.image('DMClogo', UIDir + 'DMClogo.png');
+                                };
                                 //===開頭好幾個場景
                                 gameScene.background.forEach((bg, i) =>
                                     background(bg, `scene${i + 1}_`));
 
                                 // apple();
                                 // planet();
+                                creditLogo();
                             };
                             scene();
                         };
@@ -8156,8 +8174,12 @@ class DefendScene extends Phaser.Scene {
                     let textPlayer = await this.RexUI.newTextPlayer({
                         x: width * 0.5,
                         y: height * 0.5,
-                        width: width * 0.8,
-                        height: height * 0.5,
+                        width: width,
+                        height: height,
+                        padding: {
+                            top: height * 0.3,
+                            left: width * 0.2,
+                        },
                         speed: 50,
                         animation: true,
                     }).playPromise(text);

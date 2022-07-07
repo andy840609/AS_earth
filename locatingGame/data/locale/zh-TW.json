@@ -344,10 +344,11 @@
             }
         },
         "end": {
-            "0": "[color=black]特別感謝......[/color]",
-            "1": "特別感謝...[r]",
-            "2": "特別感謝......[/color]",
-            "3": "特別感謝...[r]"
+            "0": "[color=black]感謝名單1[r]BBBBB[/color]",
+            "1": "感謝名單2[r][y=-10]XX[/y][y=-50]XXX[/y]",
+            "2": "[color=black]感謝名單3[r][x=10]XXXXX[/x][/color]",
+            "3": "感謝名單4[r][x=10]XXXXX[/x]",
+            "4": "[size=48]DMC[img=DMClogo][/size]"
         }
     },
     "Hints": {

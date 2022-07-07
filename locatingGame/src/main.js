@@ -471,23 +471,23 @@ function locatingGame() {
                     GameData.localeJSON = await getLanguageJSON();
                     GameData.getLanguageJSON = getLanguageJSON;
 
-                    //==test
-                    gameDisplay(true);
-                    let doneTutorial = await new Promise((resolve, reject) => {
-                        const config = Object.assign(getPhaserConfig(width, height), {
-                            scene: new GameStartScene(GameData, {
-                                getWaveImg: getWaveImg,
-                                tutorialData: data.tutorialData,
-                                resolve: resolve,
-                                getLanguageJSON: getLanguageJSON,
-                                rankingData: rankingData,//排行榜
-                            }),
-                        });
-                        new Phaser.Game(config);
-                    });
-                    // console.debug(doneTutorial);
-                    gameDisplay(false);
-                    //==test
+                    // //==test
+                    // gameDisplay(true);
+                    // let doneTutorial = await new Promise((resolve, reject) => {
+                    //     const config = Object.assign(getPhaserConfig(width, height), {
+                    //         scene: new GameStartScene(GameData, {
+                    //             getWaveImg: getWaveImg,
+                    //             tutorialData: data.tutorialData,
+                    //             resolve: resolve,
+                    //             getLanguageJSON: getLanguageJSON,
+                    //             rankingData: rankingData,//排行榜
+                    //         }),
+                    //     });
+                    //     new Phaser.Game(config);
+                    // });
+                    // // console.debug(doneTutorial);
+                    // gameDisplay(false);
+                    // //==test
 
                     // if (doneTutorial) {//doneTutorial     
                     //     const gainItems = [['pan', 0], ['bread', 5], ['bone', 3]];

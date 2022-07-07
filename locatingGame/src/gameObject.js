@@ -4440,10 +4440,12 @@ class RexTextPlayer extends RexPlugins.UI.TextPlayer {
 
         let getAnim = (type = null) => {
             let animObj;
+            const duration = config.duration ? config.duration : 1000;
+            const getLinearP = (t, t0, range) => (t - t0) / range;
             switch (type) {
                 case 'jump':
                     animObj = {
-                        duration: 1000,
+                        duration: duration,
                         yoyo: true,
                         onStart: function (char) {
                             char
@@ -4451,13 +4453,144 @@ class RexTextPlayer extends RexPlugins.UI.TextPlayer {
                                 .setData('y', char.y);
                         },
                         onProgress: function (char, t) {
-                            var p0 = char.getData('y');
-                            var p1 = p0 - 20;
-                            var value = Phaser.Math.Linear(p0, p1, Phaser.Math.Easing.Cubic.Out(t));
+                            let p0 = char.getData('y');
+                            let p1 = p0 - 20;
+                            let value = Phaser.Math.Linear(p0, p1, Phaser.Math.Easing.Cubic.Out(t));
                             char.setY(value);
                         },
                         onComplete: function (char) {
                             // console.debug("onComplete");
+                        }
+                    };
+                    break;
+                //==從右邊跑到中間,再往下消失
+                case 'marquee':
+                    animObj = {
+                        duration: duration,
+                        onStart: function (char) {
+                            // console.debug(char);
+                            char
+                                .setData('pos', [char.x, char.y])
+                                .setX(char.x + config.width)
+                                .setVisible();
+                        },
+                        onProgress: function (char, t) {
+                            let percent = 0.8;//==往左佔時間比例 (t-t0)/percent
+                            let pos = char.getData('pos');
+                            if (t < percent) {
+                                let p = getLinearP(t, 0, percent);//==0-0.8要換算成0-1
+                                let x = Phaser.Math.Linear(char.x, pos[0], Phaser.Math.Easing.Circular.InOut(p));
+                                char.setX(x);
+                            }
+                            else {
+                                let p = getLinearP(t, percent, 1 - percent);//==0.8-1要換算成0-1
+                                let y = Phaser.Math.Linear(pos[1], pos[1] + config.height / 2, Phaser.Math.Easing.Circular.In(p));
+                                char
+                                    .setAlpha(1 - p)
+                                    .setY(y);
+                            };
+                        },
+                        onComplete: function (char, t) {
+                        }
+                    };
+                    break;
+                //==從上面落下,再跳起來消失
+                case 'fallout':
+                    animObj = {
+                        duration: duration,
+                        onStart: function (char) {
+                            // console.debug(char);
+                            char
+                                .setData('pos', [char.x, char.y])
+                                .setY(0)
+                                .setVisible();
+                        },
+                        onProgress: function (char, t) {
+                            let percent = 0.7;//==往左佔時間比例 (t-t0)/percent
+                            let pos = char.getData('pos');
+                            if (t < percent) {
+                                let p = getLinearP(t, 0, percent);//==0-0.8要換算成0-1
+                                let y = Phaser.Math.Linear(char.y, pos[1], Phaser.Math.Easing.Cubic.Out(p));
+                                char.setY(y);
+                            }
+                            else {
+                                let p = getLinearP(t, percent, 1 - percent);//==0.8-1要換算成0-1
+                                let y2 = pos[1] - (p < 0.3 ? 50 : 0);
+                                let y = Phaser.Math.Linear(char.y, y2, Phaser.Math.Easing.Circular.InOut(p));
+                                char
+                                    .setAlpha(1 - p)
+                                    .setY(y);
+                            };
+                        },
+                        onComplete: function (char, t) {
+                        }
+                    };
+                    break;
+                //==淡入淡出
+                case 'fadein':
+                    animObj = {
+                        duration: duration,
+                        onStart: function (char) {
+                            char
+                                .setAlpha(0)
+                                .setVisible();
+                        },
+                        onProgress: function (char, t) {
+                            // let easing = Phaser.Math.Easing.Bounce[t < 0.5 ? 'Out' : 'Out'](t);
+                            // let alpha = Phaser.Math.Linear(0, 1, Phaser.Math.Easing.Sine.Out(t));
+                            // char.setAlpha(alpha);
+
+                            let percent = 0.95;//==往左佔時間比例 (t-t0)/percent
+                            let alpha;
+                            if (t < percent) {
+                                let p = getLinearP(t, 0, percent);//==0-0.8要換算成0-1
+                                alpha = Phaser.Math.Linear(0, 1, Phaser.Math.Easing.Expo.Out(p));
+
+                            }
+                            else {
+                                let p = getLinearP(t, percent, 1 - percent);//==0.8-1要換算成0-1
+                                alpha = Phaser.Math.Linear(1, 0, Phaser.Math.Easing.Sine.In(p));
+                            };
+                            char.setAlpha(alpha);
+                        },
+                        onComplete: function (char) {
+                        }
+                    };
+                    break;
+                //==旋轉變大變小
+                case 'spinscale':
+                    animObj = {
+                        duration: duration,
+                        onStart: function (char) {
+                            // console.debug(char);
+                            char
+                                .setData('pos', [char.x, char.y])
+                                .setY(config.height)
+                                .setVisible();
+                        },
+                        onProgress: function (char, t) {
+                            let percent = 0.7;//==往左佔時間比例 (t-t0)/percent
+                            let pos = char.getData('pos');
+                            if (t < percent) {
+                                let p = getLinearP(t, 0, percent);//==0-0.8要換算成0-1
+                                let y = Phaser.Math.Linear(char.y, pos[1], Phaser.Math.Easing.Circular.InOut(p));
+                                let rotation = Phaser.Math.Linear(0, -Math.PI * 2, Phaser.Math.Easing.Expo.Out(p));
+
+                                char
+                                    .setRotation(rotation)
+                                    .setY(y);
+                                // console.debug(char);
+                            }
+                            else {
+                                let p = getLinearP(t, percent, 1 - percent);//==0.8-1要換算成0-1
+                                let scale2 = p < 0.3 ? 1.5 : 0;
+                                let scale = Phaser.Math.Linear(char.scaleX, scale2, Phaser.Math.Easing.Circular.InOut(p));
+                                char
+                                    .setAlpha(1 - p)
+                                    .setScale(scale);
+                            };
+                        },
+                        onComplete: function (char, t) {
                         }
                     };
                     break;
@@ -4467,13 +4600,12 @@ class RexTextPlayer extends RexPlugins.UI.TextPlayer {
             };
             return animObj;
         };
-
         const textPlayerConfig = {
             x: config.x,
             y: config.y,
             width: config.width,
             height: config.height,  // Fixed width and height
-            padding: 20,
+            padding: config.padding,
             style: {
                 fontSize: '36px',
                 stroke: 'green',
@@ -4486,17 +4618,14 @@ class RexTextPlayer extends RexPlugins.UI.TextPlayer {
             },
             wrap: {
                 maxLines: 5,
+                lineHeight: config.height * 0.1,
                 padding: { bottom: 10 },
             },
             typing: {
                 speed: config.speed,  // 0: no-typing
                 animation: getAnim(config.animation),
             },
-            // images: {
-            //     'dude': {
-            //         height: 24
-            //     }
-            // },
+            images: config.images,
             // sounds: {
             //     bgm: {
             //         loop: true,

@@ -2639,7 +2639,6 @@ class UIScene extends Phaser.Scene {
                             const effectDir = gameObjDir + 'player/effect/';
                             const effectFrameObj = playerFrame.effect;
 
-
                             this.load.spritesheet('player_jumpDust', effectDir + 'jump_dust.png', { frameWidth: 38, frameHeight: 60 });
 
                             this.load.spritesheet('player_attackEffect', dir + 'swordSwing.png',
@@ -5640,7 +5639,7 @@ class GameStartScene extends Phaser.Scene {
                                     }));
 
                             });
-                        // playLines();
+
                     };
                     space();
                     planet();
@@ -5952,11 +5951,8 @@ class GameOverScene extends Phaser.Scene {
         };
         let initEndAnime = () => {
             const Depth = {
-                earth: 3,
-                appleTree: 3,
-                apple: 4,
+                portal: 3,
                 player: 10,
-                boss: 11,
                 UI: 20,
                 /*
                 Depth:
@@ -5976,199 +5972,7 @@ class GameOverScene extends Phaser.Scene {
             let initScene = () => {
                 this.sceneGroup = this.add.group();
 
-                let playLines = () => {
-                    //==臺詞
-                    let lines = this.gameData.localeJSON.Lines.start['space'];
-                    let playerName = this.gameData.playerCustom.name,
-                        sidekickName = this.gameData.sidekick.type;
-
-                    //==特效相關
-                    const effectScene = this.boss.effectScene;
-                    const camera = this.cameras.main;
-                    const blackOut = this.blackOut;
-                    //boss特效scene一起移動
-                    let cameraPan = (panRight, duration = animeDelay * 4) => {
-                        camera.pan(panRight ? width * 2 : width * 0.5, height * 0.5, duration, 'Power2', true);
-                    };
-
-                    this.RexUI.scene.bringToTop();
-                    effectScene.scene.bringToTop();
-
-                    this.time.delayedCall(animeDelay, async () => {
-
-                        let showEmote = (character, emoji) => {
-                            if (emoji)
-                                this.tweens.add({
-                                    targets: character.emote,
-                                    alpha: { from: 0.5, to: 1 },
-                                    scale: { from: 0, to: 1.5 },
-                                    duration: animeDelay * 0.5,
-                                    repeat: 0,
-                                    ease: 'Quadratic.InOut',
-                                    onStart: () => {
-                                        character.emote
-                                            .setTexture(emoji)
-                                            .setVisible(true);
-                                    },
-                                });
-                            else
-                                this.tweens.add({
-                                    targets: character.emote,
-                                    alpha: { from: 1, to: 0 },
-                                    scale: { from: 1.5, to: 0 },
-                                    duration: animeDelay * 0.5,
-                                    repeat: 0,
-                                    ease: 'Quadratic.InOut',
-                                    onComplete: () => {
-                                        character.emote.setVisible(false);
-                                    },
-                                });
-                        };
-                        for (let i = 0; i < Object.keys(lines).length; i++) {
-                            let line = lines[i].line,
-                                character = lines[i].character,
-                                pageendEvent = false;
-
-                            switch (i) {
-                                case 0:
-                                    showEmote(this.player, null);
-                                    break;
-                                case 1:
-                                    showEmote(this.player, 'emoteConfuse');
-                                    break;
-                                case 2:
-                                    showEmote(this.player, null);
-                                    break;
-                                case 3:
-                                    this.player.play('player_think');
-                                    showEmote(this.player, 'emoteDrops');
-                                    break;
-                                case 4:
-                                    line = line.replace('\t', this.gameData.timeMultiplier);
-                                    showEmote(this.player, null);
-                                    break;
-                                case 5:
-                                    showEmote(this.player, 'emoteHappy');
-                                    this.player.play('player_idle');
-                                    this.doctor.setFlipX(false);
-                                    this.doctor.emote.setVisible(false);
-                                    this.player.emote.setVisible(false);
-                                    // this.RexUI.cameras.main.shake(0, 0);
-                                    break;
-                                case 6:
-
-                                    this.RexUI.cameras.main.shake(animeDelay * 4, 0.03);
-                                    this.player.play('player_death')
-                                        .anims
-                                        .stopOnFrame(this.player.anims.currentAnim.frames[1]);
-
-                                    this.doctor.setFlipX(true);
-
-                                    showEmote(this.player, 'emoteShock');
-                                    showEmote(this.doctor, 'emoteShock');
-                                    this.boss.anims.stop();
-                                    break;
-                                case 7:
-                                    this.boss.flyTweens.restart();
-                                    cameraPan(true);
-                                    //==停頓在說
-                                    await new Promise(resolve => this.time.delayedCall(animeDelay * 4, () => resolve()));
-                                    //     break;
-                                    // case 9:
-                                    this.boss.flyTweens.stop(0);
-                                    this.boss.play('boss_flyAttack');
-
-
-                                    //集氣
-                                    this.tweens.add({
-                                        targets: effectScene.effect1,
-                                        alpha: { from: 0.5, to: 1 },
-                                        duration: animeDelay * 2,
-                                        delay: animeDelay,
-                                        repeat: 0,
-                                        ease: 'Quadratic.InOut',
-                                        onStart: () => {
-                                            effectScene.effect1.play('boss_effect1');
-                                        },
-                                        // onComplete: () => {
-                                        //     camera.shake(animeDelay * 10, 0.015);
-                                        // },
-                                    });
-
-                                    //波
-                                    this.time.delayedCall(animeDelay * 4, () => {
-                                        this.tweens.add({
-                                            targets: effectScene.effect1,
-                                            alpha: { from: 1, to: 0 },
-                                            duration: animeDelay * 2,
-                                            repeat: 0,
-                                            ease: 'Quadratic.InOut',
-                                            // onStart: () => {
-                                            //     camera.shake(animeDelay * 10, 0.015);
-                                            // },
-                                            onComplete: () => {
-                                                effectScene.effect1.stop();
-
-                                                let effect2 = effectScene.effect2;
-                                                effect2
-                                                    .play('boss_effect2')
-                                                    .setScale((this.boss.x - width) / effect2.width, 1.5);
-                                                // console.debug(this.boss.x, width);
-                                                camera.shake(animeDelay * 10, 0.03);
-                                            },
-                                        });
-
-                                    });
-
-
-
-                                    blackOut.scene.setVisible(true);
-                                    blackOut.fadeOut();
-                                    await new Promise(resolve => this.time.delayedCall(animeDelay * 13, () => {
-                                        camera.fadeOut(animeDelay * 3);
-                                        this.time.delayedCall(animeDelay * 3, async () => {
-                                            cameraPan(false, 0);
-                                            blackOut.scene.setVisible(false);
-                                            this.doctor.setFlipX(false);
-                                            showEmote(this.player, null);
-                                            showEmote(this.doctor, null);
-                                            getChildByName('earth').play('earth_destory');
-                                            camera.fadeIn(animeDelay * 3);
-
-                                            //==停頓在說
-                                            await new Promise(resolve => this.time.delayedCall(animeDelay * 4, () => resolve()));
-                                            resolve();
-                                        });
-
-                                    }));
-                                    break;
-                                case 8:
-                                    showEmote(this.player, 'emoteIdea');
-                                    this.player.play('player_idle');
-                                    break;
-                                case 9:
-                                    showEmote(this.player, null);
-                                    this.doctor.play('doctor_attack');
-                                    break;
-                            };
-
-
-                            let dialogCode = await new Promise(resolve => this.RexUI.newDialog(line, { character, pageendEvent }, resolve));
-                            // console.debug(dialogCode);
-
-                            if (dialogCode === 0) break;
-                            else if (dialogCode === 1) i = i - 2 < 0 ? -1 : i - 2;
-                        };
-
-                        blackOut.scene.setVisible(false);
-                        blackOut.fadeOut();
-                        camera.fadeOut(animeDelay, 255, 255, 255);
-                        this.time.delayedCall(animeDelay, () => initTutorial());
-                    }, [], this);
-
-
-                };
-                let playSubtitle = (index = 0, animes = false) => {
+                let playSubtitle = (index = 0, animes = false, padding = null) => {
                     let text = localeJSON.Lines.end[index];
                     // console.debug(text);
 
@@ -6177,7 +5981,7 @@ class GameOverScene extends Phaser.Scene {
                         y: height * 0.5,
                         width: width,
                         height: height,
-                        padding: {
+                        padding: padding ? padding : {
                             top: height * 0.1,
                             left: width * 0.2,
                         },
@@ -6187,7 +5991,7 @@ class GameOverScene extends Phaser.Scene {
                         duration: 5000,
                         images: {
                             'DMClogo': {
-                                height: 24
+                                height: height * 0.4,
                             }
                         }
                     }).setName('subtitle');
@@ -6195,7 +5999,101 @@ class GameOverScene extends Phaser.Scene {
                     // console.debug(textPlayer);
 
                     return textPlayer.playPromise(text)
-                        .then(() => textPlayer.destroy());
+                        .then(() => animes === 'theEnd' ? false : textPlayer.destroy());
+                };
+
+                const animeDelay = 500;
+                //==感謝字幕
+                let credits = async () => {
+                    const anims = ['marquee', 'fallout', 'fadein', 'spinscale'];
+                    // const anims = [];
+                    let lineLength = Object.keys(localeJSON.Lines.end).length;
+                    for (let i = 0; i < lineLength; i++) {
+                        const anim = i !== lineLength - 1 ?
+                            anims[i % anims.length] : 'theEnd';
+                        let padding = {
+                            top: height * 0.1,
+                            left: width * 0.2,
+                        };
+                        switch (i) {
+                            case 0:
+                                playerRunning(1);
+                                break;
+                            case 1:
+                                // playerRunning(2);
+                                break;
+                            case 3:
+                                playerRunning(2);
+                                await new Promise(resolve => this.time.delayedCall(animeDelay * 2, () => resolve()));
+                                break;
+                            case lineLength - 1:
+
+                                padding = {
+                                    top: height * 0.4,
+                                    left: width * 0.2,
+                                };
+                                break;
+                        };
+
+                        await playSubtitle(i, anim, padding);
+                        //===進入排名圖
+                        if (i === lineLength - 1) {
+                            this.time.delayedCall(animeDelay * 4, () => {
+                                this.game.destroy(true, false);
+                                this.resolve();
+                            }, [], this);
+
+                        };
+                    };
+                };
+                //==玩家跑(字幕控制各階段)
+                let playerRunning = (part = 1) => {
+                    let x, duration, onStart, onComplete;
+                    switch (part) {
+                        case 1:
+                            x = { from: -this.player.displayWidth, to: width * 0.2 };
+                            duration = animeDelay * 2;
+                            onStart = () => this.player.play('player_run');
+                            break;
+                        case 2:
+                            x = { from: this.player.x, to: width * 0.7 };
+                            duration = animeDelay * 1.5;
+                            onStart = () => this.player.anims.msPerFrame = 70;
+                            onComplete = () => {
+                                this.player
+                                    .setX(width * 0.2)
+                                    .anims.stop().play('player_run');
+                            };
+                            // this.player.play('player_run')
+                            //==傳送門出現
+                            this.tweens.add({
+                                targets: this.portal,
+                                repeat: 0,
+                                ease: 'Linear',
+                                duration,
+                                x: { from: this.portal.x, to: x.to },
+                                onStart: () => this.portal.play('portal_activate'),
+                                onComplete: () => {
+                                    const flashDura = 2000;
+                                    this.cameras.main.flash(flashDura, 255, 255, 255);
+                                    this.portal.destroy();
+                                },
+
+                            });
+
+                            break;
+                    };
+
+                    this.tweens.add({
+                        targets: this.player,
+                        repeat: 0,
+                        ease: 'Linear',
+                        duration,
+                        x,
+                        onStart: () => onStart ? onStart() : false,
+                        onComplete: () => onComplete ? onComplete() : false,
+                    });
+
                 };
 
                 //==主角在
@@ -6242,43 +6140,27 @@ class GameOverScene extends Phaser.Scene {
                             this.sceneGroup.add(thing);
                         });
                     };
-                    let animStart = () => {
-                        const animeDelay = 500;
-                        //==感謝字幕
-                        let credits = async () => {
-                            const anims = ['marquee', 'fallout', 'fadein', 'spinscale'];
-                            // const anims = [];
-                            for (let i = 0; i < Object.keys(localeJSON.Lines.end).length; i++) {
-                                let animIdx = i % anims.length;
-                                await playSubtitle(i, anims[animIdx]);
-                            };
-                        };
-                        //==玩家跑
-                        let playerRunning = () => {
-                            this.tweens.add({
-                                targets: this.player,
-                                repeat: 0,
-                                ease: 'Linear',
-                                duration: animeDelay * 2,
-                                x: { from: -this.player.displayWidth, to: width * 0.2 },
-                                onStart: () => this.player.play('player_run'),
-                                onComplete: () => {
-                                    credits();
-                                    // this.player.play('player_death');
-                                    // this.time.delayedCall(animeDelay * 3, () => {
-                                    //     this.cameras.main.fade(animeDelay, 0, 0, 0);
-                                    //     this.time.delayedCall(animeDelay, () => {
-                                    //         this.sceneGroup.clear(true, true);
-                                    //         // scene2();
-                                    //     });
-                                    // }, [], this);
-                                },
+                    let portal = () => {
+                        let animsCreate = () => {
+                            this.anims.create({
+                                key: 'portal_activate',
+                                frames: this.anims.generateFrameNumbers('portal'),
+                                frameRate: 30,
+                                repeat: -1,
                             });
                         };
-                        playerRunning();
+                        animsCreate();
+
+                        this.portal = this.add.sprite(0, 0)
+                            .setOrigin(0.5, 0.5)
+                            .setScale(0.5)
+                            .setDepth(Depth.portal);
+                        this.portal
+                            .setPosition(width + this.portal.displayWidth, this.player.y);
+
                     };
+                    portal();
                     space();
-                    animStart();
                 };
                 //==主角到異世界
                 let scene2 = () => {
@@ -6345,7 +6227,7 @@ class GameOverScene extends Phaser.Scene {
                                     }));
 
                             });
-                        // playLines();
+
                     };
                     space();
                     planet();
@@ -6353,6 +6235,7 @@ class GameOverScene extends Phaser.Scene {
                 };
 
                 scene1();
+                credits();
                 // scene2();
 
             };
@@ -6621,32 +6504,22 @@ class LoadingScene extends Phaser.Scene {
                         };
                         let clear = () => {
                             let scene = () => {
-                                let startDir = envDir + 'start/';
-                                let planet = () => {
-                                    const planetW = 512;
-                                    this.load.spritesheet('planetEarth',
-                                        startDir + 'earth.png',
-                                        { frameWidth: planetW, frameHeight: planetW }
+                                let endDir = envDir + 'end/';
+                                let portal = () => {
+                                    this.load.spritesheet('portal',
+                                        endDir + 'portal.png',
+                                        { frameWidth: 360, frameHeight: 592 }
                                     );
-                                    this.load.spritesheet('planetMars',
-                                        startDir + 'mars.png',
-                                        { frameWidth: planetW, frameHeight: planetW }
-                                    );
-
-                                };
-                                let apple = () => {
-                                    this.load.image('appleTree', startDir + 'appleTree.png');
-                                    this.load.image('apple', startDir + 'apple.png');
                                 };
                                 let creditLogo = () => {
-                                    this.load.image('DMClogo', UIDir + 'DMClogo.png');
+                                    const dir = assetsDir + 'ui/game/Transitions/';
+                                    this.load.image('DMClogo', dir + 'DMClogo.jpg');
                                 };
                                 //===開頭好幾個場景
                                 gameScene.background.forEach((bg, i) =>
                                     background(bg, `scene${i + 1}_`));
 
-                                // apple();
-                                // planet();
+                                portal();
                                 creditLogo();
                             };
                             scene();
@@ -6749,7 +6622,30 @@ class LoadingScene extends Phaser.Scene {
                 let character = () => {
                     const characters = gameScene.creatorObj.characters;// ['maleAdventurer']
                     const sidekicks = gameScene.creatorObj.sidekicks;
+                    let avatar = () => {
+                        const avatarDir = assetsDir + 'avatar/';
+                        let player = () => {
+                            const AvatarCount = 4;
+                            characters.forEach(chara => {
+                                let dir = avatarDir + chara + '/';
+                                [...Array(AvatarCount).keys()].forEach(i =>
+                                    this.load.image(chara + '_avatar' + i, dir + i + '.png'));
 
+                            });
+                        };
+                        let sidekick = () => {
+                            sidekicks.forEach(side =>
+                                this.load.image(side + '_avatar', avatarDir + side + '.png'));
+                            this.load.image('doctorAvatar', avatarDir + 'Doctor.png');
+                            // this.load.image('doctorAvatar', avatarDir + 'Doctor.png');
+                        };
+                        let boss = () => {
+                            this.load.image('bossAvatar', avatarDir + 'boss.jpg');
+                        };
+                        player();
+                        sidekick();
+                        boss();
+                    };
                     let sprite = () => {
                         let player = () => {
                             const playerDir = gameObjDir + 'player/';
@@ -6811,34 +6707,8 @@ class LoadingScene extends Phaser.Scene {
                         doctor();
                         boss();
                     };
-                    let avatar = () => {
-                        const AvatarDir = assetsDir + 'avatar/';
-                        let player = () => {
-                            const AvatarCount = 4;
-
-                            characters.forEach(chara => {
-                                let dir = AvatarDir + chara + '/';
-                                [...Array(AvatarCount).keys()].forEach(i =>
-                                    this.load.image(chara + '_avatar' + i, dir + i + '.png'));
-
-                            });
-                        };
-                        let sidekick = () => {
-                            sidekicks.forEach(side =>
-                                this.load.image(side + '_avatar', AvatarDir + side + '.png'));
-                            this.load.image('doctorAvatar', AvatarDir + 'Doctor.png');
-                            // this.load.image('doctorAvatar', AvatarDir + 'Doctor.png');
-                        };
-                        let boss = () => {
-                            this.load.image('bossAvatar', AvatarDir + 'boss.jpg');
-                        };
-                        player();
-                        sidekick();
-                        boss();
-                    };
                     sprite();
                     avatar();
-
                 };
                 character();
             }
@@ -6989,17 +6859,16 @@ class LoadingScene extends Phaser.Scene {
                 };
                 let avatar = () => {
                     const avatarDir = assetsDir + 'avatar/';
-                    if (packNum == 1) {
-                        if (gameScene.firstTimeEvent.isFirstTime) {
-                            this.load.image('enemyAvatar', avatarDir + gameScene.aliveEnemy[0] + '.png');
-                        };
-
-                    }
-                    else if (packNum == 2) {
-
-                    }
-                    else if (packNum == 3) {
-                        this.load.image('bossAvatar', avatarDir + 'boss.jpg');
+                    switch (packNum) {
+                        case 1:
+                            if (gameScene.firstTimeEvent.isFirstTime) {
+                                this.load.image('enemyAvatar', avatarDir + gameScene.aliveEnemy[0] + '.png');
+                            };
+                            break;
+                        case 3:
+                            this.load.image('bossAvatar', avatarDir + 'boss.jpg');
+                            this.load.image('doctorAvatar', avatarDir + 'Doctor.png');
+                            break;
                     };
                     this.load.image('playerAvatar', `${avatarDir + gameData.playerRole}/${gameData.playerCustom.avatarIndex}.png`);
                     this.load.image('sidekickAvatar', avatarDir + gameData.sidekick.type + '.png');
@@ -7026,11 +6895,11 @@ class LoadingScene extends Phaser.Scene {
             tutorial();
         };
         let makeProgressBar = () => {
-            //==開場不要讀取條
-            // if (packNum == 0) {
-            //     this.load.on('complete', () => this.resolve());
-            //     return;
-            // };
+            //==不要讀取條
+            if (packNum == 4) {
+                this.load.on('complete', () => this.resolve());
+                return;
+            };
             const canvas = gameScene.sys.game.canvas;
             const width = canvas.width;
             const height = canvas.height;

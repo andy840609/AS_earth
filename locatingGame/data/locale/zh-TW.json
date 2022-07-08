@@ -299,13 +299,21 @@
         "boss": {
             "0": {
                 "character": "boss",
-                "line": "果然到了這裡呢...\f\n接下來要考驗你的智慧了"
+                "line": "能到的了這裡果然是具備了十足勇氣和毅力呢...\f\n但是憑你的智慧有辦法戰勝我嗎"
             }
         },
         "bossEnd": {
             "0": {
+                "character": "boss",
+                "line": "這怎麼可能！！！"
+            },
+            "1": {
                 "character": "player",
-                "line": "都結束了嗎......"
+                "line": "我真的做到了...?!"
+            },
+            "2": {
+                "character": "doctor",
+                "line": "我就知道你一定可以!\f\n感謝你為我們所做的一切，爾絲星球絕對不會忘了你的英勇事蹟！\f\n震源城後面的傳送門能送你回家，再見了勇者!"
             }
         },
         "bigMap": {
@@ -344,11 +352,11 @@
             }
         },
         "end": {
-            "0": "[color=black]感謝名單1[r]BBBBB[/color]",
-            "1": "感謝名單2[r][y=-10]XX[/y][y=-50]XXX[/y]",
-            "2": "[color=black]感謝名單3[r][x=10]XXXXX[/x][/color]",
-            "3": "感謝名單4[r][x=10]XXXXX[/x]",
-            "4": "[size=48]DMC[img=DMClogo][/size]"
+            "0": "[color=black]感謝名單1[r][left=80]X[/left]XXXX",
+            "1": "[color=black]感謝名單2[r][left=80]X[/left]XXXXX",
+            "2": "[color=black]感謝名單3[r][left=80]X[/left]XXXXX[/color]",
+            "3": "[color=black]感謝名單4[r][left=80]X[/left]XXXXX",
+            "4": "[color=black][size=96]DMC[/size][left=80] [/left][img=DMClogo]"
         }
     },
     "Hints": {
@@ -429,12 +437,12 @@
         "Emergencies": {
             "0": {
                 "eventName": "大地震",
-                "rules": "即將發生大地震!!!\n移動到桌子的位置然後按 \t 來掩護",
+                "rules": "即將發生大地震!!!\n移動到桌子的位置然後按住 \t 來掩護",
                 "clear": "做得好!發生地震時要優先保護好自己，這是給你的獎勵!",
                 "lines": {
                     "0": "緊急狀況！\n魔王要發動地震攻擊了!",
-                    "1": "地震發生的時候最重要的就是保護頭部、頸部。",
-                    "2": "記住「趴下、掩護、穩住」，躲在桌子下時可握住桌腳。",
+                    "1": "地震發生的時候最重要的就是保護頭部和頸部。",
+                    "2": "記住「趴下、掩護、穩住！」，躲在桌子下時要握住桌腳。",
                     "3": "現在就用桌子當防護屏障，避免受傷吧。"
                 }
             },

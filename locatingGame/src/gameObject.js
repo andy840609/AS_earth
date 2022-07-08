@@ -490,7 +490,6 @@ const Enemy = new Phaser.Class({
 
             },
             cat: () => {
-
                 //===看完教學啟動?
                 if (!this.stats.active)
                     this.stats.active = true;
@@ -641,7 +640,6 @@ const Enemy = new Phaser.Class({
                                 this.behaviorCallback.remove();
                                 this.behaviorCallback = null;
                             };
-
                             let catfoodIdx = scene.itemOnFloor.findIndex(item => item.name === 'catfood');
                             // console.debug(boneArr)
                             if (catfoodIdx !== -1) {
@@ -4589,6 +4587,26 @@ class RexTextPlayer extends RexPlugins.UI.TextPlayer {
                                     .setAlpha(1 - p)
                                     .setScale(scale);
                             };
+                        },
+                        onComplete: function (char, t) {
+                        }
+                    };
+                    break;
+                //==從右邊跑到中間停駐
+                case 'theEnd':
+                    animObj = {
+                        duration: duration,
+                        onStart: function (char) {
+                            // console.debug(char);
+                            char
+                                .setData('pos', [char.x, char.y])
+                                .setX(char.x + config.width)
+                                .setVisible();
+                        },
+                        onProgress: function (char, t) {
+                            let pos = char.getData('pos');
+                            let x = Phaser.Math.Linear(char.x, pos[0], Phaser.Math.Easing.Circular.InOut(t));
+                            char.setX(x);
                         },
                         onComplete: function (char, t) {
                         }

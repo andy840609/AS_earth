@@ -1173,7 +1173,7 @@ const Player = new Phaser.Class({
         }
         else if (cursors[controllCursor['down']].isDown) {
             this.setVelocityX(0);
-            if (isBusy) return;
+            if (isBusy || !this.body.touching.down) return;
             this.anims.play('player_crouch', true);
             // this.body.setSize(45, 80);
         }
@@ -1802,8 +1802,10 @@ const Doctor = new Phaser.Class({
         this.dialog.setPosition(this.x + this.displayWidth * 1.9, this.y + this.displayHeight * 0.5);
 
         if (!this.talkingCallback) {
-            let inEmergency = Phaser.Math.Between(1, 5) === 1;
-            // console.debug(inEmergency)
+            let inEmergency =
+                player.scene.name === 'defend' &&
+                Phaser.Math.Between(1, 5) === 1;
+            // console.debug(player.scene.name === 'defend',)
             // inEmergency = false;
             if (!inEmergency) {
                 const

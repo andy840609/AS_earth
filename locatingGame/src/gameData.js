@@ -510,33 +510,23 @@ const BackGroundResources = {
         },
     },
     GameOver: {
-        space_1: {
-            static: ['bkgd_0.png'],
-            dynamic: ['bkgd_2.png', 'bkgd_3.png', 'bkgd_6.png', 'bkgd_7.png'],
-            depth: {
-                // static: [0, 0, 0, 0, 0, 0, 0],
-                static: [0],
-                dynamic: [0, 0, 0, 0, 0],
-            },
-            animType: [1, 1, 1, 1, 1, 1, 1],
-        },
-        desert_3: {
-            static: [],
-            dynamic: ['background1.png', 'background2.png', 'background3.png', 'background4.png', 'background5.png'],
-            depth: {
-                static: [0, 0, 0, 0, 0, 0, 0],
-                dynamic: [0, 0],
-            },
-            animType: [2, 1],
-        },
-        dawn_1: {
-            static: ['sunset.png'],
+        plain_3: {
+            static: ['p3.png', 'p2.png', 'p1.png', 'p0.png', '0.png'],
             dynamic: [],
             depth: {
-                static: [0, 0, 0, 0, 0, 0, 0],
+                static: [1, 2, 3, 4, 0,],
                 dynamic: [0, 0],
             },
             animType: [0, 0],
+        },
+        beach_1: {
+            static: ['cloud.png', 'decor.png', 'land.png', 'sea.png'],
+            dynamic: [],
+            depth: {
+                static: [1, 2, 3, 0],
+                dynamic: [1, 1, 1],
+            },
+            animType: [1, 1, 3],
         },
     }
 

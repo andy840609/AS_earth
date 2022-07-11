@@ -1126,28 +1126,36 @@ class UIScene extends Phaser.Scene {
                             initDetector(false);
 
                             let initMinimap = () => {
-                                this.minimap =
-                                    gameScene.cameras.add(rectX, rectY, rectW, rectH)
-                                        .setScene(this)
-                                        // .setBounds(0, mainCameras.getBounds().y, gameScene.groundW)
-                                        .centerOn(gameScene.groundW * 0.5)
-                                        .setZoom(mapZoom)
-                                        .setBackgroundColor(0xBEBEBE)
-                                        // .ignore(gameScene.BGgroup)
-                                        .setName('miniMap');
+                                let createMinimap = () => {
+                                    this.minimap =
+                                        gameScene.cameras.add(rectX, rectY, rectW, rectH)
+                                            .setScene(this)
+                                            // .setBounds(0, mainCameras.getBounds().y, gameScene.groundW)
+                                            .centerOn(gameScene.groundW * 0.5)
+                                            .setZoom(mapZoom)
+                                            .setBackgroundColor(0xBEBEBE)
+                                            // .ignore(gameScene.BGgroup)
+                                            .setName('miniMap');
 
-                                //===小地圖相機修正讓方框範圍一致
-                                // this.minimap.fixedScrollY = rectH / mapZoom * 0.5 + mainCameras.getBounds().y * mapZoom;
-                                this.minimap.fixedScrollY = rectH / mapZoom / 2 - 64.5;//- 65
-                                this.minimap.updateFlag = true;//==miniMap被關掉後再開啓要update位置一次
-                                // this.minimap.panFlag = false;//==相機視角平滑移動
+                                    //===小地圖相機修正讓方框範圍一致
+                                    // this.minimap.fixedScrollY = rectH / mapZoom * 0.5 + mainCameras.getBounds().y * mapZoom;
+                                    this.minimap.fixedScrollY = rectH / mapZoom / 2 - 64.5;//- 65
+                                    this.minimap.updateFlag = true;//==miniMap被關掉後再開啓要update位置一次
+                                    // this.minimap.panFlag = false;//==相機視角平滑移動
 
-                                this.events.on('destroy', () => {
+                                };
+
+                                this.events.on('sleep', () => {
                                     if (gameScene.gameOver.flag) return;
                                     gameScene.cameras.remove(this.minimap);
                                     mainCameras.startFollow(gameScene.player);
                                 });
 
+                                this.events.on('wake', () => {
+                                    if (gameScene.gameOver.flag) return;
+                                    createMinimap();
+                                });
+                                createMinimap();
                             };
                             let initScreenRect = () => {
                                 let sRectW = width * mapZoom,
@@ -5429,7 +5437,7 @@ class GameStartScene extends Phaser.Scene {
 
                         // console.debug(resources)
                         resources.static.forEach((res, i) => {
-                            let img = this.add.image(width * 0.5, height * 0.5, 'staticBG_scene1_' + i);
+                            let img = this.add.image(width * 0.5, height * 0.5, 'scene1_staticBG_' + i);
                             img
                                 .setScale(width / img.width, height / img.height)
                                 .setDepth(resources.depth.static[i]);
@@ -5438,7 +5446,7 @@ class GameStartScene extends Phaser.Scene {
                         });
 
                         resources.dynamic.forEach((res, i) => {
-                            let thing = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, 'dynamicBG_scene1_' + i);
+                            let thing = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, 'scene1_dynamicBG_' + i);
 
                             thing
                                 .setScale(width / thing.width, height / thing.height)
@@ -5536,7 +5544,7 @@ class GameStartScene extends Phaser.Scene {
 
                         // console.debug(resources)
                         resources.static.forEach((res, i) => {
-                            let img = this.add.image(0, height * 0.5, 'staticBG_scene2_' + i);
+                            let img = this.add.image(0, height * 0.5, 'scene2_staticBG_' + i);
                             img
                                 .setScale(width * 2 / img.width, height / img.height)
                                 .setOrigin(0, 0.5)
@@ -5546,7 +5554,7 @@ class GameStartScene extends Phaser.Scene {
                         });
 
                         resources.dynamic.forEach((res, i) => {
-                            let thing = this.add.tileSprite(0, height * 0.5, 0, 0, 'dynamicBG_scene2_' + i);
+                            let thing = this.add.tileSprite(0, height * 0.5, 0, 0, 'scene2_dynamicBG_' + i);
 
                             thing
                                 .setScale(width * 2 / thing.width, height / thing.height)
@@ -5867,7 +5875,7 @@ class GameOverScene extends Phaser.Scene {
             name: 'GameOver',
             gameData: GameData,
             clear: other.clear,
-            background: ['dawn_1',],
+            background: ['beach_1', 'plain_3'],
             resolve: other.resolve,
         });
     };
@@ -5951,7 +5959,7 @@ class GameOverScene extends Phaser.Scene {
         };
         let initEndAnime = () => {
             const Depth = {
-                portal: 3,
+                portal: 9,
                 player: 10,
                 UI: 20,
                 /*
@@ -5970,8 +5978,6 @@ class GameOverScene extends Phaser.Scene {
             this.Depth = Depth;//==gameObject.js用到
 
             let initScene = () => {
-                this.sceneGroup = this.add.group();
-
                 let playSubtitle = (index = 0, animes = false, padding = null) => {
                     let text = localeJSON.Lines.end[index];
                     // console.debug(text);
@@ -5983,19 +5989,21 @@ class GameOverScene extends Phaser.Scene {
                         height: height,
                         padding: padding ? padding : {
                             top: height * 0.1,
-                            left: width * 0.2,
+                            left: width * 0.3,
                         },
                         speed: 200,
                         // speed: 10,
                         animation: animes,
                         duration: 5000,
                         images: {
-                            'DMClogo': {
-                                height: height * 0.4,
+                            'IESlogo': {
+                                height: height * 0.3,
+                            },
+                            'IESDMClogo': {
+                                height: height * 0.3,
                             }
                         }
                     }).setName('subtitle');
-                    this.sceneGroup.add(textPlayer);
                     // console.debug(textPlayer);
 
                     return textPlayer.playPromise(text)
@@ -6013,21 +6021,23 @@ class GameOverScene extends Phaser.Scene {
                             anims[i % anims.length] : 'theEnd';
                         let padding = {
                             top: height * 0.1,
-                            left: width * 0.2,
+                            left: width * 0.3,
                         };
                         switch (i) {
                             case 0:
                                 playerRunning(1);
+
                                 break;
                             case 1:
                                 // playerRunning(2);
+
                                 break;
                             case 3:
                                 playerRunning(2);
                                 await new Promise(resolve => this.time.delayedCall(animeDelay * 2, () => resolve()));
                                 break;
                             case lineLength - 1:
-
+                                playerRunning(3);
                                 padding = {
                                     top: height * 0.4,
                                     left: width * 0.2,
@@ -6048,18 +6058,20 @@ class GameOverScene extends Phaser.Scene {
                 };
                 //==玩家跑(字幕控制各階段)
                 let playerRunning = (part = 1) => {
-                    let x, duration, onStart, onComplete;
+                    let x, duration, delay = 0, onStart, onComplete;
                     switch (part) {
-                        case 1:
+                        case 1://==開始跑
                             x = { from: -this.player.displayWidth, to: width * 0.2 };
                             duration = animeDelay * 2;
                             onStart = () => this.player.play('player_run');
                             break;
-                        case 2:
+                        case 2://==跑進傳送門
                             x = { from: this.player.x, to: width * 0.7 };
                             duration = animeDelay * 1.5;
                             onStart = () => this.player.anims.msPerFrame = 70;
                             onComplete = () => {
+                                this.sceneGroup1.clear(true, true);
+                                this.sceneGroup2.setVisible(true);
                                 this.player
                                     .setX(width * 0.2)
                                     .anims.stop().play('player_run');
@@ -6080,15 +6092,44 @@ class GameOverScene extends Phaser.Scene {
                                 },
 
                             });
+                            break;
+                        case 3://==跑進家
+                            x = { from: this.player.x, to: width * 0.7 };
+                            duration = animeDelay * 4;
+                            delay = duration;
+                            onComplete = () => {
+                                this.tweens.add({
+                                    targets: this.player,
+                                    repeat: 0,
+                                    ease: 'Linear',
+                                    duration: 100,
+                                    alpha: 0,
+                                });
+                            };
+                            // this.player.play('player_run')
+                            this.tweens.add({
+                                targets: this.house,
+                                repeat: 0,
+                                ease: 'Linear',
+                                duration,
+                                x: { from: this.house.x, to: x.to },
+                                // onStart: () => this.house.play('portal_activate'),
+                                onComplete: () => {
+                                    this.sceneGroup2.parallaxTween.forEach(tween => tween.stop());
+                                    const zoomDura = 500;
+                                    this.cameras.main.zoomTo(1.5, zoomDura);
+                                },
 
+                            });
                             break;
                     };
 
                     this.tweens.add({
                         targets: this.player,
                         repeat: 0,
-                        ease: 'Linear',
+                        ease: 'Linear.In',
                         duration,
+                        delay,
                         x,
                         onStart: () => onStart ? onStart() : false,
                         onComplete: () => onComplete ? onComplete() : false,
@@ -6096,22 +6137,43 @@ class GameOverScene extends Phaser.Scene {
 
                 };
 
-                //==主角在
+                //==主角在異世界
                 let scene1 = () => {
-                    let space = () => {
+                    this.sceneGroup1 = this.add.group();
+                    let scene = () => {
                         let resources = BackGroundResources.GameOver[this.background[0]];
                         // console.debug(resources);
+                        const staticLength = resources.static.length;
                         resources.static.forEach((res, i) => {
-                            let img = this.add.image(width * 0.5, height * 0.5, 'staticBG_scene1_' + i);
-                            img
-                                .setScale(width / img.width, height / img.height)
-                                // .setOrigin(0.5)
-                                .setDepth(resources.depth.static[i]);
 
-                            this.sceneGroup.add(img);
+                            let img;
+                            switch (i) {
+                                default://parallax
+                                    img = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, 'scene1_staticBG_' + i);
+                                    img.setScale(width / img.width, height / img.height);
+
+                                    let tween = this.tweens.addCounter({
+                                        from: 0,
+                                        to: 1,
+                                        repeat: -1,
+                                        duration: 0,
+                                        onRepeat: () => img.tilePositionX += 1 * (i + 1),
+                                    });
+                                    break;
+                                // case staticLength - 2://太陽
+                                case staticLength - 1://底色
+                                    img = this.add.image(width * 0.5, height * 0.5, 'scene1_staticBG_' + i);
+                                    img.setScale(width / img.width, height / img.height);
+
+                                    break;
+                            };
+
+                            img.setDepth(resources.depth.static[i]);
+                            this.sceneGroup1.add(img);
                         });
+
                         resources.dynamic.forEach((res, i) => {
-                            let thing = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, 'dynamicBG_scene1_' + i);
+                            let thing = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, 'scene1_dynamicBG_' + i);
 
                             thing
                                 .setScale(width / thing.width, height / thing.height)
@@ -6137,14 +6199,14 @@ class GameOverScene extends Phaser.Scene {
 
                                 ));
 
-                            this.sceneGroup.add(thing);
+                            this.sceneGroup1.add(thing);
                         });
                     };
-                    let portal = () => {
+                    let object = () => {
                         let animsCreate = () => {
                             this.anims.create({
                                 key: 'portal_activate',
-                                frames: this.anims.generateFrameNumbers('portal'),
+                                frames: this.anims.generateFrameNumbers('endPortal'),
                                 frameRate: 30,
                                 repeat: -1,
                             });
@@ -6152,91 +6214,123 @@ class GameOverScene extends Phaser.Scene {
                         animsCreate();
 
                         this.portal = this.add.sprite(0, 0)
-                            .setOrigin(0.5, 0.5)
                             .setScale(0.5)
                             .setDepth(Depth.portal);
                         this.portal
                             .setPosition(width + this.portal.displayWidth, this.player.y);
+                        //===
 
+                        this.house = this.add.image(0, 0, 'endHouse')
+                            .setScale(1.2, 1)
+                            .setOrigin(0.5, 1)
+                            .setDepth(Depth.portal);
+                        this.house
+                            .setPosition(width + this.house.displayWidth, this.player.y + this.player.displayHeight * 2);
                     };
-                    portal();
-                    space();
+                    // object();
+                    scene();
                 };
-                //==主角到異世界
+                //==主角回到家
                 let scene2 = () => {
+                    this.sceneGroup2 = this.add.group();
+                    this.sceneGroup2.parallaxTween = [];
 
-                    let planet = () => {
+                    let scene = () => {
+                        let resources = BackGroundResources.GameOver[this.background[1]];
+                        // console.debug(resources);
+                        const staticLength = resources.static.length;
+                        resources.static.forEach((res, i) => {
+
+                            let img;
+                            switch (i) {
+                                default://parallax
+                                    img = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, 'scene2_staticBG_' + i);
+                                    img.setScale(width / img.width, height / img.height);
+
+                                    let tween = this.tweens.addCounter({
+                                        from: 0,
+                                        to: 1,
+                                        repeat: -1,
+                                        duration: 0,
+                                        onRepeat: () => img.tilePositionX += 1 * (i + 1),
+                                    });
+                                    this.sceneGroup2.parallaxTween.push(tween);
+                                    break;
+                                // case staticLength - 2://太陽
+                                case staticLength - 1://底色
+                                    img = this.add.image(width * 0.5, height * 0.5, 'scene2_staticBG_' + i);
+                                    img.setScale(width / img.width, height / img.height);
+
+                                    break;
+                            };
+
+                            img.setDepth(resources.depth.static[i]);
+                            this.sceneGroup2.add(img);
+                        });
+
+                        resources.dynamic.forEach((res, i) => {
+                            let thing = this.add.tileSprite(width * 0.5, height * 0.5, 0, 0, 'scene2_dynamicBG_' + i);
+
+                            thing
+                                .setScale(width / thing.width, height / thing.height)
+                                // .setOrigin(0.5)
+                                .setDepth(resources.depth.dynamic[i]);
+
+                            //==tweens
+                            let movingDuration = Phaser.Math.Between(10, 15) * 1000;//==第一次移動5到20秒
+                            let animType = resources.animType[i];
+                            //==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
+
+                            this.tweens.add(
+                                Object.assign({
+                                    targets: thing,
+                                    repeat: -1,
+                                    duration: movingDuration + i * movingDuration * 0.5,
+                                },
+                                    animType == 1 ?
+                                        { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
+                                        animType == 2 ? { alpha: { start: 0, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
+                                            animType == 3 ? { scaleX: { start: t => t.scaleX, to: t => t.scaleX * 1.5 }, scaleY: { start: t => t.scaleY, to: t => t.scaleY * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
+                                                { alpha: { start: 0, to: 1 }, ease: 'Bounce', yoyo: true }
+
+                                ));
+
+                            this.sceneGroup2.add(thing);
+                        });
+                    };
+                    let object = () => {
                         let animsCreate = () => {
                             this.anims.create({
-                                key: 'earth_spin',
-                                frames: this.anims.generateFrameNumbers('planetEarth'),
-                                frameRate: 8,
-                                repeat: -1,
-                            });
-                            this.anims.create({
-                                key: 'earth_destory',
-                                frames: this.anims.generateFrameNumbers('planetMars'),
-                                frameRate: 3,
+                                key: 'portal_activate',
+                                frames: this.anims.generateFrameNumbers('endPortal'),
+                                frameRate: 30,
                                 repeat: -1,
                             });
                         };
                         animsCreate();
-                        let earth = this.add.sprite(width * 0.5, height * 0.5, 'planetEarth')
-                            .setScale(1.2)
-                            .setOrigin(0.5, 0.4)
-                            .setName('earth')
-                            .setDepth(Depth.earth)
-                            .play('earth_spin');
 
-                        this.sceneGroup.add(earth);
-                        // this.cameras.main.zoomTo(0.5, 1000);
+                        this.portal = this.add.sprite(0, 0)
+                            .setScale(0.5)
+                            .setDepth(Depth.portal);
+                        this.portal
+                            .setPosition(width + this.portal.displayWidth, this.player.y);
+                        //===
 
+                        this.house = this.add.image(0, 0, 'endHouse')
+                            .setScale(1.2, 1)
+                            .setOrigin(0.5, 1)
+                            .setDepth(Depth.portal);
+                        this.house
+                            .setPosition(width + this.house.displayWidth, this.player.y + this.player.displayHeight * 2);
                     };
-                    let animStart = () => {
-                        playSubtitle(1, 'jump')
-                            .then(() => {
-                                //===字幕移除
-                                this.cameras.main.fadeIn(animeDelay * 2, 0, 0, 0);
-                                this.sceneGroup.remove(getChildByName('subtitle'), true, true);
-
-
-                                //==博士動畫
-                                this.doctor
-                                    .setPosition(width * 0.8, height * 0.6)
-                                    .play('doctor_idle');
-
-                                //===玩家動畫
-                                this.player.setPosition(width * 0.2, height * 0.6);
-
-                                this.time.delayedCall(animeDelay * 4, () => {
-                                    this.player.playReverse('player_death');
-                                    playLines();
-                                });
-
-
-                                //===emoji
-                                this.player.emote
-                                    .setVisible(true)
-                                    .setPosition(this.player.x, this.player.y - 70);
-                                this.doctor.emote
-                                    .setPosition(this.doctor.x, this.doctor.y - 70);
-
-                                [...Array(3).keys()].forEach(i =>
-                                    this.time.delayedCall(animeDelay * 1.3 * i, () => {
-                                        this.player.emote.setTexture('emoteDots' + (i + 1));
-                                    }));
-
-                            });
-
-                    };
-                    space();
-                    planet();
-                    animStart();
+                    object();
+                    scene();
+                    this.sceneGroup2.setVisible(false);
                 };
-
                 scene1();
+                scene2();
                 credits();
-                // scene2();
+
 
             };
             let initPlayer = () => {
@@ -6269,7 +6363,7 @@ class GameOverScene extends Phaser.Scene {
                     .setDepth(Depth.player);
             };
             let initCamera = () => {
-                this.cameras.main.setBounds(0, 0, width * 2, height);
+                this.cameras.main.setBounds(0, 0, width, height);
                 this.cameras.main.fadeIn(500, 0, 0, 0);
             };
             let initRexUI = () => {
@@ -6316,10 +6410,10 @@ class LoadingScene extends Phaser.Scene {
 
                     //==重新取名讓loader裡的key不會重複(檔名可能重複)
                     resources.static.forEach((res, i) => {
-                        this.load.image(`staticBG_${(key ? key : '') + i}`, dir + res);
+                        this.load.image(`${key ? key : ''}staticBG_${i}`, dir + res);
                     });
                     resources.dynamic.forEach((res, i) => {
-                        this.load.image(`dynamicBG_${(key ? key : '') + i}`, dir + res);
+                        this.load.image(`${key ? key : ''}dynamicBG_${i}`, dir + res);
                     });
 
                 };
@@ -6505,21 +6599,24 @@ class LoadingScene extends Phaser.Scene {
                         let clear = () => {
                             let scene = () => {
                                 let endDir = envDir + 'end/';
-                                let portal = () => {
-                                    this.load.spritesheet('portal',
+                                let gameObject = () => {
+                                    this.load.spritesheet('endPortal',
                                         endDir + 'portal.png',
                                         { frameWidth: 360, frameHeight: 592 }
                                     );
+                                    this.load.image('endHouse', endDir + 'house.png');
                                 };
                                 let creditLogo = () => {
                                     const dir = assetsDir + 'ui/game/Transitions/';
-                                    this.load.image('DMClogo', dir + 'DMClogo.jpg');
+                                    this.load.image('IESlogo', dir + 'IESlogo.png');
+                                    this.load.image('IESDMClogo', dir + 'IESDMClogo.png');
+
                                 };
                                 //===開頭好幾個場景
                                 gameScene.background.forEach((bg, i) =>
                                     background(bg, `scene${i + 1}_`));
 
-                                portal();
+                                gameObject();
                                 creditLogo();
                             };
                             scene();

@@ -5461,7 +5461,7 @@ class GameStartScene extends Phaser.Scene {
                                 Object.assign({
                                     targets: thing,
                                     repeat: -1,
-                                    duration: movingDuration + i * movingDuration * 0.5,
+                                    duration: (0.5 * i + 1) * movingDuration,
                                 },
                                     animType == 1 ?
                                         { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
@@ -5570,7 +5570,7 @@ class GameStartScene extends Phaser.Scene {
                                 Object.assign({
                                     targets: thing,
                                     repeat: -1,
-                                    duration: movingDuration + i * movingDuration * 0.5,
+                                    duration: (0.5 * i + 1) * movingDuration,
                                 },
                                     animType == 1 ?
                                         { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
@@ -6010,10 +6010,13 @@ class GameOverScene extends Phaser.Scene {
                         .then(() => animes === 'theEnd' ? false : textPlayer.destroy());
                 };
 
-                const animeDelay = 500;
+                const
+                    animeDelay = 500,
+                    parallaxX = 0.2;
+
                 //==感謝字幕
                 let credits = async () => {
-                    const anims = ['marquee', 'fallout', 'fadein', 'spinscale'];
+                    const anims = ['marquee', 'fallout', 'spinscale'];
                     // const anims = [];
                     let lineLength = Object.keys(localeJSON.Lines.end).length;
                     for (let i = 0; i < lineLength; i++) {
@@ -6028,13 +6031,13 @@ class GameOverScene extends Phaser.Scene {
                                 playerRunning(1);
 
                                 break;
-                            case 1:
-                                // playerRunning(2);
+                            // case 1:
+                            //     // playerRunning(2);
 
-                                break;
-                            case 3:
+                            //     break;
+                            case 2:
                                 playerRunning(2);
-                                await new Promise(resolve => this.time.delayedCall(animeDelay * 2, () => resolve()));
+                                await new Promise(resolve => this.time.delayedCall(animeDelay * 4, () => resolve()));
                                 break;
                             case lineLength - 1:
                                 playerRunning(3);
@@ -6058,7 +6061,7 @@ class GameOverScene extends Phaser.Scene {
                 };
                 //==玩家跑(字幕控制各階段)
                 let playerRunning = (part = 1) => {
-                    let x, duration, delay = 0, onStart, onComplete;
+                    let x, duration, delay = 0, ease, onStart, onComplete;
                     switch (part) {
                         case 1://==開始跑
                             x = { from: -this.player.displayWidth, to: width * 0.2 };
@@ -6067,8 +6070,18 @@ class GameOverScene extends Phaser.Scene {
                             break;
                         case 2://==跑進傳送門
                             x = { from: this.player.x, to: width * 0.7 };
-                            duration = animeDelay * 1.5;
-                            onStart = () => this.player.anims.msPerFrame = 70;
+                            duration = animeDelay * 3;
+                            ease = 'Sine.In';
+                            onStart = () => {
+                                this.player.anims.msPerFrame = 70;
+                                for (let i = 0; i < 3; i++)
+                                    this.time.delayedCall(animeDelay * i, () =>
+                                        this.sceneGroup1.parallaxTween.forEach(tween => {
+                                            tween.custom.tilePositionX = (parallaxX + i) * 3;
+                                            tween.restart();
+                                        })
+                                    );
+                            };
                             onComplete = () => {
                                 this.sceneGroup1.clear(true, true);
                                 this.sceneGroup2.setVisible(true);
@@ -6106,7 +6119,7 @@ class GameOverScene extends Phaser.Scene {
                                     alpha: 0,
                                 });
                             };
-                            // this.player.play('player_run')
+
                             this.tweens.add({
                                 targets: this.house,
                                 repeat: 0,
@@ -6127,7 +6140,7 @@ class GameOverScene extends Phaser.Scene {
                     this.tweens.add({
                         targets: this.player,
                         repeat: 0,
-                        ease: 'Linear.In',
+                        ease: ease ? ease : 'Linear.In',
                         duration,
                         delay,
                         x,
@@ -6136,11 +6149,14 @@ class GameOverScene extends Phaser.Scene {
                     });
 
                 };
-
-                //==主角在異世界
-                let scene1 = () => {
+                let scenes = () => {
                     this.sceneGroup1 = this.add.group();
-                    let scene = () => {
+                    this.sceneGroup1.parallaxTween = [];
+                    this.sceneGroup2 = this.add.group();
+                    this.sceneGroup2.parallaxTween = [];
+
+                    //==主角在異世界
+                    let scene1 = () => {
                         let resources = BackGroundResources.GameOver[this.background[0]];
                         // console.debug(resources);
                         const staticLength = resources.static.length;
@@ -6157,8 +6173,16 @@ class GameOverScene extends Phaser.Scene {
                                         to: 1,
                                         repeat: -1,
                                         duration: 0,
-                                        onRepeat: () => img.tilePositionX += 1 * (i + 1),
+                                        onStart: (tween) => {
+                                            tween.custom = { tilePositionX: parallaxX * (i + 1) * 2 };
+                                        },
+                                        onRepeat: (tween) => {
+                                            img.tilePositionX += tween.custom.tilePositionX;
+                                        },
                                     });
+
+
+                                    this.sceneGroup1.parallaxTween.push(tween);
                                     break;
                                 // case staticLength - 2://太陽
                                 case staticLength - 1://底色
@@ -6181,7 +6205,6 @@ class GameOverScene extends Phaser.Scene {
                                 .setDepth(resources.depth.dynamic[i]);
 
                             //==tweens
-                            let movingDuration = Phaser.Math.Between(10, 15) * 1000;//==第一次移動5到20秒
                             let animType = resources.animType[i];
                             //==animType: 1.shift(往右移動) 2.shine(透明度變化) 3.sclae(變大變小)
 
@@ -6189,11 +6212,11 @@ class GameOverScene extends Phaser.Scene {
                                 Object.assign({
                                     targets: thing,
                                     repeat: -1,
-                                    duration: movingDuration + i * movingDuration * 0.5,
+                                    duration: animeDelay * 5,
                                 },
                                     animType == 1 ?
                                         { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
-                                        animType == 2 ? { alpha: { start: 0, to: 1 }, ease: 'Bounce.easeIn', yoyo: true } :
+                                        animType == 2 ? { alpha: { start: 0, to: 1 }, ease: 'Bounce', yoyo: true } :
                                             animType == 3 ? { scaleX: { start: t => t.scaleX, to: t => t.scaleX * 1.5 }, scaleY: { start: t => t.scaleY, to: t => t.scaleY * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
                                                 { alpha: { start: 0, to: 1 }, ease: 'Bounce', yoyo: true }
 
@@ -6202,40 +6225,8 @@ class GameOverScene extends Phaser.Scene {
                             this.sceneGroup1.add(thing);
                         });
                     };
-                    let object = () => {
-                        let animsCreate = () => {
-                            this.anims.create({
-                                key: 'portal_activate',
-                                frames: this.anims.generateFrameNumbers('endPortal'),
-                                frameRate: 30,
-                                repeat: -1,
-                            });
-                        };
-                        animsCreate();
-
-                        this.portal = this.add.sprite(0, 0)
-                            .setScale(0.5)
-                            .setDepth(Depth.portal);
-                        this.portal
-                            .setPosition(width + this.portal.displayWidth, this.player.y);
-                        //===
-
-                        this.house = this.add.image(0, 0, 'endHouse')
-                            .setScale(1.2, 1)
-                            .setOrigin(0.5, 1)
-                            .setDepth(Depth.portal);
-                        this.house
-                            .setPosition(width + this.house.displayWidth, this.player.y + this.player.displayHeight * 2);
-                    };
-                    // object();
-                    scene();
-                };
-                //==主角回到家
-                let scene2 = () => {
-                    this.sceneGroup2 = this.add.group();
-                    this.sceneGroup2.parallaxTween = [];
-
-                    let scene = () => {
+                    //==主角回到家
+                    let scene2 = () => {
                         let resources = BackGroundResources.GameOver[this.background[1]];
                         // console.debug(resources);
                         const staticLength = resources.static.length;
@@ -6252,7 +6243,7 @@ class GameOverScene extends Phaser.Scene {
                                         to: 1,
                                         repeat: -1,
                                         duration: 0,
-                                        onRepeat: () => img.tilePositionX += 1 * (i + 1),
+                                        onRepeat: () => img.tilePositionX += parallaxX * (i + 1) * 2,
                                     });
                                     this.sceneGroup2.parallaxTween.push(tween);
                                     break;
@@ -6285,7 +6276,7 @@ class GameOverScene extends Phaser.Scene {
                                 Object.assign({
                                     targets: thing,
                                     repeat: -1,
-                                    duration: movingDuration + i * movingDuration * 0.5,
+                                    duration: (0.5 * i + 1) * movingDuration,
                                 },
                                     animType == 1 ?
                                         { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
@@ -6297,6 +6288,7 @@ class GameOverScene extends Phaser.Scene {
 
                             this.sceneGroup2.add(thing);
                         });
+                        this.sceneGroup2.setVisible(false);
                     };
                     let object = () => {
                         let animsCreate = () => {
@@ -6323,15 +6315,13 @@ class GameOverScene extends Phaser.Scene {
                         this.house
                             .setPosition(width + this.house.displayWidth, this.player.y + this.player.displayHeight * 2);
                     };
+                    scene1();
+                    scene2();
                     object();
-                    scene();
-                    this.sceneGroup2.setVisible(false);
                 };
-                scene1();
-                scene2();
+
+                scenes();
                 credits();
-
-
             };
             let initPlayer = () => {
                 let animsCreate = () => {

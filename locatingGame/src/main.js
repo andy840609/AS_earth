@@ -3612,8 +3612,8 @@ function locatingGame() {
                         .attr("class", "brave")
                         .attr("opacity", 0)
                         .attr("width", braveW)
-                        .attr("x", -braveW * 0.4)
-                        .attr("y", -braveW * 1.1);
+                        .attr("x", -braveW * 0.5)
+                        .attr("y", -braveW * 1.2);
 
                     braveAnim = brave
                         .selectAll(".braveAnim")
@@ -3623,9 +3623,11 @@ function locatingGame() {
 
                 };
                 let playAnime = (replay) => {
+                    const playerRole = GameData.playerRole;
+
                     let init = () => {
                         brave
-                            .attr("href", braveDir + 'braveRun.gif');
+                            .attr("href", braveDir + `${playerRole}_Run.gif`);
 
                         boss
                             .attr("x", x((gapGroupData.length - playerGroupIdx - 2) * gap))
@@ -3653,9 +3655,9 @@ function locatingGame() {
                         braveAnim
                             .on('beginEvent', () => brave.attr("opacity", 1))
                             .on('endEvent', () => {
-                                brave.attr("href", braveDir + 'braveAttack.gif');
+                                brave.attr("href", braveDir + `${playerRole}_Attack.gif`);
                                 d3.timeout(() => {
-                                    brave.attr("href", braveDir + 'braveIdle.gif');
+                                    brave.attr("href", braveDir + `${playerRole}_Idle.gif`);
 
                                     let bossX = parseFloat(boss.attr("x")),
                                         bossY = parseFloat(boss.attr("y")),

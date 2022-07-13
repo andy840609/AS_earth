@@ -351,11 +351,42 @@
                 "2": "( 拖動把手\t調整\n速度參數，或是到測站\t\n更正速度情報 )"
             }
         },
-        "end": {
-            "0": "[color=black]感謝名單1[r][left=80]X[/left]XXXX",
-            "1": "[color=black]感謝名單2[r][left=80]X[/left]XXXXX",
-            "2": "[color=black]感謝名單3[r][left=80]X[/left]XXXXX[/color]",
-            "3": "[img=IESDMClogo][left=80] [/left][img=IESlogo]"
+        "endCredit": {
+            "tag": {
+                "title": "[stroke=white][color=black][size=48][b]\t[/b][/size][r]",
+                "content": "[size=36]\t[r][/size]"
+            },
+            "list": {
+                "0": {
+                    "post": "[right=10]Game assets",
+                    "names": [
+                        "Kenney.nl",
+                        "craftpix.net",
+                        "opengameart.org",
+                        "TopeconHeroes"
+                    ]
+                },
+                "1": {
+                    "post": "Game assets",
+                    "names": [
+                        "BBB",
+                        "BBB"
+                    ]
+                },
+                "2": {
+                    "post": "Speacial thanks",
+                    "names": [
+                        "CCC",
+                        "CCC"
+                    ]
+                },
+                "3": {
+                    "post": "thanks for playing![r][r][r]",
+                    "names": [
+                        "[img=IESDMClogo][left=80] [/left][img=IESlogo]"
+                    ]
+                }
+            }
         }
     },
     "Hints": {

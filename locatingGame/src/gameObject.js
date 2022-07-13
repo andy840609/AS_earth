@@ -4491,6 +4491,8 @@ class RexTextPlayer extends RexPlugins.UI.TextPlayer {
                             };
                         },
                         onComplete: function (char, t) {
+                            // let pos = char.getData('pos');
+                            // char.setX(pos[0]);
                         }
                     };
                     break;
@@ -4627,9 +4629,10 @@ class RexTextPlayer extends RexPlugins.UI.TextPlayer {
             height: config.height,  // Fixed width and height
             padding: config.padding,
             style: {
+                fontFamily: 'Audiowide',
                 fontSize: '36px',
                 stroke: 'green',
-                strokeThickness: 3,
+                strokeThickness: 5,
 
                 // shadowColor: 'red',
                 // shadowOffsetX: 5,
@@ -4639,6 +4642,7 @@ class RexTextPlayer extends RexPlugins.UI.TextPlayer {
             wrap: {
                 maxLines: 5,
                 lineHeight: config.height * 0.1,
+                // letterSpacing: 1,
                 padding: { bottom: 10 },
             },
             typing: {

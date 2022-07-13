@@ -1,7 +1,22 @@
-/* @font-face {
+@font-face {
     font-family: Pigmo;
     src: url(../data/font/Pigmo-00.otf);
-}*/
+}
+
+/* 
+@font-face {
+    font-family: PressStart2P;
+    src: url(../data/font/PressStart2P-Regular.ttf);
+} */
+
+@font-face {
+    font-family: Audiowide;
+    src: url(../data/font/Audiowide-Regular.ttf);
+}
+/* *,
+body {
+    font-family: RubikMoonrocks !important;
+} */
 
 text,
 label,

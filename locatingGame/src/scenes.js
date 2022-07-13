@@ -5534,7 +5534,6 @@ class GameStartScene extends Phaser.Scene {
                     forest();
                     apple();
                     animStart();
-
                 };
 
                 //==主角到異世界
@@ -5875,7 +5874,7 @@ class GameOverScene extends Phaser.Scene {
             name: 'GameOver',
             gameData: GameData,
             clear: other.clear,
-            background: ['beach_1', 'plain_3'],
+            background: ['space_2', 'plain_3'],
             resolve: other.resolve,
         });
     };
@@ -5978,10 +5977,21 @@ class GameOverScene extends Phaser.Scene {
             this.Depth = Depth;//==gameObject.js用到
 
             let initScene = () => {
+                const creditList = localeJSON.Lines.endCredit;
                 let playSubtitle = (index = 0, animes = false, padding = null) => {
-                    let text = localeJSON.Lines.end[index];
-                    // console.debug(text);
+                    let tag = creditList.tag,
+                        list = creditList.list[index];
+                    let text =
+                        (list.post !== '' ? tag.title.replace('\t', list.post) : '') +
+                        list.names.map(name => tag.content.replace('\t', name)).join('');
 
+                    const
+                        isTheEnd = animes === 'theEnd',
+                        charCount = list.post.length + list.names.reduce((p, c) => p + c).length,
+                        speed = isTheEnd ? 50 : 50,
+                        duration = isTheEnd ? 5000 : charCount * speed * (index ? 2 : 2);
+
+                    console.debug(duration);
                     let textPlayer = this.RexUI.newTextPlayer({
                         x: width * 0.5,
                         y: height * 0.5,
@@ -5991,10 +6001,9 @@ class GameOverScene extends Phaser.Scene {
                             top: height * 0.1,
                             left: width * 0.3,
                         },
-                        speed: 200,
-                        // speed: 10,
+                        speed,
+                        duration,
                         animation: animes,
-                        duration: 5000,
                         images: {
                             'IESlogo': {
                                 height: height * 0.3,
@@ -6007,18 +6016,17 @@ class GameOverScene extends Phaser.Scene {
                     // console.debug(textPlayer);
 
                     return textPlayer.playPromise(text)
-                        .then(() => animes === 'theEnd' ? false : textPlayer.destroy());
+                        .then(() => isTheEnd ? false : textPlayer.destroy());
                 };
 
-                const
-                    animeDelay = 500,
-                    parallaxX = 0.2;
-
+                const animeDelay = 500;
                 //==感謝字幕
                 let credits = async () => {
                     const anims = ['marquee', 'fallout', 'spinscale'];
                     // const anims = [];
-                    let lineLength = Object.keys(localeJSON.Lines.end).length;
+                    let lineLength = Object.keys(creditList.list).length;
+
+                    // await this.RexUI.newTextPlayer({ speed: 500 }).playPromise("AA")
                     for (let i = 0; i < lineLength; i++) {
                         const anim = i !== lineLength - 1 ?
                             anims[i % anims.length] : 'theEnd';
@@ -6042,7 +6050,7 @@ class GameOverScene extends Phaser.Scene {
                             case lineLength - 1:
                                 playerRunning(3);
                                 padding = {
-                                    top: height * 0.4,
+                                    top: height * 0.1,
                                     left: width * 0.2,
                                 };
                                 break;
@@ -6051,11 +6059,8 @@ class GameOverScene extends Phaser.Scene {
                         await playSubtitle(i, anim, padding);
                         //===進入排名圖
                         if (i === lineLength - 1) {
-                            this.time.delayedCall(animeDelay * 4, () => {
-                                this.game.destroy(true, false);
-                                this.resolve();
-                            }, [], this);
-
+                            this.game.destroy(true, false);
+                            this.resolve();
                         };
                     };
                 };
@@ -6071,13 +6076,15 @@ class GameOverScene extends Phaser.Scene {
                         case 2://==跑進傳送門
                             x = { from: this.player.x, to: width * 0.7 };
                             duration = animeDelay * 3;
-                            ease = 'Sine.In';
+                            ease = 'Back.In';
                             onStart = () => {
                                 this.player.anims.msPerFrame = 70;
-                                for (let i = 0; i < 3; i++)
-                                    this.time.delayedCall(animeDelay * i, () =>
+                                let gear = 8,
+                                    avgDelay = duration / gear;
+                                for (let i = 1; i < gear; i++)
+                                    this.time.delayedCall(avgDelay * i, () =>
                                         this.sceneGroup1.parallaxTween.forEach(tween => {
-                                            tween.custom.tilePositionX = (parallaxX + i) * 3;
+                                            tween.custom.tilePositionX *= 1.3;
                                             tween.restart();
                                         })
                                     );
@@ -6107,7 +6114,8 @@ class GameOverScene extends Phaser.Scene {
                             });
                             break;
                         case 3://==跑進家
-                            x = { from: this.player.x, to: width * 0.7 };
+                            const houseX = width * 0.45;
+                            x = { from: this.player.x, to: houseX + this.house.displayWidth * 0.54 };
                             duration = animeDelay * 4;
                             delay = duration;
                             onComplete = () => {
@@ -6119,13 +6127,13 @@ class GameOverScene extends Phaser.Scene {
                                     alpha: 0,
                                 });
                             };
-
+                            this.player.play('player_run')
                             this.tweens.add({
-                                targets: this.house,
+                                targets: [this.house, this.door],
                                 repeat: 0,
                                 ease: 'Linear',
                                 duration,
-                                x: { from: this.house.x, to: x.to },
+                                x: { from: this.house.x, to: houseX },
                                 // onStart: () => this.house.play('portal_activate'),
                                 onComplete: () => {
                                     this.sceneGroup2.parallaxTween.forEach(tween => tween.stop());
@@ -6140,7 +6148,7 @@ class GameOverScene extends Phaser.Scene {
                     this.tweens.add({
                         targets: this.player,
                         repeat: 0,
-                        ease: ease ? ease : 'Linear.In',
+                        ease: ease ? ease : 'Linear.Out',
                         duration,
                         delay,
                         x,
@@ -6151,9 +6159,17 @@ class GameOverScene extends Phaser.Scene {
                 };
                 let scenes = () => {
                     this.sceneGroup1 = this.add.group();
-                    this.sceneGroup1.parallaxTween = [];
                     this.sceneGroup2 = this.add.group();
-                    this.sceneGroup2.parallaxTween = [];
+
+                    //custom
+                    Object.assign(this.sceneGroup1, {
+                        parallaxShift: 0.5,
+                        parallaxTween: [],
+                    });
+                    Object.assign(this.sceneGroup2, {
+                        parallaxShift: 0.6,
+                        parallaxTween: [],
+                    });
 
                     //==主角在異世界
                     let scene1 = () => {
@@ -6174,7 +6190,9 @@ class GameOverScene extends Phaser.Scene {
                                         repeat: -1,
                                         duration: 0,
                                         onStart: (tween) => {
-                                            tween.custom = { tilePositionX: parallaxX * (i + 1) * 2 };
+                                            tween.custom = {
+                                                tilePositionX: this.sceneGroup1.parallaxShift * Math.pow(i + 1, 2),
+                                            };
                                         },
                                         onRepeat: (tween) => {
                                             img.tilePositionX += tween.custom.tilePositionX;
@@ -6212,11 +6230,11 @@ class GameOverScene extends Phaser.Scene {
                                 Object.assign({
                                     targets: thing,
                                     repeat: -1,
-                                    duration: animeDelay * 5,
+                                    duration: animeDelay * 2 * (i + 1),
                                 },
                                     animType == 1 ?
                                         { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
-                                        animType == 2 ? { alpha: { start: 0, to: 1 }, ease: 'Bounce', yoyo: true } :
+                                        animType == 2 ? { alpha: { start: 0.4, to: 1 }, ease: 'Bounce', yoyo: true } :
                                             animType == 3 ? { scaleX: { start: t => t.scaleX, to: t => t.scaleX * 1.5 }, scaleY: { start: t => t.scaleY, to: t => t.scaleY * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
                                                 { alpha: { start: 0, to: 1 }, ease: 'Bounce', yoyo: true }
 
@@ -6243,7 +6261,7 @@ class GameOverScene extends Phaser.Scene {
                                         to: 1,
                                         repeat: -1,
                                         duration: 0,
-                                        onRepeat: () => img.tilePositionX += parallaxX * (i + 1) * 2,
+                                        onRepeat: () => img.tilePositionX += this.sceneGroup2.parallaxShift * Math.pow(i + 1, 2),
                                     });
                                     this.sceneGroup2.parallaxTween.push(tween);
                                     break;
@@ -6307,13 +6325,18 @@ class GameOverScene extends Phaser.Scene {
                         this.portal
                             .setPosition(width + this.portal.displayWidth, this.player.y);
                         //===
-
                         this.house = this.add.image(0, 0, 'endHouse')
                             .setScale(1.2, 1)
-                            .setOrigin(0.5, 1)
-                            .setDepth(Depth.portal);
-                        this.house
-                            .setPosition(width + this.house.displayWidth, this.player.y + this.player.displayHeight * 2);
+                            .setOrigin(0, 1)
+                            .setDepth(Depth.player + -1)
+                            .setPosition(width, this.player.y + this.player.displayHeight * 2);
+
+                        this.door = this.add.image(0, 0, 'endDoor')
+                            .setScale(1.2, 1)
+                            .setOrigin(-9, 0.92)
+                            .setDepth(Depth.player + 1)
+                            .setPosition(width, this.player.y + this.player.displayHeight * 2);
+
                     };
                     scene1();
                     scene2();
@@ -6369,7 +6392,6 @@ class GameOverScene extends Phaser.Scene {
             // this.game.destroy(true, false);
             // this.resolve();
         };
-
         this.clear ? initEndAnime() : failScene();
     };
     update() {
@@ -6595,6 +6617,8 @@ class LoadingScene extends Phaser.Scene {
                                         { frameWidth: 360, frameHeight: 592 }
                                     );
                                     this.load.image('endHouse', endDir + 'house.png');
+                                    this.load.image('endDoor', endDir + 'door.png');
+
                                 };
                                 let creditLogo = () => {
                                     const dir = assetsDir + 'ui/game/Transitions/';

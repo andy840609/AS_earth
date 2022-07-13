@@ -519,14 +519,14 @@ const BackGroundResources = {
             },
             animType: [0, 0],
         },
-        beach_1: {
-            static: ['planets.png', 'land.png', 'vortex.png'],
-            dynamic: ['star.png'],
+        space_2: {
+            static: ['planets.png', 'hill1.png', 'hill2.png', 'hill3.png', 'land.png', 'starfield.png'],
+            dynamic: ['star.png',],
             depth: {
-                static: [1, 2, 0],
-                dynamic: [1],
+                static: [1, 2, 3, 4, 5, 0],
+                dynamic: [0, 0],
             },
-            animType: [2],
+            animType: [2, 1],
         },
         industrial_1: {
             static: ['1.png', '2.png', '3.png', '0.png'],

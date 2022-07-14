@@ -398,7 +398,7 @@ function locatingGame() {
             };
 
             function initGameData() {
-                let playerRole = 'femalePerson';//==之後能選其他[femalePerson,maleAdventurer]
+                let playerRole = 'maleAdventurer';//==之後能選其他[femalePerson,maleAdventurer]
                 let sidekick = 'Dude';//=='Owlet,Dude,Pink'
 
                 let playerName = '',
@@ -497,7 +497,7 @@ function locatingGame() {
                     //==test
                     // gameStart('defend');
                     // gameStart('dig');
-                    initEndScene(true);
+                    // initEndScene(true);
                     //==test
                 };
                 startScene();
@@ -510,16 +510,22 @@ function locatingGame() {
 
                     let newGameData = await new Promise((resolve, reject) => {
                         const config = Object.assign(getPhaserConfig(width, height), {
-                            scene: new GameOverScene(GameData, { clear, resolve }),
+                            scene: new GameOverScene(GameData, {
+                                clear,
+                                resolve,
+                                rankingData: rankingData,//排行榜
+                            }),
+                            transparent: true,
                         });
                         new Phaser.Game(config);
                     });
 
                     // Object.assign(GameData, newGameData);
-                    gameDisplay(false);
+                    // gameDisplay(false);
 
                     if (clear) {
                         congratsScene();
+                        gameOuterDiv.css('pointer-events', 'none');
                     }
                     else {
                         updateMapUI({ timeRemain: rewindTime }, 800);
@@ -575,6 +581,20 @@ function locatingGame() {
                                     <text class="text-nowrap p-1 pt-2">${GameData.localeJSON.UI['survey']}</text>
                                 </div>
                                 </button>
+
+                                <button type="button" class="btn btn-primary rounded-pill" id="rankButton">
+                                <div class="d-flex align-items-center">
+                                    <i class="fa-solid fa-chart-bar fa-2x"></i>
+                                    <text class="text-nowrap p-1 pt-2">${GameData.localeJSON.UI['rank']}</text>
+                                </div>
+                                </button>
+
+                                <button type="button" class="btn btn-primary rounded-pill" id="linkButton">
+                                <div class="d-flex align-items-center">
+                                    <i class="fa-solid fa-square-up-right fa-2x"></i>
+                                    <text class="text-nowrap p-1 pt-2">${GameData.localeJSON.UI['links']}</text>
+                                </div>
+                                </button>
      
                             </div>
                             `);
@@ -582,7 +602,7 @@ function locatingGame() {
                         //==按鈕一個一個出現                       
                         endMenu.find('.buttonGroup>button').each(function (i) {
                             let button = $(this);
-                            button.css('top', height * (0.4 + 0.1 * i));
+                            button.css('top', height * (0.2 + 0.1 * i));
                             setTimeout(() => button.show(), 5400 + i * 1000);//==5400是動畫時間
                         });
 
@@ -662,6 +682,16 @@ function locatingGame() {
                         endMenu.find('#surveyButton')
                             .on('click', () => {
                                 window.open('https://docs.google.com/forms/d/e/1FAIpQLSfwCKL5kVIqeUxJD7QTBj0VcSonCJBrud2QGGfPfd_AQvZuRg/viewform?usp=sf_link');
+                            });
+                        endMenu.find('#rankButton')
+                            .on('click', () => {
+                                congrats.trigger('openPanel', 'rank');
+                                gameOuterDiv.css('pointer-events', 'all');
+                            });
+                        endMenu.find('#linkButton')
+                            .on('click', () => {
+                                congrats.trigger('openPanel', 'links');
+                                gameOuterDiv.css('pointer-events', 'all');
                             });
                     };
 

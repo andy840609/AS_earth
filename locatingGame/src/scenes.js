@@ -5003,20 +5003,14 @@ class GameStartScene extends Phaser.Scene {
                 getWaveImg: other.getWaveImg,
                 tutorialData: other.tutorialData,
             },//==tutorial
-            rankingData: other.rankingData,
+            // rankingData: other.rankingData,
             resolve: other.resolve,
         });
 
         // console.debug(this);
     };
     preload() {
-        // let UI = () => {
-        //     const UIDir = assetsDir + 'ui/game/Transitions/';
-        //     let controller = () => {
-        //         this.load.image('startScene', UIDir + 'startScene.jpg');
-        //         this.load.image('startButton', UIDir + 'startButton.png');
-        //         this.load.image('gameTitle', UIDir + 'title.png');
-        //     };
+
         //     let intro = () => {
         //         this.load.image('epicenter', UIDir + 'epicenter.png');
         //         this.load.image('PSwave', UIDir + 'PSwave.png');
@@ -5842,8 +5836,8 @@ class GameStartScene extends Phaser.Scene {
         initCreatorUI();
         // initStartAnime();
         // initTutorial();
-        // initBackground();
-        // initButton();
+
+
     };
     update() {
         let updateBGobj = () => {
@@ -5869,12 +5863,13 @@ class GameOverScene extends Phaser.Scene {
                 ]
             },
         });
-
+        // console.debug(other)
         Object.assign(this, {
             name: 'GameOver',
             gameData: GameData,
             clear: other.clear,
             background: ['space_2', 'plain_3'],
+            rankingData: other.rankingData,
             resolve: other.resolve,
         });
     };
@@ -5987,11 +5982,11 @@ class GameOverScene extends Phaser.Scene {
 
                     const
                         isTheEnd = animes === 'theEnd',
-                        charCount = list.post.length + list.names.reduce((p, c) => p + c).length,
-                        speed = isTheEnd ? 50 : 50,
-                        duration = isTheEnd ? 5000 : charCount * speed * (index ? 2 : 2);
-
-                    console.debug(duration);
+                        speed = 50,
+                        // charCount = list.post.length + list.names.reduce((p, c) => p + c).length,
+                        // duration = isTheEnd ? 5000 : charCount * speed * (index ? 2 : 2);
+                        duration = isTheEnd ? 5000 : 8000;
+                    // console.debug(duration);
                     let textPlayer = this.RexUI.newTextPlayer({
                         x: width * 0.5,
                         y: height * 0.5,
@@ -6016,7 +6011,7 @@ class GameOverScene extends Phaser.Scene {
                     // console.debug(textPlayer);
 
                     return textPlayer.playPromise(text)
-                        .then(() => isTheEnd ? false : textPlayer.destroy());
+                        .then(() => textPlayer.destroy());
                 };
 
                 const animeDelay = 500;
@@ -6032,18 +6027,13 @@ class GameOverScene extends Phaser.Scene {
                             anims[i % anims.length] : 'theEnd';
                         let padding = {
                             top: height * 0.1,
-                            left: width * 0.3,
+                            left: width * 0.4,
                         };
                         switch (i) {
                             case 0:
                                 playerRunning(1);
-
                                 break;
-                            // case 1:
-                            //     // playerRunning(2);
-
-                            //     break;
-                            case 2:
+                            case 1:
                                 playerRunning(2);
                                 await new Promise(resolve => this.time.delayedCall(animeDelay * 4, () => resolve()));
                                 break;
@@ -6055,11 +6045,11 @@ class GameOverScene extends Phaser.Scene {
                                 };
                                 break;
                         };
-
                         await playSubtitle(i, anim, padding);
                         //===進入排名圖
                         if (i === lineLength - 1) {
-                            this.game.destroy(true, false);
+                            // this.game.destroy(false, false);
+                            this.scene.setVisible(false);
                             this.resolve();
                         };
                     };
@@ -6230,11 +6220,11 @@ class GameOverScene extends Phaser.Scene {
                                 Object.assign({
                                     targets: thing,
                                     repeat: -1,
-                                    duration: animeDelay * 2 * (i + 1),
+                                    duration: animeDelay * 3 * (i + 1),
                                 },
                                     animType == 1 ?
                                         { tilePositionX: { start: 0, to: thing.width }, ease: 'Linear', } :
-                                        animType == 2 ? { alpha: { start: 0.4, to: 1 }, ease: 'Bounce', yoyo: true } :
+                                        animType == 2 ? { alpha: { start: 0, to: 1 }, ease: 'Back', yoyo: true } :
                                             animType == 3 ? { scaleX: { start: t => t.scaleX, to: t => t.scaleX * 1.5 }, scaleY: { start: t => t.scaleY, to: t => t.scaleY * 1.2 }, ease: 'Back.easeInOut', yoyo: true } :
                                                 { alpha: { start: 0, to: 1 }, ease: 'Bounce', yoyo: true }
 
@@ -6385,12 +6375,21 @@ class GameOverScene extends Phaser.Scene {
                 this.RexUI.rankingData = this.rankingData;
             };
 
+            //===外部控制phaser物件(結尾排名按鈕)
+            let initPanelControll = () => {
+                $('#gameGroup .Congrats').on('openPanel', (e, type) => {
+                    let panel = this.RexUI.newPanel(type);
+                    panel.once('destroy', () => {
+                        $('#gameOuter').css('pointer-events', 'none');
+                    });
+                });
+            };
+
             initRexUI();
             initCamera();
             initPlayer();
             initScene();
-            // this.game.destroy(true, false);
-            // this.resolve();
+            initPanelControll();
         };
         this.clear ? initEndAnime() : failScene();
     };
@@ -6603,8 +6602,8 @@ class LoadingScene extends Phaser.Scene {
                         bossBar();
                         break;
                     case 4:
+                        const UIDir = assetsDir + 'ui/game/Transitions/';
                         let fail = () => {
-                            const UIDir = assetsDir + 'ui/game/Transitions/';
                             this.load.image('gameOverScene', UIDir + 'gameOverScene.jpg');
                             this.load.image('startButton', UIDir + 'startButton.png');
                         };
@@ -6626,12 +6625,23 @@ class LoadingScene extends Phaser.Scene {
                                     this.load.image('IESDMClogo', dir + 'IESDMClogo.png');
 
                                 };
+                                let linksite = () => {
+                                    // this.load.image('epicenter', UIDir + 'epicenter.png');
+                                    // this.load.image('PSwave', UIDir + 'PSwave.png');
+                                    this.load.image('GDMS', UIDir + 'GDMS.png');
+                                    this.load.image('BATS', UIDir + 'BATS.png');
+                                    this.load.image('TECDC', UIDir + 'TECDC.png');
+                                    this.load.image('READYTW', UIDir + 'READYTW.png');
+                                };
+
+
                                 //===開頭好幾個場景
                                 gameScene.background.forEach((bg, i) =>
                                     background(bg, `scene${i + 1}_`));
 
                                 gameObject();
                                 creditLogo();
+                                linksite();
                             };
                             scene();
                         };
@@ -7008,7 +7018,10 @@ class LoadingScene extends Phaser.Scene {
         let makeProgressBar = () => {
             //==不要讀取條
             if (packNum == 4) {
-                this.load.on('complete', () => this.resolve());
+                this.load.on('complete', () => {
+                    this.resolve();
+                    this.scene.setVisible(false);
+                });
                 return;
             };
             const canvas = gameScene.sys.game.canvas;
@@ -7100,6 +7113,7 @@ class LoadingScene extends Phaser.Scene {
                     this.assetText.destroy();
                     this.dude.destroy();
                     this.resolve();
+                    this.scene.setVisible(false);
                 });
 
 
@@ -7108,9 +7122,15 @@ class LoadingScene extends Phaser.Scene {
             loadEvents();
 
         };
+        let loadingBackground = () => {
+            this.cameras.main.setBackgroundColor('rgb(0,0,0,1)');
+        };
         makeProgressBar();
         gameObjects();
         UI();
+
+        //==黑背景
+        loadingBackground();
     };
     create() { };
     update() { };

@@ -3375,11 +3375,12 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                             break;
                         case 2://==連結
                             const
-                                sites = ['GDMS', 'BATS', 'TECDC'],
+                                sites = ['GDMS', 'BATS', 'TECDC', 'READYTW'],
                                 siteLinks = [
                                     'https://gdmsn.cwb.gov.tw/index.php',
                                     'https://bats.earth.sinica.edu.tw/',
                                     'https://tecdc.earth.sinica.edu.tw/tecdc/',
+                                    'https://www.tfdp.com.tw/cht/index.php?code=list&flag=detail&ids=227&article_id=1082',
                                 ],
                                 siteImgW = config.width * 0.6,
                                 siteImgH = config.height * 0.5;
@@ -4475,7 +4476,7 @@ class RexTextPlayer extends RexPlugins.UI.TextPlayer {
                                 .setVisible();
                         },
                         onProgress: function (char, t) {
-                            let percent = 0.8;//==往左佔時間比例 (t-t0)/percent
+                            let percent = 0.9;//==往左佔時間比例 (t-t0)/percent
                             let pos = char.getData('pos');
                             if (t < percent) {
                                 let p = getLinearP(t, 0, percent);//==0-0.8要換算成0-1
@@ -4508,7 +4509,7 @@ class RexTextPlayer extends RexPlugins.UI.TextPlayer {
                                 .setVisible();
                         },
                         onProgress: function (char, t) {
-                            let percent = 0.7;//==往左佔時間比例 (t-t0)/percent
+                            let percent = 0.9;//==往左佔時間比例 (t-t0)/percent
                             let pos = char.getData('pos');
                             if (t < percent) {
                                 let p = getLinearP(t, 0, percent);//==0-0.8要換算成0-1
@@ -4571,7 +4572,7 @@ class RexTextPlayer extends RexPlugins.UI.TextPlayer {
                                 .setVisible();
                         },
                         onProgress: function (char, t) {
-                            let percent = 0.7;//==往左佔時間比例 (t-t0)/percent
+                            let percent = 0.9;//==往左佔時間比例 (t-t0)/percent
                             let pos = char.getData('pos');
                             if (t < percent) {
                                 let p = getLinearP(t, 0, percent);//==0-0.8要換算成0-1
@@ -4640,7 +4641,7 @@ class RexTextPlayer extends RexPlugins.UI.TextPlayer {
                 // shadowBlur: 3
             },
             wrap: {
-                maxLines: 5,
+                // maxLines: 5,
                 lineHeight: config.height * 0.1,
                 // letterSpacing: 1,
                 padding: { bottom: 10 },

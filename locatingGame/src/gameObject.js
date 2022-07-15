@@ -1802,11 +1802,12 @@ const Doctor = new Phaser.Class({
         this.dialog.setPosition(this.x + this.displayWidth * 1.9, this.y + this.displayHeight * 0.5);
 
         if (!this.talkingCallback) {
-            let inEmergency =
-                player.scene.name === 'defend' &&
-                Phaser.Math.Between(1, 5) === 1;
+            // let inEmergency =
+            //     player.scene.name === 'defend' &&
+            //     Phaser.Math.Between(1, 5) === 1;
+
             // console.debug(player.scene.name === 'defend',)
-            // inEmergency = false;
+            let inEmergency = true;
             if (!inEmergency) {
                 const
                     tipIdx = Phaser.Math.Between(0, this.tipAmount - 1),  //==tip index
@@ -1852,16 +1853,16 @@ const Doctor = new Phaser.Class({
 
             } else {
                 const
-                    eventIdx = !isNaN(this.lastEventIdx) ?
-                        Phaser.Math.RND.pick([...Array(this.emerAmount).keys()].filter(i => i !== this.lastEventIdx)) :
-                        Phaser.Math.Between(0, this.emerAmount - 1),
-                    // eventIdx = 1,
+                    // eventIdx = !isNaN(this.lastEventIdx) ?
+                    //     Phaser.Math.RND.pick([...Array(this.emerAmount).keys()].filter(i => i !== this.lastEventIdx)) :
+                    //     Phaser.Math.Between(0, this.emerAmount - 1),
+                    eventIdx = 0,
                     event = this.emergencies[eventIdx];
                 this.lastEventIdx = eventIdx;//==一樣事件不連續
 
                 const
                     eventDelay = 2000,//事件開始3000
-                    eventDuration = 30 * 1000;//幾秒20
+                    eventDuration = 30 * 1000;//事件幾秒
 
                 let gameScene = scene.game.scene.getScene('gameScene'),
                     blackOut = gameScene.blackOut;
@@ -1962,43 +1963,74 @@ const Doctor = new Phaser.Class({
                 const clearDura = 3000;//通關獎勵時間
                 let eventClear = false;
                 //==事件結束回復原狀
-                this.once('emergEnd', function () {
+                this.once('emergEnd', async function () {
+                    let destroyEventObj = () => {
+                        this.ruleText.destroy();
+                        this.dialog.setAlpha(0);
+                        blackOut.fadeIn(0);
+                        player.emergFlag = false;
+                        scene.sys.updateList.remove(player);
+                        scene.sys.displayList.remove(player);
 
-                    this.ruleText.destroy();
-                    this.dialog.setAlpha(0);
-                    blackOut.fadeIn(0);
-                    player.emergFlag = false;
-                    scene.sys.updateList.remove(player);
-                    scene.sys.displayList.remove(player);
+                        gameScene.sys.updateList.add(player);
+                        gameScene.sys.displayList.add(player);
 
-                    gameScene.sys.updateList.add(player);
-                    gameScene.sys.displayList.add(player);
-
-                    //===防災物品銷燬
-                    dropPlayerItem();
-                    if (gameScene.gameOver.flag) {
-                        emergItems.clear(true, true);
-                        hintTexts.clear(true, true);
-                    }
-                    else
-                        scene.tweens.add({
-                            targets: emergItems.getChildren().concat(hintTexts.getChildren()),
-                            alpha: { start: 1, to: 0 },
-                            duration: 200,
-                            repeat: 0,
-                            ease: 'Linear.Out',
-                            onComplete: () => {
-                                emergItems.clear(true, true);
-                                hintTexts.clear(true, true);
-                            },
+                        //===防災物品銷燬
+                        dropPlayerItem();
+                        if (gameScene.gameOver.flag) {
+                            emergItems.clear(true, true);
+                            hintTexts.clear(true, true);
+                        }
+                        else
+                            scene.tweens.add({
+                                targets: emergItems.getChildren().concat(hintTexts.getChildren()),
+                                alpha: { start: 1, to: 0 },
+                                duration: 200,
+                                repeat: 0,
+                                ease: 'Linear.Out',
+                                onComplete: () => {
+                                    emergItems.clear(true, true);
+                                    hintTexts.clear(true, true);
+                                },
+                            });
+                        // console.debug('emergEnd');
+                        this.behavior = null;
+                        this.dialog.getElement('background')
+                            .setStrokeStyle(2, 0xffffff, 1);
+                        if (!gameScene.gameOver.flag) this.talkingCallback = null;
+                        gameScene.enemy.children.iterate(child => child.behavior = '');
+                        gameScene.sidekick.talkingCallback = false;
+                    };
+                    //==獎勵
+                    if (eventClear) {
+                        let itemAmount = Phaser.Math.Between(2, 5);//==獎勵數量隨機
+                        let itemList = Object.keys(GameItemData)//==消耗品清單
+                            .filter(item => GameItemData[item].type === 0 || GameItemData[item].type === 1);
+                        // console.debug(itemList)
+                        [...Array(itemAmount).keys()].forEach(i => {
+                            let itemIdx = Phaser.Math.Between(0, itemList.length - 1);//獎勵清單中抽一個
+                            let itemPosition = [
+                                Phaser.Math.Between(width * 0.1, width * 0.9),
+                                Phaser.Math.Between(height * 0.5, height * 0.9)
+                            ];
+                            scene.time.delayedCall(i * 650, () =>//==掉落間隔時間
+                                scene.add.existing(new Item(gameScene, itemList[itemIdx], ...itemPosition, true)))
                         });
-                    // console.debug('emergEnd');
-                    this.behavior = null;
-                    this.dialog.getElement('background')
-                        .setStrokeStyle(2, 0xffffff, 1);
-                    if (!gameScene.gameOver.flag) this.talkingCallback = null;
-                    gameScene.enemy.children.iterate(child => child.behavior = '');
-                    gameScene.sidekick.talkingCallback = false;
+
+                        await getDialog(event.clear, 2);
+                    };
+
+                    scene.tweens.add({
+                        targets: this,
+                        alpha: { start: 1, to: 0 },
+                        y: height - this.displayHeight,
+                        duration: 1000,
+                        delay: eventClear ? clearDura : 0,
+                        repeat: 0,
+                        ease: 'Linear',
+                        onComplete: () => destroyEventObj(),
+                    });
+
                 });
 
                 this.talkingCallback = scene.time.delayedCall(eventDelay, () => {
@@ -2054,6 +2086,75 @@ const Doctor = new Phaser.Class({
                                     .setAlpha(0);
 
                                 emergItems.add(table);
+
+                                let goals = ['drop', 'cover', 'hold'];
+                                let clear = goals.map((goal, i) => {
+                                    let string = event.items[goal];
+
+                                    let hint = scene.add.text(width * 0.8, this.ruleText.y + 50 * i, '', {
+                                        fontSize: '24px',
+                                        fill: '#fff',
+                                        stroke: '#000',
+                                        strokeThickness: 1,
+                                        shadow: {
+                                            offsetX: 5,
+                                            offsetY: 5,
+                                            color: '#000',
+                                            blur: 3,
+                                            stroke: true,
+                                            fill: true
+                                        },
+                                        padding: {
+                                            top: 5,
+                                            bottom: 5,
+                                        },
+                                        align: 'right',
+                                    })
+                                        .setOrigin(0, -3)
+                                        .setDepth(1);
+                                    let sign = scene.add.image(hint.x, hint.y, 'emergWrong')
+                                        .setAlpha(0)
+                                        .setOrigin(1, -2)
+                                        .setScale(0.1)
+                                        .setDepth(1);
+
+                                    const showDura = 1000;
+                                    let tween = scene.tweens.add({
+                                        targets: [hint, sign],
+                                        alpha: { start: 0, to: 1 },
+                                        duration: showDura,
+                                        delay: 1500 + i * showDura,
+                                        ease: 'Linear.Out',
+                                        onStart: () => { hint.setText(string) },
+                                    });
+                                    hint.once('destroy', () => tween.remove());
+                                    // hint.sign = sign;
+
+                                    hintTexts.add(hint);
+                                    hintTexts.add(sign);
+                                    return sign;
+                                });
+
+                                scene.events.on('update', () => {
+                                    // console.debug('AAAA', clear);
+                                    clear.forEach((sign, i) => {
+                                        let condition;
+                                        switch (i) {
+                                            case 0:
+                                                condition = player.anims.getName() === 'player_crouch';
+                                                console.debug(player.anims.getName());
+                                                break;
+                                            case 1:
+                                                let table = emergItems.getChildren()[0];
+                                                condition = Math.abs(player.x - table.x) < table.displayWidth / 2;
+                                                break;
+                                            case 2:
+                                                break;
+                                        };
+                                        sign.setTexture(condition ? 'emergCorrect' : 'emergWrong');
+                                    });
+
+                                });
                             };
                             break;
                         case 1://===撿防災物品
@@ -2154,6 +2255,10 @@ const Doctor = new Phaser.Class({
                                                     let text = `${itemHints[emergBag.name]} ${emergBag.itemCount} / ${amount}`;
                                                     emergBag.itemHint.setText(text);
                                                     eventClear = emergBag.itemCount === amount;
+                                                    if (eventClear) {
+                                                        delayedCall.destroy();
+                                                        this.emit('emergEnd');
+                                                    };
                                                 },
                                             });
 
@@ -2168,37 +2273,11 @@ const Doctor = new Phaser.Class({
                     eventAction();
 
                     //==事件結束
-                    scene.time.delayedCall(eventDuration, async () => {
-                        //==獎勵
-                        if (eventClear) {
-                            let itemAmount = Phaser.Math.Between(2, 5);//==獎勵數量隨機
-                            let itemList = Object.keys(GameItemData)//==消耗品清單
-                                .filter(item => GameItemData[item].type === 0 || GameItemData[item].type === 1);
-                            // console.debug(itemList)
-                            [...Array(itemAmount).keys()].forEach(i => {
-                                let itemIdx = Phaser.Math.Between(0, itemList.length - 1);//獎勵清單中抽一個
-                                let itemPosition = [
-                                    Phaser.Math.Between(width * 0.1, width * 0.9),
-                                    Phaser.Math.Between(height * 0.5, height * 0.9)
-                                ];
-                                scene.time.delayedCall(i * 650, () =>//==掉落間隔時間
-                                    scene.add.existing(new Item(gameScene, itemList[itemIdx], ...itemPosition, true)))
-                            });
-
-                            await getDialog(event.clear, 2);
-                        };
-
-                        scene.tweens.add({
-                            targets: this,
-                            alpha: { start: 1, to: 0 },
-                            y: height - this.displayHeight,
-                            duration: 1000,
-                            delay: eventClear ? clearDura : 0,
-                            repeat: 0,
-                            ease: 'Linear',
-                            onComplete: () => this.emit('emergEnd'),
-                        });
+                    let delayedCall = scene.time.delayedCall(eventDuration, () => {
+                        this.emit('emergEnd');
                     }, [], scene);
+                    // console.debug(delayedCall)
+                    // delayedCall.destroy();
 
                     //==助手暫停說話
                     let sidekick = gameScene.sidekick;
@@ -2257,6 +2336,7 @@ const Doctor = new Phaser.Class({
                                 let text = event.lines[i];
                                 let lineType = i === 0 ? 0 :
                                     i === rulesCount - 1 ? 2 : 1;
+                                if (eventClear) break;
                                 await getDialog(text, lineType);
                             };
                         },
@@ -3060,9 +3140,9 @@ class RexScrollablePanel extends RexPlugins.UI.ScrollablePanel {
                 break;
         };
 
-        const COLOR_PRIMARY = 0x4e342e;
-        const COLOR_LIGHT = 0x7b5e57;
-        const COLOR_DARK = 0x260e04;
+        const COLOR_PRIMARY = 0x00527a;
+        const COLOR_LIGHT = 0x007bff;
+        const COLOR_DARK = 0x003652;
         const padding = {
             left: 3,
             right: 3,

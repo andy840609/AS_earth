@@ -495,7 +495,7 @@ function locatingGame() {
                     // };
                     initMap();
                     //==test
-                    // gameStart('defend');
+                    gameStart('defend');
                     // gameStart('dig');
                     // initEndScene(true);
                     //==test
@@ -603,7 +603,7 @@ function locatingGame() {
                         endMenu.find('.buttonGroup>button').each(function (i) {
                             let button = $(this);
                             button.css('top', height * (0.2 + 0.1 * i));
-                            setTimeout(() => button.show(), 5400 + i * 1000);//==5400是動畫時間
+                            setTimeout(() => button.show(), 5000 + i * 300);//==5000是動畫時間
                         });
 
                         endMenu.find('#fbButton')
@@ -3707,7 +3707,7 @@ function locatingGame() {
                                         .attr("y", bossY + 15)
                                         .transition().duration(bossT3).delay(bossT2)
                                         .ease(d3.easeCubicIn)
-                                        .attr("y", -height);
+                                        .attr("y", -height * 1.5);
 
 
                                     if (!replay) {

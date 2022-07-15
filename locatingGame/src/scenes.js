@@ -6045,9 +6045,10 @@ class GameOverScene extends Phaser.Scene {
                                 };
                                 break;
                         };
+                        // this.resolve();
                         await playSubtitle(i, anim, padding);
                         //===進入排名圖
-                        if (i === lineLength - 1) {
+                        if (i === lineLength - 1) {//lineLength - 1
                             // this.game.destroy(false, false);
                             this.scene.setVisible(false);
                             this.resolve();
@@ -6466,7 +6467,6 @@ class LoadingScene extends Phaser.Scene {
                             this.load.image('statsStar', dir + 'star.png');
 
                         };
-
                         start();
                         scene();
 
@@ -6645,7 +6645,7 @@ class LoadingScene extends Phaser.Scene {
                             };
                             scene();
                         };
-                        console.debug(gameScene)
+                        // console.debug(gameScene);
                         gameScene.clear ? clear() : fail();
                         break;
                 };
@@ -6866,6 +6866,11 @@ class LoadingScene extends Phaser.Scene {
                     this.load.image('emergBag', dir + 'emergBag.png');
                     emergencyKitItems.forEach(item =>
                         this.load.image(item, dir + item + '.png'));
+
+                    //==任務目標
+                    const UIdir = assetsDir + 'ui/game/';
+                    this.load.image('emergCorrect', UIdir + 'correct.png');
+                    this.load.image('emergWrong', UIdir + 'wrong.png');
                 };
                 enemy();
                 emergence();

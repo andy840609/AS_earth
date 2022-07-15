@@ -533,7 +533,7 @@ svg {
 .buttonGroup>button {
     opacity: 0;
     position: absolute;
-    animation: showButton 1.5s ease-in 0s forwards;
+    animation: showButton 1s ease-in 0s forwards;
     display: none;
     width: 210px;
 }

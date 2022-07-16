@@ -2061,10 +2061,11 @@ const Doctor = new Phaser.Class({
                                         loop: hurtTimes,
                                         duration: hurtDura,
                                         onLoop: () => {
-                                            let table = emergItems.getChildren()[0];
-                                            let takeShelter =
-                                                (player.anims.getName() === 'player_crouch') &&//==蹲下
-                                                (Math.abs(player.x - table.x) < table.displayWidth / 2);//==在桌子附近
+                                            let takeShelter = hintTexts.clear[2];
+                                            // console.debug(hintTexts.clear);
+                                            // let table = emergItems.getChildren()[0];
+                                            // (player.anims.getName() === 'player_crouch') &&//==蹲下
+                                            // (Math.abs(player.x - table.x) < table.displayWidth / 2);//==在桌子附近
 
                                             if (!takeShelter) {
                                                 player.statsChangeHandler({ HP: -hurtHp }, scene);
@@ -2135,6 +2136,7 @@ const Doctor = new Phaser.Class({
                                     return sign;
                                 });
 
+                                hintTexts.clear = [];
                                 scene.events.on('update', () => {
                                     // console.debug('AAAA', clear);
                                     clear.forEach((sign, i) => {
@@ -2142,15 +2144,17 @@ const Doctor = new Phaser.Class({
                                         switch (i) {
                                             case 0:
                                                 condition = player.anims.getName() === 'player_crouch';
-                                                console.debug(player.anims.getName());
+                                                // console.debug(player.anims.getName());
                                                 break;
                                             case 1:
                                                 let table = emergItems.getChildren()[0];
                                                 condition = Math.abs(player.x - table.x) < table.displayWidth / 2;
                                                 break;
                                             case 2:
+                                                condition = hintTexts.clear[0] && hintTexts.clear[1];
                                                 break;
                                         };
+                                        hintTexts.clear[i] = condition;
                                         sign.setTexture(condition ? 'emergCorrect' : 'emergWrong');
                                     });
 

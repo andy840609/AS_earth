@@ -41,7 +41,7 @@ function locatingGame() {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 300 },
-                    debug: true,
+                    // debug: true,
                 },
             },
             dom: {//==for rexUI:rexTextEdit
@@ -471,31 +471,31 @@ function locatingGame() {
                     GameData.localeJSON = await getLanguageJSON();
                     GameData.getLanguageJSON = getLanguageJSON;
 
-                    // //==test
-                    // gameDisplay(true);
-                    // let doneTutorial = await new Promise((resolve, reject) => {
-                    //     const config = Object.assign(getPhaserConfig(width, height), {
-                    //         scene: new GameStartScene(GameData, {
-                    //             getWaveImg: getWaveImg,
-                    //             tutorialData: data.tutorialData,
-                    //             resolve: resolve,
-                    //             getLanguageJSON: getLanguageJSON,
-                    //             rankingData: rankingData,//排行榜
-                    //         }),
-                    //     });
-                    //     new Phaser.Game(config);
-                    // });
-                    // // console.debug(doneTutorial);
-                    // gameDisplay(false);
-                    // //==test
+                    //==test
+                    gameDisplay(true);
+                    let doneTutorial = await new Promise((resolve, reject) => {
+                        const config = Object.assign(getPhaserConfig(width, height), {
+                            scene: new GameStartScene(GameData, {
+                                getWaveImg: getWaveImg,
+                                tutorialData: data.tutorialData,
+                                resolve: resolve,
+                                getLanguageJSON: getLanguageJSON,
+                                rankingData: rankingData,//排行榜
+                            }),
+                        });
+                        new Phaser.Game(config);
+                    });
+                    // console.debug(doneTutorial);
+                    gameDisplay(false);
+                    //==test
 
-                    // if (doneTutorial) {//doneTutorial     
-                    //     const gainItems = [['pan', 0], ['bread', 5], ['bone', 3]];
-                    //     hintTextAnime('itemGain1', gainItems);
-                    // };
+                    if (doneTutorial) {//doneTutorial     
+                        const gainItems = [['pan', 0], ['bread', 5], ['bone', 3]];
+                        hintTextAnime('itemGain1', gainItems);
+                    };
                     initMap();
                     //==test
-                    gameStart('defend');
+                    // gameStart('defend');
                     // gameStart('dig');
                     // initEndScene(true);
                     //==test
@@ -1748,7 +1748,7 @@ function locatingGame() {
                                 })
                                 .on('click', function (e) {
                                     //==速度參數要完成兩站才能調整
-                                    // if (this.id == 'velocityChart' && !GameData.stationClear.chartUnlock) return;
+                                    if (this.id == 'velocityChart' && !GameData.stationClear.chartUnlock) return;
 
                                     let button = $(this);
                                     let ckick = button.hasClass('clicked');
@@ -1891,7 +1891,7 @@ function locatingGame() {
 
                     mapObj
                         .on('click', function (e) {
-                            // if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
+                            if (stopClickFlag || !GameData.stationClear.chartUnlock) return;
                             let lat = e.latlng.lat,
                                 lng = e.latlng.lng
 

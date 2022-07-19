@@ -6001,10 +6001,10 @@ class GameOverScene extends Phaser.Scene {
                         animation: animes,
                         images: {
                             'IESlogo': {
-                                height: height * 0.3,
+                                height: height * 0.2,
                             },
                             'IESDMClogo': {
-                                height: height * 0.3,
+                                height: height * 0.2,
                             }
                         }
                     }).setName('subtitle');

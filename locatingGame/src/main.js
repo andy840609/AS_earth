@@ -209,7 +209,7 @@ function locatingGame() {
                         timeUse: parseFloat(col[1]),
                         score: parseInt(col[2])
                     };
-                });
+                }).filter(d => !isNaN(d.timeUse) && (d.player !== ''));
                 // console.debug(data);
                 resolve(data);
             })
@@ -797,7 +797,7 @@ function locatingGame() {
                     // console.debug(geoJSON);
                 };
                 async function addStation() {
-                    console.debug(data);
+                    // console.debug(data);
                     const backgroundArr = Object.keys(BackGroundResources.defend);
                     const enemyArr = Object.keys(GameObjectStats.creature).filter(c => c != 'boss' && c != 'zombie');
                     let copyEnemyArr = [...enemyArr].sort(() => 0.5 - Math.random());//===確保每種敵人出現一次

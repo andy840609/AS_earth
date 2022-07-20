@@ -59,20 +59,10 @@
     color: rgba(0, 0, 0, 0.658);
 }
 
-/* div.tooltip {
-    position: absolute;
-    text-align: center;
-    width: 150px;
-    height: 115px;
-    padding: 40px;
-    font: 16px sans-serif;
-    color: white;
-    font-weight: 500;
-    background: black;
-    border: 0px;
-    border-radius: 4px;
-    pointer-events: none;
-} */
+.toggle-menu hr {
+    margin:5px 0px;
+    border:rgb(197, 197, 197) 1px solid;
+}
 
 .grid .tick {
     stroke: lightgrey;
@@ -190,9 +180,53 @@ a {
 
 #tooltip {
     position: absolute;
-    z-index: 999;
+    z-index: 1300;
     background-color: #D3D3D3;
     padding: 20px 20px 20px 20px;
     opacity: .9;
     display: none;
 }
+
+
+/* 圖表字跟波形樣式 */
+#charts svg .tick{
+    font-size: 1rem;
+}
+
+#charts svg .axis_name,#charts svg .title>text{
+    font-size: 2rem;
+}
+
+#charts svg .path{
+    font-size: 2rem;
+}
+
+/* 地圖 */
+#stationMap{
+    height: 60vh;
+}
+
+img.jumpingIcon {
+    animation: yo-yo 0.5s ease-in-out 0s infinite normal;
+}
+
+  @keyframes yo-yo {
+    0% {
+      top: 0px;
+    }
+    50% {
+        top:-10px;
+    }
+    100% {
+        top: 0px;
+    }
+  }
+/* 測站列表 */
+#stationtable_wrapper>div:last-child>div{
+    flex: 0 0 100%;
+    max-width: 100%;
+}
+#stationtable_wrapper>div:last-child>div:last-child .pagination{
+    flex-wrap:wrap;
+}
+

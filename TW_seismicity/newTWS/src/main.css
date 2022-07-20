@@ -1,0 +1,26 @@
+#Map {
+    height: 90vh;
+}
+
+.animeMarker {
+    stroke: white;
+    fill-opacity: 1;
+    opacity: 0;
+    animation: showMarker 1s ease-in 0s forwards;
+    display: none;
+}
+
+/* fb Button动画 */
+@keyframes showMarker {
+    0% {
+        opacity: 0;
+    }
+
+    60% {
+        opacity: 0.3;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}

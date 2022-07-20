@@ -167,7 +167,6 @@ export default function define(runtime, observer) {
   main.variable().define("mutable date", ["Mutable", "initial date"], (M, _) => new M(_));
   main.variable(observer("date")).define("date", ["mutable date"], _ => _.generator);
 
-
   var timeOuts = [];
   var Refresh = true;
   var restart = false;
@@ -186,7 +185,6 @@ export default function define(runtime, observer) {
     const range2 = [3, 12];//[3, 8]
     //=================================================================================
 
-
     svg.append("path")
       .datum(topojson.merge(tw, tw.objects.layer1.geometries))
       .attr("fill", "#ADADAD")
@@ -198,8 +196,6 @@ export default function define(runtime, observer) {
       .attr("stroke", "white")
       .attr("stroke-linejoin", "round")
       .attr("d", path);
-
-
 
     const ML_domain = [data[0].ML, data[0].ML];
     depth_domain = [data[0].depth, data[0].depth];
@@ -448,7 +444,7 @@ export default function define(runtime, observer) {
             .duration(delay.range()[1] - UserDragTime - TimebeenRun)
             .tween("date", () => {
               const i = d3.interpolateDate($0.value, delay.domain()[1]);
-              // window.alert(d3.timeDay(data[0].date));       
+              // window.alert(d3.timeDay(data[0].date));
               return t => $0.value = d3.timeMinute(i(t));
             });
 

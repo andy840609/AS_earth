@@ -388,4 +388,5 @@ function QSISchart() {
 
         return chart;
     };
+    return chart;
 };

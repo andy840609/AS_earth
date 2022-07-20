@@ -14,8 +14,9 @@ function waveXdist() {
         let staDist_paths = value.dist;
         let Taxis_paths = value.Taxis;
         let eventlist_paths = value.eventlist;
+        let staCoord_paths = value.sta_coord;
 
-        const dataKey = ['network', 'station', 'channel', 'data', 'dist', 'az'];
+        const dataKey = ['network', 'station', 'channel', 'data', 'dist', 'az', 'coord'];
         //==test
         const stationIndex = 7;
         const channelIndex = 9;
@@ -71,7 +72,7 @@ function waveXdist() {
 
         };
 
-        //==需要以下4種檔案
+        //==需要以下檔案
         //==1.振幅y 檔案可能有多個
         async function getXYData() {
             // const dataKey_xy = ['time', 'amplipude'];
@@ -273,26 +274,29 @@ function waveXdist() {
         //==2.az、3.dist 都是單個檔案
         const dataKey_staAz = [dataKey[1], dataKey[5]];
         const dataKey_staDist = [dataKey[1], dataKey[4]];
+        const dataKey_staCoord = [dataKey[1], dataKey[6]];
         let azPromise = readTextFile(staAz_paths, dataKey_staAz);
         let distPromise = readTextFile(staDist_paths, dataKey_staDist);
 
         //==4.時間x
-        //4種檔案都讀取完才能整理成圖表要的完整資料
         const dataKey_Taxis = ['time'];
         let TaxisPromise = readTextFile(Taxis_paths, dataKey_Taxis);
 
-        //==eventlist.txt
-        let eventlistPromise = readTextFile(eventlist_paths, ['date', 'time', 'lat', 'lng', 'depth', 'ML']);
+        //==5.eventlist.txt
+        let eventlistPromise = readTextFile(eventlist_paths, ['date', 'time', 'lat', 'lng', 'depth', 'ML', 'catalog']);
 
+        //==6.sta_coord.txt
+        let staCoordPromise = readTextFile(staCoord_paths, ['station', 'lat', 'lng']);
 
-
-        data = Promise.all([getXYData(), azPromise, distPromise, TaxisPromise, eventlistPromise]).then(success => {
+        //檔案都讀取完才能整理成圖表要的完整資料
+        data = Promise.all([getXYData(), azPromise, distPromise, TaxisPromise, eventlistPromise, staCoordPromise]).then(success => {
             // console.debug(success);
             let xyData = success[0];
             let sta_az = success[1];
             let sta_dist = success[2];
             let Taxis = success[3];
             let eventlist = success[4];
+            let sta_coord = success[5];
 
             console.log("xyData = ");
             console.log(xyData);
@@ -302,10 +306,16 @@ function waveXdist() {
             console.log(sta_dist);
             console.log("Taxis = ");
             console.log(Taxis);
+            console.log("eventlist = ");
+            console.log(eventlist);
+            console.log("sta_coord = ");
+            console.log(sta_coord);
 
-            //將每個測站資料加上az、dist,並push到各cha分組
+
+            //將每個測站資料加上az、dist、coord,並push到各cha分組
             const distData = sta_dist.data;
             const azData = sta_az.data;
+            const coordData = sta_coord.data;
             const networkKey = Object.keys(xyData);
 
 
@@ -338,6 +348,14 @@ function waveXdist() {
                         else if (i == azData.length - 1)
                             obj[dataKey_staAz[1]] = undefined;
 
+                    for (let i = 0; i < coordData.length; i++)
+                        if (coordData[i][dataKey_staCoord[0]] == sta) {
+                            obj[dataKey_staCoord[1]] = [coordData[i].lat, coordData[i].lng];
+                            break;
+                        }
+                        else if (i == coordData.length - 1)
+                            obj[dataKey_staCoord[1]] = undefined;
+
                     //==沒有同時有az.dist的資料不要放入
                     if (!isNaN(obj[dataKey_staDist[1]]) && !isNaN(obj[dataKey_staAz[1]]))
                         channelData[cha].push(obj);
@@ -354,7 +372,7 @@ function waveXdist() {
 
             Object.assign(compositeData, eventlist.data[0]);
             // console.debug(eventlist.data[0]);
-            // console.debug(compositeData);
+            console.debug(compositeData);
 
             return compositeData;
         });
@@ -369,7 +387,7 @@ function waveXdist() {
         return chart;
     };
 
-    function chart() {
+    function chart(catalog_get = null) {
         const chartContainerJQ = $(selector);
         const chartContainerD3 = d3.select(selector);
 
@@ -420,7 +438,7 @@ function waveXdist() {
                     <label for="catalog" class="col-form-label col-4" >Catalog</label>
                     <div class="form-group col-8">
                          <select class="form-control" id="catalog">
-                     
+                            <option disabled selected value> -- select an option -- </option>
                          </select>
                     </div>
                 </div>
@@ -628,7 +646,7 @@ function waveXdist() {
                     <div id="charts"></div>          
                  
                     <div id="outerdiv"
-                        style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:10;width:100%;height:100%;display:none;">
+                        style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:1200;width:100%;height:100%;display:none;">
                         <div id="innerdiv" style=" background-color: rgb(255, 255, 255);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div>                      
                     </div>
 
@@ -642,7 +660,10 @@ function waveXdist() {
                 </div> 
                 </form>
 
-               
+                <div id='stationInfo' class="row">
+                    <div id='stationMap' class="col-8"></div> 
+                    <div id='stationList' class="col-4"></div> 
+               </div> 
                 `);
             //================dropdown-menu內元素被點擊不關閉menu
 
@@ -661,7 +682,8 @@ function waveXdist() {
 
             //================
             let mousedownFlag = false;
-            $(window)
+            let windowJQ = $(window);
+            windowJQ
                 //==用來關閉dropdown menu
                 .on('click', e => {
                     // console.debug(e.target);
@@ -671,6 +693,19 @@ function waveXdist() {
                 //==用來判斷range是否拖曳中(不要關dropdown)
                 .on('mousedown', e => mousedownFlag = true)
                 .on('mouseup', e => mousedownFlag = false);
+            // .on('resize', e => {
+            //     let chartW = windowJQ.width() * 0.8;
+            //     let chartH = windowJQ.height() * 0.6;
+
+            //     console.debug(chartW, chartH);
+            //     chartContainerJQ.find("#chart1 svg")
+            //         .attr({
+            //             viewBox: `0 0 ${chartW} ${chartH}`,
+            //             width: chartW + 'px',
+            //             height: chartH + 'px',
+            //         });
+
+            // });
 
 
             //================station list數量變畫會自動捲動（還沒找到解法）
@@ -795,10 +830,6 @@ function waveXdist() {
 
 
             //====================catalog
-
-
-            // readData(getPaths(catalogSelectValue));
-
             function getFileData() {
                 //===get floder name(catalog) to make option
                 let catalogArr;
@@ -808,7 +839,7 @@ function waveXdist() {
                 // const staAz_fileName = 'sta_az.txt';
                 // const staDist_fileName = 'sta_dist.txt';
 
-                const pathsKey = ['data', 'az', 'dist', 'Taxis', 'eventlist'];
+                const pathsKey = ['data', 'az', 'dist', 'Taxis', 'eventlist', 'sta_coord'];
                 const fileExtension = '.txt';
 
                 $.ajax({
@@ -856,8 +887,12 @@ function waveXdist() {
                     return pathObj;
                 };
 
-                // console.debug(catalogArr.length);
-                let catalogSelectValue = catalogArr.length - 1;
+                // console.debug(catalogArr);
+                // console.debug(catalogArr.findIndex(obj => obj.catalog == catalog_get));
+
+                let catalogSelectValue = catalog_get ?
+                    catalogArr.findIndex(obj => obj.catalog === catalog_get) :
+                    undefined;
                 chartContainerJQ.find('#catalog')
                     .val(catalogSelectValue)  //===show first data charts when onload
                     .change(e => {
@@ -866,14 +901,15 @@ function waveXdist() {
                         let paths = getPaths(e.target.value);
                         chart.dataPath(paths)();
                     });
-                chart.dataPath(getPaths(catalogSelectValue));
+                catalogSelectValue ?
+                    chart.dataPath(getPaths(catalogSelectValue)) :
+                    loadingEffect('hide');
             };
 
             getFileData();
         };
         function WD_Charts(xAxisScale = 'linear', xAxisName = 'dist') {
             console.debug(data);
-
             // console.debug(xAxisName)
             let colorPalette = {};//to fixed color for each station
             const dataKeys = data.column;//0: "network", 1: "station", 2: "channel", 3: "data", 4: "dist", 5:"az"
@@ -889,8 +925,7 @@ function waveXdist() {
                 groupData[net] = tmp;
             });
             const timeArr = data.timeArr;
-            console.debug(groupData);
-
+            // console.debug(groupData);
 
             let referenceTime = `${data.date}T${data.time}`,
                 title = `${referenceTime}(UTC)  M${data.ML}`;
@@ -903,8 +938,6 @@ function waveXdist() {
                         referenceTime.substring(0, referenceTime.lastIndexOf('.')) : referenceTime) + " (UTC)";
             };
 
-
-
             const getMargin = (yAxisDomain = null) => {
                 // console.debug(yAxisDomain);
                 let top = 30, right = 30, bottom = 70, left = 50;
@@ -912,7 +945,7 @@ function waveXdist() {
                     let yAxisMaxTick = parseInt(Math.max(...yAxisDomain.map(domain => Math.abs(domain))));
                     let tickLength = yAxisMaxTick.toString().length;
                     // console.debug(tickLength);
-                    left = tickLength >= 7 ? 60 : tickLength >= 5 ? 50 : 45;
+                    left = (tickLength >= 7 ? 60 : tickLength >= 5 ? 50 : 45) + 40;
                 }
                 return { top: top, right: right, bottom: bottom, left: left };
             };
@@ -921,13 +954,24 @@ function waveXdist() {
                 if (colorPalette[key])
                     color = colorPalette[key];
                 else {
-                    let data = newDataObj.newData;
-                    let index = undefined;
-                    for (i = 0; i < data.length; i++)
-                        if (data[i][dataKeys[1]] == key) {
-                            index = i;
-                            break;
-                        }
+                    // let data = newDataObj.newData;
+                    // let index = data.findIndex(d => d[dataKeys[1]] === key);
+                    // let index = undefined;
+                    // for (let i = 0; i < data.length; i++)
+                    //     if (data[i][dataKeys[1]] == key) {
+                    //         index = i;
+                    //         break;
+                    //     };
+                    // data[index].colorIdx = index;
+
+                    let networkArr = newDataObj.network_selectArr;
+                    let channelGroup = newDataObj.channel_selectGroup;
+
+                    //==每次選net顏色都重置，不管net怎麼選都要按照距離6色輪流
+                    let data = [].concat(...networkArr.map(net => groupData[net][channelGroup]))
+                        .sort((a, b) => a[dataKeys[4]] - b[dataKeys[4]]);
+                    let index = data.findIndex(d => d[dataKeys[1]] === key);
+                    // console.debug(data);
 
                     switch (index % 6) {
                         case 0:
@@ -951,10 +995,11 @@ function waveXdist() {
                         default:
                             color = "steelblue";
                             break;
-                    }
+                    };
                     colorPalette[key] = color;
-                }
+                };
                 // console.debug(colorPalette);
+
                 return color;
             };
             const getString = (key) => {
@@ -981,9 +1026,12 @@ function waveXdist() {
                 }
                 return { keyName: keyName, keyUnit: keyUnit };
             };
+            const width = window.innerWidth;
+            const height = window.innerHeight * 0.95;
+            // const width = 800;
+            // const height = 500;
+            // console.debug(width, height)
 
-            const width = 800;
-            const height = 500;
             const svg = d3.create("svg")
                 .attr("viewBox", [0, 0, width, height]);
             const xAxis = svg.append("g").attr("class", "xAxis");
@@ -1108,6 +1156,10 @@ function waveXdist() {
 
                             }
                         });
+
+                        //==更新下面地圖
+                        let chartData = newDataObj.newData.filter(d => !unselected_band.includes(d[dataKeys[1]]));
+                        chartContainerJQ.find('#stationtable').trigger('updateData', [chartData, colorPalette]);
 
                     });
             };
@@ -1565,7 +1617,7 @@ function waveXdist() {
                                         .join("path")
                                         .style("mix-blend-mode", "normal")
                                         .attr("fill", "none")
-                                        .attr("stroke-width", 1)
+                                        .attr("stroke-width", 2)
                                         .attr("stroke-linejoin", "round")
                                         .attr("stroke-linecap", "round")
                                         .attr("stroke-opacity", opacity)
@@ -1601,6 +1653,10 @@ function waveXdist() {
                     updateAxis();
                     updatePaths();
                     refreshText();
+
+                    //==更新下面地圖
+                    let chartData = newDataObj.newData.filter(d => !unselected_band.includes(d[dataKeys[1]]));
+                    chartContainerJQ.find('#stationtable').trigger('updateData', [chartData, colorPalette]);
                 };
 
                 if (!newDataObj) {
@@ -1619,7 +1675,6 @@ function waveXdist() {
                 render();
                 loadingEffect('hide');
             };
-
 
             updateChart();
 
@@ -1852,7 +1907,6 @@ function waveXdist() {
 
                 //===select Mode controll
                 let dragBehavior, mouseMoveBehavior;
-
 
                 function pathEvent() {
 
@@ -2158,6 +2212,7 @@ function waveXdist() {
                                 xAxis_domainObj: xAxis_domainObj,
                                 network_selectArr: network_selectArr
                             });
+                            colorPalette = {};
                             updateChart();
                             updateStaionDropDownMenu();
 
@@ -2243,7 +2298,11 @@ function waveXdist() {
                                                     //===同步ckb
                                                     let stationCheckbox = staionDropDownMenu.selectAll(`input[value =${thisStation}]`);
                                                     stationCheckbox.property('checked', show);
-                                                }
+
+                                                    //==更新下面地圖
+                                                    let chartData = newDataObj.newData.filter(d => !unselected_band.includes(d[dataKeys[1]]));
+                                                    chartContainerJQ.find('#stationtable').trigger('updateData', [chartData, colorPalette]);
+                                                };
                                                 updateHandler(action);
                                             });
 
@@ -2608,6 +2667,280 @@ function waveXdist() {
 
             return svg.node();
         };
+        function stationInfo() {
+            const highlightPath = (station, focus = true) => {
+                //==除了選中都隱藏
+                let paths = chartContainerJQ.find("#chart1 svg>.paths").children();
+
+                focus ?
+                    paths.filter(function () {
+                        let g = $(this);
+                        return g[0].__data__.station !== station;
+                    }).css('opacity', 0.2) :
+                    paths.css('opacity', '');
+            };
+            let initMap = () => {
+                const getIconSrc = (type = 1, width, color = 'black') => {
+                    let svg;
+
+                    if (type)//測站三角  倒三角在transform加：rotate(180 640.036 564.147) 
+                        svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${width}" viewBox="0 0 1280 1128" preserveAspectRatio="xMidYMid meet" version="1.0"> <metadata>Created by potrace 1.15, written by Peter Selinger 2001-2017</metadata> <g> <title>Layer 1</title> <g fill="#000000" transform="translate(0 1128) scale(0.1 -0.1)"> <path d="m6303,11266c-76,-18 -188,-75 -247,-127c-24,-21 -64,-69 -89,-106c-25,-38 -558,-957 -1185,-2043c-627,-1086 -1946,-3372 -2932,-5080c-1166,-2019 -1802,-3129 -1818,-3175c-103,-293 59,-608 368,-712c53,-17 251,-18 5978,-21c5276,-2 5931,0 5989,13c152,35 295,145 366,281c91,175 89,350 -7,529c-38,72 -450,793 -3096,5415c-433,756 -1225,2140 -1760,3075c-535,935 -990,1723 -1012,1752c-64,84 -169,155 -277,189c-69,22 -205,26 -278,10zm261,-196c118,-45 127,-57 534,-770c355,-620 1584,-2769 3202,-5595c422,-737 1108,-1936 1525,-2665c470,-821 766,-1348 778,-1385c53,-169 -39,-362 -211,-443l-57,-27l-5885,-3c-3750,-1 -5908,1 -5948,7c-86,13 -147,45 -213,111c-75,74 -102,144 -103,260c0,66 4,95 21,132c12,26 974,1698 2139,3715c1165,2017 2487,4309 2940,5093c552,957 837,1442 868,1477c48,53 128,100 195,114c55,12 151,2 215,-21z"/> <path fill="${color}" opacity="0.9" d="m6368,10911c-59,-19 -98,-54 -142,-124c-86,-140 -5839,-10113 -5854,-10147c-9,-22 -13,-55 -10,-91c5,-73 40,-128 105,-166l48,-28l5865,-3c4394,-2 5876,0 5907,9c96,26 160,119 151,222c-5,59 238,-370 -2573,4542c-532,930 -1476,2579 -2097,3665c-621,1086 -1145,1998 -1164,2026c-19,28 -52,60 -74,73c-44,25 -121,35 -162,22z"/> </g> </g> </svg>`
+                    else//震央圖
+                        svg = `<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" id="svg2" version="1.1" inkscape:version="0.91 r13725" width="302.83594" height="302.83594" viewBox="0 0 302.83594 302.83594" sodipodi:docname="Epicenter_map_sign_by_Juhele.svg" inkscape:export-filename="/media/sdb1/_GRAFIKA/2017_OCAL/Missile_camera/Epicenter_map_sign_by_Juhele.png" inkscape:export-xdpi="152.16159" inkscape:export-ydpi="152.16159">
+                        <title id="title7791">Epicenter map symbol / sign</title>
+                        <metadata id="metadata8">
+                          <rdf:RDF>
+                            <cc:Work rdf:about="">
+                              <dc:format>image/svg+xml</dc:format>
+                              <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+                              <dc:title>Epicenter map symbol / sign</dc:title>
+                              <dc:subject>
+                                <rdf:Bag>
+                                  <rdf:li>earthquake</rdf:li>
+                                  <rdf:li>disaster</rdf:li>
+                                  <rdf:li>epicenter</rdf:li>
+                                  <rdf:li>epicentre</rdf:li>
+                                  <rdf:li>circle</rdf:li>
+                                  <rdf:li>concentric</rdf:li>
+                                  <rdf:li>mark</rdf:li>
+                                  <rdf:li>symbol</rdf:li>
+                                  <rdf:li>map</rdf:li>
+                                  <rdf:li>mapping</rdf:li>
+                                </rdf:Bag>
+                              </dc:subject>
+                              <dc:description>Simple concentric circles map sign used to mark an earthquake epicenter</dc:description>
+                              <cc:license rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/"/>
+                              <dc:creator>
+                                <cc:Agent>
+                                  <dc:title>Jan Helebrant</dc:title>
+                                </cc:Agent>
+                              </dc:creator>
+                              <dc:rights>
+                                <cc:Agent>
+                                  <dc:title>Jan Helebrant</dc:title>
+                                </cc:Agent>
+                              </dc:rights>
+                              <dc:publisher>
+                                <cc:Agent>
+                                  <dc:title>Jan Helebrant</dc:title>
+                                </cc:Agent>
+                              </dc:publisher>
+                            </cc:Work>
+                            <cc:License rdf:about="http://creativecommons.org/publicdomain/zero/1.0/">
+                              <cc:permits rdf:resource="http://creativecommons.org/ns#Reproduction"/>
+                              <cc:permits rdf:resource="http://creativecommons.org/ns#Distribution"/>
+                              <cc:permits rdf:resource="http://creativecommons.org/ns#DerivativeWorks"/>
+                            </cc:License>
+                          </rdf:RDF>
+                        </metadata>
+                        <defs id="defs6"/>
+                        <sodipodi:namedview pagecolor="#ffffff" bordercolor="#666666" borderopacity="1" objecttolerance="10" gridtolerance="10" guidetolerance="10" inkscape:pageopacity="0" inkscape:pageshadow="2" inkscape:window-width="1920" inkscape:window-height="1125" id="namedview4" showgrid="false" inkscape:zoom="0.71830983" inkscape:cx="-72.287923" inkscape:cy="188.71783" inkscape:window-x="0" inkscape:window-y="0" inkscape:window-maximized="1" inkscape:current-layer="svg2" fit-margin-top="5" fit-margin-left="5" fit-margin-right="5" fit-margin-bottom="5" showguides="false"/>
+                        <g id="g7783" transform="translate(-104.58203,-104.58203)">
+                          <path id="path6947" d="m 271,256 a 15,15 0 0 1 -15,15 15,15 0 0 1 -15,-15 15,15 0 0 1 15,-15 15,15 0 0 1 15,15 z" style="opacity:1;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:8;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" inkscape:connector-curvature="0"/>
+                          <path inkscape:connector-curvature="0" id="circle7761" d="m 256,139.28906 c -64.43944,0 -116.71094,52.2715 -116.71094,116.71094 0,64.43944 52.2715,116.71094 116.71094,116.71094 64.43944,0 116.71094,-52.2715 116.71094,-116.71094 0,-64.43944 -52.2715,-116.71094 -116.71094,-116.71094 z m 0,3 c 62.81812,0 113.71094,50.89282 113.71094,113.71094 0,62.81812 -50.89282,113.71094 -113.71094,113.71094 -62.81812,0 -113.71094,-50.89282 -113.71094,-113.71094 0,-62.81812 50.89282,-113.71094 113.71094,-113.71094 z" style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:medium;line-height:normal;font-family:sans-serif;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:#000000;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;baseline-shift:baseline;text-anchor:start;white-space:normal;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;fill:#ff0000;fill-opacity:0.55474453;fill-rule:nonzero;stroke:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate"/>
+                          <path inkscape:connector-curvature="0" id="circle7765" d="m 256,214.26562 c -22.99636,0 -41.73438,18.73802 -41.73438,41.73438 0,22.99636 18.73802,41.73438 41.73438,41.73438 22.99636,0 41.73438,-18.73802 41.73438,-41.73438 0,-22.99636 -18.73802,-41.73437 -41.73438,-41.73438 z m 0,9 c 18.1324,0 32.73438,14.60198 32.73438,32.73438 0,18.1324 -14.60198,32.73438 -32.73438,32.73438 -18.1324,0 -32.73438,-14.60198 -32.73438,-32.73438 0,-18.1324 14.60198,-32.73437 32.73438,-32.73438 z" style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:medium;line-height:normal;font-family:sans-serif;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:#000000;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;baseline-shift:baseline;text-anchor:start;white-space:normal;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;fill:#ff0000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:9;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate"/>
+                          <path inkscape:connector-curvature="0" id="circle7767" d="m 256,189.67773 c -36.59352,0 -66.32227,29.72875 -66.32227,66.32227 0,36.59352 29.72875,66.32227 66.32227,66.32227 36.59352,0 66.32227,-29.72875 66.32227,-66.32227 0,-36.59352 -29.72875,-66.32227 -66.32227,-66.32227 z m 0,6 c 33.35088,0 60.32227,26.97139 60.32227,60.32227 0,33.35088 -26.97139,60.32227 -60.32227,60.32227 -33.35088,0 -60.32227,-26.97139 -60.32227,-60.32227 0,-33.35088 26.97139,-60.32227 60.32227,-60.32227 z" style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:medium;line-height:normal;font-family:sans-serif;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:#000000;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;baseline-shift:baseline;text-anchor:start;white-space:normal;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;fill:#ff0000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:6;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate"/>
+                          <path inkscape:connector-curvature="0" id="circle7769" d="m 256,166.16406 c -49.59132,0 -89.83594,40.24462 -89.83594,89.83594 0,49.59132 40.24462,89.83594 89.83594,89.83594 49.59132,0 89.83594,-40.24462 89.83594,-89.83594 0,-49.59132 -40.24462,-89.83594 -89.83594,-89.83594 z m 0,4 c 47.42956,0 85.83594,38.40638 85.83594,85.83594 0,47.42956 -38.40638,85.83594 -85.83594,85.83594 -47.42956,0 -85.83594,-38.40638 -85.83594,-85.83594 0,-47.42956 38.40638,-85.83594 85.83594,-85.83594 z" style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:medium;line-height:normal;font-family:sans-serif;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:#000000;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;baseline-shift:baseline;text-anchor:start;white-space:normal;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;fill:#ff0000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:4;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate"/>
+                          <path inkscape:connector-curvature="0" id="circle7771" d="m 256,109.58203 c -80.85286,0 -146.41797,65.56511 -146.41797,146.41797 0,80.85286 65.56511,146.41797 146.41797,146.41797 80.85286,0 146.41797,-65.56511 146.41797,-146.41797 0,-80.85286 -65.56511,-146.41797 -146.41797,-146.41797 z m 0,2 c 79.77198,0 144.41797,64.64599 144.41797,144.41797 0,79.77198 -64.64599,144.41797 -144.41797,144.41797 -79.77198,0 -144.41797,-64.64599 -144.41797,-144.41797 0,-79.77198 64.64599,-144.41797 144.41797,-144.41797 z" style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:medium;line-height:normal;font-family:sans-serif;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:#000000;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;baseline-shift:baseline;text-anchor:start;white-space:normal;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;fill:#ff0000;fill-opacity:0.35766422;fill-rule:nonzero;stroke:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate"/>
+                        </g>
+                      </svg>`;
+                    return `data:image/svg+xml;base64,${window.btoa(svg)}`;
+                };
+                const tileProviders = [
+                    {
+                        name: 'OceanBasemap',
+                        attribution:
+                            'Tiles &copy; Esri &mdash; Sources: GEBCO, NOAA, CHS, OSU, UNH, CSUMB, National Geographic, DeLorme, NAVTEQ, and Esri',
+                        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean_Basemap/MapServer/tile/{z}/{y}/{x}',
+                        maxZoom: 10
+                    },
+                    {
+                        name: 'OpenStreetMap',
+                        attribution: '&copy; <a target="_blank" href="http://osm.org/copyright">OpenStreetMap</a> contributors',
+                        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        maxZoom: 18
+                    },
+                    {
+                        name: 'OpenTopoMap',
+                        attribution: 'Map data: &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
+                        url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+                        maxZoom: 18
+                    },
+                    {
+                        name: 'WorldImagery',
+                        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+                        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                        maxZoom: 18
+                    }
+                ];
+                //load the map
+                let Map = L.map('stationMap');
+                //  lat lon（ center, zoom）
+                Map.setView([23, 121], 7);
+                L.tileLayer(tileProviders[0].url, { 'attribution': tileProviders[0].attribution, 'minZoom': 6, 'maxZoom': tileProviders[0].maxZoom }).addTo(Map);
+
+                // change the map setting
+                tile = {};
+                tileProviders.forEach(function (map) {
+                    tile[map.name] = L.tileLayer(map.url, { 'attribution': map.attribution, 'minZoom': 6, 'maxZoom': map.maxZoom })
+                });
+                L.control.layers(tile).addTo(Map);
+
+                // map sacles
+                L.control.scale({
+                    position: 'topright'
+                }).addTo(Map);
+
+                //==marker group
+                let markerGroup = L.layerGroup().addTo(Map);
+                const markerSize = 15;
+
+                chartContainerJQ.find('#stationMap')
+                    .on('updateMap', (e, chartData, colorPalette) => {
+                        // remove all the markers in one go
+                        markerGroup.clearLayers();
+
+                        chartData.forEach((d, i) => {
+                            let station = d.station;
+                            //===station icon
+                            let marker = L.marker(d['coord'], {
+                                pane: 'markerPane',
+                                data: d,
+                                icon: L.icon({
+                                    iconUrl: getIconSrc(1, markerSize, colorPalette[station]),
+                                    iconSize: [markerSize, markerSize],
+                                    iconAnchor: [markerSize / 2, markerSize / 2],
+                                    tooltipAnchor: [0, -markerSize / 2],
+                                })
+                            })
+                                .on('mouseover mouseout', (e) => {
+                                    let hover = e.type === 'mouseover';
+                                    let tr = chartContainerJQ.find('#stationtable>tbody').children()
+                                        .filter(function () {
+                                            return this.innerText.split('\t')[0] === station;
+                                        });
+                                    tr.trigger(hover ? 'mouseenter' : 'mouseleave');
+                                    highlightPath(station, hover);
+                                });
+
+                            let tooltipHtml = `<text>${station}</text><br>`;
+                            let popupHtml = `
+                                <h1>${station}</h1>
+                                <text>Distance : ${d.dist} km</text><br>
+                                <text>Azimuth : ${d.az}°</text><br>
+                                <text>Latitude : ${d.coord[0]}</text><br>
+                                <text>Longitude : ${d.coord[1]}</text><br>
+                                <text>Network : ${d.network}</text><br>`;
+
+                            marker.bindTooltip(tooltipHtml, {
+                                direction: 'top',
+                                // permanent: true,
+                                // className: 'station-tooltip',
+                            });
+                            marker.bindPopup(popupHtml);
+                            marker.addTo(markerGroup);
+
+                            //==datatable才找的到marker
+                            marker.getElement().dataset.station = station;
+                        });
+
+                        epicenter
+                            .setLatLng([data.lat, data.lng])
+                            .setOpacity(1);
+                    });
+
+                //==epicenter 
+                const epicSize = 50;
+                let epicenter = L.marker([0, 0], {
+                    icon: L.icon({
+                        iconUrl: getIconSrc(0, epicSize),
+                        iconSize: [epicSize, epicSize],
+                        iconAnchor: [epicSize / 2, epicSize / 2],
+                    }),
+                    pane: 'shadowPane',
+                    // opacity: 0,
+                });
+
+                epicenter.addTo(Map);
+
+            };
+            let initTable = () => {
+                chartContainerJQ.find('#stationList').append(`<table id='stationtable' class="hover" style="width:100%"></table>`);
+                let datatable = chartContainerJQ.find('#stationtable').DataTable({
+                    "columns": [ // 列的標題一般是從DOM中讀取（也可以使用這個屬性為表格創建列標題)
+                        { title: "station" },
+                        { title: "network" },
+                        { title: "dist." },
+                        { title: "az." },
+                    ],
+                    "order": [[2, 'asc']],
+                    "searching": false,
+                    "lengthChange": false,
+                    "pageLength": 8,
+                    // "columnDefs": [
+                    //     { responsivePriority: 1, targets: 0 },
+                    //     { responsivePriority: 2, targets: -1 }
+                    // ]
+                    // fixedColumns: true
+                });
+
+                datatable.on('updateData', (e, chartData, colorPalette) => {
+                    // console.debug(e, chartData, colorPalette);
+                    //===更新地圖
+                    chartContainerJQ.find('#stationMap').trigger("updateMap", [chartData, colorPalette]);
+
+                    let dataset = chartData.map(d =>
+                        [d.station, d.network, (d.dist).toFixed(2), (d.az).toFixed(2)]);
+                    datatable.clear();
+                    datatable.rows.add(dataset);
+                    datatable.draw();
+
+                    datatable.rows().every(function (rowIdx) {
+                        let data = this.data();
+                        let tr = $(this.node());
+
+                        let station = data[0];
+                        let marker = chartContainerJQ.find('#stationMap .leaflet-marker-pane').children()
+                            .filter(function () {
+                                return this.dataset.station === station;
+                            });
+
+                        tr.hover(
+                            function (e) {
+                                $(this)
+                                    .addClass("hover")
+                                    .css({
+                                        'background-color': '#9D9D9D',
+                                        'color': '#fff',
+                                    });
+                                highlightPath(station);
+                                // console.debug()
+                                if (!e.isTrigger) marker.addClass("jumpingIcon");
+                            },
+                            function (e) {
+                                $(this).removeClass("hover")
+                                    .css({
+                                        'background-color': '',
+                                        'color': '',
+                                    });
+                                highlightPath(station, false);
+                                if (!e.isTrigger) marker.removeClass("jumpingIcon");
+                            }
+                        );
+                        tr.children('td:first-child')
+                            .css({
+                                'background-color': colorPalette[station],
+                                'color': '#fff',
+                            });
+
+                    });
+                });
+            };
+            if (!(chartContainerJQ.find('#stationMap>*').length >= 1)) {
+                initMap();
+                initTable();
+            };
+        };
         async function printChart() {
             chartContainerJQ.find('#distRange_slider').remove();
             chartContainerJQ.find('#azRange_slider').remove();
@@ -2645,26 +2978,47 @@ function waveXdist() {
                 ul.classList.add("active");
                 nav.append(ul);
 
-                let chartDropDown = ['bigimg', 'svg', 'png', 'jpg'];
+                let chartDropDown = ['svg', 'png', 'jpg', 'bigimg', 'option'];
+
+                let gethr = () => {
+                    return document.createElement("hr");
+                };
+
                 chartDropDown.forEach(option => {
                     let li = document.createElement("li");
                     let item = document.createElement("a");
                     item.href = "javascript:void(0)";
 
-                    if (option != chartDropDown[0])
-                        item.innerHTML = "下載圖表爲" + option;
-                    else
-                        item.innerHTML = "檢視圖片";
+                    switch (option) {
+                        case 'bigimg':
+                            item.innerHTML = "檢視圖片";
+                            ul.append(gethr());
+                            break;
+                        case 'option':
+                            item.innerHTML = "顯示/隱藏圖表選項";
+                            ul.append(gethr());
+                            break;
+                        default:
+                            item.innerHTML = "下載圖表爲" + option;
+                            break;
+                    };
 
                     item.addEventListener("click", (e, a) => {
-                        let svgArr = [];
-                        let svg = chartContainerJQ.find("#" + $(e.target).parents('.chart')[0].id).children('svg')[0];
-                        svgArr.push(svg);
-                        let xAxisName = document.querySelector('input[name ="xAxisName"]:checked').value;
-                        let xAxisScale = document.querySelector('input[name ="xAxisScale"]:checked').value;
-                        let referenceTime = stringObj.referenceTime;
-                        let fileName = 'WF_by_' + xAxisName + (xAxisScale == 'band' ? '-sta' : '') + '_' + referenceTime + 'Z';
-                        downloadSvg(svgArr, fileName, option);
+                        if (option !== "option") {
+                            let svgArr = [];
+                            let svg = chartContainerJQ.find("#" + $(e.target).parents('.chart')[0].id).children('svg')[0];
+                            svgArr.push(svg);
+                            let xAxisName = document.querySelector('input[name ="xAxisName"]:checked').value;
+                            let xAxisScale = document.querySelector('input[name ="xAxisScale"]:checked').value;
+                            let referenceTime = `${data.date}T${data.time}`;
+                            let fileName = 'WF_by_' + xAxisName + (xAxisScale == 'band' ? '-sta' : '') + '_' + referenceTime + 'Z';
+                            downloadSvg(svgArr, fileName, option);
+                        }
+                        else {
+                            let chartsOptions = chartContainerJQ.find('#chartsOptions');
+                            chartsOptions.is(':visible') ?
+                                chartsOptions.hide() : chartsOptions.show();
+                        };
                     });
 
                     li.append(item);
@@ -2871,8 +3225,9 @@ function waveXdist() {
         //===init once
         if (!(chartContainerJQ.find('#form-chart').length >= 1)) {
             init();
+            stationInfo();
         };
-        printChart();
+        if (data) printChart();
     };
     return chart;
-}
+};

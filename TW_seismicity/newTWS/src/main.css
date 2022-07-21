@@ -4,6 +4,7 @@
 
 .animeMarker {
     stroke: white;
+    stroke-width: 1;
     fill-opacity: 1;
     opacity: 0;
     animation: showMarker 1s ease-in 0s forwards;

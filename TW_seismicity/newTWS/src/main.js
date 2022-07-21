@@ -329,21 +329,18 @@ function TWSanime() {
                     zoomControl: false
                 });
                 let markerGroup = new L.layerGroup();
-                // let dep = [10, 35, 70, 150];
-                // let s100Color = [
-                //     '#DB453F', '#F2B53A', '#97E838', '#26D2EB', '#7B3AF2'
-                // ];
-                // function getColor(depth) {
-                //     for (let i = 0; i < s100Color.length - 1; i++) {
-                //         if (depth <= dep[i]) { return s100Color[i] }
-                //         else { continue };
-                //     }
-                //     return s100Color[s100Color.length - 1];
-                // };
-                const mlScale = d3.scaleLinear()
-                    .domain(ML_domain)
-                    .range(range1);
-                const depthScale = d3.scaleSequentialSqrt([320, 0], d3.interpolateTurbo);
+
+                const getSize = (ML) => {
+                    let ml_base = 3,
+                        circleSize = 3;
+                    return ML > ml_base ?
+                        (ML - ml_base) * circleSize + 0.1 : 0.1;
+                };
+                const
+                    mlDomain = [3, 7],
+                    maxDepth = 320;
+                const depthScale = d3.scaleSequentialSqrt([maxDepth, 0], d3.interpolateTurbo);
+
 
                 function init() {
                     let initMap = () => {
@@ -375,11 +372,11 @@ function TWSanime() {
                             }
                         ];
                         //  lat lon（ center, zoom）
-                        Map.setView([23, 121], 7);
+                        Map.setView([23, 120], 7);
                         L.tileLayer(tileProviders[0].url, {
-                            'attribution': tileProviders[0].attribution,
-                            'minZoom': 6,
-                            'maxZoom': tileProviders[0].maxZoom
+                            // 'attribution': tileProviders[0].attribution,
+                            // 'minZoom': 6,
+                            // 'maxZoom': tileProviders[0].maxZoom
                         }).addTo(Map);
 
                         // change the map setting
@@ -399,31 +396,17 @@ function TWSanime() {
                         }).addTo(Map);
 
                         //==disable
-                        Map.boxZoom.disable();
-                        Map.scrollWheelZoom.disable();
-                        Map.doubleClickZoom.disable();
-                        Map.dragging.disable();
-                        Map.keyboard.disable();
+                        // Map.boxZoom.disable();
+                        // Map.scrollWheelZoom.disable();
+                        // Map.doubleClickZoom.disable();
+                        // Map.dragging.disable();
+                        // Map.keyboard.disable();
                     };
-
-                    initMap();
-                    markerGroup.addTo(Map);
-
-
-                };
-                function update() {
-                    let updateMarker = (data) => {
-                        markerGroup.clearLayers();
-
+                    let initMarker = () => {
                         data.forEach((d, i) => {
-                            // let color = getColor(d.Depth);
-                            // let size = getSize(row.ML);
-
-                            const size = 5, color = 'red';
-
                             let marker = L.circleMarker(d.crood, {
-                                color: 'white',
-                                radius: size,
+                                color: depthScale(d.depth),
+                                radius: getSize(d.ML),
                                 className: 'animeMarker',
                             }
                             ).bindPopup(
@@ -431,13 +414,36 @@ function TWSanime() {
                             );
                             markerGroup.addLayer(marker);
 
-                            marker.getElement().style.display = 'inline';
+                        });
+                    }
+                    initMap();
+                    initMarker();
+                    markerGroup.addTo(Map);
+                };
+                function update() {
+                    // let dep = [10, 35, 70, 150];
+                    // let s100Color = [
+                    //     '#DB453F', '#F2B53A', '#97E838', '#26D2EB', '#7B3AF2'
+                    // ];
+                    // function getColor(depth) {
+                    //     for (let i = 0; i < s100Color.length - 1; i++) {
+                    //         if (depth <= dep[i]) { return s100Color[i] }
+                    //         else { continue };
+                    //     }
+                    //     return s100Color[s100Color.length - 1];
+                    // };
 
+
+                    let updateMarker = (data) => {
+                        // markerGroup.clearLayers();
+
+                        // marker.getElement().style.display = 'inline';
+                        markerGroup.getLayers().forEach(marker => {
+                            // console.debug();
+                            marker.getElement().style.display = 'inline';
                         });
 
-
                     };
-
                     updateMarker(data)
 
                 };

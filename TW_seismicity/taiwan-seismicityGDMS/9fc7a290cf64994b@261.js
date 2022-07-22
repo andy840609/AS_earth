@@ -63,7 +63,7 @@ export default function define(runtime, observer) {
   });
 
   main.variable(observer("viewof keyframe")).define("viewof keyframe", ["Scrubber", "d3", "keyframes"], function (Scrubber, d3, keyframes) {
-    // console.log("keyframes=" + keyframes);
+    console.log("keyframes=" + keyframes);
     return (
       Scrubber(d3.range(keyframes), {
         // format: i => moment(i).format(),
@@ -424,7 +424,7 @@ export default function define(runtime, observer) {
             .duration(delay.range()[1] - UserDragTime)
             .tween("date", () => {
               const i = d3.interpolateDate(DragDomainTime, delay.domain()[1]);
-              // window.alert(d3.timeDay(data[0].date));
+              console.debug(DragDomainTime, delay.domain()[1]);
               return t => $0.value = d3.timeMinute(i(t));
             });
 

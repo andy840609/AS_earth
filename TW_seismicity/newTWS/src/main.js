@@ -7,7 +7,7 @@ function TWSanime() {
         return chart;
     };
     chart.data = (vaule = undefined) => {
-        ajaxGetData = (url, option) => {
+        let ajaxGetData = (url, option) => {
             return new Promise(resolve =>
                 $.ajax({
                     url,
@@ -20,7 +20,7 @@ function TWSanime() {
                         let sortData = data.map(d => new Object(
                             {
                                 crood: [parseFloat(d.latitude), parseFloat(d.longitude)],
-                                date: d.date + "T" + d.time + "." + d.ms,
+                                date: new Date(d.date + "T" + d.time + "." + d.ms).getTime(),
                                 ML: parseFloat(d.ML),
                                 depth: parseFloat(d.depth),
                             })
@@ -322,7 +322,7 @@ function TWSanime() {
             };
 
             function animeMap() {
-                // console.debug(data);
+                console.debug(data);
 
                 let Map = L.map('Map', {
                     attributionControl: false,
@@ -341,7 +341,9 @@ function TWSanime() {
                     maxDepth = 320;
                 const depthScale = d3.scaleSequentialSqrt([maxDepth, 0], d3.interpolateTurbo);
 
-
+                const minSpeed = 5 * 86400000;//==5d/s
+                const totalFrames = (data[data.length - 1].date - data[0].date) / minSpeed;
+                let keyframe;
                 function init() {
                     let initMap = () => {
                         const tileProviders = [
@@ -380,7 +382,7 @@ function TWSanime() {
                         }).addTo(Map);
 
                         // change the map setting
-                        tile = {};
+                        let tile = {};
                         tileProviders.forEach(function (map) {
                             tile[map.name] = L.tileLayer(map.url, {
                                 'attribution': map.attribution,
@@ -421,19 +423,6 @@ function TWSanime() {
                     markerGroup.addTo(Map);
                 };
                 function update() {
-                    // let dep = [10, 35, 70, 150];
-                    // let s100Color = [
-                    //     '#DB453F', '#F2B53A', '#97E838', '#26D2EB', '#7B3AF2'
-                    // ];
-                    // function getColor(depth) {
-                    //     for (let i = 0; i < s100Color.length - 1; i++) {
-                    //         if (depth <= dep[i]) { return s100Color[i] }
-                    //         else { continue };
-                    //     }
-                    //     return s100Color[s100Color.length - 1];
-                    // };
-
-
                     let updateMarker = (data) => {
                         // markerGroup.clearLayers();
 
@@ -444,14 +433,11 @@ function TWSanime() {
                         });
 
                     };
-                    updateMarker(data)
-
+                    updateMarker(data);
                 };
-
 
                 init();
                 update();
-
                 function events() { };
 
 

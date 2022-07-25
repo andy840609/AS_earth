@@ -427,9 +427,9 @@ function TWSanime() {
                         // markerGroup.clearLayers();
 
                         // marker.getElement().style.display = 'inline';
-                        markerGroup.getLayers().forEach(marker => {
-                            // console.debug();
-                            marker.getElement().style.display = 'inline';
+                        let markers = markerGroup.getLayers();
+                        data.forEach((d, i) => {
+                            markers[i].getElement().style.display = 'inline';
                         });
 
                     };

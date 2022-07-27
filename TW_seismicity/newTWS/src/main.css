@@ -1,3 +1,18 @@
+text,
+label,
+font,
+div,
+h1,
+h2,
+h3 {
+    user-select: none;
+}
+
+body {
+    overflow: hidden;
+    /* Hide scrollbars */
+}
+
 #Map {
     height: 90vh;
 }
@@ -7,7 +22,7 @@
     stroke-width: 1;
     fill-opacity: 1;
     opacity: 0;
-    animation: showMarker 1s ease-in 0s forwards;
+    animation: showMarker 0s ease-in 0s forwards;
     display: none;
 }
 
@@ -41,7 +56,7 @@
 }
 
 /* =============================================setting========================================== */
-.setting {
+#setting {
     position: fixed;
     bottom: 10%;
     z-index: 1600;
@@ -66,7 +81,6 @@
 .toolButton:hover .tooltiptext {
     visibility: visible;
 }
-
 
 .button {
     padding: 5px;
@@ -111,39 +125,23 @@
     border-color: #555 transparent transparent transparent;
 }
 
-/* 
-.panel {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(0, 0, 0, 0.7);
-    transition: opacity 500ms;
-    visibility: hidden;
-    opacity: 0;
-}
 
-.panel:target {
-    visibility: visible;
-    opacity: 1;
-} */
+/* pannel */
 
 .popup {
     margin: 70px auto;
     padding: 20px;
     background: #fff;
     border-radius: 5px;
-    width: 30%;
+    width: 300px;
     transition: all 5s ease-in-out;
 
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    /* background: rgba(0, 0, 0, 0.7); */
+    position: absolute;
+    bottom: 20%;
     transition: opacity 500ms;
     visibility: hidden;
     opacity: 0;
+    pointer-events: all;
 }
 
 .popup:target {
@@ -152,25 +150,24 @@
 }
 
 .popup:after {
-    content: '';
+    content: "";
     position: absolute;
-    bottom: 100%;
-    width: 0;
-    height: 0;
+    top: 95%;
+    left: 12px;
     border-style: solid;
-    border-width: 0 20px 20px 20px;
-    border-color: transparent transparent white transparent;
+    border-width: 20px;
+    border-color: white transparent transparent transparent;
 }
 
-/* .panel:target .popup {
-    animation: popup 0.7s;
+.popup:target {
+    animation: popup 0.2s;
 }
 
-*/
 .popup h2 {
     margin-top: 0;
     color: #333;
     font-family: Tahoma, Arial, sans-serif;
+    white-space: nowrap;
 }
 
 .popup .close {
@@ -193,7 +190,7 @@
     overflow: auto;
 }
 
-@media screen and (max-width: 700px) {
+/* @media screen and (max-width: 700px) {
     .toolBar {
         width: 70%;
     }
@@ -201,31 +198,11 @@
     .popup {
         width: 70%;
     }
-}
+} */
 
 @keyframes popup {
     0% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.4);
-    }
-
-    60% {
-        transform: scale(1.1);
-    }
-
-    70% {
-        transform: scale(1.2);
-    }
-
-    80% {
-        transform: scale(1);
-    }
-
-    90% {
-        transform: scale(1.1);
+        transform: scale(0.1);
     }
 
     100% {

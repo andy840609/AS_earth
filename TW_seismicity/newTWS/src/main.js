@@ -55,37 +55,26 @@ function TWSanime() {
 
         function init() {
             document.querySelector(selector).insertAdjacentHTML('beforeend', `
-            <div id="form-chart">
-                <div class="form-group" id="chartsOptions" style="display: inline;">
-                    <div class="row">
-
-                    </div>
-                </div>
+            <div id="seismicity">        
+                <div id="Map"></div>          
             
+                <div id="outerdiv"
+                    style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:10;width:100%;height:100%;display:none;">
+                    <div id="innerdiv" style=" background-color: rgb(255, 255, 255);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div>                      
+                </div>
 
-                <div class="form-group"  id="chartMain">
-
-                    <div id="Map">
-                    </div>          
-                
-                    <div id="outerdiv"
-                        style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:10;width:100%;height:100%;display:none;">
-                        <div id="innerdiv" style=" background-color: rgb(255, 255, 255);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div>                      
+                <!--<div id='loading'>
+                    <div class="spinner-border"role="status">
+                        <span class="sr-only" >Loading...</span>
                     </div>
-
-                    <div id='loading'>
-                        <div class="spinner-border"role="status">
-                            <span class="sr-only" >Loading...</span>
-                        </div>
-                        Loading...
-                    </div>
-                </div> 
+                    Loading...
+                </div>-->
             </div>
             `);
 
         };
         async function printChart() {
-            selectorD3.selectAll('#Map>*').remove();
+            // selectorD3.selectAll('#Map>*').remove();
 
             function animeMap() {
                 console.debug(data);
@@ -101,7 +90,7 @@ function TWSanime() {
                 };
 
                 const dateText = selectorD3.selectAll('#Map').append('span').attr("class", "dateText");
-                const setting = selectorD3.append('div').attr("id", "setting");
+                const controller = selectorD3.append('div').attr("class", "controller");
                 const
                     mlDomain = [3, 7],//==規模範圍
                     depthDomain = [0, 320],//==深度範圍
@@ -148,7 +137,7 @@ function TWSanime() {
                         animTime: getAnimTime(startDate, endDate, playSpeed),
                     };
                 };
-                function updateAnime() {
+                function updateAnime(action = null) {//==暫停不用更新markerTimer
                     function init() {
                         let initMap = () => {
                             const tileProviders = [
@@ -206,49 +195,7 @@ function TWSanime() {
                                 position: 'topright'
                             }).addTo(Map);
 
-                            //==map events
-                            Map
-                                .on('maplock', (e) => {
-                                    if (e.lock) {
-                                        Map.boxZoom.disable();
-                                        Map.scrollWheelZoom.disable();
-                                        Map.doubleClickZoom.disable();
-                                        Map.dragging.disable();
-                                        Map.keyboard.disable();
-                                    }
-                                    else {
-                                        Map.boxZoom.enable();
-                                        Map.scrollWheelZoom.enable();
-                                        Map.doubleClickZoom.enable();
-                                        Map.dragging.enable();
-                                        Map.keyboard.enable();
-                                    };
-                                })
-                                .on('animCtrl', (e) => {
-                                    // console.debug(e.play, markerTimer)
-                                    if (e.play) {
 
-                                        let startDate = dateText.property('value'),
-                                            endDate = animDataObj.endDate;
-
-
-                                        dateText.interrupt().transition()
-                                            .ease(d3.easeLinear)
-                                            .duration(endDate - startDate)
-                                            .tween("date", () => {
-                                                let i = d3.interpolateDate(...timeScale.domain());
-                                                return t => dateText.text(getDateStr(d3.timeMinute(i(t))));
-                                            });
-                                        markerTimer.forEach(t => t.resume());
-                                    }
-                                    else {
-                                        dateText.interrupt();
-                                        markerTimer.forEach(t => t.pause());
-                                    };
-                                });
-
-
-                            Map.fire('maplock', { lock: defaultSetting.lockView });
                         };
                         let initMarker = () => {
                             data.forEach((d, i) => {
@@ -266,15 +213,26 @@ function TWSanime() {
                             });
                         };
                         let initToolBar = () => {
-                            const icons = ['setting', 'unlockView', 'pause',];
+                            function getTooltipText(string, hotkey = undefined) {
+                                let text = string.charAt(0).toUpperCase() + string.slice(1);
+                                return hotkey ? `${text} ( ${hotkey} )` : text;
+                            };
+
+                            const icons = [
+                                { str: 'setting', hotkey: 'S' },
+                                { str: 'lockView', hotkey: 'L' },
+                                { str: 'pause', hotkey: 'P' },
+                            ];
                             const panelControl = {
                                 slider: ['progress', 'playspeed'],
                             };
 
                             let buttonHtml = icons.map(btn => `
                                 <div class="toolButton">
-                                    <span class="tooltiptext tooltip-top">${btn}</span>
-                                    <a class="button" id="${btn}Btn" href="${btn === 'setting' ? '#setPanel' : '#'}"></a>
+                                    <span class="tooltiptext tooltip-top">
+                                        ${getTooltipText(btn.str, btn.hotkey)}
+                                    </span>
+                                    <a class="button" id="${btn.str}Btn" href="#"></a>
                                 </div>`).join('');
 
                             let sliderHtml = panelControl.slider.map(type => `
@@ -282,10 +240,9 @@ function TWSanime() {
                                 <input class="slider" type="range"></input>
                                `).join('');
 
-
                             let setPanelHtml = `
                             <div id="setPanel" class="popup">
-                                <h2>Settings</h2>
+                                <h2>Setting</h2>
                                 <a class="close" href="#">&times;</a>
                                 <div>
                                     ${sliderHtml}
@@ -295,46 +252,57 @@ function TWSanime() {
                                 </div > -->
                             </div > `;
 
-                            setting.node().insertAdjacentHTML('beforeend',
-                                `<div class="toolBar d-flex flex-row">
+                            controller.node().insertAdjacentHTML('beforeend',
+                                `<div class="toolbar d-flex flex-row">
                                     ${buttonHtml}
                                 </div>`);
 
                             icons.forEach(btn => {
-                                let button = setting.selectAll(`#${btn}Btn`);
-                                button.style('content', `url(img/${btn}.png)`);
+                                let button = controller.selectAll(`#${btn.str}Btn`);
+                                button.style('content', `url(img/${btn.str}.png)`);
 
-                                switch (btn) {
+                                let onClick;
+                                switch (btn.str) {
                                     case 'setting':
-                                        button.node().parentNode.insertAdjacentHTML('beforebegin', setPanelHtml);
+                                        let toolbar = controller.selectAll('.toolbar');
+                                        toolbar.node().insertAdjacentHTML('afterbegin', setPanelHtml);
+                                        let setPanel = toolbar.selectAll('#setPanel');
+                                        setPanel.selectAll('.close').on('click', () => button.dispatch('click'));
+
+                                        onClick = function (e) {
+                                            let display = this.value ? 'inline' : 'none';
+                                            setPanel.style('display', display);
+                                            this.value = !this.value;
+                                        };
                                         break;
-                                    case 'unlockView':
-                                        button.property("value", true);
-                                        button.on('click', function () {
+                                    case 'lockView':
+                                        onClick = function () {
                                             this.value = !this.value;
                                             Map.fire('maplock', { lock: this.value });
 
-                                            let string = (this.value ? 'un' : '') + 'lockView';
+                                            let string = (this.value ? '' : 'un') + 'lockView';
                                             button.style('content', `url(img/${string}.png)`);
-                                            d3.select(this.parentNode).selectAll('.tooltiptext').text(string);
-                                        });
+                                            d3.select(this.parentNode).selectAll('.tooltiptext')
+                                                .text(getTooltipText(string, btn.hotkey));
+                                        };
                                         break;
                                     case 'pause':
-                                        button.property("value", true);
-                                        button.on('click', function () {
+                                        onClick = function () {
                                             this.value = !this.value;
                                             Map.fire('animCtrl', { play: this.value });
 
                                             let string = this.value ? 'pause' : 'play';
                                             button.style('content', `url(img/${string}.png)`);
-                                            d3.select(this.parentNode).selectAll('.tooltiptext').text(string);
-                                        });
-
+                                            d3.select(this.parentNode).selectAll('.tooltiptext')
+                                                .text(getTooltipText(string, btn.hotkey));
+                                        };
                                         break;
                                     case 'b':
                                         break;
-                                };
 
+                                };
+                                button.property("value", true);
+                                button.on('click', onClick);
 
                             });
                         };
@@ -346,7 +314,7 @@ function TWSanime() {
                         markerGroup.addTo(Map);
                     };
                     function update() {
-                        console.debug(animDataObj);
+                        // console.debug(action, animDataObj);
 
                         let startDate = animDataObj.startDate,
                             endDate = animDataObj.endDate,
@@ -356,36 +324,67 @@ function TWSanime() {
                             .domain([startDate, endDate])
                             .range([0, animTime]);
                         // console.debug(timeScale(startDate - 1000))
-                        let updateDateStr = () => {
+
+                        let updateDateStr = (duration, dateDomain) => {
                             dateText.interrupt().transition()
                                 .ease(d3.easeLinear)
-                                .duration(timeScale.range()[1])
+                                .duration(duration)
                                 .tween("date", () => {
-                                    let i = d3.interpolateDate(...timeScale.domain());
+                                    let i = d3.interpolateDate(...dateDomain);
                                     return t => {
                                         // let date = d3.timeMinute(i(t));
                                         let date = i(t);
+                                        // console.debug(date.toISOString())
                                         dateText
                                             .property('value', date.getTime())
                                             .text(getDateStr(date));
                                     };
                                 });
                         };
-                        let updateMarker = (data) => {
-                            // markerGroup.clearLayers();
 
-                            // marker.getElement().style.display = 'inline';
-                            let markers = markerGroup.getLayers();
-                            markerTimer = data.map((d, i) => {
-                                // console.debug(timeScale(d.date))
-                                return new Timer(() => {
-                                    markers[i].getElement().style.display = 'inline';
-                                }, timeScale(d.date));
-                            });
+                        let duration, dateDomain;
+                        switch (action) {
+                            case 'play':
+                                let pauseDate = dateText.property('value');
+                                duration = timeScale.range()[1] - timeScale(pauseDate);
+                                dateDomain = [pauseDate, timeScale.domain()[1]];
+                                updateDateStr(duration, dateDomain);
+                                // console.debug(new Date(pauseDate).toISOString());
 
+                                markerTimer.forEach(t => t.resume());
+                                break;
+                            case 'pause':
+                                console.debug(new Date(dateText.property('value')).toISOString())
+                                dateText.interrupt();
+
+                                markerTimer.forEach(t => t.pause());
+                                break;
+                            default://init
+                                duration = timeScale.range()[1];
+                                dateDomain = timeScale.domain();
+                                updateDateStr(duration, dateDomain);
+
+                                let markers = markerGroup.getLayers();
+                                markerTimer = data.map((d, i) => {
+                                    // console.debug(timeScale(d.date))
+
+                                    return new Timer(() => {
+                                        markers[i].getElement().style.display = 'inline';
+
+                                        //==debug
+                                        // console.debug(Date.now() - start - timeScale(d.date))
+                                        let timer = markerTimer[i];
+                                        let elapsed = timer.elapsed + Date.now() - timer.start;
+                                        console.debug(elapsed - timeScale(d.date));
+                                        //==debug
+
+                                    }, timeScale(d.date));
+                                });
+                                console.debug(setTimeout(() => { }, 1000))
+                                console.debug(window.setTimeout(() => { }, 1000))
+                                break;
                         };
-                        updateMarker(data);
-                        updateDateStr();
+
                     };
                     if (!animDataObj) {
                         animDataObj = getNewData(defaultSetting);
@@ -395,10 +394,69 @@ function TWSanime() {
                 };
                 updateAnime();
 
+                function events() {
+                    let toolbar = controller.selectAll('.toolbar');
+
+                    let settingBtn = toolbar.selectAll('#settingBtn'),
+                        lockViewBtn = toolbar.selectAll('#lockViewBtn'),
+                        pauseBtn = toolbar.selectAll('#pauseBtn');
+
+                    let animeControllEvent = () => {
+                        //==map events
+                        Map
+                            .on('maplock', (e) => {
+                                let action = e.lock ? 'disable' : 'enable';
+                                Map.boxZoom[action]();
+                                Map.scrollWheelZoom[action]();
+                                Map.doubleClickZoom[action]();
+                                Map.dragging[action]();
+                                Map.keyboard[action]();
+                            })
+                            .on('animCtrl', (e) => {
+                                let action = e.play ? 'play' : 'pause';
+                                updateAnime(action);
+                            });
 
 
-                function events() { };
+                        Map.fire('maplock', { lock: defaultSetting.lockView });
 
+
+                        document.addEventListener("visibilitychange", (e) => {
+                            // console.debug();
+                            let playing = pauseBtn.property('value');
+                            if (document.hidden || playing) {
+                                pauseBtn.dispatch('click');
+                            };
+                        });
+                    };
+                    let keyboardEvent = () => {
+                        let hotkeyPressFlag = true;//avoid from trigger event too often
+
+                        d3.select(window)
+                            .on("keydown", (e) => {
+                                if (!hotkeyPressFlag) return;
+                                // console.debug(e.code)
+                                switch (e.code) {
+                                    //==快捷鍵
+                                    case 'KeyP':
+                                        pauseBtn.dispatch('click');
+                                        break;
+                                    case 'KeyS':
+                                        settingBtn.dispatch('click');
+                                        break;
+                                    case 'KeyL':
+                                        lockViewBtn.dispatch('click');
+                                        break;
+                                };
+
+                                hotkeyPressFlag = false;
+                                d3.timeout(() => hotkeyPressFlag = true, 10);
+                            });
+                    };
+                    animeControllEvent();
+                    keyboardEvent();
+                };
+                events();
 
             };
             // getChartMenu('qsis');
@@ -410,7 +468,7 @@ function TWSanime() {
             animeMap();
         };
         //===init once
-        if (!(selectorD3.selectAll('#form-chart').nodes().length >= 1)) {
+        if (!(selectorD3.selectAll('#seismicity').nodes().length >= 1)) {
             init();
         };
 

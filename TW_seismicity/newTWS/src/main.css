@@ -55,15 +55,15 @@ body {
     -webkit-text-stroke-width: 1px;
 }
 
-/* =============================================setting========================================== */
-#setting {
+/* =============================================toolbar========================================== */
+.controller {
     position: fixed;
     bottom: 10%;
     z-index: 1600;
     pointer-events: auto;
 }
 
-.toolBar {
+.toolbar {
     margin: 10px 10px;
     background: rgba(255, 255, 255, 0.2);
     padding: 3px 5px 0 5px;
@@ -95,7 +95,7 @@ body {
     background: #06D85F;
 }
 
-.toolBar .tooltiptext {
+.toolbar .tooltiptext {
     visibility: hidden;
     position: absolute;
     background-color: #555;
@@ -104,6 +104,7 @@ body {
     text-align: center;
     padding: 5px 10px;
     border-radius: 6px;
+    white-space: nowrap;
     /* opacity: 0; */
     /* transition: opacity .6s; */
     transform: translateX(-50%);
@@ -138,15 +139,12 @@ body {
 
     position: absolute;
     bottom: 20%;
-    transition: opacity 500ms;
-    visibility: hidden;
-    opacity: 0;
+    /* transition: opacity 500ms; */
+    /* visibility: hidden; */
+    /* opacity: 0; */
+    animation: popup 0.2s;
+    display: none;
     pointer-events: all;
-}
-
-.popup:target {
-    visibility: visible;
-    opacity: 1;
 }
 
 .popup:after {
@@ -157,10 +155,6 @@ body {
     border-style: solid;
     border-width: 20px;
     border-color: white transparent transparent transparent;
-}
-
-.popup:target {
-    animation: popup 0.2s;
 }
 
 .popup h2 {
@@ -191,7 +185,7 @@ body {
 }
 
 /* @media screen and (max-width: 700px) {
-    .toolBar {
+    .toolbar {
         width: 70%;
     }
 

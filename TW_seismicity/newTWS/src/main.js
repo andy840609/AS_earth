@@ -56,7 +56,7 @@ function TWSanime() {
         function init() {
             document.querySelector(selector).insertAdjacentHTML('beforeend', `
             <div id="seismicity">        
-                <div id="Map"></div>          
+                <div id="Map"></div>A          
             
                 <div id="outerdiv"
                     style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:10;width:100%;height:100%;display:none;">

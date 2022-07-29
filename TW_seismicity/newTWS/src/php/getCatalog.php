@@ -1,5 +1,5 @@
 <?php
-
+error_log("Error message.", 3, "/var/tmp/my-errors.log");
 require("./sqliconnect.php");
 
 // $stlat = $_POST['stlat'];

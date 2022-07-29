@@ -1,5 +1,4 @@
 <?php
-
 require("./sqliconnect.php");
 
 // $stlat = $_POST['stlat'];

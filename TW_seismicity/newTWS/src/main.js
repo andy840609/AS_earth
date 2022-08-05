@@ -109,7 +109,8 @@ function TWSanime() {
           audio: false, //==預設聲音關閉(chrome66後不能自動播放)
           volume: 0.5, //==預設聲音大小
         };
-
+        123;
+        555;
         let leafletMap, //leaflet obj
           markerGroup = new L.layerGroup(),
           markerTimer;

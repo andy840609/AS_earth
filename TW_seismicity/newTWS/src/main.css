@@ -5,183 +5,226 @@ div,
 h1,
 h2,
 h3 {
-    user-select: none;
+  user-select: none;
 }
 
 body {
-    overflow: hidden;
-    /* Hide scrollbars */
+  overflow: hidden;
+  /* Hide scrollbars */
+}
+
+datalist {
+  display: inline-flex;
 }
 
 #Map {
-    height: 90vh;
+  height: 90vh;
 }
 
-.animeMarker {
-    stroke: white;
-    stroke-width: 1;
-    fill-opacity: 1;
+/* divIcon marker的z-index會改變前後順序 */
+.leaflet-marker-icon {
+  z-index: 0 !important;
+}
+
+/* 所有marker預設class */
+.animateMarker {
+  border: 1px white solid;
+  border-radius: 50%;
+  display: none;
+}
+/* 出現的觸發的marker class */
+.animateMarker-appeared {
+  display: inline;
+  animation: appear 0.3s linear 0s;
+}
+
+.anime-toggled::before,
+.anime-toggled::after {
+  content: "";
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  position: absolute;
+  animation: living 1s linear 0s;
+  transform-origin: 50%;
+  pointer-events: none;
+}
+
+.anime-toggled::before {
+  animation-delay: 0.5s;
+}
+.anime-paused::after,
+.anime-paused::before {
+  animation-play-state: paused;
+}
+
+@keyframes living {
+  /*圓形放大的同時，透明度逐漸減小為0*/
+  0% {
+    background-color: rgba(255, 255, 255, 0.6);
+    transform: scale(0);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(10);
     opacity: 0;
-    animation: showMarker 0s ease-in 0s forwards;
-    display: none;
+  }
+
+  100% {
+    transform: scale(0);
+    opacity: 1;
+  }
 }
-
-/* fb Button动画 */
-@keyframes showMarker {
-    0% {
-        opacity: 0;
-    }
-
-    60% {
-        opacity: 0.3;
-    }
-
-    100% {
-        opacity: 1;
-    }
+@keyframes appear {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .dateText {
-    position: fixed;
-    top: 10%;
-    left: 10%;
-    font-size: 6vmin;
-    font-weight: bold;
-    z-index: 1500;
-    color: #20a5ba;
-    -moz-text-stroke-color: #218fa0;
-    -webkit-text-stroke-color: #218fa0;
-    -moz-text-stroke-width: 1px;
-    -webkit-text-stroke-width: 1px;
+  position: fixed;
+  top: 5%;
+  left: 10%;
+  font-size: 6vmin;
+  font-weight: bold;
+  z-index: 1500;
+  color: #20a5ba;
+  -moz-text-stroke-color: #218fa0;
+  -webkit-text-stroke-color: #218fa0;
+  -moz-text-stroke-width: 1px;
+  -webkit-text-stroke-width: 1px;
 }
 
 /* =============================================toolbar========================================== */
 .controller {
-    position: fixed;
-    bottom: 10%;
-    z-index: 1600;
-    pointer-events: auto;
+  position: fixed;
+  bottom: 10%;
+  z-index: 1600;
+  pointer-events: auto;
 }
 
 .toolbar {
-    margin: 10px 10px;
-    background: rgba(255, 255, 255, 0.2);
-    padding: 3px 5px 0 5px;
-    border: 2px solid #fff;
-    border-radius: 50px;
-    background-clip: padding-box;
-    text-align: center;
+  margin: 10px 10px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 3px 5px 0 5px;
+  border: 2px solid #fff;
+  border-radius: 50px;
+  background-clip: padding-box;
+  text-align: center;
 }
 
 .toolButton {
-    position: relative;
-    padding: 0 6px;
+  position: relative;
+  padding: 0 6px;
 }
 
 .toolButton:hover .tooltiptext {
-    visibility: visible;
+  visibility: visible;
 }
 
 .button {
-    padding: 5px;
-    cursor: pointer;
-    width: 50px;
-    height: 50px;
-    border-radius: 10px;
-    transition: all 0.2s ease-out;
+  padding: 5px;
+  cursor: pointer;
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  transition: all 0.2s ease-out;
 }
 
 .button:hover {
-    background: #06D85F;
+  background: #06d85f;
 }
 
 .toolbar .tooltiptext {
-    visibility: hidden;
-    position: absolute;
-    background-color: #555;
-    color: #fff;
-    font-size: 18px;
-    text-align: center;
-    padding: 5px 10px;
-    border-radius: 6px;
-    white-space: nowrap;
-    /* opacity: 0; */
-    /* transition: opacity .6s; */
-    transform: translateX(-50%);
+  visibility: hidden;
+  position: absolute;
+  background-color: #555;
+  color: #fff;
+  font-size: 18px;
+  text-align: center;
+  padding: 5px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  /* opacity: 0; */
+  /* transition: opacity .6s; */
+  transform: translateX(-50%);
 }
 
 .tooltip-top {
-    bottom: 125%;
-    left: 50%;
+  bottom: 125%;
+  left: 50%;
 }
 
 .tooltip-top::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    margin-left: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: #555 transparent transparent transparent;
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #555 transparent transparent transparent;
 }
-
 
 /* pannel */
 
 .popup {
-    margin: 70px auto;
-    padding: 20px;
-    background: #fff;
-    border-radius: 5px;
-    width: 300px;
-    transition: all 5s ease-in-out;
+  margin: 70px auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 5px;
+  min-width: 300px;
+  transition: all 5s ease-in-out;
 
-    position: absolute;
-    bottom: 20%;
-    /* transition: opacity 500ms; */
-    /* visibility: hidden; */
-    /* opacity: 0; */
-    animation: popup 0.2s;
-    display: none;
-    pointer-events: all;
+  position: absolute;
+  bottom: 20%;
+  /* transition: opacity 500ms; */
+  /* visibility: hidden; */
+  /* opacity: 0; */
+  animation: popup 0.2s;
+  display: none;
+  pointer-events: all;
 }
 
 .popup:after {
-    content: "";
-    position: absolute;
-    top: 95%;
-    left: 12px;
-    border-style: solid;
-    border-width: 20px;
-    border-color: white transparent transparent transparent;
+  content: "";
+  position: absolute;
+  top: 95%;
+  left: 12px;
+  border-style: solid;
+  border-width: 20px;
+  border-color: white transparent transparent transparent;
 }
 
 .popup h2 {
-    margin-top: 0;
-    color: #333;
-    font-family: Tahoma, Arial, sans-serif;
-    white-space: nowrap;
+  margin-top: 0;
+  color: #333;
+  font-family: Tahoma, Arial, sans-serif;
+  white-space: nowrap;
 }
 
 .popup .close {
-    position: absolute;
-    top: 20px;
-    right: 30px;
-    transition: all 200ms;
-    font-size: 30px;
-    font-weight: bold;
-    text-decoration: none;
-    color: #333;
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  transition: all 200ms;
+  font-size: 30px;
+  font-weight: bold;
+  text-decoration: none;
+  color: #333;
 }
 
 .popup .close:hover {
-    color: #06D85F;
+  color: #06d85f;
 }
 
 .popup .content {
-    max-height: 30%;
-    overflow: auto;
+  max-height: 30%;
+  overflow: auto;
 }
 
 /* @media screen and (max-width: 700px) {
@@ -195,11 +238,11 @@ body {
 } */
 
 @keyframes popup {
-    0% {
-        transform: scale(0.1);
-    }
+  0% {
+    transform: scale(0.1);
+  }
 
-    100% {
-        transform: scale(1);
-    }
+  100% {
+    transform: scale(1);
+  }
 }

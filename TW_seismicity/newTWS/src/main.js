@@ -1,62 +1,63 @@
 function TWSanime() {
-    let selector = 'body';
-    let data = null;
+  let selector = "body";
+  let data = null;
 
-    chart.selector = (vaule) => {
-        selector = vaule;
-        return chart;
-    };
-    chart.data = (vaule = undefined) => {
-        let ajaxGetData = (url, option) => {
-            return new Promise(resolve =>
-                $.ajax({
-                    url,
-                    data: option,
-                    method: 'POST',
-                    dataType: 'json',
-                    async: true,
-                    success: function (data) {
-                        console.log(data);
-                        let sortData = data.map(d => new Object(
-                            {
-                                crood: [parseFloat(d.latitude), parseFloat(d.longitude)],
-                                date: new Date(d.date + "T" + d.time + "." + d.ms).getTime(),
-                                ML: parseFloat(d.ML),
-                                depth: parseFloat(d.depth),
-                            })
-                        ).sort((a, b) => a.date - b.date);
-                        // console.debug(sortData)
-                        resolve(sortData);
-                    }, error: function (jqXHR, textStatus, errorThrown) {
-                        console.log(jqXHR, textStatus, errorThrown);
-                    }
-                })
-            );
+  chart.selector = (vaule) => {
+    selector = vaule;
+    return chart;
+  };
+  chart.data = (vaule = undefined) => {
+    let requsetData = (url, option) => {
+      let postData = new URLSearchParams();
+      Object.keys(option).forEach((key) => postData.append(key, option[key]));
 
-
-
-        };
-
-        const sqlOption = {
-            stlat: 21,
-            edlat: 26,
-            stlon: 118,
-            edlon: 124,
-            ML: 4.5,
-            stdate: '1990-1-1',
-            eddate: new Date().toISOString().substring(0, 10),
-        };
-        data = vaule ? vaule : ajaxGetData('src/php/getCatalog.php', sqlOption);
-        return chart;
+      return new Promise((resolve) => {
+        axios
+          .post(url, postData)
+          .then((res) => {
+            console.log(res);
+            let sortData = res.data
+              .map(
+                (d) =>
+                  new Object({
+                    crood: [parseFloat(d.latitude), parseFloat(d.longitude)],
+                    date: new Date(
+                      d.date + "T" + d.time + "." + d.ms + "Z"
+                    ).getTime(),
+                    ML: parseFloat(d.ML),
+                    depth: parseFloat(d.depth),
+                  })
+              )
+              .sort((a, b) => a.date - b.date);
+            // console.debug(sortData)
+            resolve(sortData);
+          })
+          .catch((error) => console.log(error));
+      });
     };
 
-    async function chart() {
-        const selectorD3 = d3.select(selector);
+    const sqlOption = {
+      //   stlat: 21,
+      //   edlat: 26,
+      //   stlon: 118,
+      //   edlon: 124,
+      ML: 4.5,
+      stdate: "1990-01-01",
+      eddate: new Date().toISOString().substring(0, 10),
+    };
+    data = vaule ? vaule : requsetData("src/php/getCatalog.php", sqlOption);
+    return chart;
+  };
 
-        function init() {
-            document.querySelector(selector).insertAdjacentHTML('beforeend', `
+  async function chart() {
+    const selectorD3 = d3.select(selector);
+
+    function init() {
+      document.querySelector(selector).insertAdjacentHTML(
+        "beforeend",
+        `
             <div id="seismicity">        
-                <div id="Map"></div>A          
+                <div id="Map"></div>          
             
                 <div id="outerdiv"
                     style="position:fixed;top:0;left:0;background:rgba(0,0,0,0.7);z-index:10;width:100%;height:100%;display:none;">
@@ -70,181 +71,305 @@ function TWSanime() {
                     Loading...
                 </div>-->
             </div>
-            `);
+            `
+      );
+    }
+    async function printChart() {
+      // selectorD3.selectAll('#Map>*').remove();
 
+      function animeMap() {
+        console.debug(data);
+
+        const getDateStr = (dateMs) => {
+          return new Date(dateMs).toISOString().substring(0, 16);
         };
-        async function printChart() {
-            // selectorD3.selectAll('#Map>*').remove();
+        const getSize = (ML) => {
+          let ml_base = 3,
+            circleSize = 3;
+          return ML > ml_base ? (ML - ml_base) * circleSize + 0.1 : 0.1;
+        };
 
-            function animeMap() {
-                console.debug(data);
+        const dateText = selectorD3
+          .selectAll("#Map")
+          .append("span")
+          .attr("class", "dateText");
+        const controller = selectorD3.append("div").attr("class", "controller");
+        const mlDomain = [3, 7], //==規模範圍
+          depthDomain = [0, 320], //==深度範圍
+          dateDomain = [data[0].date, data[data.length - 1].date], //==日期範圍
+          playSpeedDomain = [5, 180]; //==播放速度5~180days/s
 
-                const getDateStr = (dateObj) => {
-                    return dateObj.toISOString().substring(0, 16);
-                };
-                const getSize = (ML) => {
-                    let ml_base = 3,
-                        circleSize = 3;
-                    return ML > ml_base ?
-                        (ML - ml_base) * circleSize + 0.1 : 0.1;
-                };
+        //==動畫預設設定
+        const defaultSetting = {
+          playSpeed: playSpeedDomain[0],
+          startDate: dateDomain[0],
+          endDate: dateDomain[1],
+          play: true, //==預設播放動畫
+          lockView: true, //==預設鎖定地圖
+          audio: false, //==預設聲音關閉(chrome66後不能自動播放)
+          volume: 0.5, //==預設聲音大小
+        };
 
-                const dateText = selectorD3.selectAll('#Map').append('span').attr("class", "dateText");
-                const controller = selectorD3.append('div').attr("class", "controller");
-                const
-                    mlDomain = [3, 7],//==規模範圍
-                    depthDomain = [0, 320],//==深度範圍
-                    dateDomain = [data[0].date, data[data.length - 1].date],//==日期範圍
-                    playSpeedDomain = [5, 180];//==播放速度5~180days/s
+        let leafletMap, //leaflet obj
+          markerGroup = new L.layerGroup(),
+          markerTimer;
 
-                //==動畫預設設定
-                const defaultSetting = {
-                    playSpeed: playSpeedDomain[0],
-                    startDate: dateDomain[0],
-                    endDate: dateDomain[1],
-                    lockView: true,//==預設鎖定地圖
-                };
+        let depthScale = d3.scaleSequentialSqrt(
+          depthDomain.reverse(),
+          d3.interpolateTurbo
+        );
 
-                let
-                    Map,//leaflet obj
-                    markerGroup = new L.layerGroup(),
-                    markerTimer;
+        //==timeScale用原始範圍來計算progress拉動進度
+        let timeScale, newTimeScale;
+        let animDataObj;
 
-                let depthScale = d3.scaleSequentialSqrt(depthDomain.reverse(), d3.interpolateTurbo),
-                    timeScale;
-                let animDataObj;
+        function getNewData(option = null) {
+          //   console.debug("getNewData", option);
+          const getValue = (key) => {
+            return (option.hasOwnProperty(key) ? option : animDataObj)[key];
+          };
+          //==算動畫總播放長度
+          const getAnimTime = (start, end, playSpeed) => {
+            //==in ms
+            const dayToMs = 86400000;
+            return ((end - start) / (playSpeed * dayToMs)) * 1000;
+          };
+          const getNewData = () => {
+            let newData = data;
+            // return newData.slice(0, 2);
+            return newData;
+          };
+          let playSpeed = getValue("playSpeed"),
+            startDate = getValue("startDate"),
+            endDate = getValue("endDate"),
+            play = getValue("play"),
+            lockView = getValue("lockView"),
+            audio = getValue("audio"),
+            volume = getValue("volume");
+          // ml = getValue('ml'),
+          // mlDomain, mlDomain
+          //   console.debug(play);
+          return {
+            //==time unit in ms
+            playSpeed, //==days/s
+            startDate,
+            endDate,
+            animTime: getAnimTime(startDate, endDate, playSpeed),
+            play,
+            lockView,
+            audio,
+            volume,
+            newData: getNewData(),
+          };
+        }
+        function updateAnime(action = null) {
+          function init() {
+            let initMap = () => {
+              const defaultTile = "WorldImagery";
+              const getTileLayer = (tile) => {
+                return L.tileLayer(tile.url, {
+                  attribution: tile.attribution,
+                  minZoom: 6,
+                  maxZoom: tile.maxZoom,
+                });
+              };
+              const tileProviders = {
+                OceanBasemap: getTileLayer({
+                  attribution:
+                    "Tiles &copy; Esri &mdash; Sources: GEBCO, NOAA, CHS, OSU, UNH, CSUMB, National Geographic, DeLorme, NAVTEQ, and Esri",
+                  url: "https://server.arcgisonline.com/ArcGIS/rest/services/Ocean_Basemap/MapServer/tile/{z}/{y}/{x}",
+                  maxZoom: 10,
+                }),
+                OpenStreetMap: getTileLayer({
+                  attribution:
+                    '&copy; <a target="_blank" href="http://osm.org/copyright">OpenStreetMap</a> contributors',
+                  url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                  maxZoom: 18,
+                }),
+                OpenTopoMap: getTileLayer({
+                  attribution:
+                    'Map data: &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
+                  url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+                  maxZoom: 18,
+                }),
+                WorldImagery: getTileLayer({
+                  attribution:
+                    "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
+                  url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+                  maxZoom: 18,
+                }),
+              };
 
-                function getNewData(option = null) {
-                    const getValue = (key) => {
-                        return (option.hasOwnProperty(key) ? option : animDataObj)[key];
-                    };
-                    //==算動畫總播放長度
-                    const getAnimTime = (start, end, playSpeed) => {//==in ms
-                        const dayToMs = 86400000;
-                        return (end - start) / (playSpeed * dayToMs) * 1000;
-                    };
+              //lat lon（ center, zoom）
+              leafletMap = L.map("Map", {
+                // attributionControl: false,
+                // zoomControl: false,
+              }).setView([23, 120], 7);
 
-                    let playSpeed = getValue('playSpeed'),
-                        startDate = getValue('startDate'),
-                        endDate = getValue('endDate');
-                    // ml = getValue('ml'),
-                    // mlDomain, mlDomain
+              // map tiles
+              L.control.layers(tileProviders).addTo(leafletMap);
+              // map sacles
+              L.control.scale({ position: "topright" }).addTo(leafletMap);
+              // map default tile
+              tileProviders[defaultTile].addTo(leafletMap);
+            };
+            let initMarker = () => {
+              const DivIcon = L.DivIcon.extend({
+                options: {
+                  // tooltipAnchor: [0, -25],
+                  // popupAnchor: [-0.5, 0],
+                  className: "animateMarker",
+                },
+              });
 
-                    return {//==time unit in ms
-                        playSpeed,//==days/s
-                        startDate,
-                        endDate,
-                        animTime: getAnimTime(startDate, endDate, playSpeed),
-                    };
-                };
-                function updateAnime(action = null) {//==暫停不用更新markerTimer
-                    function init() {
-                        let initMap = () => {
-                            const tileProviders = [
-                                {
-                                    name: 'OceanBasemap',
-                                    attribution:
-                                        'Tiles &copy; Esri &mdash; Sources: GEBCO, NOAA, CHS, OSU, UNH, CSUMB, National Geographic, DeLorme, NAVTEQ, and Esri',
-                                    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean_Basemap/MapServer/tile/{z}/{y}/{x}',
-                                    maxZoom: 10
-                                },
-                                {
-                                    name: 'OpenStreetMap',
-                                    attribution: '&copy; <a target="_blank" href="http://osm.org/copyright">OpenStreetMap</a> contributors',
-                                    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                    maxZoom: 18
-                                },
-                                {
-                                    name: 'OpenTopoMap',
-                                    attribution: 'Map data: &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
-                                    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-                                    maxZoom: 18
-                                },
-                                {
-                                    name: 'WorldImagery',
-                                    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-                                    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-                                    maxZoom: 18
-                                }
-                            ];
-                            //  lat lon（ center, zoom）
-                            Map = L.map('Map', {
-                                attributionControl: false,
-                                zoomControl: false
-                            }).setView([23, 120], 7);
+              data.forEach((d, i) => {
+                let popupHtml = `
+                ${getDateStr(d.date)}<br>Depth: ${d.depth}km <br>ML: ${
+                  d.ML
+                }<br>`;
 
-                            L.tileLayer(tileProviders[tileProviders.length - 1].url, {
-                                // 'attribution': tileProviders[0].attribution,
-                                // 'minZoom': 6,
-                                // 'maxZoom': tileProviders[0].maxZoom
-                            }).addTo(Map);
+                d.marker = L.marker(d.crood, {
+                  icon: new DivIcon(),
+                }).bindPopup(popupHtml);
 
-                            // change the map setting
-                            let tile = {};
-                            tileProviders.forEach(function (map) {
-                                tile[map.name] = L.tileLayer(map.url, {
-                                    'attribution': map.attribution,
-                                    'minZoom': 6,
-                                    'maxZoom': map.maxZoom
-                                })
-                            });
-                            L.control.layers(tile).addTo(Map);
+                markerGroup.addLayer(d.marker);
+                // console.debug(d.marker);
+              });
+              markerGroup.addTo(leafletMap);
+            };
+            let initToolBar = () => {
+              function getTooltipText(string, hotkey = undefined) {
+                let text = string.charAt(0).toUpperCase() + string.slice(1);
+                return hotkey ? `${text} ( ${hotkey} )` : text;
+              }
+              function getControllerHTML(type) {
+                let html;
+                switch (type) {
+                  case "progress":
+                    html = `
+                    <input class="slider col-9 p-0" type="range"
+                        min="0"
+                        max="${animDataObj.animTime / 1000}"
+                        value="0"
+                        step="any"
+                    >
+                    <span class="col-3 text-nowrap" style="font-size: smaller;">        
+                       00:00:00
+                    </span>`;
+                    break;
+                  case "playspeed":
+                    let tickSpacing = playSpeedDomain[0]; //==多少數值一個tick
 
-                            // map sacles
-                            L.control.scale({
-                                position: 'topright'
-                            }).addTo(Map);
+                    let labelAmount = 3,
+                      labelSpacing = parseInt(playSpeedDomain[1] / labelAmount);
+                    // console.debug(labelSpacing);
+                    html = `
+                    <input class="slider col-9 p-0" type="range"
+                        min="${playSpeedDomain[0]}"
+                        max="${playSpeedDomain[1]}"
+                        value="${animDataObj.playSpeed}"
+                        step="${tickSpacing}"
+                        list="playSpeedTick">        
+                    <span class="col-3 text-nowrap" style="font-size: small";>      
+                        <b class="fs-6">${
+                          animDataObj.playSpeed
+                        }</b> day/<sub>s</sub>
+                    </span>
+                    <datalist class="fs-6 p-0" id="playSpeedTick" >
+                        ${d3
+                          .range(playSpeedDomain[0], playSpeedDomain[1] + 1)
+                          .filter((val) => val % tickSpacing === 0)
+                          .map(
+                            (val) => `<option value="${val}"
+                          ${
+                            val % labelSpacing === 0 || val === tickSpacing
+                              ? `label="x${
+                                  val / tickSpacing
+                                }" style="font-size: small;"`
+                              : ""
+                          }></option>`
+                          )
+                          .join("")}
+                    </datalist>
+                    `;
+                    break;
+                  case "audio":
+                    html = `
+                    <div class="col-2 form-switch ps-4 pe-0">
+                    <input class="my-1 form-check-input" type="checkbox" role="switch">
+                    </div>
+                    <input class="slider col-7 p-0" type="range"
+                        min="0"
+                        max="100"
+                        value="${defaultSetting.volume * 100}"
+                        step="1"
+                        list="audioTick" disabled>        
+                    <span class="col-3 text-nowrap" style="font-size: small;">      
+                      <b class="fs-6">${defaultSetting.volume * 100}</b> %
+                    </span>
 
+                    <datalist class="fs-6 ps-5" id="audioTick" >
+                        ${d3
+                          .range(101)
+                          .filter((val) => val % 5 === 0)
+                          .map(
+                            (val) => `<option value="${val}"
+                          ${
+                            val % 25 === 0
+                              ? `label="${val}"  style="font-size: smaller;${
+                                  val !== 0 ? "padding-left:5px" : ""
+                                }"`
+                              : ""
+                          }></option>`
+                          )
+                          .join("")}
+                    </datalist>
+                    `;
+                    break;
+                }
+                return html;
+              }
+              const icons = [
+                { str: "setting", hotkey: "S" },
+                { str: "lockView", hotkey: "L" },
+                { str: "pause", hotkey: "P" },
+              ];
+              const panelControl = {
+                slider: ["progress", "playspeed", "audio"],
+              };
 
-                        };
-                        let initMarker = () => {
-                            data.forEach((d, i) => {
-
-                                let popupHtml = `${getDateStr(new Date(d.date))}<br>Depth: ${d.depth}km <br>ML: ${d.ML}<br>`;
-
-                                let marker = L.circleMarker(d.crood, {
-                                    color: depthScale(d.depth),
-                                    radius: getSize(d.ML),
-                                    className: 'animeMarker',
-                                }).bindPopup(popupHtml);
-
-                                markerGroup.addLayer(marker);
-
-                            });
-                        };
-                        let initToolBar = () => {
-                            function getTooltipText(string, hotkey = undefined) {
-                                let text = string.charAt(0).toUpperCase() + string.slice(1);
-                                return hotkey ? `${text} ( ${hotkey} )` : text;
-                            };
-
-                            const icons = [
-                                { str: 'setting', hotkey: 'S' },
-                                { str: 'lockView', hotkey: 'L' },
-                                { str: 'pause', hotkey: 'P' },
-                            ];
-                            const panelControl = {
-                                slider: ['progress', 'playspeed'],
-                            };
-
-                            let buttonHtml = icons.map(btn => `
+              let buttonHtml = icons
+                .map(
+                  (btn) => `
                                 <div class="toolButton">
                                     <span class="tooltiptext tooltip-top">
                                         ${getTooltipText(btn.str, btn.hotkey)}
                                     </span>
-                                    <a class="button" id="${btn.str}Btn" href="#"></a>
-                                </div>`).join('');
+                                    <a class="button" id="${
+                                      btn.str
+                                    }Btn" href="#"></a>
+                                </div>`
+                )
+                .join("");
 
-                            let sliderHtml = panelControl.slider.map(type => `
-                                <label for="customRange3" class="form-label">Example range</label>
-                                <input class="slider" type="range"></input>
-                               `).join('');
+              let sliderHtml = panelControl.slider
+                .map(
+                  (type) => `<div class="inputGroup d-flex flex-column">
+                                <label for="" class="text-start fs-5">
+                                    ${getTooltipText(type)}
+                                </label>
+                                <div class="row" id="${type}">
+                                    ${getControllerHTML(type)}
+                                </div>
+                            </div>`
+                )
+                .join("");
 
-                            let setPanelHtml = `
+              let setPanelHtml = `
                             <div id="setPanel" class="popup">
-                                <h2>Setting</h2>
+                                <h1>Setting</h1>
                                 <a class="close" href="#">&times;</a>
-                                <div>
+                                <div class="mx-1">
                                     ${sliderHtml}
                                 </div>
                                 <!-- < div class= "content" >
@@ -252,229 +377,374 @@ function TWSanime() {
                                 </div > -->
                             </div > `;
 
-                            controller.node().insertAdjacentHTML('beforeend',
-                                `<div class="toolbar d-flex flex-row">
+              controller.node().insertAdjacentHTML(
+                "beforeend",
+                `<div class="toolbar d-flex flex-row">
                                     ${buttonHtml}
-                                </div>`);
+                                </div>`
+              );
 
-                            icons.forEach(btn => {
-                                let button = controller.selectAll(`#${btn.str}Btn`);
-                                button.style('content', `url(img/${btn.str}.png)`);
+              icons.forEach((btn) => {
+                let button = controller.selectAll(`#${btn.str}Btn`);
 
-                                let onClick;
-                                switch (btn.str) {
-                                    case 'setting':
-                                        let toolbar = controller.selectAll('.toolbar');
-                                        toolbar.node().insertAdjacentHTML('afterbegin', setPanelHtml);
-                                        let setPanel = toolbar.selectAll('#setPanel');
-                                        setPanel.selectAll('.close').on('click', () => button.dispatch('click'));
+                let onClick, value, icon;
+                switch (btn.str) {
+                  case "setting":
+                    let toolbar = controller.selectAll(".toolbar");
+                    toolbar
+                      .node()
+                      .insertAdjacentHTML("afterbegin", setPanelHtml);
+                    let setPanel = toolbar.selectAll("#setPanel");
+                    setPanel
+                      .selectAll(".close")
+                      .on("click", () => button.dispatch("click"));
 
-                                        onClick = function (e) {
-                                            let display = this.value ? 'inline' : 'none';
-                                            setPanel.style('display', display);
-                                            this.value = !this.value;
-                                        };
-                                        break;
-                                    case 'lockView':
-                                        onClick = function () {
-                                            this.value = !this.value;
-                                            Map.fire('maplock', { lock: this.value });
-
-                                            let string = (this.value ? '' : 'un') + 'lockView';
-                                            button.style('content', `url(img/${string}.png)`);
-                                            d3.select(this.parentNode).selectAll('.tooltiptext')
-                                                .text(getTooltipText(string, btn.hotkey));
-                                        };
-                                        break;
-                                    case 'pause':
-                                        onClick = function () {
-                                            this.value = !this.value;
-                                            Map.fire('animCtrl', { play: this.value });
-
-                                            let string = this.value ? 'pause' : 'play';
-                                            button.style('content', `url(img/${string}.png)`);
-                                            d3.select(this.parentNode).selectAll('.tooltiptext')
-                                                .text(getTooltipText(string, btn.hotkey));
-                                        };
-                                        break;
-                                    case 'b':
-                                        break;
-
-                                };
-                                button.property("value", true);
-                                button.on('click', onClick);
-
-                            });
-                        };
-
-                        initMap();
-                        initMarker();
-                        initToolBar();
-
-                        markerGroup.addTo(Map);
+                    value = true;
+                    icon = btn.str;
+                    onClick = function (e) {
+                      let display = this.value ? "inline" : "none";
+                      setPanel.style("display", display);
+                      this.value = !this.value;
                     };
-                    function update() {
-                        // console.debug(action, animDataObj);
+                    break;
+                  case "lockView":
+                    value = defaultSetting.lockView;
+                    icon = (value ? "" : "un") + "lockView";
+                    onClick = function () {
+                      this.value = !this.value;
+                      leafletMap.fire("maplock", { lock: this.value });
 
-                        let startDate = animDataObj.startDate,
-                            endDate = animDataObj.endDate,
-                            animTime = animDataObj.animTime;
-
-                        timeScale = d3.scaleTime()
-                            .domain([startDate, endDate])
-                            .range([0, animTime]);
-                        // console.debug(timeScale(startDate - 1000))
-
-                        let updateDateStr = (duration, dateDomain) => {
-                            dateText.interrupt().transition()
-                                .ease(d3.easeLinear)
-                                .duration(duration)
-                                .tween("date", () => {
-                                    let i = d3.interpolateDate(...dateDomain);
-                                    return t => {
-                                        // let date = d3.timeMinute(i(t));
-                                        let date = i(t);
-                                        // console.debug(date.toISOString())
-                                        dateText
-                                            .property('value', date.getTime())
-                                            .text(getDateStr(date));
-                                    };
-                                });
-                        };
-
-                        let duration, dateDomain;
-                        switch (action) {
-                            case 'play':
-                                let pauseDate = dateText.property('value');
-                                duration = timeScale.range()[1] - timeScale(pauseDate);
-                                dateDomain = [pauseDate, timeScale.domain()[1]];
-                                updateDateStr(duration, dateDomain);
-                                // console.debug(new Date(pauseDate).toISOString());
-
-                                markerTimer.forEach(t => t.resume());
-                                break;
-                            case 'pause':
-                                console.debug(new Date(dateText.property('value')).toISOString())
-                                dateText.interrupt();
-
-                                markerTimer.forEach(t => t.pause());
-                                break;
-                            default://init
-                                duration = timeScale.range()[1];
-                                dateDomain = timeScale.domain();
-                                updateDateStr(duration, dateDomain);
-
-                                let markers = markerGroup.getLayers();
-                                markerTimer = data.map((d, i) => {
-                                    // console.debug(timeScale(d.date))
-
-                                    return new Timer(() => {
-                                        markers[i].getElement().style.display = 'inline';
-
-                                        //==debug
-                                        // console.debug(Date.now() - start - timeScale(d.date))
-                                        let timer = markerTimer[i];
-                                        let elapsed = timer.elapsed + Date.now() - timer.start;
-                                        console.debug(elapsed - timeScale(d.date));
-                                        //==debug
-
-                                    }, timeScale(d.date));
-                                });
-                                console.debug(setTimeout(() => { }, 1000))
-                                console.debug(window.setTimeout(() => { }, 1000))
-                                break;
-                        };
-
+                      let string = (this.value ? "" : "un") + "lockView";
+                      button.style("content", `url(img/${string}.png)`);
+                      d3.select(this.parentNode)
+                        .selectAll(".tooltiptext")
+                        .text(getTooltipText(string, btn.hotkey));
                     };
-                    if (!animDataObj) {
-                        animDataObj = getNewData(defaultSetting);
-                        init();
+                    break;
+                  case "pause":
+                    value = defaultSetting.play;
+                    icon = value ? "pause" : "play";
+                    onClick = function () {
+                      this.value = !this.value;
+                      leafletMap.fire("animCtrl", { play: this.value });
+
+                      let string = this.value ? "pause" : "play";
+                      button.style("content", `url(img/${string}.png)`);
+                      d3.select(this.parentNode)
+                        .selectAll(".tooltiptext")
+                        .text(getTooltipText(string, btn.hotkey));
                     };
-                    update();
-                };
-                updateAnime();
-
-                function events() {
-                    let toolbar = controller.selectAll('.toolbar');
-
-                    let settingBtn = toolbar.selectAll('#settingBtn'),
-                        lockViewBtn = toolbar.selectAll('#lockViewBtn'),
-                        pauseBtn = toolbar.selectAll('#pauseBtn');
-
-                    let animeControllEvent = () => {
-                        //==map events
-                        Map
-                            .on('maplock', (e) => {
-                                let action = e.lock ? 'disable' : 'enable';
-                                Map.boxZoom[action]();
-                                Map.scrollWheelZoom[action]();
-                                Map.doubleClickZoom[action]();
-                                Map.dragging[action]();
-                                Map.keyboard[action]();
-                            })
-                            .on('animCtrl', (e) => {
-                                let action = e.play ? 'play' : 'pause';
-                                updateAnime(action);
-                            });
-
-
-                        Map.fire('maplock', { lock: defaultSetting.lockView });
-
-
-                        document.addEventListener("visibilitychange", (e) => {
-                            // console.debug();
-                            let playing = pauseBtn.property('value');
-                            if (document.hidden || playing) {
-                                pauseBtn.dispatch('click');
-                            };
-                        });
-                    };
-                    let keyboardEvent = () => {
-                        let hotkeyPressFlag = true;//avoid from trigger event too often
-
-                        d3.select(window)
-                            .on("keydown", (e) => {
-                                if (!hotkeyPressFlag) return;
-                                // console.debug(e.code)
-                                switch (e.code) {
-                                    //==快捷鍵
-                                    case 'KeyP':
-                                        pauseBtn.dispatch('click');
-                                        break;
-                                    case 'KeyS':
-                                        settingBtn.dispatch('click');
-                                        break;
-                                    case 'KeyL':
-                                        lockViewBtn.dispatch('click');
-                                        break;
-                                };
-
-                                hotkeyPressFlag = false;
-                                d3.timeout(() => hotkeyPressFlag = true, 10);
-                            });
-                    };
-                    animeControllEvent();
-                    keyboardEvent();
-                };
-                events();
-
+                    break;
+                  case "b":
+                    break;
+                }
+                button
+                  .property("value", value)
+                  .style("content", `url(img/${icon}.png)`)
+                  .on("click", onClick);
+              });
             };
-            // getChartMenu('qsis');
-
-            if (!data) {
-                chart.data();
-                data = await data;
+            let initTimeScale = () => {
+              timeScale = d3
+                .scaleTime()
+                .domain([animDataObj.startDate, animDataObj.endDate])
+                .range([0, animDataObj.animTime]);
             };
-            animeMap();
-        };
-        //===init once
-        if (!(selectorD3.selectAll('#seismicity').nodes().length >= 1)) {
+            initMap();
+            initMarker();
+            initToolBar();
+            initTimeScale();
+          }
+          function update() {
+            // console.debug("action", animDataObj);
+            let startDate = animDataObj.startDate,
+              endDate = animDataObj.endDate,
+              animTime = animDataObj.animTime,
+              play = animDataObj.play,
+              newData = animDataObj.newData;
+
+            newTimeScale = d3
+              .scaleTime()
+              .domain([startDate, endDate])
+              .range([0, animTime]);
+            // console.debug(animDataObj.playSpeed);
+
+            const progressControl = controller.selectAll("#progress");
+            const updateProgress = (newStartDate = null, startTimer = true) => {
+              const timeTunnel = (date) => {
+                //==更新日期
+                dateText.property("value", date).text(getDateStr(date));
+                //==更新進度條
+                progressControl.call((div) => {
+                  let timeMs = timeScale(date);
+                  div.select("input").property("value", timeMs / 1000);
+
+                  let timeString = new Date(timeMs).toISOString().substr(11, 8);
+                  div.select("span").text(timeString);
+                });
+              };
+
+              let duration =
+                newTimeScale.range()[1] -
+                (newStartDate ? newTimeScale(newStartDate) : 0);
+
+              let newDateDomain = newStartDate
+                ? [newStartDate, newTimeScale.domain()[1]]
+                : newTimeScale.domain();
+
+              if (startTimer)
+                dateText
+                  .interrupt()
+                  .transition()
+                  .ease(d3.easeLinear)
+                  .duration(duration)
+                  .tween("date", () => {
+                    let i = d3.interpolateDate(...newDateDomain);
+                    return (t) => {
+                      // let date = d3.timeMinute(i(t));
+                      let date = i(t).getTime();
+                      timeTunnel(date);
+                    };
+                  });
+              else timeTunnel(newDateDomain[0]);
+            };
+            const getAudioPlayer = (ml) => {
+              const audioPlayer = new Audio("audio/1.mp3");
+              // console.debug(audioPlayer);
+              Object.assign(audioPlayer, {
+                volume: animDataObj.volume,
+                playbackRate: 1.5,
+                mediaGroup: "test",
+              });
+              return audioPlayer;
+            };
+            switch (action) {
+              case "play":
+                let pauseDate = dateText.property("value");
+                updateProgress(pauseDate);
+                // console.debug(new Date(pauseDate).toISOString());
+
+                markerTimer.forEach((t) => t.resume());
+                newData.forEach((d) =>
+                  L.DomUtil.removeClass(d.marker.getElement(), "anime-paused")
+                );
+                break;
+              case "pause":
+                dateText.interrupt();
+                markerTimer.forEach((t) => t.pause());
+                newData.forEach((d) =>
+                  L.DomUtil.addClass(d.marker.getElement(), "anime-paused")
+                );
+                break;
+              case "dragProgress":
+                newData.forEach((d) => {
+                  L.DomUtil.removeClass(
+                    d.marker.getElement(),
+                    "animateMarker-appeared"
+                  );
+                  L.DomUtil.removeClass(d.marker.getElement(), "anime-toggled");
+                });
+              case "changeSpeed":
+              default: //init and speed change
+                // console.debug(action);
+                let startTimer = play;
+                updateProgress(action ? startDate : null, startTimer);
+
+                if (markerTimer) markerTimer.forEach((t) => t.stop());
+                markerTimer = newData.map((d, i) => {
+                  let callback = () => {
+                    // console.debug(d.marker.getIcon());
+                    let marker = d.marker.getElement();
+                    let color = depthScale(d.depth);
+                    let radius = getSize(d.ML);
+
+                    //==marker根據資料變化style
+                    Object.assign(marker.style, {
+                      "background-color": color,
+                      width: `${radius * 2}px`,
+                      height: `${radius * 2}px`,
+                      "margin-left": `${-radius}px`,
+                      "margin-top": `${-radius}px`,
+                    });
+
+                    //==marker透明度動畫
+                    L.DomUtil.addClass(marker, "animateMarker-appeared");
+
+                    //==用delay>0判斷不是過去的時間點
+
+                    //==計時開始才校正日期
+                    if (startTimer && delay > 0) updateProgress(d.date);
+
+                    //==特效(不補特效聲音動畫一次多會LAG)
+                    //==圓圈動畫
+                    if (delay > 0 || i === 0)
+                      L.DomUtil.addClass(marker, "anime-toggled");
+                    //==聲音
+                    if (animDataObj.audio && delay > 0)
+                      getAudioPlayer(d.ML).play();
+                  };
+                  let delay = newTimeScale(d.date);
+                  let timer = new Timer(
+                    delay > 0 ? callback : callback(),
+                    delay
+                  );
+
+                  // if (!startTimer)
+                  //   action === "dragProgress"
+                  //     ? setTimeout(() => timer.pause(), 0) //==拉完要讓前面的點出現
+                  //     : timer.pause();
+
+                  if (!startTimer) timer.pause();
+
+                  return timer;
+                });
+                break;
+            }
+          }
+          if (!animDataObj) {
+            animDataObj = getNewData(defaultSetting);
             init();
-        };
+          }
+          update();
+        }
+        updateAnime();
 
-        printChart();
+        function events() {
+          let toolbar = controller.selectAll(".toolbar");
 
-        return chart;
-    };
+          let settingBtn = toolbar.selectAll("#settingBtn"),
+            lockViewBtn = toolbar.selectAll("#lockViewBtn"),
+            pauseBtn = toolbar.selectAll("#pauseBtn"),
+            audioCkb = toolbar.selectAll("#audio>input[type='checkbox']");
+
+          let animeControllEvent = () => {
+            let toolbarEvent = () => {
+              leafletMap
+                .on("maplock", (e) => {
+                  let action = e.lock ? "disable" : "enable";
+                  const mapEvents = [
+                    "boxZoom",
+                    "scrollWheelZoom",
+                    "doubleClickZoom",
+                    "dragging",
+                    "keyboard",
+                  ];
+                  mapEvents.forEach((event) => leafletMap[event][action]());
+                  animDataObj = getNewData({ lockView: e.lock });
+                })
+                .on("animCtrl", (e) => {
+                  let action = e.play ? "play" : "pause";
+                  animDataObj = getNewData({ play: e.play });
+                  updateAnime(action);
+                });
+              leafletMap.fire("maplock", { lock: defaultSetting.lockView });
+
+              // document.addEventListener("visibilitychange", (e) => {
+              //   // console.debug();
+              //   let playing = pauseBtn.property("value");
+              //   if (document.hidden || playing) {
+              //     pauseBtn.dispatch("click");
+              //   }
+              // });
+            };
+            let setPanelEvent = () => {
+              let setPanel = toolbar.selectAll("#setPanel");
+              let progressControl = setPanel.selectAll("#progress"),
+                playspeedControl = setPanel.selectAll("#playspeed"),
+                audioControl = setPanel.selectAll("#audio");
+
+              playspeedControl.select("input").on("input", function () {
+                let playSpeed = parseInt(this.value);
+                let startDate = dateText.property("value");
+                playspeedControl.select("span>b").text(playSpeed);
+
+                // console.debug(new Date(startDate).toISOString());
+                animDataObj = getNewData({
+                  playSpeed,
+                  startDate,
+                });
+                updateAnime("changeSpeed");
+              });
+
+              progressControl.select("input").on("input", function () {
+                // console.debug(this.value);
+                let startDate = timeScale
+                  .invert(parseFloat(this.value) * 1000)
+                  .getTime();
+                animDataObj = getNewData({
+                  startDate,
+                });
+                updateAnime("dragProgress");
+              });
+
+              audioControl.selectAll("input").call((input) => {
+                let inputEles = input.nodes();
+                let checkbox = inputEles[0];
+                let range = inputEles[1];
+
+                checkbox.addEventListener("change", function () {
+                  let check = this.checked;
+                  range.disabled = !check;
+                  animDataObj = getNewData({ audio: check });
+                });
+                range.addEventListener("input", function () {
+                  let volume = parseInt(this.value);
+                  audioControl.select("span>b").text(volume);
+                  animDataObj = getNewData({ volume: volume / 100 });
+                });
+              });
+            };
+            toolbarEvent();
+            setPanelEvent();
+          };
+          let keyboardEvent = () => {
+            let hotkeyPressFlag = true; //avoid from trigger event too often
+
+            d3.select(window).on("keydown", (e) => {
+              if (!hotkeyPressFlag) return;
+              // console.debug(e.code)
+              switch (e.code) {
+                //==快捷鍵
+                case "KeyP":
+                  pauseBtn.dispatch("click");
+                  break;
+                case "KeyS":
+                  settingBtn.dispatch("click");
+                  break;
+                case "KeyL":
+                  lockViewBtn.dispatch("click");
+                  break;
+                case "KeyA":
+                  console.debug(audioCkb);
+                  // audioCkb.attr("value", true);
+                  audioCkb.dispatch("click");
+                  break;
+              }
+
+              hotkeyPressFlag = false;
+              d3.timeout(() => (hotkeyPressFlag = true), 10);
+            });
+          };
+          animeControllEvent();
+          keyboardEvent();
+        }
+        events();
+      }
+
+      if (!data) {
+        chart.data();
+        data = await data;
+      }
+      animeMap();
+    }
+    //===init once
+    if (!(selectorD3.selectAll("#seismicity").nodes().length >= 1)) {
+      init();
+    }
+
+    printChart();
+
     return chart;
-};
+  }
+  return chart;
+}

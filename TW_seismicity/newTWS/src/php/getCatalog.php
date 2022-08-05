@@ -1,21 +1,28 @@
 <?php
-error_log("Error message.", 3, "/var/tmp/my-errors.log");
+// ini_set('memory_limit', '-1');
 require("./sqliconnect.php");
 
-// $stlat = $_POST['stlat'];
-// $edlat = $_POST['edlat'];
-// $stlon = $_POST['stlon'];
-// $edlon = $_POST['edlon'];
-// $ML = $_POST['ML'];
+
+// 111.195*SQRT(POWER(`Latitude`- ? ,2)+POWER(COS(PI()/180  ?)(`Longitude` - ? ),2)) <= ?";
+
+// 	$dbname = 'seis';
+// 	$sql =  "SELECT * FROM `event` WHERE `date` >= ? AND `date` <= ?";
+// 	$sql.= " AND 111.195*SQRT(POWER(`Latitude`- ? ,2)+POWER(COS(PI()/180  ?)(`Longitude` - ? ),2)) <= ?";
+// 	$sql .= " AND `ML` <= ?";
+// 	$sql .= " AND `ML` >= ?";
+// 	$sql .= " AND `depth` <= ?";
+// 	$sql .= " AND `depth` >= ?";
+
+// bind_param('ssdddddddd', $stdate,$eddate,$circlelat,$circlelat,$circlelon,$radius,$maxMag,$minMag,$maxdep,$mindep);	//帶入參數
 
 if (isset($_POST['stdate']))
 	$stdate = $_POST['stdate'];
 else
-	$stdate = "1990-1-1";
+	$stdate = "1990-01-01";
 if (isset($_POST['eddate']))
 	$eddate = $_POST['eddate'];
 else
-	$eddate = date("Y-m-d");
+	$eddate = "1990-05-05";
 
 $sql = "SELECT * FROM `event` WHERE `date` >= '" . $stdate . "' AND `date` <= '" . $eddate . "'";
 
@@ -47,4 +54,5 @@ $rtArray = array();
 while ($data = mysqli_fetch_assoc($result)) {
 	$rtArray[] = $data;
 }
+
 echo json_encode($rtArray);

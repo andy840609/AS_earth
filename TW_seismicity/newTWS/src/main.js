@@ -94,6 +94,9 @@ function TWSanime() {
           .append("span")
           .attr("class", "dateText");
         const controller = selectorD3.append("div").attr("class", "controller");
+        const legendGroup = selectorD3
+          .append("div")
+          .attr("class", "legendGroup");
         const mlDomain = [3, 7], //==規模範圍
           depthDomain = [0, 320], //==深度範圍
           dateDomain = [data[0].date, data[data.length - 1].date], //==日期範圍
@@ -109,8 +112,7 @@ function TWSanime() {
           audio: false, //==預設聲音關閉(chrome66後不能自動播放)
           volume: 0.5, //==預設聲音大小
         };
-        123;
-        555;
+
         let leafletMap, //leaflet obj
           markerGroup = new L.layerGroup(),
           markerTimer;
@@ -278,8 +280,11 @@ function TWSanime() {
                     </span>
                     <datalist class="fs-6 p-0" id="playSpeedTick" >
                         ${d3
-                          .range(playSpeedDomain[0], playSpeedDomain[1] + 1)
-                          .filter((val) => val % tickSpacing === 0)
+                          .range(
+                            playSpeedDomain[0],
+                            playSpeedDomain[1] + 1,
+                            tickSpacing
+                          )
                           .map(
                             (val) => `<option value="${val}"
                           ${
@@ -296,8 +301,11 @@ function TWSanime() {
                     break;
                   case "audio":
                     html = `
-                    <div class="col-2 form-switch ps-4 pe-0">
-                    <input class="my-1 form-check-input" type="checkbox" role="switch">
+                    <div class="col-2 ps-4 pe-0 form-switch toolButton">
+                      <span class="tooltiptext tooltip-top">
+                        ${getTooltipText("ON/OFF", "A")}
+                      </span>
+                      <input class="my-1 form-check-input" type="checkbox" role="switch">
                     </div>
                     <input class="slider col-7 p-0" type="range"
                         min="0"
@@ -311,8 +319,7 @@ function TWSanime() {
 
                     <datalist class="fs-6 ps-5" id="audioTick" >
                         ${d3
-                          .range(101)
-                          .filter((val) => val % 5 === 0)
+                          .range(0, 101, 5)
                           .map(
                             (val) => `<option value="${val}"
                           ${
@@ -451,10 +458,69 @@ function TWSanime() {
                 .domain([animDataObj.startDate, animDataObj.endDate])
                 .range([0, animDataObj.animTime]);
             };
+            let initLegend = () => {
+              // return;
+
+              legendGroup
+                .append("div")
+                .attr("class", "legend")
+                .append("svg")
+                .call((svg) => {
+                  let mlRange = d3.range(...mlDomain).concat(mlDomain[1]);
+                  let spacing = 50,
+                    margin = spacing / 2,
+                    rectW = spacing * (mlRange.length - 1) + 2 * margin,
+                    rectH = margin;
+                  svg
+                    .attr("width", rectW + margin)
+                    .attr("height", rectH * 3)
+                    .append("g")
+                    .attr("class", "mlLegend")
+
+                    .attr("transform", `translate(${margin},${margin})`)
+                    .call((g) => {
+                      g.append("rect")
+                        .attr("height", rectH)
+                        .attr("width", rectW)
+                        .attr("rx", rectH / 2);
+
+                      g.append("text")
+                        .attr("text-anchor", "end")
+                        .attr("font-weight", "bold")
+                        .attr("font-size", "16")
+                        .text("M")
+                        .append("tspan")
+                        .attr("dy", "4")
+                        .text("L");
+
+                      g.append("g")
+                        .attr("transform", `translate(0,${rectH / 2})`)
+                        .call((g) => {
+                          g.selectAll("circle")
+                            .data(mlRange)
+                            .join("circle")
+                            .attr("fill", "#888")
+                            .attr("r", getSize)
+                            .attr("cx", (d, i) => i * spacing + margin)
+                            .attr("stroke-opacity", 1)
+                            .attr("stroke", "white");
+
+                          g.selectAll("g")
+                            .data(mlRange)
+                            .join("text")
+                            .text((d) => d)
+                            .attr("text-anchor", "middle")
+                            .attr("x", (d, i) => i * spacing + margin)
+                            .attr("y", spacing * 0.6);
+                        });
+                    });
+                });
+            };
+            initTimeScale();
             initMap();
             initMarker();
             initToolBar();
-            initTimeScale();
+            initLegend();
           }
           function update() {
             // console.debug("action", animDataObj);
@@ -616,7 +682,7 @@ function TWSanime() {
           let settingBtn = toolbar.selectAll("#settingBtn"),
             lockViewBtn = toolbar.selectAll("#lockViewBtn"),
             pauseBtn = toolbar.selectAll("#pauseBtn"),
-            audioCkb = toolbar.selectAll("#audio>input[type='checkbox']");
+            audioCkb = toolbar.selectAll("#audio input[type='checkbox']");
 
           let animeControllEvent = () => {
             let toolbarEvent = () => {
@@ -687,6 +753,7 @@ function TWSanime() {
                   let check = this.checked;
                   range.disabled = !check;
                   animDataObj = getNewData({ audio: check });
+                  // console.debug(check);
                 });
                 range.addEventListener("input", function () {
                   let volume = parseInt(this.value);
@@ -716,9 +783,9 @@ function TWSanime() {
                   lockViewBtn.dispatch("click");
                   break;
                 case "KeyA":
-                  console.debug(audioCkb);
-                  // audioCkb.attr("value", true);
-                  audioCkb.dispatch("click");
+                  audioCkb
+                    .property("checked", !animDataObj.audio)
+                    .dispatch("change");
                   break;
               }
 
@@ -726,8 +793,55 @@ function TWSanime() {
               d3.timeout(() => (hotkeyPressFlag = true), 10);
             });
           };
+          function legendEvent() {
+            new L.Draggable(legendGroup.node()).enable();
+            // let CanvasLayer = L.GridLayer.extend({
+            //   createTile: function (coords) {
+            //     // create a <canvas> element for drawing
+            //     var tile = L.DomUtil.create("canvas", "leaflet-tileAAA");
+            //     // setup tile width and height according to the options
+            //     var size = this.getTileSize();
+            //     tile.width = size.x;
+            //     tile.height = size.y;
+            //     // get a canvas context and draw something on it using coords.x, coords.y and coords.z
+            //     var ctx = tile.getContext("2d");
+            //     // return the tile so it can be rendered on screen
+            //     return tile;
+            //   },
+            // });
+
+            // // console.debug(CanvasLayer);
+            // new CanvasLayer().addTo(leafletMap);
+            return;
+            let raiseAndDrag = (d3_selection) => {
+              let x_fixed = 0,
+                y_fixed = 0;
+              let legend_dragBehavior = d3
+                .drag()
+                .on("start", function (e) {
+                  x_fixed = e.sourceEvent.offsetX;
+                  y_fixed = e.sourceEvent.offsetY;
+                })
+                .on("drag end", function (e) {
+                  let translateX = e.x - x_fixed;
+                  let translateY = e.y - y_fixed;
+
+                  d3.select(this).style(
+                    "transform",
+                    `translate(${translateX}px, ${translateY}px)`
+                  );
+                });
+
+              d3_selection
+                .attr("cursor", "grab")
+                .call((g) => g.raise()) //把選中元素拉到最上層(比zoom的選取框優先)
+                .call((g) => g.selectAll(".legend").call(legend_dragBehavior));
+            };
+            legendGroup.call(raiseAndDrag);
+          }
           animeControllEvent();
           keyboardEvent();
+          legendEvent();
         }
         events();
       }

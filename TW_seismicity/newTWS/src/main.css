@@ -23,7 +23,7 @@ datalist {
 
 /* divIcon marker的z-index會改變前後順序 */
 .leaflet-marker-icon {
-  z-index: 0 !important;
+  z-index: 9500 !important;
 }
 
 /* 所有marker預設class */
@@ -97,6 +97,28 @@ datalist {
   -webkit-text-stroke-color: #218fa0;
   -moz-text-stroke-width: 1px;
   -webkit-text-stroke-width: 1px;
+  pointer-events: none;
+}
+
+/* =============================================legend========================================== */
+
+.legendGroup {
+  position: absolute;
+  bottom: 10%;
+  z-index: 500;
+  pointer-events: auto;
+}
+/* .legend svg {
+  width: 100px;
+} */
+.legend text {
+  font: bold 16px sans-serif;
+  fill: black;
+  paint-order: stroke;
+  stroke-width: 3px;
+  stroke: white;
+  stroke-linecap: butt;
+  stroke-linejoin: miter;
 }
 
 /* =============================================toolbar========================================== */

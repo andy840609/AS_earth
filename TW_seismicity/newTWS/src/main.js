@@ -113,12 +113,14 @@ function TWSanime() {
           volume: 0.5, //==預設聲音大小
         };
 
+        //==leaflet obj reference
         let leafletMap, //leaflet obj
           markerGroup = new L.layerGroup(),
-          markerTimer;
+          latlngLayer;
 
+        let markerTimer;
         let depthScale = d3.scaleSequentialSqrt(
-          depthDomain.reverse(),
+          [...depthDomain].reverse(),
           d3.interpolateTurbo
         );
 
@@ -242,7 +244,9 @@ function TWSanime() {
             };
             let initToolBar = () => {
               function getTooltipText(string, hotkey = undefined) {
-                let text = string.charAt(0).toUpperCase() + string.slice(1);
+                let text =
+                  string.charAt(0).toUpperCase() +
+                  string.slice(1).replace("_", " ");
                 return hotkey ? `${text} ( ${hotkey} )` : text;
               }
               function getControllerHTML(type) {
@@ -344,19 +348,17 @@ function TWSanime() {
               ];
               const panelControl = {
                 slider: ["progress", "playspeed", "audio"],
+                checkbox: ["mL_Legend", "depth_Legend", "grid_Line"],
               };
 
               let buttonHtml = icons
                 .map(
-                  (btn) => `
-                                <div class="toolButton">
-                                    <span class="tooltiptext tooltip-top">
-                                        ${getTooltipText(btn.str, btn.hotkey)}
-                                    </span>
-                                    <a class="button" id="${
-                                      btn.str
-                                    }Btn" href="#"></a>
-                                </div>`
+                  (btn) => `<div class="toolButton">
+                              <span class="tooltiptext tooltip-top">
+                                  ${getTooltipText(btn.str, btn.hotkey)}
+                              </span>
+                              <a class="button" id="${btn.str}Btn" href="#"></a>
+                            </div>`
                 )
                 .join("");
 
@@ -373,16 +375,27 @@ function TWSanime() {
                 )
                 .join("");
 
+              let checkboxHtml = panelControl.checkbox
+                .map(
+                  (type, i) => `<div class="form-check col-6 text-start">
+                              <input class="form-check-input" type="checkbox" name="display" value="${i}" id="${type}ckb" checked>
+                              <label class="form-check-label" for="${type}ckb">
+                                ${getTooltipText(type)}
+                              </label>
+                            </div>`
+                )
+                .join("");
+
               let setPanelHtml = `
                             <div id="setPanel" class="popup">
                                 <h1>Setting</h1>
                                 <a class="close" href="#">&times;</a>
                                 <div class="mx-1">
                                     ${sliderHtml}
+                                    <div class="row">
+                                      ${checkboxHtml}
+                                    </div>
                                 </div>
-                                <!-- < div class= "content" >
-                                Thank to pop me out of that button, but now i'm done so you can close this window.
-                                </div > -->
                             </div > `;
 
               controller.node().insertAdjacentHTML(
@@ -459,51 +472,43 @@ function TWSanime() {
                 .range([0, animDataObj.animTime]);
             };
             let initLegend = () => {
-              // return;
+              const mlRange = d3.range(...mlDomain).concat(mlDomain[1]);
+              const spacing = 50,
+                margin = spacing / 2,
+                legendW = spacing * (mlRange.length - 1) + 2 * margin,
+                legendH = margin;
 
+              //==ml legend
               legendGroup
                 .append("div")
                 .attr("class", "legend")
                 .append("svg")
                 .call((svg) => {
-                  let mlRange = d3.range(...mlDomain).concat(mlDomain[1]);
-                  let spacing = 50,
-                    margin = spacing / 2,
-                    rectW = spacing * (mlRange.length - 1) + 2 * margin,
-                    rectH = margin;
                   svg
-                    .attr("width", rectW + margin)
-                    .attr("height", rectH * 3)
-                    .append("g")
                     .attr("class", "mlLegend")
-
-                    .attr("transform", `translate(${margin},${margin})`)
+                    .attr("width", legendW)
+                    .attr("height", legendH * 3)
+                    .append("g")
+                    .attr("transform", `translate(0,${margin})`)
                     .call((g) => {
                       g.append("rect")
-                        .attr("height", rectH)
-                        .attr("width", rectW)
-                        .attr("rx", rectH / 2);
+                        .attr("height", legendH)
+                        .attr("width", legendW)
+                        .attr("rx", legendH / 2);
 
                       g.append("text")
-                        .attr("text-anchor", "end")
-                        .attr("font-weight", "bold")
-                        .attr("font-size", "16")
-                        .text("M")
-                        .append("tspan")
-                        .attr("dy", "4")
-                        .text("L");
+                        .attr("text-anchor", "start")
+                        .attr("alignment-baseline", "text-after-edge")
+                        .text("ML");
 
                       g.append("g")
-                        .attr("transform", `translate(0,${rectH / 2})`)
+                        .attr("transform", `translate(0,${legendH / 2})`)
                         .call((g) => {
                           g.selectAll("circle")
                             .data(mlRange)
                             .join("circle")
-                            .attr("fill", "#888")
                             .attr("r", getSize)
-                            .attr("cx", (d, i) => i * spacing + margin)
-                            .attr("stroke-opacity", 1)
-                            .attr("stroke", "white");
+                            .attr("cx", (d, i) => i * spacing + margin);
 
                           g.selectAll("g")
                             .data(mlRange)
@@ -514,6 +519,248 @@ function TWSanime() {
                             .attr("y", spacing * 0.6);
                         });
                     });
+                });
+
+              //==depth legend
+              legendGroup
+                .append("div")
+                .attr("class", "legend")
+                .call((div) => {
+                  //==@d3/color-legend
+                  let Legend = ({
+                    color,
+                    title,
+                    tickSize = 6,
+                    width = 320,
+                    height = 44 + tickSize,
+                    marginTop = 18,
+                    marginRight = 0,
+                    marginBottom = 16 + tickSize,
+                    marginLeft = 0,
+                    ticks = width / 64,
+                    tickFormat,
+                    tickValues,
+                  } = {}) => {
+                    function ramp(color, n = 256) {
+                      const canvas = document.createElement("canvas");
+                      canvas.width = n;
+                      canvas.height = 1;
+                      const context = canvas.getContext("2d");
+                      for (let i = 0; i < n; ++i) {
+                        context.fillStyle = color(i / (n - 1));
+                        context.fillRect(i, 0, 1, 1);
+                      }
+                      return canvas;
+                    }
+
+                    const svg = d3
+                      .create("svg")
+                      .attr("width", width)
+                      .attr("height", height)
+                      .attr("viewBox", [0, 0, width, height])
+                      .style("overflow", "visible")
+                      .style("display", "block");
+
+                    let tickAdjust = (g) =>
+                      g
+                        .selectAll(".tick line")
+                        .attr("y1", marginTop + marginBottom - height);
+                    let x;
+
+                    // Continuous
+                    if (color.interpolate) {
+                      const n = Math.min(
+                        color.domain().length,
+                        color.range().length
+                      );
+
+                      x = color
+                        .copy()
+                        .rangeRound(
+                          d3.quantize(
+                            d3.interpolate(marginLeft, width - marginRight),
+                            n
+                          )
+                        );
+
+                      svg
+                        .append("image")
+                        .attr("x", marginLeft)
+                        .attr("y", marginTop)
+                        .attr("width", width - marginLeft - marginRight)
+                        .attr("height", height - marginTop - marginBottom)
+                        .attr("preserveAspectRatio", "none")
+                        .attr(
+                          "xlink:href",
+                          ramp(
+                            color
+                              .copy()
+                              .domain(d3.quantize(d3.interpolate(0, 1), n))
+                          ).toDataURL()
+                        );
+                    }
+
+                    // Sequential
+                    else if (color.interpolator) {
+                      x = Object.assign(
+                        color
+                          .copy()
+                          .interpolator(
+                            d3.interpolateRound(marginLeft, width - marginRight)
+                          ),
+                        {
+                          range() {
+                            return [marginLeft, width - marginRight];
+                          },
+                        }
+                      );
+
+                      svg
+                        .append("image")
+                        .attr("x", marginLeft)
+                        .attr("y", marginTop)
+                        .attr("width", width - marginLeft - marginRight)
+                        .attr("height", height - marginTop - marginBottom)
+                        .attr("preserveAspectRatio", "none")
+                        .attr(
+                          "xlink:href",
+                          ramp(color.interpolator()).toDataURL()
+                        )
+                        .attr(
+                          "transform",
+                          `translate(${
+                            width - marginLeft - marginRight
+                          }) scale(-1,1)`
+                        );
+
+                      // scaleSequentialQuantile doesn’t implement ticks or tickFormat.
+                      if (!x.ticks) {
+                        if (tickValues === undefined) {
+                          const n = Math.round(ticks + 1);
+                          tickValues = d3
+                            .range(n)
+                            .map((i) =>
+                              d3.quantile(color.domain(), i / (n - 1))
+                            );
+                        }
+                        if (typeof tickFormat !== "function") {
+                          tickFormat = d3.format(
+                            tickFormat === undefined ? ",f" : tickFormat
+                          );
+                        }
+                      }
+                    }
+
+                    // Threshold
+                    else if (color.invertExtent) {
+                      const thresholds = color.thresholds
+                        ? color.thresholds() // scaleQuantize
+                        : color.quantiles
+                        ? color.quantiles() // scaleQuantile
+                        : color.domain(); // scaleThreshold
+
+                      const thresholdFormat =
+                        tickFormat === undefined
+                          ? (d) => d
+                          : typeof tickFormat === "string"
+                          ? d3.format(tickFormat)
+                          : tickFormat;
+
+                      x = d3
+                        .scaleLinear()
+                        .domain([-1, color.range().length - 1])
+                        .rangeRound([marginLeft, width - marginRight]);
+
+                      svg
+                        .append("g")
+                        .selectAll("rect")
+                        .data(color.range())
+                        .join("rect")
+                        .attr("x", (d, i) => x(i - 1))
+                        .attr("y", marginTop)
+                        .attr("width", (d, i) => x(i) - x(i - 1))
+                        .attr("height", height - marginTop - marginBottom)
+                        .attr("fill", (d) => d);
+
+                      tickValues = d3.range(thresholds.length);
+                      tickFormat = (i) => thresholdFormat(thresholds[i], i);
+                    }
+
+                    // Ordinal
+                    else {
+                      x = d3
+                        .scaleBand()
+                        .domain(color.domain())
+                        .rangeRound([marginLeft, width - marginRight]);
+
+                      svg
+                        .append("g")
+                        .selectAll("rect")
+                        .data(color.domain())
+                        .join("rect")
+                        .attr("x", x)
+                        .attr("y", marginTop)
+                        .attr("width", Math.max(0, x.bandwidth() - 1))
+                        .attr("height", height - marginTop - marginBottom)
+                        .attr("fill", color);
+
+                      tickAdjust = () => {};
+                    }
+
+                    svg
+                      .append("g")
+                      .attr(
+                        "transform",
+                        `translate(0,${height - marginBottom})`
+                      )
+                      .call(
+                        d3
+                          .axisBottom(x)
+                          .ticks(
+                            ticks,
+                            typeof tickFormat === "string"
+                              ? tickFormat
+                              : undefined
+                          )
+                          .tickFormat(
+                            typeof tickFormat === "function"
+                              ? tickFormat
+                              : undefined
+                          )
+                          .tickSize(tickSize)
+                          .tickValues(tickValues)
+                      )
+                      .call(tickAdjust)
+                      .call((g) => g.select(".domain").remove())
+                      .call((g) =>
+                        g
+                          .append("text")
+                          .attr("x", marginLeft)
+                          .attr("y", marginTop + marginBottom - height - 6)
+                          .attr("fill", "currentColor")
+                          .attr("text-anchor", "start")
+                          .attr("font-weight", "bold")
+                          .attr("class", "title")
+                          .text(title)
+                      );
+
+                    return svg.node();
+                  };
+
+                  div
+                    // .attr("transform", `translate(0,35)`)
+                    .append(() =>
+                      Legend({
+                        color: d3.scaleSequentialSqrt(
+                          depthDomain,
+                          d3.interpolateTurbo
+                        ),
+                        title: "Depth (km)",
+                        width: legendW,
+                        tickValues: [0, 50, 100, 200, 300],
+                      })
+                    )
+                    .attr("class", "depthLegend");
                 });
             };
             initTimeScale();
@@ -718,7 +965,8 @@ function TWSanime() {
               let setPanel = toolbar.selectAll("#setPanel");
               let progressControl = setPanel.selectAll("#progress"),
                 playspeedControl = setPanel.selectAll("#playspeed"),
-                audioControl = setPanel.selectAll("#audio");
+                audioControl = setPanel.selectAll("#audio"),
+                displayControl = setPanel.selectAll("input[name='display']");
 
               playspeedControl.select("input").on("input", function () {
                 let playSpeed = parseInt(this.value);
@@ -761,6 +1009,22 @@ function TWSanime() {
                   animDataObj = getNewData({ volume: volume / 100 });
                 });
               });
+
+              displayControl.on("change", function () {
+                let index = parseInt(this.value);
+                let checked = this.checked;
+
+                switch (index) {
+                  case 0:
+                  case 1:
+                    legendGroup
+                      .select(`.legend:nth-child(${index + 1})`)
+                      .style("display", checked ? "block" : "none");
+                    break;
+                  case 2:
+                    break;
+                }
+              });
             };
             toolbarEvent();
             setPanelEvent();
@@ -793,15 +1057,19 @@ function TWSanime() {
               d3.timeout(() => (hotkeyPressFlag = true), 10);
             });
           };
-          function legendEvent() {
-            new L.Draggable(legendGroup.node()).enable();
+          let legendEvent = () => {
+            legendGroup
+              .selectAll(".legend")
+              .nodes()
+              .forEach((legend) => new L.Draggable(legend).enable());
+
             // let CanvasLayer = L.GridLayer.extend({
             //   createTile: function (coords) {
             //     // create a <canvas> element for drawing
             //     var tile = L.DomUtil.create("canvas", "leaflet-tileAAA");
             //     // setup tile width and height according to the options
             //     var size = this.getTileSize();
-            //     tile.width = size.x;
+            //     tile.width = size.x + 550;
             //     tile.height = size.y;
             //     // get a canvas context and draw something on it using coords.x, coords.y and coords.z
             //     var ctx = tile.getContext("2d");
@@ -810,8 +1078,28 @@ function TWSanime() {
             //   },
             // });
 
-            // // console.debug(CanvasLayer);
+            // // // console.debug(CanvasLayer);
             // new CanvasLayer().addTo(leafletMap);
+
+            let grid = L.latlngGraticule({
+              showLabel: true,
+              color: "red",
+              zoomInterval: [
+                { start: 2, end: 3, interval: 30 },
+                { start: 4, end: 4, interval: 10 },
+                { start: 5, end: 6, interval: 5 },
+                { start: 7, end: 8, interval: 1.5 },
+                { start: 9, end: 9, interval: 0.5 },
+                { start: 10, end: 11, interval: 0.2 },
+                { start: 12, end: 14, interval: 0.1 },
+                { start: 15, end: 18, interval: 0.05 },
+              ],
+            }).addTo(leafletMap);
+
+            console.debug(grid);
+            // console.debug(L.DivIcon());
+
+            // L.latlngGraticule.extend({});
             return;
             let raiseAndDrag = (d3_selection) => {
               let x_fixed = 0,
@@ -838,7 +1126,7 @@ function TWSanime() {
                 .call((g) => g.selectAll(".legend").call(legend_dragBehavior));
             };
             legendGroup.call(raiseAndDrag);
-          }
+          };
           animeControllEvent();
           keyboardEvent();
           legendEvent();

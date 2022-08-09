@@ -101,26 +101,51 @@ datalist {
 }
 
 /* =============================================legend========================================== */
-
 .legendGroup {
   position: absolute;
-  bottom: 10%;
-  z-index: 500;
-  pointer-events: auto;
+  z-index: 1500;
+  bottom: 12%;
+  right: 5%;
 }
-/* .legend svg {
-  width: 100px;
-} */
+.legend {
+  position: absolute;
+  z-index: 0;
+  bottom: 0;
+  right: 0;
+}
+
+.legend:hover {
+  z-index: 1;
+}
+
+.legend:nth-child(1) {
+  bottom: 50px;
+}
+
+.mlLegend {
+  bottom: 20%;
+}
+
 .legend text {
   font: bold 16px sans-serif;
   fill: black;
   paint-order: stroke;
-  stroke-width: 3px;
+  stroke-width: 2px;
   stroke: white;
   stroke-linecap: butt;
   stroke-linejoin: miter;
 }
 
+.mlLegend > *,
+.depthLegend > * {
+  cursor: grab;
+  pointer-events: all;
+}
+.mlLegend circle {
+  fill: #888;
+  stroke: white;
+  stroke-width: 1px;
+}
 /* =============================================toolbar========================================== */
 .controller {
   position: fixed;
@@ -215,7 +240,7 @@ datalist {
 .popup:after {
   content: "";
   position: absolute;
-  top: 95%;
+  bottom: -32px;
   left: 12px;
   border-style: solid;
   border-width: 20px;

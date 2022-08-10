@@ -15,7 +15,7 @@ function TWSanime() {
         axios
           .post(url, postData)
           .then((res) => {
-            console.log(res);
+            console.log(res.data);
             let sortData = res.data
               .map(
                 (d) =>
@@ -83,9 +83,8 @@ function TWSanime() {
         const getDateStr = (dateMs) => {
           return new Date(dateMs).toISOString().substring(0, 16);
         };
-        const getSize = (ML) => {
-          let ml_base = 3,
-            circleSize = 3;
+        const getCircleRadius = (ML, circleSize) => {
+          let ml_base = 3;
           return ML > ml_base ? (ML - ml_base) * circleSize + 0.1 : 0.1;
         };
 
@@ -97,24 +96,28 @@ function TWSanime() {
         const legendGroup = selectorD3
           .append("div")
           .attr("class", "legendGroup");
-        const mlDomain = [3, 7], //==規模範圍
+        const mlDomain = [4, 8], //==規模範圍[3,7]
           depthDomain = [0, 320], //==深度範圍
           dateDomain = [data[0].date, data[data.length - 1].date], //==日期範圍
           playSpeedDomain = [5, 180]; //==播放速度5~180days/s
 
         //==動畫預設設定
         const defaultSetting = {
+          tile: "WorldImagery", //==預設地圖圖層
           playSpeed: playSpeedDomain[0],
           startDate: dateDomain[0],
           endDate: dateDomain[1],
-          play: true, //==預設播放動畫
+          play: false, //==預設播放動畫
           lockView: true, //==預設鎖定地圖
           audio: false, //==預設聲音關閉(chrome66後不能自動播放)
           volume: 0.5, //==預設聲音大小
+          circleSize: 2, //==預設marker半徑係數
+          displayStyle: "living", //==預設出現動畫
+          displayColor: "rgba(255, 255, 255, 0.6)", //==預設動畫顏色
         };
 
         //==leaflet obj reference
-        let leafletMap, //leaflet obj
+        let leafletMap,
           markerGroup = new L.layerGroup(),
           latlngLayer;
 
@@ -150,7 +153,10 @@ function TWSanime() {
             play = getValue("play"),
             lockView = getValue("lockView"),
             audio = getValue("audio"),
-            volume = getValue("volume");
+            volume = getValue("volume"),
+            circleSize = getValue("circleSize"),
+            displayStyle = getValue("displayStyle"),
+            displayColor = getValue("displayColor");
           // ml = getValue('ml'),
           // mlDomain, mlDomain
           //   console.debug(play);
@@ -164,17 +170,19 @@ function TWSanime() {
             lockView,
             audio,
             volume,
+            circleSize,
+            displayStyle,
+            displayColor,
             newData: getNewData(),
           };
         }
         function updateAnime(action = null) {
           function init() {
             let initMap = () => {
-              const defaultTile = "WorldImagery";
               const getTileLayer = (tile) => {
                 return L.tileLayer(tile.url, {
                   attribution: tile.attribution,
-                  minZoom: 6,
+                  // minZoom: 6,
                   maxZoom: tile.maxZoom,
                 });
               };
@@ -216,7 +224,7 @@ function TWSanime() {
               // map sacles
               L.control.scale({ position: "topright" }).addTo(leafletMap);
               // map default tile
-              tileProviders[defaultTile].addTo(leafletMap);
+              tileProviders[defaultSetting.tile].addTo(leafletMap);
             };
             let initMarker = () => {
               const DivIcon = L.DivIcon.extend({
@@ -338,9 +346,51 @@ function TWSanime() {
                     </datalist>
                     `;
                     break;
+                  case "event_Config":
+                    let displaystyle = ["none", "living"];
+
+                    html = `
+                    <div class="inputGroup d-flex flex-column">
+                      <label for="" class="text-start fs-5">
+                        Animation
+                      </label>
+
+                      <div class="d-flex flex-row flex-nowrap mb-2">
+                        <label for="displaystyle" class="col-form-label text-nowrap me-3">Display Style</label>
+                        <select class="form-control" id="displaystyle">
+                          ${displaystyle
+                            .map(
+                              (type) =>
+                                `<option value="${type}" ${
+                                  type === defaultSetting.displayStyle
+                                    ? "selected"
+                                    : ""
+                                }>${type}</option>`
+                            )
+                            .join("")}
+                        </select>
+                      </div>
+
+                      <div class="d-flex flex-row flex-nowrap mb-2">
+                        <label for="circlesize" class="col-form-label text-nowrap me-3">Circle Size</label>
+                        <input type="number" class="form-control" id="circlesize" min="1" value="${
+                          defaultSetting.circleSize
+                        }">
+                      </div>
+
+                    </div>
+                    `;
+                    break;
+                  // case "filter":
+                  //   html = ``;
+                  //   break;
+                  // case "audio":
+                  //   html = ``;
+                  //   break;
                 }
                 return html;
               }
+
               const icons = [
                 { str: "setting", hotkey: "S" },
                 { str: "lockView", hotkey: "L" },
@@ -349,13 +399,14 @@ function TWSanime() {
               const panelControl = {
                 slider: ["progress", "playspeed", "audio"],
                 checkbox: ["mL_Legend", "depth_Legend", "grid_Line"],
+                dropdown: ["event_Config"],
               };
 
               let buttonHtml = icons
                 .map(
                   (btn) => `<div class="toolButton">
                               <span class="tooltiptext tooltip-top">
-                                  ${getTooltipText(btn.str, btn.hotkey)}
+                                ${getTooltipText(btn.str, btn.hotkey)}
                               </span>
                               <a class="button" id="${btn.str}Btn" href="#"></a>
                             </div>`
@@ -366,11 +417,24 @@ function TWSanime() {
                 .map(
                   (type) => `<div class="inputGroup d-flex flex-column">
                                 <label for="" class="text-start fs-5">
-                                    ${getTooltipText(type)}
+                                  ${getTooltipText(type)}
                                 </label>
                                 <div class="row" id="${type}">
-                                    ${getControllerHTML(type)}
+                                  ${getControllerHTML(type)}
                                 </div>
+                            </div>`
+                )
+                .join("");
+
+              let dropdownHtml = panelControl.dropdown
+                .map(
+                  (type) => `<div class="col-6 dropend text-start px-0">
+                              <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                                ${getTooltipText(type)}
+                              </button>
+                              <ul class="dropdown-menu p-3" id="${type}">
+                                ${getControllerHTML(type)}
+                              </ul>
                             </div>`
                 )
                 .join("");
@@ -378,11 +442,11 @@ function TWSanime() {
               let checkboxHtml = panelControl.checkbox
                 .map(
                   (type, i) => `<div class="form-check col-6 text-start">
-                              <input class="form-check-input" type="checkbox" name="display" value="${i}" id="${type}ckb" checked>
-                              <label class="form-check-label" for="${type}ckb">
-                                ${getTooltipText(type)}
-                              </label>
-                            </div>`
+                                  <input class="form-check-input" type="checkbox" name="display" value="${i}" id="${type}ckb" checked>
+                                  <label class="form-check-label" for="${type}ckb">
+                                    ${getTooltipText(type)}
+                                  </label>
+                              </div>`
                 )
                 .join("");
 
@@ -392,6 +456,9 @@ function TWSanime() {
                                 <a class="close" href="#">&times;</a>
                                 <div class="mx-1">
                                     ${sliderHtml}
+                                    <div class="row my-1">
+                                      ${dropdownHtml}
+                                    </div>
                                     <div class="row">
                                       ${checkboxHtml}
                                     </div>
@@ -401,8 +468,8 @@ function TWSanime() {
               controller.node().insertAdjacentHTML(
                 "beforeend",
                 `<div class="toolbar d-flex flex-row">
-                                    ${buttonHtml}
-                                </div>`
+                    ${buttonHtml}
+                </div>`
               );
 
               icons.forEach((btn) => {
@@ -472,8 +539,14 @@ function TWSanime() {
                 .range([0, animDataObj.animTime]);
             };
             let initLegend = () => {
+              //==Legend長度被最大的圓直徑影響
+              let getSpacing = (circleSize) => {
+                return (
+                  parseInt(getCircleRadius(mlDomain[1], circleSize) * 2) + 30
+                );
+              };
               const mlRange = d3.range(...mlDomain).concat(mlDomain[1]);
-              const spacing = 50,
+              const spacing = getSpacing(animDataObj.circleSize),
                 margin = spacing / 2,
                 legendW = spacing * (mlRange.length - 1) + 2 * margin,
                 legendH = margin;
@@ -507,10 +580,12 @@ function TWSanime() {
                           g.selectAll("circle")
                             .data(mlRange)
                             .join("circle")
-                            .attr("r", getSize)
+                            .attr("r", (d) =>
+                              getCircleRadius(d, defaultSetting.circleSize)
+                            )
                             .attr("cx", (d, i) => i * spacing + margin);
 
-                          g.selectAll("g")
+                          g.selectAll("text")
                             .data(mlRange)
                             .join("text")
                             .text((d) => d)
@@ -519,6 +594,40 @@ function TWSanime() {
                             .attr("y", spacing * 0.6);
                         });
                     });
+
+                  svg.on("updateLegend", (a, b, c) => {
+                    // console.debug(a, b, c);
+                    let spacing = getSpacing(animDataObj.circleSize),
+                      margin = spacing / 2,
+                      legendW = spacing * (mlRange.length - 1) + 2 * margin,
+                      legendH = margin;
+
+                    svg
+                      .attr("width", legendW)
+                      .attr("height", legendH * 3)
+                      .select("g")
+                      .attr("transform", `translate(0,${margin})`)
+                      .call((g) => {
+                        g.select("rect")
+                          .attr("height", legendH)
+                          .attr("width", legendW)
+                          .attr("rx", legendH / 2);
+
+                        g.select("g")
+                          .attr("transform", `translate(0,${legendH / 2})`)
+                          .call((g) => {
+                            g.selectAll("circle")
+                              .attr("r", (d) =>
+                                getCircleRadius(d, animDataObj.circleSize)
+                              )
+                              .attr("cx", (d, i) => i * spacing + margin);
+
+                            g.selectAll("text")
+                              .attr("x", (d, i) => i * spacing + margin)
+                              .attr("y", spacing * 0.6);
+                          });
+                      });
+                  });
                 });
 
               //==depth legend
@@ -856,7 +965,10 @@ function TWSanime() {
                     d.marker.getElement(),
                     "animateMarker-appeared"
                   );
-                  L.DomUtil.removeClass(d.marker.getElement(), "anime-toggled");
+                  L.DomUtil.removeClass(
+                    d.marker.getElement(),
+                    `anime-toggled-${animDataObj.displayStyle}`
+                  );
                 });
               case "changeSpeed":
               default: //init and speed change
@@ -870,7 +982,7 @@ function TWSanime() {
                     // console.debug(d.marker.getIcon());
                     let marker = d.marker.getElement();
                     let color = depthScale(d.depth);
-                    let radius = getSize(d.ML);
+                    let radius = getCircleRadius(d.ML, animDataObj.circleSize);
 
                     //==marker根據資料變化style
                     Object.assign(marker.style, {
@@ -889,12 +1001,23 @@ function TWSanime() {
                     //==計時開始才校正日期
                     if (startTimer && delay > 0) updateProgress(d.date);
 
-                    //==特效(不補特效聲音動畫一次多會LAG)
-                    //==圓圈動畫
-                    if (delay > 0 || i === 0)
-                      L.DomUtil.addClass(marker, "anime-toggled");
-                    //==聲音
+                    //==動畫(不補特效聲音一次多會LAG)
+                    if (delay > 0 || i === 0) {
+                      //==動畫顏色
+                      if (animDataObj.displayStyle !== "none")
+                        marker.setAttribute(
+                          "data-content",
+                          animDataObj.displayColor
+                        );
+                      //==動畫類型
+                      L.DomUtil.addClass(
+                        marker,
+                        `anime-toggled-${animDataObj.displayStyle}`
+                      );
+                    }
+
                     if (animDataObj.audio && delay > 0)
+                      //==聲音
                       getAudioPlayer(d.ML).play();
                   };
                   let delay = newTimeScale(d.date);
@@ -902,11 +1025,6 @@ function TWSanime() {
                     delay > 0 ? callback : callback(),
                     delay
                   );
-
-                  // if (!startTimer)
-                  //   action === "dragProgress"
-                  //     ? setTimeout(() => timer.pause(), 0) //==拉完要讓前面的點出現
-                  //     : timer.pause();
 
                   if (!startTimer) timer.pause();
 
@@ -950,8 +1068,28 @@ function TWSanime() {
                   let action = e.play ? "play" : "pause";
                   animDataObj = getNewData({ play: e.play });
                   updateAnime(action);
+                })
+                .on("baselayerchange", (layer) => {
+                  let color = layer.name === "WorldImagery" ? "white" : "black";
+                  if (latlngLayer) leafletMap.removeLayer(latlngLayer);
+                  latlngLayer = L.latlngGraticule({
+                    showLabel: true,
+                    color,
+                    zoomInterval: [
+                      { start: 2, end: 3, interval: 30 },
+                      { start: 4, end: 4, interval: 10 },
+                      { start: 5, end: 6, interval: 5 },
+                      { start: 7, end: 8, interval: 1.5 },
+                      { start: 9, end: 9, interval: 0.5 },
+                      { start: 10, end: 11, interval: 0.2 },
+                      { start: 12, end: 14, interval: 0.1 },
+                      { start: 15, end: 18, interval: 0.05 },
+                    ],
+                  }).addTo(leafletMap);
                 });
-              leafletMap.fire("maplock", { lock: defaultSetting.lockView });
+              leafletMap
+                .fire("maplock", { lock: defaultSetting.lockView })
+                .fire("baselayerchange", { name: defaultSetting.tile });
 
               // document.addEventListener("visibilitychange", (e) => {
               //   // console.debug();
@@ -968,63 +1106,123 @@ function TWSanime() {
                 audioControl = setPanel.selectAll("#audio"),
                 displayControl = setPanel.selectAll("input[name='display']");
 
-              playspeedControl.select("input").on("input", function () {
-                let playSpeed = parseInt(this.value);
-                let startDate = dateText.property("value");
-                playspeedControl.select("span>b").text(playSpeed);
+              let pannel = () => {
+                playspeedControl.select("input").on("input", function () {
+                  let playSpeed = parseInt(this.value);
+                  let startDate = dateText.property("value");
+                  playspeedControl.select("span>b").text(playSpeed);
 
-                // console.debug(new Date(startDate).toISOString());
-                animDataObj = getNewData({
-                  playSpeed,
-                  startDate,
+                  // console.debug(new Date(startDate).toISOString());
+                  animDataObj = getNewData({
+                    playSpeed,
+                    startDate,
+                  });
+                  updateAnime("changeSpeed");
                 });
-                updateAnime("changeSpeed");
-              });
 
-              progressControl.select("input").on("input", function () {
-                // console.debug(this.value);
-                let startDate = timeScale
-                  .invert(parseFloat(this.value) * 1000)
-                  .getTime();
-                animDataObj = getNewData({
-                  startDate,
+                progressControl.select("input").on("input", function () {
+                  // console.debug(this.value);
+                  let startDate = timeScale
+                    .invert(parseFloat(this.value) * 1000)
+                    .getTime();
+                  animDataObj = getNewData({
+                    startDate,
+                  });
+                  updateAnime("dragProgress");
                 });
-                updateAnime("dragProgress");
-              });
 
-              audioControl.selectAll("input").call((input) => {
-                let inputEles = input.nodes();
-                let checkbox = inputEles[0];
-                let range = inputEles[1];
+                audioControl.selectAll("input").call((input) => {
+                  let inputEles = input.nodes();
+                  let checkbox = inputEles[0];
+                  let range = inputEles[1];
 
-                checkbox.addEventListener("change", function () {
-                  let check = this.checked;
-                  range.disabled = !check;
-                  animDataObj = getNewData({ audio: check });
-                  // console.debug(check);
+                  checkbox.addEventListener("change", function () {
+                    let check = this.checked;
+                    range.disabled = !check;
+                    animDataObj = getNewData({ audio: check });
+                    // console.debug(check);
+                  });
+                  range.addEventListener("input", function () {
+                    let volume = parseInt(this.value);
+                    audioControl.select("span>b").text(volume);
+                    animDataObj = getNewData({ volume: volume / 100 });
+                  });
                 });
-                range.addEventListener("input", function () {
-                  let volume = parseInt(this.value);
-                  audioControl.select("span>b").text(volume);
-                  animDataObj = getNewData({ volume: volume / 100 });
+
+                displayControl.on("change", function () {
+                  let index = parseInt(this.value);
+                  let checked = this.checked;
+
+                  switch (index) {
+                    case 0:
+                    case 1:
+                      legendGroup
+                        .select(`.legend:nth-child(${index + 1})`)
+                        .style("display", checked ? "block" : "none");
+                      break;
+                    case 2:
+                      latlngLayer._canvas.parentNode.style.display = checked
+                        ? "inline"
+                        : "none";
+                      break;
+                  }
                 });
-              });
+              };
+              let dropdownMenu = () => {
+                let eventMenu = setPanel.selectAll("#event_Config");
+                let circlesizeControl = eventMenu.selectAll("#circlesize"),
+                  displaystyleControl = eventMenu.select("#displaystyle");
+                // let dropdownBtns = setPanel.selectAll(
+                //   "button[data-bs-toggle='dropdown']"
+                // );
+                // let dropdownMenus = setPanel.selectAll(".dropdown-menu");
 
-              displayControl.on("change", function () {
-                let index = parseInt(this.value);
-                let checked = this.checked;
+                circlesizeControl.on("change", function (e) {
+                  // console.debug(this.value);
+                  let circleSize = parseFloat(this.value);
+                  animDataObj = getNewData({ circleSize });
 
-                switch (index) {
-                  case 0:
-                  case 1:
-                    legendGroup
-                      .select(`.legend:nth-child(${index + 1})`)
-                      .style("display", checked ? "block" : "none");
-                    break;
-                  case 2:
-                    break;
-                }
-              });
+                  animDataObj.newData
+                    .filter((d) =>
+                      L.DomUtil.hasClass(
+                        d.marker.getElement(),
+                        "animateMarker-appeared"
+                      )
+                    )
+                    .forEach((d) => {
+                      let radius = getCircleRadius(d.ML, circleSize);
+                      Object.assign(d.marker.getElement().style, {
+                        width: `${radius * 2}px`,
+                        height: `${radius * 2}px`,
+                        "margin-left": `${-radius}px`,
+                        "margin-top": `${-radius}px`,
+                      });
+                    });
+
+                  legendGroup.select(".mlLegend").dispatch("updateLegend");
+                });
+                displaystyleControl.on("change", function (e) {
+                  // console.debug(this.value);
+                  let displayStyle = this.value;
+                  animDataObj.newData.forEach((d) =>
+                    L.DomUtil.removeClass(
+                      d.marker.getElement(),
+                      `anime-toggled-${animDataObj.displayStyle}`
+                    )
+                  );
+                  animDataObj = getNewData({ displayStyle });
+                });
+                // dropdownBtns.on("mouseover mouseleave", function (e) {
+                //   let menu = this.nextElementSibling;
+                //   // menu.classList.add("show");
+                //   bootstrap.Dropdown.getOrCreateInstance(menu).toggle();
+                // });
+                // dropdownMenus.on("click.bs.dropdown", (e) =>
+                //   e.stopPropagation()
+                // );
+              };
+              pannel();
+              dropdownMenu();
             };
             toolbarEvent();
             setPanelEvent();
@@ -1063,69 +1261,31 @@ function TWSanime() {
               .nodes()
               .forEach((legend) => new L.Draggable(legend).enable());
 
-            // let CanvasLayer = L.GridLayer.extend({
-            //   createTile: function (coords) {
-            //     // create a <canvas> element for drawing
-            //     var tile = L.DomUtil.create("canvas", "leaflet-tileAAA");
-            //     // setup tile width and height according to the options
-            //     var size = this.getTileSize();
-            //     tile.width = size.x + 550;
-            //     tile.height = size.y;
-            //     // get a canvas context and draw something on it using coords.x, coords.y and coords.z
-            //     var ctx = tile.getContext("2d");
-            //     // return the tile so it can be rendered on screen
-            //     return tile;
-            //   },
-            // });
+            // let raiseAndDrag = (d3_selection) => {
+            //   let x_fixed = 0,
+            //     y_fixed = 0;
+            //   let legend_dragBehavior = d3
+            //     .drag()
+            //     .on("start", function (e) {
+            //       x_fixed = e.sourceEvent.offsetX;
+            //       y_fixed = e.sourceEvent.offsetY;
+            //     })
+            //     .on("drag end", function (e) {
+            //       let translateX = e.x - x_fixed;
+            //       let translateY = e.y - y_fixed;
 
-            // // // console.debug(CanvasLayer);
-            // new CanvasLayer().addTo(leafletMap);
+            //       d3.select(this).style(
+            //         "transform",
+            //         `translate(${translateX}px, ${translateY}px)`
+            //       );
+            //     });
 
-            let grid = L.latlngGraticule({
-              showLabel: true,
-              color: "red",
-              zoomInterval: [
-                { start: 2, end: 3, interval: 30 },
-                { start: 4, end: 4, interval: 10 },
-                { start: 5, end: 6, interval: 5 },
-                { start: 7, end: 8, interval: 1.5 },
-                { start: 9, end: 9, interval: 0.5 },
-                { start: 10, end: 11, interval: 0.2 },
-                { start: 12, end: 14, interval: 0.1 },
-                { start: 15, end: 18, interval: 0.05 },
-              ],
-            }).addTo(leafletMap);
-
-            console.debug(grid);
-            // console.debug(L.DivIcon());
-
-            // L.latlngGraticule.extend({});
-            return;
-            let raiseAndDrag = (d3_selection) => {
-              let x_fixed = 0,
-                y_fixed = 0;
-              let legend_dragBehavior = d3
-                .drag()
-                .on("start", function (e) {
-                  x_fixed = e.sourceEvent.offsetX;
-                  y_fixed = e.sourceEvent.offsetY;
-                })
-                .on("drag end", function (e) {
-                  let translateX = e.x - x_fixed;
-                  let translateY = e.y - y_fixed;
-
-                  d3.select(this).style(
-                    "transform",
-                    `translate(${translateX}px, ${translateY}px)`
-                  );
-                });
-
-              d3_selection
-                .attr("cursor", "grab")
-                .call((g) => g.raise()) //把選中元素拉到最上層(比zoom的選取框優先)
-                .call((g) => g.selectAll(".legend").call(legend_dragBehavior));
-            };
-            legendGroup.call(raiseAndDrag);
+            //   d3_selection
+            //     .attr("cursor", "grab")
+            //     .call((g) => g.raise()) //把選中元素拉到最上層(比zoom的選取框優先)
+            //     .call((g) => g.selectAll(".legend").call(legend_dragBehavior));
+            // };
+            // legendGroup.call(raiseAndDrag);
           };
           animeControllEvent();
           keyboardEvent();

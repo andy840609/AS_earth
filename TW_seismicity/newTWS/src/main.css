@@ -38,9 +38,9 @@ datalist {
   animation: appear 0.3s linear 0s;
 }
 
-.anime-toggled::before,
-.anime-toggled::after {
-  content: "";
+.anime-toggled-living::before,
+.anime-toggled-living::after {
+  content: attr(data-content);
   width: 100%;
   height: 100%;
   border-radius: 50%;
@@ -48,20 +48,17 @@ datalist {
   animation: living 1s linear 0s;
   transform-origin: 50%;
   pointer-events: none;
+  background-color: attr(data-content);
+  opacity: 0;
 }
 
-.anime-toggled::before {
+.anime-toggled-living::before {
   animation-delay: 0.5s;
-}
-.anime-paused::after,
-.anime-paused::before {
-  animation-play-state: paused;
 }
 
 @keyframes living {
   /*圓形放大的同時，透明度逐漸減小為0*/
   0% {
-    background-color: rgba(255, 255, 255, 0.6);
     transform: scale(0);
     opacity: 1;
   }
@@ -83,6 +80,11 @@ datalist {
   100% {
     opacity: 1;
   }
+}
+
+.anime-paused::after,
+.anime-paused::before {
+  animation-play-state: paused;
 }
 
 .dateText {
@@ -292,4 +294,13 @@ datalist {
   100% {
     transform: scale(1);
   }
+}
+
+.dropend > .dropdown-menu {
+  inset: auto auto 0 !important;
+}
+
+.dropdown-menu input,
+.dropdown-menu select {
+  min-width: 5em;
 }

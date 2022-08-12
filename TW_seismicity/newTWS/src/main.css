@@ -1,3 +1,6 @@
+:root {
+  --displayColor: #d6d6d6;
+}
 text,
 label,
 font,
@@ -23,33 +26,47 @@ datalist {
 
 /* divIcon marker的z-index會改變前後順序 */
 .leaflet-marker-icon {
-  z-index: 9500 !important;
+  z-index: 0 !important;
 }
 
-/* 所有marker預設class */
+/* ====================================== marker動畫 ============================================== */
+/* ======= event時間未到 ======= */
 .animateMarker {
   border: 1px white solid;
   border-radius: 50%;
   display: none;
 }
-/* 出現的觸發的marker class */
+/* ======= event時間到 ======= */
 .animateMarker-appeared {
   display: inline;
-  animation: appear 0.3s linear 0s;
+  animation: appeared 0.3s linear 0s;
 }
 
+@keyframes appeared {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* ======= 效果1:living ======= */
 .anime-toggled-living::before,
 .anime-toggled-living::after {
-  content: attr(data-content);
+  content: "";
   width: 100%;
   height: 100%;
   border-radius: 50%;
+  opacity: 0;
   position: absolute;
-  animation: living 1s linear 0s;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   transform-origin: 50%;
   pointer-events: none;
-  background-color: attr(data-content);
-  opacity: 0;
+  background-color: var(--displayColor);
+  animation: living 1s linear 0s;
 }
 
 .anime-toggled-living::before {
@@ -59,29 +76,64 @@ datalist {
 @keyframes living {
   /*圓形放大的同時，透明度逐漸減小為0*/
   0% {
-    transform: scale(0);
     opacity: 1;
+    width: 0%;
+    height: 0%;
   }
 
   50% {
-    transform: scale(10);
     opacity: 0;
+    width: 1000%;
+    height: 1000%;
   }
 
   100% {
-    transform: scale(0);
     opacity: 1;
+    width: 0%;
+    height: 0%;
   }
 }
-@keyframes appear {
+/* ======= 效果2:pulsate ======= */
+.anime-toggled-pulsate::before,
+.anime-toggled-pulsate::after {
+  content: "";
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  border-radius: 100%;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  transform-origin: 50%;
+  pointer-events: none;
+  animation: pulsate 1s ease-out 0s;
+  border: 1px var(--displayColor) solid;
+  /* background-color: transparent; */
+}
+
+.anime-toggled-pulsate::before {
+  animation-delay: 0.5s;
+}
+
+@keyframes pulsate {
   0% {
     opacity: 0;
+    border-width: 9px;
   }
-  100% {
+
+  50% {
     opacity: 1;
   }
-}
 
+  100% {
+    opacity: 0;
+    border-width: 1px;
+    width: 1000%;
+    height: 1000%;
+  }
+}
+/* ======= 暫停、計時器 ======= */
 .anime-paused::after,
 .anime-paused::before {
   animation-play-state: paused;
@@ -108,6 +160,7 @@ datalist {
   z-index: 1500;
   bottom: 12%;
   right: 5%;
+  pointer-events: none;
 }
 .legend {
   position: absolute;
@@ -219,7 +272,7 @@ datalist {
   border-color: #555 transparent transparent transparent;
 }
 
-/* pannel */
+/*============================================ pannel ============================================*/
 
 .popup {
   margin: 70px auto;
@@ -297,10 +350,35 @@ datalist {
 }
 
 .dropend > .dropdown-menu {
+  width: 320px;
   inset: auto auto 0 !important;
 }
 
 .dropdown-menu input,
 .dropdown-menu select {
   min-width: 5em;
+  max-width: 10em;
+}
+
+/*============================================ bootstrap-slider ============================================ */
+
+#event_Config .slider {
+  width: 100% !important;
+}
+
+.slider-handle {
+  --slider-handle-width: 16px;
+  width: var(--slider-handle-width);
+  height: var(--slider-handle-width);
+  margin-top: calc(10px - var(--slider-handle-width) * 0.5);
+}
+
+.slider-selection {
+  background: #0480be;
+}
+
+.slider-track {
+  border-color: #afafafb9;
+  border-style: solid;
+  border-width: 1px;
 }

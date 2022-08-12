@@ -41,7 +41,7 @@ function TWSanime() {
       //   edlat: 26,
       //   stlon: 118,
       //   edlon: 124,
-      ML: 4.5,
+      ML: 4,
       stdate: "1990-01-01",
       eddate: new Date().toISOString().substring(0, 10),
     };
@@ -75,13 +75,11 @@ function TWSanime() {
       );
     }
     async function printChart() {
-      // selectorD3.selectAll('#Map>*').remove();
-
       function animeMap() {
         console.debug(data);
 
-        const getDateStr = (dateMs) => {
-          return new Date(dateMs).toISOString().substring(0, 16);
+        const getDateStr = (dateMs, toTime = true) => {
+          return new Date(dateMs).toISOString().substring(0, toTime ? 16 : 10);
         };
         const getCircleRadius = (ML, circleSize) => {
           let ml_base = 3;
@@ -89,7 +87,7 @@ function TWSanime() {
         };
 
         const dateText = selectorD3
-          .selectAll("#Map")
+          .select("#Map")
           .append("span")
           .attr("class", "dateText");
         const controller = selectorD3.append("div").attr("class", "controller");
@@ -98,8 +96,10 @@ function TWSanime() {
           .attr("class", "legendGroup");
         const mlDomain = [4, 8], //==規模範圍[3,7]
           depthDomain = [0, 320], //==深度範圍
-          dateDomain = [data[0].date, data[data.length - 1].date], //==日期範圍
-          playSpeedDomain = [5, 180]; //==播放速度5~180days/s
+          playSpeedDomain = [5, 180], //==播放速度5~180days/s
+          dateDomain = [data[0].date, data[data.length - 1].date].map(
+            (d, i) => Math[i === 0 ? "floor" : "ceil"](d / 86400000) * 86400000
+          ); //==日期範圍(天之後的時間去掉)
 
         //==動畫預設設定
         const defaultSetting = {
@@ -107,13 +107,17 @@ function TWSanime() {
           playSpeed: playSpeedDomain[0],
           startDate: dateDomain[0],
           endDate: dateDomain[1],
-          play: false, //==預設播放動畫
+          play: true, //==預設播放動畫
           lockView: true, //==預設鎖定地圖
           audio: false, //==預設聲音關閉(chrome66後不能自動播放)
           volume: 0.5, //==預設聲音大小
           circleSize: 2, //==預設marker半徑係數
-          displayStyle: "living", //==預設出現動畫
-          displayColor: "rgba(255, 255, 255, 0.6)", //==預設動畫顏色
+          displayStyle: "pulsate", //==預設出現動畫['living','pulsate']
+          displayColor: "#d6d6d6", //==預設動畫顏色
+          initFilterData: {
+            ML: [4.5, mlDomain[1]], //==預設最小規模(4開始8000個會當)
+          },
+          // minML:,
         };
 
         //==leaflet obj reference
@@ -142,9 +146,25 @@ function TWSanime() {
             const dayToMs = 86400000;
             return ((end - start) / (playSpeed * dayToMs)) * 1000;
           };
-          const getNewData = () => {
-            let newData = data;
-            // return newData.slice(0, 2);
+          const getData = (filterData) => {
+            // console.debug(filterData);
+
+            filterData = option.initFilterData
+              ? option.initFilterData
+              : filterData;
+
+            let newData = filterData ? data : animDataObj.newData;
+            if (filterData) {
+              Object.keys(filterData).forEach((key) => {
+                let range = filterData[key];
+
+                newData = newData.filter(
+                  (d) => d[key] >= range[0] && d[key] <= range[1]
+                );
+              });
+              newData.filterData = filterData;
+            }
+            // console.debug(newData);
             return newData;
           };
           let playSpeed = getValue("playSpeed"),
@@ -155,11 +175,8 @@ function TWSanime() {
             audio = getValue("audio"),
             volume = getValue("volume"),
             circleSize = getValue("circleSize"),
-            displayStyle = getValue("displayStyle"),
-            displayColor = getValue("displayColor");
-          // ml = getValue('ml'),
-          // mlDomain, mlDomain
-          //   console.debug(play);
+            displayStyle = getValue("displayStyle");
+
           return {
             //==time unit in ms
             playSpeed, //==days/s
@@ -172,8 +189,7 @@ function TWSanime() {
             volume,
             circleSize,
             displayStyle,
-            displayColor,
-            newData: getNewData(),
+            newData: getData(option.filterData),
           };
         }
         function updateAnime(action = null) {
@@ -182,8 +198,9 @@ function TWSanime() {
               const getTileLayer = (tile) => {
                 return L.tileLayer(tile.url, {
                   attribution: tile.attribution,
-                  // minZoom: 6,
-                  maxZoom: tile.maxZoom,
+                  minZoom: 6,
+                  maxZoom: 10,
+                  // maxZoom: tile.maxZoom,
                 });
               };
               const tileProviders = {
@@ -225,6 +242,11 @@ function TWSanime() {
               L.control.scale({ position: "topright" }).addTo(leafletMap);
               // map default tile
               tileProviders[defaultSetting.tile].addTo(leafletMap);
+
+              // //===test zoom
+              // leafletMap.on("zoomanim", (e) => {
+              //   console.debug(e.zoom);
+              // });
             };
             let initMarker = () => {
               const DivIcon = L.DivIcon.extend({
@@ -237,9 +259,11 @@ function TWSanime() {
 
               data.forEach((d, i) => {
                 let popupHtml = `
-                ${getDateStr(d.date)}<br>Depth: ${d.depth}km <br>ML: ${
-                  d.ML
-                }<br>`;
+                <h5>${getDateStr(d.date)}</h5>
+                Latitude: ${d.crood[0]}°<br>
+                Longitude: ${d.crood[1]}°<br>
+                Depth: ${d.depth} km<br>
+                ML: ${d.ML}<br>`;
 
                 d.marker = L.marker(d.crood, {
                   icon: new DivIcon(),
@@ -347,11 +371,77 @@ function TWSanime() {
                     `;
                     break;
                   case "event_Config":
-                    let displaystyle = ["none", "living"];
+                    let displaystyle = ["none", "living", "pulsate"];
+                    let dateRange = dateDomain.map((d) => getDateStr(d, false));
 
                     html = `
-                    <div class="inputGroup d-flex flex-column">
-                      <label for="" class="text-start fs-5">
+                    <div class="d-flex flex-column">
+
+                    <!------------------------- Filter --------------------------->
+                      <label class="text-start fs-5 fw-bold">
+                        Filter
+                      </label>
+
+                      <!-- date filter -->
+                      <div class="d-flex flex-column" id="dateFilter">
+                        <label for="dateRange" class="col-form-label text-nowrap pb-0">Date Range</label>
+                        
+                        <div class="mx-2 mb-1">
+                          <input type="range" id="dateRange"/>   
+                        </div>
+
+                        <div class="d-flex flex-row flex-nowrap" >
+                          <input class="form-control" type="date" id="date_start" name="date" 
+                          min="${dateRange[0]}" max="${dateRange[1]}"
+                          value="${dateRange[0]}">
+                          <span class="p-1">-</span>
+                          <input class="form-control" type="date" id="date_end" name="date"
+                          min="${dateRange[0]}" max="${dateRange[1]}"
+                          value="${dateRange[1]}">
+                        </div>       
+                      </div>
+
+                      <!-- ml filter -->
+                      <div class="d-flex flex-column" id="mlFilter">
+                        <label for="mlRange" class="col-form-label text-nowrap pb-0">ML Range</label>
+                        
+                        <div class="mx-2 mb-1">
+                          <input type="range" id="mlRange"/>   
+                        </div>
+
+                        <div class="d-flex flex-row flex-nowrap" >
+                          <input type="number" class="form-control" id="ml_min" name="ml" 
+                          min="${mlDomain[0]}" max="${mlDomain[1]}" 
+                          value="${
+                            defaultSetting.initFilterData.ML[0]
+                          }" title="">
+                          <span class="p-1">-</span>
+                          <input type="number" class="form-control" id="ml_max" name="ml" 
+                          min="${mlDomain[0]}" max="${mlDomain[1]}"
+                          value="${mlDomain[1]}" title="">
+                        </div>       
+                      </div>           
+                      
+                      <!-- depth filter -->
+                      <div class="d-flex flex-column" id="depthFilter">
+                        <label for="depthRange" class="col-form-label text-nowrap pb-0">Depth Range</label>
+                        
+                        <div class="mx-2 mb-1">
+                          <input type="range" id="depthRange"/>   
+                        </div>
+
+                        <div class="d-flex flex-row flex-nowrap" >
+                          <input type="number" class="form-control" id="depth_min" name="depth" 
+                          min="${depthDomain[0]}" max="${depthDomain[1]}" 
+                          value="${depthDomain[0]}" title="">
+                          <span class="p-1">-</span>
+                          <input type="number" class="form-control" id="depth_max" name="depth" 
+                          min="${depthDomain[0]}" max="${depthDomain[1]}"
+                          value="${depthDomain[1]}" title="">
+                        </div>       
+                      </div> 
+                    <!------------------------- Animation --------------------------->
+                      <label class="text-start fs-5 fw-bold mt-2">
                         Animation
                       </label>
 
@@ -372,10 +462,16 @@ function TWSanime() {
                       </div>
 
                       <div class="d-flex flex-row flex-nowrap mb-2">
+                        <label for="displaycolor" class="col-form-label text-nowrap me-3">Display Color</label>
+                        <input type="color" class="form-control h-auto" id="displaycolor"
+                        value="${defaultSetting.displayColor}" >
+                      </div>
+                    
+                      <div class="d-flex flex-row flex-nowrap mb-2">
                         <label for="circlesize" class="col-form-label text-nowrap me-3">Circle Size</label>
                         <input type="number" class="form-control" id="circlesize" min="1" value="${
                           defaultSetting.circleSize
-                        }">
+                        }" title="">
                       </div>
 
                     </div>
@@ -415,8 +511,8 @@ function TWSanime() {
 
               let sliderHtml = panelControl.slider
                 .map(
-                  (type) => `<div class="inputGroup d-flex flex-column">
-                                <label for="" class="text-start fs-5">
+                  (type) => `<div class="d-flex flex-column">
+                                <label for="" class="text-start fs-5 fw-bold">
                                   ${getTooltipText(type)}
                                 </label>
                                 <div class="row" id="${type}">
@@ -473,18 +569,18 @@ function TWSanime() {
               );
 
               icons.forEach((btn) => {
-                let button = controller.selectAll(`#${btn.str}Btn`);
+                let button = controller.select(`#${btn.str}Btn`);
 
                 let onClick, value, icon;
                 switch (btn.str) {
                   case "setting":
-                    let toolbar = controller.selectAll(".toolbar");
+                    let toolbar = controller.select(".toolbar");
                     toolbar
                       .node()
                       .insertAdjacentHTML("afterbegin", setPanelHtml);
-                    let setPanel = toolbar.selectAll("#setPanel");
+                    let setPanel = toolbar.select("#setPanel");
                     setPanel
-                      .selectAll(".close")
+                      .select(".close")
                       .on("click", () => button.dispatch("click"));
 
                     value = true;
@@ -505,7 +601,7 @@ function TWSanime() {
                       let string = (this.value ? "" : "un") + "lockView";
                       button.style("content", `url(img/${string}.png)`);
                       d3.select(this.parentNode)
-                        .selectAll(".tooltiptext")
+                        .select(".tooltiptext")
                         .text(getTooltipText(string, btn.hotkey));
                     };
                     break;
@@ -519,7 +615,7 @@ function TWSanime() {
                       let string = this.value ? "pause" : "play";
                       button.style("content", `url(img/${string}.png)`);
                       d3.select(this.parentNode)
-                        .selectAll(".tooltiptext")
+                        .select(".tooltiptext")
                         .text(getTooltipText(string, btn.hotkey));
                     };
                     break;
@@ -892,7 +988,7 @@ function TWSanime() {
               .range([0, animTime]);
             // console.debug(animDataObj.playSpeed);
 
-            const progressControl = controller.selectAll("#progress");
+            const progressControl = controller.select("#progress");
             const updateProgress = (newStartDate = null, startTimer = true) => {
               const timeTunnel = (date) => {
                 //==更新日期
@@ -931,8 +1027,25 @@ function TWSanime() {
                   });
               else timeTunnel(newDateDomain[0]);
             };
-            const getAudioPlayer = (ml) => {
-              const audioPlayer = new Audio("audio/1.mp3");
+            const getAudioPlayer = (ML) => {
+              let source;
+              switch (parseInt(ML)) {
+                case 3:
+                case 4:
+                  source = "pianoD.mp3";
+                  break;
+                case 5:
+                  source = "pianoF.mp3";
+                  break;
+                case 6:
+                  source = "pianoA.mp3";
+                  break;
+                case 7:
+                  source = "pianoC2.mp3";
+                case 8:
+                  break;
+              }
+              const audioPlayer = new Audio("audio/" + source);
               // console.debug(audioPlayer);
               Object.assign(audioPlayer, {
                 volume: animDataObj.volume,
@@ -960,7 +1073,7 @@ function TWSanime() {
                 );
                 break;
               case "dragProgress":
-                newData.forEach((d) => {
+                data.forEach((d) => {
                   L.DomUtil.removeClass(
                     d.marker.getElement(),
                     "animateMarker-appeared"
@@ -992,33 +1105,22 @@ function TWSanime() {
                       "margin-left": `${-radius}px`,
                       "margin-top": `${-radius}px`,
                     });
-
+                    // console.debug(marker.style);
                     //==marker透明度動畫
                     L.DomUtil.addClass(marker, "animateMarker-appeared");
 
                     //==用delay>0判斷不是過去的時間點
-
-                    //==計時開始才校正日期
-                    if (startTimer && delay > 0) updateProgress(d.date);
-
-                    //==動畫(不補特效聲音一次多會LAG)
-                    if (delay > 0 || i === 0) {
-                      //==動畫顏色
-                      if (animDataObj.displayStyle !== "none")
-                        marker.setAttribute(
-                          "data-content",
-                          animDataObj.displayColor
-                        );
-                      //==動畫類型
+                    if (delay > 0) {
+                      //==動畫類型(過去的不補聲音特效)
                       L.DomUtil.addClass(
                         marker,
                         `anime-toggled-${animDataObj.displayStyle}`
                       );
-                    }
-
-                    if (animDataObj.audio && delay > 0)
+                      //==計時開始才校正日期
+                      if (startTimer) updateProgress(d.date);
                       //==聲音
-                      getAudioPlayer(d.ML).play();
+                      if (animDataObj.audio) getAudioPlayer(d.ML).play();
+                    }
                   };
                   let delay = newTimeScale(d.date);
                   let timer = new Timer(
@@ -1042,12 +1144,12 @@ function TWSanime() {
         updateAnime();
 
         function events() {
-          let toolbar = controller.selectAll(".toolbar");
+          let toolbar = controller.select(".toolbar");
 
-          let settingBtn = toolbar.selectAll("#settingBtn"),
-            lockViewBtn = toolbar.selectAll("#lockViewBtn"),
-            pauseBtn = toolbar.selectAll("#pauseBtn"),
-            audioCkb = toolbar.selectAll("#audio input[type='checkbox']");
+          let settingBtn = toolbar.select("#settingBtn"),
+            lockViewBtn = toolbar.select("#lockViewBtn"),
+            pauseBtn = toolbar.select("#pauseBtn"),
+            audioCkb = toolbar.select("#audio input[type='checkbox']");
 
           let animeControllEvent = () => {
             let toolbarEvent = () => {
@@ -1100,10 +1202,10 @@ function TWSanime() {
               // });
             };
             let setPanelEvent = () => {
-              let setPanel = toolbar.selectAll("#setPanel");
-              let progressControl = setPanel.selectAll("#progress"),
-                playspeedControl = setPanel.selectAll("#playspeed"),
-                audioControl = setPanel.selectAll("#audio"),
+              let setPanel = toolbar.select("#setPanel");
+              let progressControl = setPanel.select("#progress"),
+                playspeedControl = setPanel.select("#playspeed"),
+                audioControl = setPanel.select("#audio"),
                 displayControl = setPanel.selectAll("input[name='display']");
 
               let pannel = () => {
@@ -1169,49 +1271,228 @@ function TWSanime() {
                 });
               };
               let dropdownMenu = () => {
-                let eventMenu = setPanel.selectAll("#event_Config");
-                let circlesizeControl = eventMenu.selectAll("#circlesize"),
-                  displaystyleControl = eventMenu.select("#displaystyle");
+                let eventMenu = setPanel.select("#event_Config");
+
+                let animation = () => {
+                  let circlesizeControl = eventMenu.select("#circlesize"),
+                    displaystyleControl = eventMenu.select("#displaystyle"),
+                    displaycolorControl = eventMenu.select("#displaycolor");
+
+                  circlesizeControl.on("change", function (e) {
+                    // console.debug(this.value);
+                    let circleSize = parseFloat(this.value);
+                    animDataObj = getNewData({ circleSize });
+
+                    animDataObj.newData
+                      .filter((d) =>
+                        L.DomUtil.hasClass(
+                          d.marker.getElement(),
+                          "animateMarker-appeared"
+                        )
+                      )
+                      .forEach((d) => {
+                        let radius = getCircleRadius(d.ML, circleSize);
+                        Object.assign(d.marker.getElement().style, {
+                          width: `${radius * 2}px`,
+                          height: `${radius * 2}px`,
+                          "margin-left": `${-radius}px`,
+                          "margin-top": `${-radius}px`,
+                        });
+                      });
+
+                    legendGroup.select(".mlLegend").dispatch("updateLegend");
+                  });
+                  displaystyleControl.on("change", function (e) {
+                    // console.debug(this.value);
+                    let displayStyle = this.value;
+                    animDataObj.newData.forEach((d) =>
+                      L.DomUtil.removeClass(
+                        d.marker.getElement(),
+                        `anime-toggled-${animDataObj.displayStyle}`
+                      )
+                    );
+                    animDataObj = getNewData({ displayStyle });
+                  });
+                  displaycolorControl.on("input", function (e) {
+                    this.value =
+                      this.value[0] === "#"
+                        ? this.value
+                        : defaultSetting.displayColor;
+
+                    //==動畫顏色(改變css :root變數值)
+                    document.documentElement.style.setProperty(
+                      "--displayColor",
+                      this.value
+                    );
+                  });
+                };
+                let filter = () => {
+                  const filterData = defaultSetting.initFilterData;
+
+                  let dateFilter = eventMenu.select("#dateFilter"),
+                    mlFilter = eventMenu.select("#mlFilter"),
+                    depthFilter = eventMenu.select("#depthFilter");
+
+                  mlFilter.call((div) => {
+                    let mlRange = new Slider("#mlRange", {
+                      id: "mlRange_slider",
+                      min: mlDomain[0],
+                      max: mlDomain[1],
+                      value: defaultSetting.initFilterData.ML,
+                      step: 0.1,
+                      precision: 1,
+                      tooltip: "hide",
+                    });
+                    let mlMax = div.select("#ml_max");
+                    mlMin = div.select("#ml_min");
+
+                    mlRange.on("change", () => {
+                      let range = mlRange.getValue();
+                      // console.debug(range);
+                      mlMin.property("value", range[0]);
+                      mlMax.property("value", range[1]);
+                      mlMin.dispatch("change");
+                    });
+
+                    div.selectAll("input[name='ml']").on("change", function () {
+                      //======textBox空值或超過限制範圍處理
+                      if (isNaN(this.value) || this.value == "")
+                        this.value = mlDomain[this.id === "ml_min" ? 0 : 1];
+                      else if (
+                        this.value < mlDomain[0] ||
+                        this.value > mlDomain[1]
+                      )
+                        this.value = mlDomain[this.value < mlDomain[0] ? 0 : 1];
+
+                      let min = parseFloat(mlMin.property("value")),
+                        max = parseFloat(mlMax.property("value"));
+
+                      let range = [min, max].sort((a, b) => a - b);
+                      mlRange.setValue(range);
+
+                      Object.assign(filterData, { ML: range });
+                      animDataObj = getNewData({ filterData });
+                      progressControl.select("input").dispatch("input");
+                      // console.debug(animDataObj);
+                    });
+                  });
+
+                  depthFilter.call((div) => {
+                    let depthRange = new Slider("#depthRange", {
+                      id: "depthRange_slider",
+                      min: depthDomain[0],
+                      max: depthDomain[1],
+                      value: depthDomain,
+                      step: 0.1,
+                      precision: 1,
+                      tooltip: "hide",
+                    });
+                    let depthMax = div.select("#depth_max");
+                    depthMin = div.select("#depth_min");
+
+                    depthRange.on("change", () => {
+                      let range = depthRange.getValue();
+                      // console.debug(range);
+                      depthMin.property("value", range[0]);
+                      depthMax.property("value", range[1]);
+                      depthMin.dispatch("change");
+                    });
+
+                    div
+                      .selectAll("input[name='depth']")
+                      .on("change", function () {
+                        //======textBox空值或超過限制範圍處理
+                        if (isNaN(this.value) || this.value == "")
+                          this.value =
+                            depthDomain[this.id === "depth_min" ? 0 : 1];
+                        else if (
+                          this.value < depthDomain[0] ||
+                          this.value > depthDomain[1]
+                        )
+                          this.value =
+                            depthDomain[this.value < depthDomain[0] ? 0 : 1];
+
+                        let min = parseFloat(depthMin.property("value")),
+                          max = parseFloat(depthMax.property("value"));
+
+                        let range = [min, max].sort((a, b) => a - b);
+                        depthRange.setValue(range);
+
+                        Object.assign(filterData, { depth: range });
+                        animDataObj = getNewData({ filterData });
+                        progressControl.select("input").dispatch("input");
+                        // console.debug(animDataObj);
+                      });
+                  });
+
+                  dateFilter.call((div) => {
+                    let dateDayDomain = dateDomain.map((d, i) => d / 86400000);
+                    let dateRange = new Slider("#dateRange", {
+                      id: "dateRange_slider",
+                      min: dateDayDomain[0],
+                      max: dateDayDomain[1],
+                      value: dateDayDomain,
+                      step: 1,
+                      tooltip: "hide",
+                    });
+                    let dateStart = div.select("#date_start");
+                    dateEnd = div.select("#date_end");
+
+                    dateRange.on("change", () => {
+                      let range = dateRange.getValue();
+                      // console.debug(range);
+                      dateStart.property(
+                        "value",
+                        getDateStr(range[0] * 86400000, false)
+                      );
+                      dateEnd.property(
+                        "value",
+                        getDateStr(range[1] * 86400000, false)
+                      );
+                      dateStart.dispatch("change");
+                    });
+
+                    div
+                      .selectAll("input[name='date']")
+                      .on("change", function () {
+                        // //======textBox空值或超過限制範圍處理
+                        // if (isNaN(this.value) || this.value == "")
+                        //   this.value = mlDomain[this.id === "ml_min" ? 0 : 1];
+                        // else if (
+                        //   this.value < mlDomain[0] ||
+                        //   this.value > mlDomain[1]
+                        // )
+                        //   this.value =
+                        //     mlDomain[this.value < mlDomain[0] ? 0 : 1];
+                        let getUTCdateArray = (dateString) => {
+                          return dateString
+                            .split("-")
+                            .map((d, i) => d - (i === 1 ? 1 : 0)); //月份參數-1
+                        };
+                        let min = Date.UTC(
+                            ...getUTCdateArray(dateStart.property("value"))
+                          ),
+                          max = Date.UTC(
+                            ...getUTCdateArray(dateEnd.property("value"))
+                          );
+
+                        let range = [min, max].sort((a, b) => a - b);
+                        dateRange.setValue(range.map((r) => r / 86400000));
+
+                        Object.assign(filterData, { date: range });
+                        animDataObj = getNewData({ filterData });
+                        progressControl.select("input").dispatch("input");
+                        // console.debug(animDataObj);
+                      });
+                  });
+                };
+                animation();
+                filter();
+
                 // let dropdownBtns = setPanel.selectAll(
                 //   "button[data-bs-toggle='dropdown']"
                 // );
                 // let dropdownMenus = setPanel.selectAll(".dropdown-menu");
-
-                circlesizeControl.on("change", function (e) {
-                  // console.debug(this.value);
-                  let circleSize = parseFloat(this.value);
-                  animDataObj = getNewData({ circleSize });
-
-                  animDataObj.newData
-                    .filter((d) =>
-                      L.DomUtil.hasClass(
-                        d.marker.getElement(),
-                        "animateMarker-appeared"
-                      )
-                    )
-                    .forEach((d) => {
-                      let radius = getCircleRadius(d.ML, circleSize);
-                      Object.assign(d.marker.getElement().style, {
-                        width: `${radius * 2}px`,
-                        height: `${radius * 2}px`,
-                        "margin-left": `${-radius}px`,
-                        "margin-top": `${-radius}px`,
-                      });
-                    });
-
-                  legendGroup.select(".mlLegend").dispatch("updateLegend");
-                });
-                displaystyleControl.on("change", function (e) {
-                  // console.debug(this.value);
-                  let displayStyle = this.value;
-                  animDataObj.newData.forEach((d) =>
-                    L.DomUtil.removeClass(
-                      d.marker.getElement(),
-                      `anime-toggled-${animDataObj.displayStyle}`
-                    )
-                  );
-                  animDataObj = getNewData({ displayStyle });
-                });
                 // dropdownBtns.on("mouseover mouseleave", function (e) {
                 //   let menu = this.nextElementSibling;
                 //   // menu.classList.add("show");

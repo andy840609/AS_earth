@@ -164,7 +164,7 @@ function TWSanime() {
               });
               newData.filterData = filterData;
             }
-            // console.debug(newData);
+            // console.debug((newData.length / data.length) * 100);
             return newData;
           };
           let playSpeed = getValue("playSpeed"),
@@ -384,7 +384,7 @@ function TWSanime() {
 
                       <!-- date filter -->
                       <div class="d-flex flex-column" id="dateFilter">
-                        <label for="dateRange" class="col-form-label text-nowrap pb-0">Date Range</label>
+                        <label for="dateRange" class="col-form-label text-nowrap pb-0">Date Range(UTC)</label>
                         
                         <div class="mx-2 mb-1">
                           <input type="range" id="dateRange"/>   
@@ -552,7 +552,7 @@ function TWSanime() {
                                 <a class="close" href="#">&times;</a>
                                 <div class="mx-1">
                                     ${sliderHtml}
-                                    <div class="row my-1">
+                                    <div class="d-flex justify-content-end row my-1">
                                       ${dropdownHtml}
                                     </div>
                                     <div class="row">
@@ -989,7 +989,11 @@ function TWSanime() {
             // console.debug(animDataObj.playSpeed);
 
             const progressControl = controller.select("#progress");
-            const updateProgress = (newStartDate = null, startTimer = true) => {
+            const updateProgress = (
+              newStartDate = null,
+              startTimer = true,
+              newEndDate = null
+            ) => {
               const timeTunnel = (date) => {
                 //==更新日期
                 dateText.property("value", date).text(getDateStr(date));
@@ -1002,6 +1006,24 @@ function TWSanime() {
                   div.select("span").text(timeString);
                 });
               };
+
+              //==時間範圍改變
+              if (newEndDate) {
+                //==要用最低速度來算動畫時長
+                let animTime = getNewData({
+                  startDate: newStartDate,
+                  endDate: newEndDate,
+                  playSpeed: defaultSetting.playSpeed,
+                }).animTime;
+
+                timeScale
+                  .domain([newStartDate, newEndDate])
+                  .range([0, animTime]);
+
+                progressControl
+                  .select("input")
+                  .property("max", animTime / 1000);
+              }
 
               let duration =
                 newTimeScale.range()[1] -
@@ -1027,32 +1049,40 @@ function TWSanime() {
                   });
               else timeTunnel(newDateDomain[0]);
             };
-            const getAudioPlayer = (ML) => {
-              let source;
-              switch (parseInt(ML)) {
-                case 3:
-                case 4:
-                  source = "pianoD.mp3";
-                  break;
-                case 5:
-                  source = "pianoF.mp3";
-                  break;
-                case 6:
-                  source = "pianoA.mp3";
-                  break;
-                case 7:
-                  source = "pianoC2.mp3";
-                case 8:
-                  break;
-              }
-              const audioPlayer = new Audio("audio/" + source);
-              // console.debug(audioPlayer);
-              Object.assign(audioPlayer, {
-                volume: animDataObj.volume,
-                playbackRate: 1.5,
-                mediaGroup: "test",
-              });
-              return audioPlayer;
+            const playerAudio = (ML) => {
+              const getAudioPlayer = (source) => {
+                let audioPlayer = new Audio(`audio/${source}.mp3`);
+                // console.debug(audioPlayer);
+                Object.assign(audioPlayer, {
+                  volume: animDataObj.volume,
+                  playbackRate: 1.5,
+                  mediaGroup: "test",
+                });
+                return audioPlayer;
+              };
+              //==8個音階
+              const audioSource = [
+                "pianoC2",
+                "pianoB",
+                "pianoA",
+                "pianoG",
+                "pianoF",
+                "pianoE",
+                "pianoD",
+                "pianoC",
+              ];
+
+              //==對應8種ml範圍(<)
+              const mlLevel = [4.5, 4.575, 4.65, 4.725, 4.8, 5, 7];
+
+              // let levelIdx = mlLevel.findIndex((d) => ML / d <= 1);
+              let levelIdx = (mlLevel.findIndex((d) => ML < d) + 8) % 8;
+              let source = audioSource[levelIdx];
+              // console.debug(ML, levelIdx);
+              getAudioPlayer(source).play();
+              //==大於7加鼓聲
+              if (levelIdx === audioSource.length - 1)
+                getAudioPlayer("drum1").play();
             };
             switch (action) {
               case "play":
@@ -1072,6 +1102,11 @@ function TWSanime() {
                   L.DomUtil.addClass(d.marker.getElement(), "anime-paused")
                 );
                 break;
+              case "changeDateRange":
+              // progressControl
+              //   .select("input")
+              //   .property("value", 0)
+              //   .property("value", 0);
               case "dragProgress":
                 data.forEach((d) => {
                   L.DomUtil.removeClass(
@@ -1087,7 +1122,11 @@ function TWSanime() {
               default: //init and speed change
                 // console.debug(action);
                 let startTimer = play;
-                updateProgress(action ? startDate : null, startTimer);
+                updateProgress(
+                  action ? startDate : null,
+                  startTimer,
+                  action === "changeDateRange" ? endDate : null
+                );
 
                 if (markerTimer) markerTimer.forEach((t) => t.stop());
                 markerTimer = newData.map((d, i) => {
@@ -1119,7 +1158,7 @@ function TWSanime() {
                       //==計時開始才校正日期
                       if (startTimer) updateProgress(d.date);
                       //==聲音
-                      if (animDataObj.audio) getAudioPlayer(d.ML).play();
+                      if (animDataObj.audio) playerAudio(d.ML);
                     }
                   };
                   let delay = newTimeScale(d.date);
@@ -1469,6 +1508,8 @@ function TWSanime() {
                             .split("-")
                             .map((d, i) => d - (i === 1 ? 1 : 0)); //月份參數-1
                         };
+
+                        //==絕對秒數
                         let min = Date.UTC(
                             ...getUTCdateArray(dateStart.property("value"))
                           ),
@@ -1480,9 +1521,23 @@ function TWSanime() {
                         dateRange.setValue(range.map((r) => r / 86400000));
 
                         Object.assign(filterData, { date: range });
-                        animDataObj = getNewData({ filterData });
-                        progressControl.select("input").dispatch("input");
+                        animDataObj = getNewData({
+                          filterData,
+                          startDate: range[0],
+                          endDate: range[1],
+                        });
+                        updateAnime("changeDateRange");
+
+                        // progressControl.select("input").dispatch("input");
                         // console.debug(animDataObj);
+
+                        // let startDate = timeScale
+                        //   .invert(parseFloat(this.value) * 1000)
+                        //   .getTime();
+                        // animDataObj = getNewData({
+                        //   startDate,
+                        // });
+                        // updateAnime("dragProgress");
                       });
                   });
                 };

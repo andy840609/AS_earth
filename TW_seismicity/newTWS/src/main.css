@@ -52,7 +52,7 @@ datalist {
 }
 
 /* ======= 效果1:living ======= */
-.anime-toggled-living::before,
+/* .anime-toggled-living::before, */
 .anime-toggled-living::after {
   content: "";
   width: 100%;
@@ -69,9 +69,9 @@ datalist {
   animation: living 1s linear 0s;
 }
 
-.anime-toggled-living::before {
+/* .anime-toggled-living::before {
   animation-delay: 0.5s;
-}
+} */
 
 @keyframes living {
   /*圓形放大的同時，透明度逐漸減小為0*/
@@ -94,7 +94,7 @@ datalist {
   }
 }
 /* ======= 效果2:pulsate ======= */
-.anime-toggled-pulsate::before,
+/* .anime-toggled-pulsate::before, */
 .anime-toggled-pulsate::after {
   content: "";
   width: 100%;
@@ -112,9 +112,9 @@ datalist {
   /* background-color: transparent; */
 }
 
-.anime-toggled-pulsate::before {
+/* .anime-toggled-pulsate::before {
   animation-delay: 0.5s;
-}
+} */
 
 @keyframes pulsate {
   0% {
@@ -329,6 +329,9 @@ datalist {
   overflow: auto;
 }
 
+.popup label {
+  white-space: nowrap;
+}
 /* @media screen and (max-width: 700px) {
     .toolbar {
         width: 70%;
@@ -351,7 +354,7 @@ datalist {
 
 .dropend > .dropdown-menu {
   width: 320px;
-  inset: auto auto 0 !important;
+  /* inset: auto auto 0 !important; */
 }
 
 .dropdown-menu input,

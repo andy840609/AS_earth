@@ -275,358 +275,401 @@ function TWSanime() {
               markerGroup.addTo(leafletMap);
             };
             let initToolBar = () => {
-              function getTooltipText(string, hotkey = undefined) {
-                let text =
-                  string.charAt(0).toUpperCase() +
-                  string.slice(1).replace("_", " ");
-                return hotkey ? `${text} ( ${hotkey} )` : text;
-              }
-              function getControllerHTML(type) {
-                let html;
-                switch (type) {
-                  case "progress":
-                    html = `
-                    <input class="slider col-9 p-0" type="range"
-                        min="0"
-                        max="${animDataObj.animTime / 1000}"
-                        value="0"
-                        step="any"
-                    >
-                    <span class="col-3 text-nowrap" style="font-size: smaller;">        
-                       00:00:00
-                    </span>`;
-                    break;
-                  case "playspeed":
-                    let tickSpacing = playSpeedDomain[0]; //==多少數值一個tick
+              let initHTML = () => {
+                function getTooltipText(string, hotkey = undefined) {
+                  let text =
+                    string.charAt(0).toUpperCase() +
+                    string.slice(1).replace("_", " ");
+                  return hotkey ? `${text} ( ${hotkey} )` : text;
+                }
+                function getControllerHTML(type) {
+                  let html;
+                  switch (type) {
+                    case "progress":
+                      html = `
+                      <input class="slider col-9 p-0" type="range"
+                          min="0"
+                          max="${animDataObj.animTime / 1000}"
+                          value="0"
+                          step="any"
+                      >
+                      <span class="col-3 text-nowrap" style="font-size: smaller;">        
+                         00:00:00
+                      </span>`;
+                      break;
+                    case "playspeed":
+                      let tickSpacing = playSpeedDomain[0]; //==多少數值一個tick
 
-                    let labelAmount = 3,
-                      labelSpacing = parseInt(playSpeedDomain[1] / labelAmount);
-                    // console.debug(labelSpacing);
-                    html = `
-                    <input class="slider col-9 p-0" type="range"
-                        min="${playSpeedDomain[0]}"
-                        max="${playSpeedDomain[1]}"
-                        value="${animDataObj.playSpeed}"
-                        step="${tickSpacing}"
-                        list="playSpeedTick">        
-                    <span class="col-3 text-nowrap" style="font-size: small";>      
-                        <b class="fs-6">${
-                          animDataObj.playSpeed
-                        }</b> day/<sub>s</sub>
-                    </span>
-                    <datalist class="fs-6 p-0" id="playSpeedTick" >
-                        ${d3
-                          .range(
-                            playSpeedDomain[0],
-                            playSpeedDomain[1] + 1,
-                            tickSpacing
-                          )
-                          .map(
-                            (val) => `<option value="${val}"
-                          ${
-                            val % labelSpacing === 0 || val === tickSpacing
-                              ? `label="x${
-                                  val / tickSpacing
-                                }" style="font-size: small;"`
-                              : ""
-                          }></option>`
-                          )
-                          .join("")}
-                    </datalist>
-                    `;
-                    break;
-                  case "audio":
-                    html = `
-                    <div class="col-2 ps-4 pe-0 form-switch toolButton">
-                      <span class="tooltiptext tooltip-top">
-                        ${getTooltipText("ON/OFF", "A")}
+                      let labelAmount = 3,
+                        labelSpacing = parseInt(
+                          playSpeedDomain[1] / labelAmount
+                        );
+                      // console.debug(labelSpacing);
+                      html = `
+                      <input class="slider col-9 p-0" type="range"
+                          min="${playSpeedDomain[0]}"
+                          max="${playSpeedDomain[1]}"
+                          value="${animDataObj.playSpeed}"
+                          step="${tickSpacing}"
+                          list="playSpeedTick">        
+                      <span class="col-3 text-nowrap" style="font-size: small";>      
+                          <b class="fs-6">${
+                            animDataObj.playSpeed
+                          }</b> day/<sub>s</sub>
                       </span>
-                      <input class="my-1 form-check-input" type="checkbox" role="switch">
-                    </div>
-                    <input class="slider col-7 p-0" type="range"
-                        min="0"
-                        max="100"
-                        value="${defaultSetting.volume * 100}"
-                        step="1"
-                        list="audioTick" disabled>        
-                    <span class="col-3 text-nowrap" style="font-size: small;">      
-                      <b class="fs-6">${defaultSetting.volume * 100}</b> %
-                    </span>
-
-                    <datalist class="fs-6 ps-5" id="audioTick" >
-                        ${d3
-                          .range(0, 101, 5)
-                          .map(
-                            (val) => `<option value="${val}"
-                          ${
-                            val % 25 === 0
-                              ? `label="${val}"  style="font-size: smaller;${
-                                  val !== 0 ? "padding-left:5px" : ""
-                                }"`
-                              : ""
-                          }></option>`
-                          )
-                          .join("")}
-                    </datalist>
-                    `;
-                    break;
-                  case "event_Config":
-                    let displaystyle = ["none", "living", "pulsate"];
-                    let dateRange = dateDomain.map((d) => getDateStr(d, false));
-
-                    html = `
-                    <div class="d-flex flex-column">
-
-                    <!------------------------- Filter --------------------------->
-                      <label class="text-start fs-5 fw-bold">
-                        Filter
-                      </label>
-
-                      <!-- date filter -->
-                      <div class="d-flex flex-column" id="dateFilter">
-                        <label for="dateRange" class="col-form-label text-nowrap pb-0">Date Range(UTC)</label>
-                        
-                        <div class="mx-2 mb-1">
-                          <input type="range" id="dateRange"/>   
-                        </div>
-
-                        <div class="d-flex flex-row flex-nowrap" >
-                          <input class="form-control" type="date" id="date_start" name="date" 
-                          min="${dateRange[0]}" max="${dateRange[1]}"
-                          value="${dateRange[0]}">
-                          <span class="p-1">-</span>
-                          <input class="form-control" type="date" id="date_end" name="date"
-                          min="${dateRange[0]}" max="${dateRange[1]}"
-                          value="${dateRange[1]}">
-                        </div>       
-                      </div>
-
-                      <!-- ml filter -->
-                      <div class="d-flex flex-column" id="mlFilter">
-                        <label for="mlRange" class="col-form-label text-nowrap pb-0">ML Range</label>
-                        
-                        <div class="mx-2 mb-1">
-                          <input type="range" id="mlRange"/>   
-                        </div>
-
-                        <div class="d-flex flex-row flex-nowrap" >
-                          <input type="number" class="form-control" id="ml_min" name="ml" 
-                          min="${mlDomain[0]}" max="${mlDomain[1]}" 
-                          value="${
-                            defaultSetting.initFilterData.ML[0]
-                          }" title="">
-                          <span class="p-1">-</span>
-                          <input type="number" class="form-control" id="ml_max" name="ml" 
-                          min="${mlDomain[0]}" max="${mlDomain[1]}"
-                          value="${mlDomain[1]}" title="">
-                        </div>       
-                      </div>           
-                      
-                      <!-- depth filter -->
-                      <div class="d-flex flex-column" id="depthFilter">
-                        <label for="depthRange" class="col-form-label text-nowrap pb-0">Depth Range</label>
-                        
-                        <div class="mx-2 mb-1">
-                          <input type="range" id="depthRange"/>   
-                        </div>
-
-                        <div class="d-flex flex-row flex-nowrap" >
-                          <input type="number" class="form-control" id="depth_min" name="depth" 
-                          min="${depthDomain[0]}" max="${depthDomain[1]}" 
-                          value="${depthDomain[0]}" title="">
-                          <span class="p-1">-</span>
-                          <input type="number" class="form-control" id="depth_max" name="depth" 
-                          min="${depthDomain[0]}" max="${depthDomain[1]}"
-                          value="${depthDomain[1]}" title="">
-                        </div>       
-                      </div> 
-                    <!------------------------- Animation --------------------------->
-                      <label class="text-start fs-5 fw-bold mt-2">
-                        Animation
-                      </label>
-
-                      <div class="d-flex flex-row flex-nowrap mb-2">
-                        <label for="displaystyle" class="col-form-label text-nowrap me-3">Display Style</label>
-                        <select class="form-control" id="displaystyle">
-                          ${displaystyle
+                      <datalist class="fs-6 p-0" id="playSpeedTick" >
+                          ${d3
+                            .range(
+                              playSpeedDomain[0],
+                              playSpeedDomain[1] + 1,
+                              tickSpacing
+                            )
                             .map(
-                              (type) =>
-                                `<option value="${type}" ${
-                                  type === defaultSetting.displayStyle
-                                    ? "selected"
-                                    : ""
-                                }>${type}</option>`
+                              (val) => `<option value="${val}"
+                            ${
+                              val % labelSpacing === 0 || val === tickSpacing
+                                ? `label="x${
+                                    val / tickSpacing
+                                  }" style="font-size: small;"`
+                                : ""
+                            }></option>`
                             )
                             .join("")}
-                        </select>
+                      </datalist>
+                      `;
+                      break;
+                    case "audio":
+                      html = `
+                      <div class="col-2 ps-4 pe-0 form-switch toolButton">
+                        <span class="tooltiptext tooltip-top">
+                          ${getTooltipText("ON/OFF", "A")}
+                        </span>
+                        <input class="my-1 form-check-input" type="checkbox" role="switch">
                       </div>
+                      <input class="slider col-7 p-0" type="range"
+                          min="0"
+                          max="100"
+                          value="${defaultSetting.volume * 100}"
+                          step="1"
+                          list="audioTick" disabled>        
+                      <span class="col-3 text-nowrap" style="font-size: small;">      
+                        <b class="fs-6">${defaultSetting.volume * 100}</b> %
+                      </span>
+  
+                      <datalist class="fs-6 ps-5" id="audioTick" >
+                          ${d3
+                            .range(0, 101, 5)
+                            .map(
+                              (val) => `<option value="${val}"
+                            ${
+                              val % 25 === 0
+                                ? `label="${val}"  style="font-size: smaller;${
+                                    val !== 0 ? "padding-left:5px" : ""
+                                  }"`
+                                : ""
+                            }></option>`
+                            )
+                            .join("")}
+                      </datalist>
+                      `;
+                      break;
+                    case "event_config":
+                      let displaystyle = ["none", "living", "pulsate"];
+                      let dateRange = dateDomain.map((d) =>
+                        getDateStr(d, false)
+                      );
 
-                      <div class="d-flex flex-row flex-nowrap mb-2">
-                        <label for="displaycolor" class="col-form-label text-nowrap me-3">Display Color</label>
-                        <input type="color" class="form-control h-auto" id="displaycolor"
-                        value="${defaultSetting.displayColor}" >
+                      html = `
+                      <div class="d-flex flex-column">
+  
+                      <!------------------------- Filter --------------------------->
+                        <label class="text-start fs-5 fw-bold">
+                          Filter
+                        </label>
+  
+                        <!-- date filter -->
+                        <div class="d-flex flex-column" id="dateFilter">
+                          <label for="dateRange" class="col-form-label text-nowrap pb-0">Date Range(UTC)</label>
+                          
+                          <div class="mx-2 mb-1">
+                            <input type="range" id="dateRange"/>   
+                          </div>
+  
+                          <div class="d-flex flex-row flex-nowrap" >
+                            <input class="form-control" type="date" id="date_start" name="date" 
+                            min="${dateRange[0]}" max="${dateRange[1]}"
+                            value="${dateRange[0]}">
+                            <span class="p-1">-</span>
+                            <input class="form-control" type="date" id="date_end" name="date"
+                            min="${dateRange[0]}" max="${dateRange[1]}"
+                            value="${dateRange[1]}">
+                          </div>       
+                        </div>
+  
+                        <!-- ml filter -->
+                        <div class="d-flex flex-column" id="mlFilter">
+                          <label for="mlRange" class="col-form-label text-nowrap pb-0">ML Range</label>
+                          
+                          <div class="mx-2 mb-1">
+                            <input type="range" id="mlRange"/>   
+                          </div>
+  
+                          <div class="d-flex flex-row flex-nowrap" >
+                            <input type="number" class="form-control" id="ml_min" name="ml" 
+                            min="${mlDomain[0]}" max="${mlDomain[1]}" step="0.1"
+                            value="${
+                              defaultSetting.initFilterData.ML[0]
+                            }" title="">
+                            <span class="p-1">-</span>
+                            <input type="number" class="form-control" id="ml_max" name="ml" 
+                            min="${mlDomain[0]}" max="${mlDomain[1]}" step="0.1"
+                            value="${mlDomain[1]}" title="">
+                          </div>       
+                        </div>           
+                        
+                        <!-- depth filter -->
+                        <div class="d-flex flex-column" id="depthFilter">
+                          <label for="depthRange" class="col-form-label text-nowrap pb-0">Depth Range</label>
+                          
+                          <div class="mx-2 mb-1">
+                            <input type="range" id="depthRange"/>   
+                          </div>
+  
+                          <div class="d-flex flex-row flex-nowrap" >
+                            <input type="number" class="form-control" id="depth_min" name="depth" 
+                            min="${depthDomain[0]}" max="${depthDomain[1]}" 
+                            value="${depthDomain[0]}" title="">
+                            <span class="p-1">-</span>
+                            <input type="number" class="form-control" id="depth_max" name="depth" 
+                            min="${depthDomain[0]}" max="${depthDomain[1]}"
+                            value="${depthDomain[1]}" title="">
+                          </div>       
+                        </div> 
+                      <!------------------------- Animation --------------------------->
+                        <label class="text-start fs-5 fw-bold mt-2">
+                          Animation
+                        </label>
+  
+                        <div class="d-flex flex-row flex-nowrap mb-2">
+                          <label for="displaystyle" class="col-form-label text-nowrap me-3">Display Style</label>
+                          <select class="form-control" id="displaystyle">
+                            ${displaystyle
+                              .map(
+                                (type) =>
+                                  `<option value="${type}" ${
+                                    type === defaultSetting.displayStyle
+                                      ? "selected"
+                                      : ""
+                                  }>${type}</option>`
+                              )
+                              .join("")}
+                          </select>
+                        </div>
+  
+                        <div class="d-flex flex-row flex-nowrap mb-2">
+                          <label for="displaycolor" class="col-form-label text-nowrap me-3">Display Color</label>
+                          <input type="color" class="form-control h-auto" id="displaycolor"
+                          value="${defaultSetting.displayColor}" >
+                        </div>
+                      
+                        <div class="d-flex flex-row flex-nowrap mb-2">
+                          <label for="circlesize" class="col-form-label text-nowrap me-3">Circle Size</label>
+                          <input type="number" class="form-control" id="circlesize" min="1" value="${
+                            defaultSetting.circleSize
+                          }" title="">
+                        </div>
+  
                       </div>
-                    
-                      <div class="d-flex flex-row flex-nowrap mb-2">
-                        <label for="circlesize" class="col-form-label text-nowrap me-3">Circle Size</label>
-                        <input type="number" class="form-control" id="circlesize" min="1" value="${
-                          defaultSetting.circleSize
-                        }" title="">
-                      </div>
-
-                    </div>
-                    `;
-                    break;
-                  // case "filter":
-                  //   html = ``;
-                  //   break;
-                  // case "audio":
-                  //   html = ``;
-                  //   break;
+                      `;
+                      break;
+                    // case "filter":
+                    //   html = ``;
+                    //   break;
+                    // case "audio":
+                    //   html = ``;
+                    //   break;
+                  }
+                  return html;
                 }
-                return html;
-              }
 
-              const icons = [
-                { str: "setting", hotkey: "S" },
-                { str: "lockView", hotkey: "L" },
-                { str: "pause", hotkey: "P" },
-              ];
-              const panelControl = {
-                slider: ["progress", "playspeed", "audio"],
-                checkbox: ["mL_Legend", "depth_Legend", "grid_Line"],
-                dropdown: ["event_Config"],
-              };
+                const icons = [
+                  { str: "setting", hotkey: "S" },
+                  { str: "lockView", hotkey: "L" },
+                  { str: "pause", hotkey: "P" },
+                ];
+                const panelControl = {
+                  slider: ["progress", "playspeed", "audio"],
+                  checkbox: ["mL_legend", "depth_legend", "grid_line"],
+                  dropdown: ["event_config"],
+                };
 
-              let buttonHtml = icons
-                .map(
-                  (btn) => `<div class="toolButton">
-                              <span class="tooltiptext tooltip-top">
-                                ${getTooltipText(btn.str, btn.hotkey)}
-                              </span>
-                              <a class="button" id="${btn.str}Btn" href="#"></a>
-                            </div>`
-                )
-                .join("");
-
-              let sliderHtml = panelControl.slider
-                .map(
-                  (type) => `<div class="d-flex flex-column">
-                                <label for="" class="text-start fs-5 fw-bold">
-                                  ${getTooltipText(type)}
-                                </label>
-                                <div class="row" id="${type}">
-                                  ${getControllerHTML(type)}
-                                </div>
-                            </div>`
-                )
-                .join("");
-
-              let dropdownHtml = panelControl.dropdown
-                .map(
-                  (type) => `<div class="col-6 dropend text-start px-0">
-                              <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-                                ${getTooltipText(type)}
-                              </button>
-                              <ul class="dropdown-menu p-3" id="${type}">
-                                ${getControllerHTML(type)}
-                              </ul>
-                            </div>`
-                )
-                .join("");
-
-              let checkboxHtml = panelControl.checkbox
-                .map(
-                  (type, i) => `<div class="form-check col-6 text-start">
-                                  <input class="form-check-input" type="checkbox" name="display" value="${i}" id="${type}ckb" checked>
-                                  <label class="form-check-label" for="${type}ckb">
-                                    ${getTooltipText(type)}
-                                  </label>
+                let buttonHtml = icons
+                  .map(
+                    (btn) => `<div class="toolButton">
+                                <span class="tooltiptext tooltip-top" 
+                                data-i18n="toolbar.${btn.str}"
+                                data-i18n-options="{'hotkey': 'AA'}">
+                                </span>
+                                <a class="button" id="${btn.str}Btn" href="#"></a>
                               </div>`
-                )
-                .join("");
+                  )
+                  .join("");
 
-              let setPanelHtml = `
-                            <div id="setPanel" class="popup">
-                                <h1>Setting</h1>
-                                <a class="close" href="#">&times;</a>
-                                <div class="mx-1">
-                                    ${sliderHtml}
-                                    <div class="d-flex justify-content-end row my-1">
-                                      ${dropdownHtml}
-                                    </div>
-                                    <div class="row">
-                                      ${checkboxHtml}
-                                    </div>
-                                </div>
-                            </div > `;
+                let sliderHtml = panelControl.slider
+                  .map(
+                    (type) => `<div class="d-flex flex-column">
+                                  <label for="" class="text-start fs-5 fw-bold" data-i18n="${type}">
+                                  </label>
+                                  <div class="row" id="${type}">
+                                    ${getControllerHTML(type)}
+                                  </div>
+                              </div>`
+                  )
+                  .join("");
 
-              controller.node().insertAdjacentHTML(
-                "beforeend",
-                `<div class="toolbar d-flex flex-row">
-                    ${buttonHtml}
-                </div>`
-              );
+                let dropdownHtml = panelControl.dropdown
+                  .map(
+                    (type) => `<div class="col-6 dropend text-start px-0">
+                                <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" 
+                                data-bs-auto-close="outside" data-i18n="${type}">
+                                </button>
+                                <ul class="dropdown-menu p-3" id="${type}">
+                                  ${getControllerHTML(type)}
+                                </ul>
+                              </div>`
+                  )
+                  .join("");
 
-              icons.forEach((btn) => {
-                let button = controller.select(`#${btn.str}Btn`);
+                let checkboxHtml = panelControl.checkbox
+                  .map(
+                    (type, i) => `<div class="form-check col-6 text-start">
+                                    <input class="form-check-input" type="checkbox" name="display" value="${i}" id="${type}ckb" checked>
+                                    <label class="form-check-label" for="${type}ckb">
+                                      ${getTooltipText(type)}
+                                    </label>
+                                </div>`
+                  )
+                  .join("");
 
-                let onClick, value, icon;
-                switch (btn.str) {
-                  case "setting":
-                    let toolbar = controller.select(".toolbar");
-                    toolbar
-                      .node()
-                      .insertAdjacentHTML("afterbegin", setPanelHtml);
-                    let setPanel = toolbar.select("#setPanel");
-                    setPanel
-                      .select(".close")
-                      .on("click", () => button.dispatch("click"));
+                let setPanelHtml = `
+                              <div id="setPanel" class="popup">
+                                  <h1 data-i18n="setting"></h1>
+                                  <a class="close" href="#">&times;</a>
+                                  <div class="mx-1">
+                                      ${sliderHtml}
+                                      <div class="d-flex justify-content-end row my-1">
+                                        ${dropdownHtml}
+                                      </div>
+                                      <div class="row">
+                                        ${checkboxHtml}
+                                      </div>
+                                  </div>
+                              </div > `;
 
-                    value = true;
-                    icon = btn.str;
-                    onClick = function (e) {
-                      let display = this.value ? "inline" : "none";
-                      setPanel.style("display", display);
-                      this.value = !this.value;
-                    };
-                    break;
-                  case "lockView":
-                    value = defaultSetting.lockView;
-                    icon = (value ? "" : "un") + "lockView";
-                    onClick = function () {
-                      this.value = !this.value;
-                      leafletMap.fire("maplock", { lock: this.value });
+                controller.node().insertAdjacentHTML(
+                  "beforeend",
+                  `<div class="toolbar d-flex flex-row">
+                      ${buttonHtml}
+                  </div>`
+                );
 
-                      let string = (this.value ? "" : "un") + "lockView";
-                      button.style("content", `url(img/${string}.png)`);
-                      d3.select(this.parentNode)
-                        .select(".tooltiptext")
-                        .text(getTooltipText(string, btn.hotkey));
-                    };
-                    break;
-                  case "pause":
-                    value = defaultSetting.play;
-                    icon = value ? "pause" : "play";
-                    onClick = function () {
-                      this.value = !this.value;
-                      leafletMap.fire("animCtrl", { play: this.value });
+                icons.forEach((btn) => {
+                  let button = controller.select(`#${btn.str}Btn`);
 
-                      let string = this.value ? "pause" : "play";
-                      button.style("content", `url(img/${string}.png)`);
-                      d3.select(this.parentNode)
-                        .select(".tooltiptext")
-                        .text(getTooltipText(string, btn.hotkey));
-                    };
-                    break;
-                  case "b":
-                    break;
-                }
-                button
-                  .property("value", value)
-                  .style("content", `url(img/${icon}.png)`)
-                  .on("click", onClick);
-              });
+                  let onClick, value, icon;
+                  switch (btn.str) {
+                    case "setting":
+                      let toolbar = controller.select(".toolbar");
+                      toolbar
+                        .node()
+                        .insertAdjacentHTML("afterbegin", setPanelHtml);
+                      let setPanel = toolbar.select("#setPanel");
+                      setPanel
+                        .select(".close")
+                        .on("click", () => button.dispatch("click"));
+
+                      value = true;
+                      icon = btn.str;
+                      onClick = function (e) {
+                        let display = this.value ? "inline" : "none";
+                        setPanel.style("display", display);
+                        this.value = !this.value;
+                      };
+                      break;
+                    case "lockView":
+                      value = defaultSetting.lockView;
+                      icon = (value ? "" : "un") + "lockView";
+                      onClick = function () {
+                        this.value = !this.value;
+                        leafletMap.fire("maplock", { lock: this.value });
+
+                        let string = (this.value ? "" : "un") + "lockView";
+                        button.style("content", `url(img/${string}.png)`);
+                        d3.select(this.parentNode)
+                          .select(".tooltiptext")
+                          .text(getTooltipText(string, btn.hotkey));
+                      };
+                      break;
+                    case "pause":
+                      value = defaultSetting.play;
+                      icon = value ? "pause" : "play";
+                      onClick = function () {
+                        this.value = !this.value;
+                        leafletMap.fire("animCtrl", { play: this.value });
+
+                        let string = this.value ? "pause" : "play";
+                        button.style("content", `url(img/${string}.png)`);
+                        d3.select(this.parentNode)
+                          .select(".tooltiptext")
+                          .text(getTooltipText(string, btn.hotkey));
+                      };
+                      break;
+                    case "b":
+                      break;
+                  }
+                  button
+                    .property("value", value)
+                    .style("content", `url(img/${icon}.png)`)
+                    .on("click", onClick);
+                });
+
+                // initI18n();
+              };
+              let initI18n = () => {
+                let updateLocales = () => {
+                  localize = locI18next.init(i18next);
+                  localize(".controller");
+                  localize(".legendGroup");
+                };
+                // use plugins and options as needed, for options, detail see
+                // http://i18next.com/docs/
+                i18next
+                  .use(i18nextHttpBackend)
+                  .use(i18nextBrowserLanguageDetector)
+                  .init(
+                    {
+                      debug: true,
+                      fallbackLng: "en-US",
+                      useDataAttrOptions: true,
+                      load: "currentOnly",
+                      // detection: {
+                      //   order: ["querystring", "navigator"],
+                      //   lookupQuerystring: "lng",
+                      // },
+                      backend: {
+                        // load from i18next-gitbook repo
+                        loadPath: "src/locales/{{lng}}.json",
+                        crossDomain: false,
+                      },
+                    },
+                    function (err, t) {
+                      // console.debug(err, t);
+                      updateLocales();
+                    }
+                  );
+              };
+              initHTML();
+              initI18n();
             };
             let initTimeScale = () => {
               timeScale = d3
@@ -968,6 +1011,7 @@ function TWSanime() {
                     .attr("class", "depthLegend");
                 });
             };
+
             initTimeScale();
             initMap();
             initMarker();
@@ -1080,9 +1124,8 @@ function TWSanime() {
               let source = audioSource[levelIdx];
               // console.debug(ML, levelIdx);
               getAudioPlayer(source).play();
-              //==大於7加鼓聲
-              if (levelIdx === audioSource.length - 1)
-                getAudioPlayer("drum1").play();
+              //==ML大於6.5加鼓聲
+              if (ML >= 6.5) getAudioPlayer("drum1").play();
             };
             switch (action) {
               case "play":
@@ -1310,7 +1353,7 @@ function TWSanime() {
                 });
               };
               let dropdownMenu = () => {
-                let eventMenu = setPanel.select("#event_Config");
+                let eventMenu = setPanel.select("#event_config");
 
                 let animation = () => {
                   let circlesizeControl = eventMenu.select("#circlesize"),

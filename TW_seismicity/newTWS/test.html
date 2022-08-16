@@ -17,6 +17,8 @@
 <html>
   <head>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next/2.0.22/i18next.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next-browser-languagedetector/6.1.5/i18nextBrowserLanguageDetector.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next-http-backend/1.4.1/i18nextHttpBackend.min.js"></script>
     <script src="src/loc-i18next.min.js"></script>
   </head>
   <body>
@@ -39,38 +41,73 @@
     </a>
 
     <script>
+      let aaa = () => {
+        localize = locI18next.init(i18next);
+
+        localize("body");
+      };
       // use plugins and options as needed, for options, detail see
       // http://i18next.com/docs/
-      i18next.init(
-        {
-          lng: "en", // evtl. use language-detector https://github.com/i18next/i18next-browser-languageDetector
-          resources: {
-            // evtl. load via xhr https://github.com/i18next/i18next-xhr-backend
-            en: {
-              translation: {
-                input: {
-                  placeholder: "A translated placeholder",
-                },
-                nav: {
-                  home: "Home",
-                  page1: "Page One",
-                  page2: "Page Two",
-                },
-                key: {
-                  title: "Title translated",
-                },
-              },
+      i18next
+        .use(i18nextHttpBackend)
+        .use(i18nextBrowserLanguageDetector)
+        .init(
+          {
+            // fallbackLng: "en",
+            // fallbackLng: ["es", "en", "en-US", "dev"],
+            //   lng: "en", // evtl. use language-detector https://github.com/i18next/i18next-browser-languageDetector
+            // resources: {
+            //   // evtl. load via xhr https://github.com/i18next/i18next-xhr-backend
+            //   en: {
+            //     translation: {
+            //       input: {
+            //         placeholder: "A translated placeholder",
+            //       },
+            //       nav: {
+            //         home: "Home",
+            //         page1: "Page One",
+            //         page2: "Page Two",
+            //       },
+            //       key: {
+            //         title: "Title translated",
+            //       },
+            //     },
+            //   },
+            //   "zh-TW": {
+            //     translation: {
+            //       input: {
+            //         placeholder: "A translated placeholder",
+            //       },
+            //       nav: {
+            //         home: "ddd",
+            //         page1: "aa One",
+            //         page2: "sss Two",
+            //       },
+            //       key: {
+            //         title: "aa translated",
+            //       },
+            //     },
+            //   },
+            // },
+
+            debug: true,
+            // ns: ["special", "common"],
+            // defaultNS: "special",
+            backend: {
+              // load from i18next-gitbook repo
+              loadPath: "src/locales/{{lng}}.json",
+              crossDomain: true,
             },
           },
-        },
-        function (err, t) {
-          localize = locI18next.init(i18next);
+          function (err, t) {
+            console.debug(err, t);
+            aaa();
+          }
+        );
 
-          localize(".nav");
-          localize(".content");
-          localize("#btn1");
-        }
-      );
+      //   i18next.changeLanguage("ab", () => aaa());
+      //   const storedLang = localStorage.getItem("i18nextLng");
+      //   console.debug(storedLang);
     </script>
   </body>
 </html>

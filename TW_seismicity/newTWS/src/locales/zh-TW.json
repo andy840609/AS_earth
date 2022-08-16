@@ -1,0 +1,12 @@
+{
+  "setting": "Setting",
+  "event_config": "Event Config",
+  "progress": "Progress",
+  "playspeed": "Play speed",
+  "audio": "Audio",
+  "toolbar": {
+    "setting": "Setting ( {{hotkey}} )",
+    "lockView": "lockView",
+    "pause": "pause"
+  }
+}

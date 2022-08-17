@@ -315,7 +315,7 @@ function TWSanime() {
                       <span class="col-3 text-nowrap" style="font-size: small";>      
                           <b class="fs-6">${
                             animDataObj.playSpeed
-                          }</b> day/<sub>s</sub>
+                          }</b> <span data-i18n="day"></span>/<sub data-i18n="sec"></sub>
                       </span>
                       <datalist class="fs-6 p-0" id="playSpeedTick" >
                           ${d3
@@ -341,8 +341,8 @@ function TWSanime() {
                     case "audio":
                       html = `
                       <div class="col-2 ps-4 pe-0 form-switch toolButton">
-                        <span class="tooltiptext tooltip-top">
-                          ${getTooltipText("ON/OFF", "A")}
+                        <span class="tooltiptext tooltip-top"
+                        data-i18n="switch" i18n-options="{ hotkey: 'A' }">
                         </span>
                         <input class="my-1 form-check-input" type="checkbox" role="switch">
                       </div>
@@ -373,6 +373,27 @@ function TWSanime() {
                       </datalist>
                       `;
                       break;
+                    case "language":
+                      let language = [
+                        { str: "繁體中文", lang: "zh-TW" },
+                        { str: "English", lang: "en-US" },
+                      ];
+                      html = `
+                        <select class="form-control" id="language">
+                            ${language
+                              .map(
+                                (type) =>
+                                  `<option value="${type.lang}" 
+                                  ${
+                                    type.lang ===
+                                    localStorage.getItem("i18nextLng")
+                                      ? "selected"
+                                      : ""
+                                  }>${type.str}</option>`
+                              )
+                              .join("")}
+                        </select>`;
+                      break;
                     case "event_config":
                       let displaystyle = ["none", "living", "pulsate"];
                       let dateRange = dateDomain.map((d) =>
@@ -383,13 +404,11 @@ function TWSanime() {
                       <div class="d-flex flex-column">
   
                       <!------------------------- Filter --------------------------->
-                        <label class="text-start fs-5 fw-bold">
-                          Filter
-                        </label>
-  
+                        <label class="text-start fs-5 fw-bold" data-i18n="filter"></label>
+                                               
                         <!-- date filter -->
                         <div class="d-flex flex-column" id="dateFilter">
-                          <label for="dateRange" class="col-form-label text-nowrap pb-0">Date Range(UTC)</label>
+                          <label for="dateRange" class="col-form-label text-nowrap pb-0" data-i18n="dateRange"></label>
                           
                           <div class="mx-2 mb-1">
                             <input type="range" id="dateRange"/>   
@@ -408,7 +427,7 @@ function TWSanime() {
   
                         <!-- ml filter -->
                         <div class="d-flex flex-column" id="mlFilter">
-                          <label for="mlRange" class="col-form-label text-nowrap pb-0">ML Range</label>
+                          <label for="mlRange" class="col-form-label text-nowrap pb-0" data-i18n="mlRange"></label>
                           
                           <div class="mx-2 mb-1">
                             <input type="range" id="mlRange"/>   
@@ -429,7 +448,7 @@ function TWSanime() {
                         
                         <!-- depth filter -->
                         <div class="d-flex flex-column" id="depthFilter">
-                          <label for="depthRange" class="col-form-label text-nowrap pb-0">Depth Range</label>
+                          <label for="depthRange" class="col-form-label text-nowrap pb-0" data-i18n="depthRange"></label>
                           
                           <div class="mx-2 mb-1">
                             <input type="range" id="depthRange"/>   
@@ -446,34 +465,34 @@ function TWSanime() {
                           </div>       
                         </div> 
                       <!------------------------- Animation --------------------------->
-                        <label class="text-start fs-5 fw-bold mt-2">
-                          Animation
-                        </label>
-  
+                        <label class="text-start fs-5 fw-bold mt-2" data-i18n="animation"></label>
+                          
                         <div class="d-flex flex-row flex-nowrap mb-2">
-                          <label for="displaystyle" class="col-form-label text-nowrap me-3">Display Style</label>
+                          <label for="displaystyle" class="col-form-label text-nowrap me-3" data-i18n="displaystyle"></label>
                           <select class="form-control" id="displaystyle">
                             ${displaystyle
                               .map(
                                 (type) =>
-                                  `<option value="${type}" ${
+                                  `<option value="${type}" 
+                                  ${
                                     type === defaultSetting.displayStyle
                                       ? "selected"
                                       : ""
-                                  }>${type}</option>`
+                                  }
+                                  data-i18n="${type}"></option>`
                               )
                               .join("")}
                           </select>
                         </div>
   
                         <div class="d-flex flex-row flex-nowrap mb-2">
-                          <label for="displaycolor" class="col-form-label text-nowrap me-3">Display Color</label>
+                          <label for="displaycolor" class="col-form-label text-nowrap me-3" data-i18n="displaycolor"></label>
                           <input type="color" class="form-control h-auto" id="displaycolor"
                           value="${defaultSetting.displayColor}" >
                         </div>
                       
                         <div class="d-flex flex-row flex-nowrap mb-2">
-                          <label for="circlesize" class="col-form-label text-nowrap me-3">Circle Size</label>
+                          <label for="circlesize" class="col-form-label text-nowrap me-3" data-i18n="circlesize"></label>
                           <input type="number" class="form-control" id="circlesize" min="1" value="${
                             defaultSetting.circleSize
                           }" title="">
@@ -482,9 +501,7 @@ function TWSanime() {
                       </div>
                       `;
                       break;
-                    // case "filter":
-                    //   html = ``;
-                    //   break;
+
                     // case "audio":
                     //   html = ``;
                     //   break;
@@ -495,22 +512,28 @@ function TWSanime() {
                 const icons = [
                   { str: "setting", hotkey: "S" },
                   { str: "lockView", hotkey: "L" },
-                  { str: "pause", hotkey: "P" },
+                  { str: "play", hotkey: "P" },
                 ];
+
                 const panelControl = {
                   slider: ["progress", "playspeed", "audio"],
+                  select: ["language"],
                   checkbox: ["mL_legend", "depth_legend", "grid_line"],
                   dropdown: ["event_config"],
                 };
 
                 let buttonHtml = icons
                   .map(
-                    (btn) => `<div class="toolButton">
+                    (btn, i) => `<div class="toolButton">
                                 <span class="tooltiptext tooltip-top" 
-                                data-i18n="toolbar.${btn.str}"
-                                data-i18n-options="{'hotkey': 'AA'}">
+                                data-i18n="toolbar.${
+                                  btn.str +
+                                  (i > 0 ? "." + defaultSetting[btn.str] : "")
+                                }"
+                                i18n-options="{ hotkey: '${btn.hotkey}' }">
                                 </span>
-                                <a class="button" id="${btn.str}Btn" href="#"></a>
+                                <a class="button" 
+                                id="${btn.str}Btn" href="#"></a>
                               </div>`
                   )
                   .join("");
@@ -540,13 +563,21 @@ function TWSanime() {
                   )
                   .join("");
 
+                let selectHtml = panelControl.select
+                  .map(
+                    (type) => `
+                              <label class="text-start fs-5 fw-bold col-5" data-i18n="${type}"></label>                      
+                              <div class="col-7">
+                              ${getControllerHTML(type)} 
+                              </div>`
+                  )
+                  .join("");
+
                 let checkboxHtml = panelControl.checkbox
                   .map(
                     (type, i) => `<div class="form-check col-6 text-start">
                                     <input class="form-check-input" type="checkbox" name="display" value="${i}" id="${type}ckb" checked>
-                                    <label class="form-check-label" for="${type}ckb">
-                                      ${getTooltipText(type)}
-                                    </label>
+                                    <label class="form-check-label" for="${type}ckb" data-i18n="${type}"></label>
                                 </div>`
                   )
                   .join("");
@@ -557,6 +588,9 @@ function TWSanime() {
                                   <a class="close" href="#">&times;</a>
                                   <div class="mx-1">
                                       ${sliderHtml}
+                                      <div class="d-flex flex-row row my-1">
+                                        ${selectHtml}
+                                      </div>
                                       <div class="d-flex justify-content-end row my-1">
                                         ${dropdownHtml}
                                       </div>
@@ -607,10 +641,15 @@ function TWSanime() {
                         button.style("content", `url(img/${string}.png)`);
                         d3.select(this.parentNode)
                           .select(".tooltiptext")
-                          .text(getTooltipText(string, btn.hotkey));
+                          .attr("data-i18n", `toolbar.lockView.${this.value}`);
+                        controller.dispatch("updateLocales", {
+                          detail: {
+                            target: ".controller .toolButton",
+                          },
+                        });
                       };
                       break;
-                    case "pause":
+                    case "play":
                       value = defaultSetting.play;
                       icon = value ? "pause" : "play";
                       onClick = function () {
@@ -621,23 +660,33 @@ function TWSanime() {
                         button.style("content", `url(img/${string}.png)`);
                         d3.select(this.parentNode)
                           .select(".tooltiptext")
-                          .text(getTooltipText(string, btn.hotkey));
+                          .attr("data-i18n", `toolbar.play.${this.value}`);
+                        controller.dispatch("updateLocales", {
+                          detail: {
+                            target: ".controller .toolButton",
+                          },
+                        });
                       };
                       break;
-                    case "b":
-                      break;
+                    // case "b":
+                    //   break;
                   }
                   button
                     .property("value", value)
                     .style("content", `url(img/${icon}.png)`)
                     .on("click", onClick);
                 });
-
-                // initI18n();
               };
               let initI18n = () => {
+                let localize;
                 let updateLocales = () => {
-                  localize = locI18next.init(i18next);
+                  localize = locI18next.init(i18next, {
+                    selectorAttr: "data-i18n", // selector for translating elements
+                    targetAttr: "i18n-target",
+                    optionsAttr: "i18n-options",
+                    useOptionsAttr: true,
+                    parseDefaultValueFromContent: true,
+                  });
                   localize(".controller");
                   localize(".legendGroup");
                 };
@@ -648,10 +697,13 @@ function TWSanime() {
                   .use(i18nextBrowserLanguageDetector)
                   .init(
                     {
-                      debug: true,
+                      // debug: true,
                       fallbackLng: "en-US",
-                      useDataAttrOptions: true,
                       load: "currentOnly",
+                      // interpolation: {
+                      //   prefix: "__",
+                      //   suffix: "__",
+                      // },
                       // detection: {
                       //   order: ["querystring", "navigator"],
                       //   lookupQuerystring: "lng",
@@ -666,6 +718,12 @@ function TWSanime() {
                       // console.debug(err, t);
                       updateLocales();
                     }
+                  );
+
+                controller
+                  .on("updateLocales", (e) => localize(e.detail.target))
+                  .on("changeLanguage", (e) =>
+                    i18next.changeLanguage(e.detail.lang, () => updateLocales())
                   );
               };
               initHTML();
@@ -711,7 +769,7 @@ function TWSanime() {
                       g.append("text")
                         .attr("text-anchor", "start")
                         .attr("alignment-baseline", "text-after-edge")
-                        .text("ML");
+                        .attr("data-i18n", "ML");
 
                       g.append("g")
                         .attr("transform", `translate(0,${legendH / 2})`)
@@ -989,7 +1047,7 @@ function TWSanime() {
                           .attr("text-anchor", "start")
                           .attr("font-weight", "bold")
                           .attr("class", "title")
-                          .text(title)
+                          .attr("data-i18n", title)
                       );
 
                     return svg.node();
@@ -1003,7 +1061,7 @@ function TWSanime() {
                           depthDomain,
                           d3.interpolateTurbo
                         ),
-                        title: "Depth (km)",
+                        title: "depth",
                         width: legendW,
                         tickValues: [0, 50, 100, 200, 300],
                       })
@@ -1288,7 +1346,8 @@ function TWSanime() {
               let progressControl = setPanel.select("#progress"),
                 playspeedControl = setPanel.select("#playspeed"),
                 audioControl = setPanel.select("#audio"),
-                displayControl = setPanel.selectAll("input[name='display']");
+                languageControl = setPanel.select("#language");
+              displayControl = setPanel.selectAll("input[name='display']");
 
               let pannel = () => {
                 playspeedControl.select("input").on("input", function () {
@@ -1350,6 +1409,13 @@ function TWSanime() {
                         : "none";
                       break;
                   }
+                });
+
+                languageControl.on("change", function () {
+                  // console.debug(this.value);
+                  controller.dispatch("changeLanguage", {
+                    detail: { lang: this.value },
+                  });
                 });
               };
               let dropdownMenu = () => {
@@ -1425,8 +1491,8 @@ function TWSanime() {
                       precision: 1,
                       tooltip: "hide",
                     });
-                    let mlMax = div.select("#ml_max");
-                    mlMin = div.select("#ml_min");
+                    let mlMax = div.select("#ml_max"),
+                      mlMin = div.select("#ml_min");
 
                     mlRange.on("change", () => {
                       let range = mlRange.getValue();
@@ -1469,8 +1535,8 @@ function TWSanime() {
                       precision: 1,
                       tooltip: "hide",
                     });
-                    let depthMax = div.select("#depth_max");
-                    depthMin = div.select("#depth_min");
+                    let depthMax = div.select("#depth_max"),
+                      depthMin = div.select("#depth_min");
 
                     depthRange.on("change", () => {
                       let range = depthRange.getValue();
@@ -1517,8 +1583,8 @@ function TWSanime() {
                       step: 1,
                       tooltip: "hide",
                     });
-                    let dateStart = div.select("#date_start");
-                    dateEnd = div.select("#date_end");
+                    let dateStart = div.select("#date_start"),
+                      dateEnd = div.select("#date_end");
 
                     dateRange.on("change", () => {
                       let range = dateRange.getValue();

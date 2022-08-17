@@ -1,3 +1,38 @@
 {
-  "setting": "SettingA"
+  "setting": "Setting",
+  "event_config": "Event Config",
+  "progress": "Progress",
+  "playspeed": "Play speed",
+  "audio": "Audio",
+  "language": "Language",
+  "toolbar": {
+    "setting": "Setting ( {{hotkey}} )",
+    "lockView": {
+      "true": "UnlockView ( {{hotkey}} )",
+      "false": "LockView ( {{hotkey}} )"
+    },
+    "play": {
+      "true": "Pause ( {{hotkey}} )",
+      "false": "Play ( {{hotkey}} )"
+    }
+  },
+  "switch": "On/Off ( {{hotkey}} )",
+  "mL_legend": "ML Legend",
+  "depth_legend": "Depth Legend",
+  "grid_line": "Grid Line",
+  "filter": "Filter",
+  "dateRange": "Date Range(UTC)",
+  "mlRange": "ML Range",
+  "depthRange": "Depth Range",
+  "animation": "Animation",
+  "displaystyle": "Display Style",
+  "displaycolor": "Display Color",
+  "circlesize": "Circle Size",
+  "ML": "ML",
+  "depth": "Depth (km)",
+  "day": "day",
+  "sec": "s",
+  "none": "none",
+  "living": "living",
+  "pulsate": "pulsate"
 }

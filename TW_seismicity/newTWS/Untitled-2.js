@@ -1,0 +1,129 @@
+
+	// this is used to simulate leaflet zoom animation timing:
+	var easing = BezierEasing(0, 0, 0.25, 1);
+
+	function getJSON(url, successHandler, errorHandler) {
+		var xhr = typeof XMLHttpRequest != 'undefined'
+			? new XMLHttpRequest()
+			: new ActiveXObject('Microsoft.XMLHTTP');
+		xhr.open('get', url, true);
+		xhr.onreadystatechange = function() {
+			var status;
+			var data;
+			if (xhr.readyState == 4) {
+				status = xhr.status;
+				if (status == 200) {
+					data = JSON.parse(xhr.responseText);
+					successHandler && successHandler(data);
+				} else {
+					errorHandler && errorHandler(status);
+				}
+			}
+		};
+		xhr.send();
+	}
+
+	var loader = new PIXI.loaders.Loader();
+	loader
+		.add('plane', 'img/plane.png')
+		.add('bicycle', 'img/bicycle.png');
+	document.addEventListener("DOMContentLoaded", function() {
+		loader.load(function(loader, resources) {
+			var textures = [resources.plane.texture, resources.bicycle.texture];
+			getJSON('data/cities.json', function(markers) {
+				var map = L.map('map').setView([37.49229399862877, -96.94335937500001], 4);
+
+				L.tileLayer('//stamen-tiles-{s}.a.ssl.fastly.net/toner/{z}/{x}/{y}.png', {
+					subdomains: 'abcd',
+					attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
+					minZoom: 4,
+					maxZoom: 18
+				}).addTo(map);
+				map.attributionControl.setPosition('bottomleft');
+				map.zoomControl.setPosition('bottomright');
+				var pixiContainer = new PIXI.Container();
+				var markerSprites = [];
+				var zoomChangeTs = null;
+				var pixiLayer = (function() {
+					var colorScale = d3.scaleLinear()
+						.domain([0, 50, 100])
+						.range(["#c6233c", "#ffd300", "#008000"]);
+					var doubleBuffering = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+					return L.pixiOverlay(function(utils, event) {
+						var zoom = utils.getMap().getZoom();
+						var container = utils.getContainer();
+						var renderer = utils.getRenderer();
+						var project = utils.latLngToLayerPoint;
+						var getScale = utils.getScale;
+						var invScale = 1 / getScale();
+
+						if (event.type === 'add') {
+							markers.forEach(function(marker) {
+								var coords = project([marker.latitude, marker.longitude]);
+								var index = Math.floor(Math.random() * textures.length);
+								var markerSprite = new PIXI.Sprite(textures[index]);
+								markerSprite.textureIndex = index;
+								markerSprite.x = coords.x;
+								markerSprite.y = coords.y;
+								markerSprite.anchor.set(0.5, 0.5);
+								markerSprite.scale.set(invScale);
+								var tint = d3.color(colorScale(Math.random() * 100)).rgb();
+								markerSprite.tint = 256 * (tint.r * 256 + tint.g) + tint.b;
+								container.addChild(markerSprite);
+								markerSprites.push(markerSprite);
+								markerSprite.legend = marker.city || marker.label;
+							});
+						}
+
+						if (event.type === 'zoomanim') {
+							zoomChangeTs = 0;
+							var targetScale = 1 / getScale(event.zoom);
+							markerSprites.forEach(function(markerSprite) {
+								markerSprite.currentScale = markerSprite.scale.x;
+								markerSprite.targetScale = targetScale;
+							});
+							return;
+						}
+
+						if (event.type === 'redraw') {
+							var delta = event.delta;
+							markerSprites.forEach(function(markerSprite) {
+								markerSprite.rotation -= 0.03 * delta;
+							});
+							if (zoomChangeTs !== null) {
+								var duration = 17;
+								zoomChangeTs += delta;
+								var lambda = zoomChangeTs / duration;
+							  if (lambda > 1) {
+							  	lambda = 1;
+							  	zoomChangeTs = null;
+							  }
+							  lambda = easing(lambda);
+							  markerSprites.forEach(function(markerSprite) {
+								  markerSprite.scale.set(markerSprite.currentScale + lambda * (markerSprite.targetScale - markerSprite.currentScale));
+								});
+							}
+							else {
+								markerSprites.forEach(function(markerSprite) {
+									markerSprite.scale.set(invScale);
+								});
+							}
+						}
+						renderer.render(container);
+					}, pixiContainer, {
+						doubleBuffering: doubleBuffering,
+						destroyInteractionManager: true
+					});
+				})();
+
+				pixiLayer.addTo(map);
+
+				var ticker = new PIXI.ticker.Ticker();
+				ticker.add(function(delta) {
+					pixiLayer.redraw({type: 'redraw', delta: delta});
+				});
+				ticker.start();
+				map.on('zoomanim', pixiLayer.redraw, pixiLayer);
+			});
+		});
+	});

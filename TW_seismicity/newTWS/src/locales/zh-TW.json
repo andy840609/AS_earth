@@ -1,12 +1,38 @@
 {
-  "setting": "Setting",
-  "event_config": "Event Config",
-  "progress": "Progress",
-  "playspeed": "Play speed",
-  "audio": "Audio",
+  "setting": "設定",
+  "event_config": "細節設定",
+  "progress": "播放進度",
+  "playspeed": "播放速度",
+  "audio": "音效",
+  "language": "語言",
   "toolbar": {
-    "setting": "Setting ( {{hotkey}} )",
-    "lockView": "lockView",
-    "pause": "pause"
-  }
+    "setting": "設定 ( {{hotkey}} )",
+    "lockView": {
+      "true": "解除鎖定地圖 ( {{hotkey}} )",
+      "false": "鎖定地圖 ( {{hotkey}} )"
+    },
+    "play": {
+      "true": "暫停 ( {{hotkey}} )",
+      "false": "播放 ( {{hotkey}} )"
+    }
+  },
+  "switch": "開/關 ( {{hotkey}} )",
+  "mL_legend": "規模尺",
+  "depth_legend": "深度尺",
+  "grid_line": "經緯度線",
+  "filter": "篩選",
+  "dateRange": "日期範圍(UTC)",
+  "mlRange": "規模範圍",
+  "depthRange": "深度範圍",
+  "animation": "動畫",
+  "displaystyle": "動畫樣式",
+  "displaycolor": "動畫顏色",
+  "circlesize": "圓圈大小",
+  "ML": "芮氏規模",
+  "depth": "深度 (公里)",
+  "day": "天",
+  "sec": "秒",
+  "none": "無",
+  "living": "心跳",
+  "pulsate": "律動"
 }

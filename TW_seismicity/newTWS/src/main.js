@@ -1346,8 +1346,8 @@ function TWSanime() {
               let progressControl = setPanel.select("#progress"),
                 playspeedControl = setPanel.select("#playspeed"),
                 audioControl = setPanel.select("#audio"),
-                languageControl = setPanel.select("#language");
-              displayControl = setPanel.selectAll("input[name='display']");
+                languageControl = setPanel.select("#language"),
+                displayControl = setPanel.selectAll("input[name='display']");
 
               let pannel = () => {
                 playspeedControl.select("input").on("input", function () {

@@ -1,5 +1,10 @@
 <?php
 // ini_set('memory_limit', '-1');
+header('Access-Control-Allow-Origin:*');
+header("Access-Control-Allow-Credentials:true");
+header("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept");
+header('Access-Control-Allow-Methods: GET, POST, PUT,DELETE,OPTIONS');
+header("Content-type: text/json; charset=utf-8");
 require("./sqliconnect.php");
 
 

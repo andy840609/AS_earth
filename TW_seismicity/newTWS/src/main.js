@@ -1288,7 +1288,7 @@ function TWSanime() {
 
           let settingBtn = toolbar.select("#settingBtn"),
             lockViewBtn = toolbar.select("#lockViewBtn"),
-            pauseBtn = toolbar.select("#pauseBtn"),
+            playBtn = toolbar.select("#playBtn"),
             audioCkb = toolbar.select("#audio input[type='checkbox']");
 
           let animeControllEvent = () => {
@@ -1335,9 +1335,9 @@ function TWSanime() {
 
               // document.addEventListener("visibilitychange", (e) => {
               //   // console.debug();
-              //   let playing = pauseBtn.property("value");
+              //   let playing = playBtn.property("value");
               //   if (document.hidden || playing) {
-              //     pauseBtn.dispatch("click");
+              //     playBtn.dispatch("click");
               //   }
               // });
             };
@@ -1681,7 +1681,7 @@ function TWSanime() {
               switch (e.code) {
                 //==快捷鍵
                 case "KeyP":
-                  pauseBtn.dispatch("click");
+                  playBtn.dispatch("click");
                   break;
                 case "KeyS":
                   settingBtn.dispatch("click");

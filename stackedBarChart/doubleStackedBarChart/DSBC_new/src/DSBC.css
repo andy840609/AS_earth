@@ -88,6 +88,7 @@ a {
   white-space: nowrap;
 }
 
-#form-header {
-  display: none;
+#form-header,
+#displayOption {
+  display: none !important;
 }

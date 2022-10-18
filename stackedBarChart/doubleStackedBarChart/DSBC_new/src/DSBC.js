@@ -784,7 +784,7 @@ function DSBC() {
                     </div>  
                 
                     <!-- ... display selector ... -->    
-                    <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
+                    <div id="displayOption" class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
                         <label for="displaySelectButton" class="col-form-label col-5" >資料庫</label>
                         <div class="btn-group btn-group-toggle col-7" role="group">
                             <button id="displaySelectButton" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -858,7 +858,7 @@ function DSBC() {
                
                 `);
         //================資料庫選項
-        console.debug(subjects, categories);
+        // console.debug(subjects, categories);
 
         let displayHTML = subjects.map(
           (key, i) =>
@@ -993,19 +993,26 @@ function DSBC() {
           }
         }
         function render() {
-          console.debug(newDataObj);
+          //   console.debug(newDataObj);
           let newData = newDataObj.newData;
           let leftAxisOption = newDataObj.leftAxisOption;
           let rightAxisOption = newDataObj.rightAxisOption;
           let displayArr = newDataObj.displayArr;
           let barOption = newDataObj.barOption;
-            Object.assign(
-              newData,
-              newData.map((data) =>
-                data.filter((d) => displayArr.includes(d.data))
-              )
-            );
-          console.debug(newData);
+          // Object.assign(
+          //   newData,
+          //   newData.map((data) =>
+          //     data.filter((d) => displayArr.includes(d.data))
+          //   )
+          // );
+          //   console.debug(newData);
+          let displayData = newData.map((metric) =>
+            metric.map((series) =>
+              series.filter((subject) => displayArr.includes(subject.data))
+            )
+          );
+          Object.assign(newData, displayData);
+          //   console.debug(newData);
 
           let subjectRange, leftRange, rightRange;
 
@@ -1261,18 +1268,19 @@ function DSBC() {
                     .attr("stroke-opacity", 0)
                     .call((rect_collection) =>
                       rect_collection.each(function (d) {
-                        // console.debug(d)
+                        // console.debug(d);
                         let rect = d3.select(this);
-                        let y1 = d[0],
-                          y2 = d[1];
-                        if (seriesOption.logScale) {
-                          y1 = y1 == 0 ? seriesScale.domain()[0] : y1;
-                          y2 = y2 == 0 ? seriesScale.domain()[0] : y2;
-                          // console.debug(y1, y2);
-                          // console.debug(seriesScale(y1) - seriesScale(y2));
-                        }
 
                         if (barOption.orientation) {
+                          let y1 = d[0],
+                            y2 = d[1];
+                          if (seriesOption.logScale) {
+                            y1 = y1 == 0 ? seriesScale.domain()[0] : y1;
+                            y2 = y2 == 0 ? seriesScale.domain()[0] : y2;
+                          }
+
+                          //   console.debug(seriesScale.domain());
+
                           let barWidth =
                             subjectScale.bandwidth() / 2 > barOption.maxWidth
                               ? barOption.maxWidth
@@ -1284,7 +1292,10 @@ function DSBC() {
                               barOption.interval;
                           let height = seriesScale(y1) - seriesScale(y2);
                           height = height <= 0 ? 0 : height;
-
+                          //   if (i) {
+                          //     console.debug(d.data, d.key, y1, y2, height);
+                          //     console.debug(seriesScale(y1), seriesScale(y2));
+                          //   }
                           rect
                             .transition()
                             .duration(transDuration)
@@ -1294,23 +1305,43 @@ function DSBC() {
                             .attr("height", height)
                             .attr("width", barWidth);
                         } else {
+                          let x1 = d[0],
+                            x2 = d[1];
+                          if (seriesOption.logScale) {
+                            x1 = x1 == 0 ? seriesScale.domain()[0] : x1;
+                            x2 = x2 == 0 ? seriesScale.domain()[0] : x2;
+                          }
+                          //   console.debug(seriesScale.domain());
+
                           let barWidth =
                             subjectScale.bandwidth() > barOption.maxWidth
                               ? barOption.maxWidth
                               : subjectScale.bandwidth();
                           let transY =
                             (subjectScale.bandwidth() - barWidth) * 0.5;
+                          let width = i
+                            ? seriesScale(x2) - seriesScale(x1)
+                            : seriesScale(x1) - seriesScale(x2);
+                          let x = i ? x1 : x2;
+                          width =
+                            width <= 0
+                              ? 0
+                              : seriesOption.logScale && x < 1
+                              ? 0
+                              : width;
+                          //   if (i) {
+                          //     console.debug(d.data, d.key, x1, x2, width);
+                          //     console.debug(seriesScale(x1), seriesScale(x2));
+                          //   }
 
                           rect
                             .transition()
                             .duration(transDuration)
                             .attr("transform", `translate(0, ${transY})`)
-                            .attr("x", (d) => seriesScale(d[i ? 0 : 1]))
+                            .attr("x", seriesScale(x))
                             .attr("y", (d) => subjectScale(d.data))
                             .attr("height", barWidth)
-                            .attr("width", (d) =>
-                              Math.abs(seriesScale(d[0]) - seriesScale(d[1]))
-                            );
+                            .attr("width", width);
                         }
                       })
                     );

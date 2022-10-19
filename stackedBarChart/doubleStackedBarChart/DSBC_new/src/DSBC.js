@@ -1126,8 +1126,13 @@ function DSBC() {
                 .call((g) =>
                   g
                     .selectAll(".tick")
-                    .attr("font-size", 11)
-                    .attr("font-weight", 500)
+                    .attr("font-size", (text) => {
+                      let size =
+                        !barOption.orientation && text.length > 5 ? 8 : 11;
+                      // console.debug(text, size);
+                      return size;
+                    })
+                    .attr("font-weight", 800)
                 );
             };
             let makeSeriesAxis = (g, isRight) => {
@@ -1167,7 +1172,7 @@ function DSBC() {
                       "transform",
                       `translate(${[
                         axisOrigin + 2 * barOption.interval * sign,
-                        margin.bottom * 0.5,
+                        margin.bottom * 0.65,
                       ]})`
                     )
                     .text(axisText)
@@ -1194,7 +1199,7 @@ function DSBC() {
                         ) + 1,
                         formatPower
                       )
-                    : axisFun.ticks(width / 80);
+                    : axisFun.ticks(5);
                   axisFun(g);
                 });
 
@@ -1781,7 +1786,7 @@ function DSBC() {
           }
           function subjectClickEvent(tickCollection) {
             // console.debug(tickCollection);
-
+            // return;
             tickCollection
               .on("click", function (e) {
                 // console.debug(dataKeys, newDataObj.newData.metric);
@@ -1812,7 +1817,6 @@ function DSBC() {
 
                 tick
                   .select("text")
-                  .attr("font-size", 11)
                   .transition()
                   .duration(100)
                   .attr("fill", getColor(tick.data()[0]))
@@ -1829,8 +1833,12 @@ function DSBC() {
                   .transition()
                   .duration(100)
                   .attr("fill", "black")
-                  .attr("font-size", 11)
-                  .attr("font-weight", 500);
+                  .attr("font-size", (text) =>
+                    !newDataObj.barOption.orientation && text.length > 5
+                      ? 8
+                      : 11
+                  )
+                  .attr("font-weight", 800);
               });
           }
 

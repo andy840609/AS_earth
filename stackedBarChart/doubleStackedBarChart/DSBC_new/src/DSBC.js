@@ -1039,24 +1039,33 @@ function DSBC() {
 
           leftScale = d3[leftAxisOption.logScale ? "scaleLog" : "scaleLinear"]()
             .domain([
-              +leftAxisOption.logScale,
+              leftAxisOption.logScale
+                ? d3.min(newData[0], (d) =>
+                    d3.min(d, (d) => (d[1] ? d[1] : null))
+                  )
+                : 0,
               d3.max(newData[0], (d) => d3.max(d, (d) => d[1])),
             ])
             .range(leftRange);
-          if (leftAxisOption.logScale) leftScale.nice();
+          leftScale.nice();
 
           rightScale = d3[
             rightAxisOption.logScale ? "scaleLog" : "scaleLinear"
           ]()
             .domain([
-              +rightAxisOption.logScale,
+              //取對數最小值要是非0值（資料大小最小爲1byte）
+              // +rightAxisOption.logScale,
+              rightAxisOption.logScale
+                ? d3.min(newData[1], (d) =>
+                    d3.min(d, (d) => (d[1] ? d[1] : null))
+                  )
+                : 0,
               d3.max(newData[1], (d) => d3.max(d, (d) => d[1])),
             ])
             .range(rightRange);
-          if (rightAxisOption.logScale) rightScale.nice();
+          rightScale.nice();
 
-          // console.debug(leftScale.domain(), rightScale.domain())
-          // console.debug(leftScale.range())
+          // console.debug(newData);
 
           let updateAxis = () => {
             function formatPower(x) {
@@ -1297,10 +1306,23 @@ function DSBC() {
                               barOption.interval;
                           let height = seriesScale(y1) - seriesScale(y2);
                           height = height <= 0 ? 0 : height;
-                          //   if (i) {
-                          //     console.debug(d.data, d.key, y1, y2, height);
-                          //     console.debug(seriesScale(y1), seriesScale(y2));
-                          //   }
+
+                          // if (i) {
+                          //   // console.debug(
+                          //   //   seriesScale.domain(),
+                          //   //   seriesScale.range()
+                          //   // );
+                          //   console.debug(d.data, d.key);
+                          //   console.debug(
+                          //     `d1=${y1}`,
+                          //     `d2=${y2}`,
+                          //     `y1=${seriesScale(y1)}`,
+                          //     `y2=${seriesScale(y2)}`,
+                          //     `height=${height}`
+                          //   );
+                          //   // console.debug(seriesScale(y1), seriesScale(y2));
+                          // }
+
                           rect
                             .transition()
                             .duration(transDuration)
@@ -1324,20 +1346,28 @@ function DSBC() {
                               : subjectScale.bandwidth();
                           let transY =
                             (subjectScale.bandwidth() - barWidth) * 0.5;
+                          // let width = seriesScale(x2) - seriesScale(x1);
+
                           let width = i
                             ? seriesScale(x2) - seriesScale(x1)
                             : seriesScale(x1) - seriesScale(x2);
                           let x = i ? x1 : x2;
-                          width =
-                            width <= 0
-                              ? 0
-                              : seriesOption.logScale && x < 1
-                              ? 0
-                              : width;
-                          //   if (i) {
-                          //     console.debug(d.data, d.key, x1, x2, width);
-                          //     console.debug(seriesScale(x1), seriesScale(x2));
-                          //   }
+                          width = width <= 0 ? 0 : width;
+
+                          // if (i) {
+                          //   console.debug(
+                          //     seriesScale.domain(),
+                          //     seriesScale.range()
+                          //   );
+                          //   console.debug(d.data, d.key);
+                          //   console.debug(
+                          //     `d1=${x1}`,
+                          //     `d2=${x2}`,
+                          //     `y1=${seriesScale(x1)}`,
+                          //     `y2=${seriesScale(x2)}`,
+                          //     `width=${width}`
+                          //   );
+                          // }
 
                           rect
                             .transition()

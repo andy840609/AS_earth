@@ -140,12 +140,13 @@ function DSBC() {
       }
       return { name: keyName, unit: keyUnit };
     };
-    const getColor = (key, dataCount = 0) => {
-      // console.debug(key, dataCount);
+    const getColor = (key, dataIdx = 0) => {
+      // console.debug(key, dataIdx);
       let color, gradientColor;
-      function getGradientColor(hex, level) {
+      function getGradientColor(hex, dataIdx) {
         // console.debug(hex, level);
-        let maxLevel = categories.length - 1;
+        let maxLevel = categories.length - 1,
+          level = maxLevel - dataIdx;
 
         let gradient = (color, level) => {
           let val = 30;
@@ -153,8 +154,8 @@ function DSBC() {
             val = (d3.max([color, 240]) - color) / maxLevel;
             // console.debug(val);
           }
-
-          let tmp = color + level * val + (dataCount ? val : 0);
+          // console.debug(level, dataIdx);
+          let tmp = color + level * val + (level ? val : 0);
           color = tmp > 255 ? 255 : tmp;
           return color;
         };
@@ -183,7 +184,7 @@ function DSBC() {
         for (let i = 0; i < 3; i++) color += randomColor();
         colorPalette[key] = color;
       }
-      gradientColor = getGradientColor(color, dataCount);
+      gradientColor = getGradientColor(color, dataIdx);
       return gradientColor;
     };
     const convert_download_unit = (
@@ -1271,12 +1272,7 @@ function DSBC() {
                         categories.indexOf(d.key) * subjects.length +
                         index
                     )
-                    .attr("fill", (d) =>
-                      getColor(
-                        i,
-                        categories.length - 1 - categories.indexOf(d.key)
-                      )
-                    )
+                    .attr("fill", (d) => getColor(i, categories.indexOf(d.key)))
                     .attr("stroke", "#D3D3D3")
                     .attr("stroke-width", 3)
                     .attr("stroke-opacity", 0)
@@ -1437,7 +1433,7 @@ function DSBC() {
         let getSeries = (key) => {
           //===count or size....
           const seriesData = data[key];
-          //   console.debug(data, key);
+          // console.debug(data, key);
           const series = d3
             .stack()
             .keys(categories)

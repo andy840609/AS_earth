@@ -6,35 +6,21 @@ function TWSanime() {
     selector = value;
     return chart;
   };
-  chart.data = (value = undefined) => {
-    let requestData = (url) => {
+  chart.data = (path = undefined) => {
+    let requestData = (url, option) => {
       return new Promise((resolve) => {
         axios
           .get(url)
           .then((res) => {
-            console.log(res.data);
-            let sortData = res.data
-              .map(
-                (d) =>
-                  new Object({
-                    crood: [parseFloat(d.latitude), parseFloat(d.longitude)],
-                    date: new Date(
-                      d.date + "T" + d.time + "." + d.ms + "Z"
-                    ).getTime(),
-                    ML: parseFloat(d.ML),
-                    depth: parseFloat(d.depth),
-                  })
-              )
-              .sort((a, b) => a.date - b.date);
-            // console.debug(sortData)
-            resolve(sortData);
+            // console.debug(res);
+            resolve(res.data);
           })
-          .catch((error) => console.log(error));
+          .catch((err) => console.log(err));
       });
     };
 
-    data = value ? value : requestData("src/php/getCatalog.php");
-    // console.debug(data);
+    data = requestData(path);
+    console.debug(data);
     return chart;
   };
 
@@ -187,7 +173,7 @@ function TWSanime() {
               const getTileLayer = (tile) => {
                 return L.tileLayer(tile.url, {
                   attribution: tile.attribution,
-                  minZoom: 6,
+                  minZoom: 5,
                   maxZoom: 10,
                   // maxZoom: tile.maxZoom,
                 });
@@ -223,7 +209,7 @@ function TWSanime() {
               leafletMap = L.map("Map", {
                 // attributionControl: false,
                 // zoomControl: false,
-              }).setView([23, 120], 7);
+              }).setView([12, 120], 5);
 
               // map tiles
               L.control.layers(tileProviders).addTo(leafletMap);
@@ -1730,8 +1716,8 @@ function TWSanime() {
 
       if (!data) {
         chart.data();
-        data = await data;
       }
+      data = await data;
       animeMap();
     }
     //===init once

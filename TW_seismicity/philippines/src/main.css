@@ -1,0 +1,387 @@
+:root {
+  --displayColor: #d6d6d6;
+}
+text,
+label,
+font,
+div,
+h1,
+h2,
+h3 {
+  user-select: none;
+}
+
+body {
+  overflow: hidden;
+  /* Hide scrollbars */
+}
+
+datalist {
+  display: inline-flex;
+}
+
+#Map {
+  height: 90vh;
+}
+
+/* divIcon marker的z-index會改變前後順序 */
+.leaflet-marker-icon {
+  z-index: 0 !important;
+}
+
+/* ====================================== marker動畫 ============================================== */
+/* ======= event時間未到 ======= */
+.animateMarker {
+  border: 1px white solid;
+  border-radius: 50%;
+  display: none;
+}
+/* ======= event時間到 ======= */
+.animateMarker-appeared {
+  display: inline;
+  animation: appeared 0.3s linear 0s;
+}
+
+@keyframes appeared {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* ======= 效果1:living ======= */
+/* .anime-toggled-living::before, */
+.anime-toggled-living::after {
+  content: "";
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  opacity: 0;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  transform-origin: 50%;
+  pointer-events: none;
+  background-color: var(--displayColor);
+  animation: living 1s linear 0s;
+}
+
+/* .anime-toggled-living::before {
+  animation-delay: 0.5s;
+} */
+
+@keyframes living {
+  /*圓形放大的同時，透明度逐漸減小為0*/
+  0% {
+    opacity: 1;
+    width: 0%;
+    height: 0%;
+  }
+
+  50% {
+    opacity: 0;
+    width: 1000%;
+    height: 1000%;
+  }
+
+  100% {
+    opacity: 1;
+    width: 0%;
+    height: 0%;
+  }
+}
+/* ======= 效果2:pulsate ======= */
+/* .anime-toggled-pulsate::before, */
+.anime-toggled-pulsate::after {
+  content: "";
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  border-radius: 100%;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  transform-origin: 50%;
+  pointer-events: none;
+  animation: pulsate 1s ease-out 0s;
+  border: 1px var(--displayColor) solid;
+  /* background-color: transparent; */
+}
+
+/* .anime-toggled-pulsate::before {
+  animation-delay: 0.5s;
+} */
+
+@keyframes pulsate {
+  0% {
+    opacity: 0;
+    border-width: 9px;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    border-width: 1px;
+    width: 1000%;
+    height: 1000%;
+  }
+}
+/* ======= 暫停、計時器 ======= */
+.anime-paused::after,
+.anime-paused::before {
+  animation-play-state: paused;
+}
+
+.dateText {
+  position: fixed;
+  top: 5%;
+  left: 10%;
+  font-size: 6vmin;
+  font-weight: bold;
+  z-index: 1500;
+  color: #20a5ba;
+  -moz-text-stroke-color: #218fa0;
+  -webkit-text-stroke-color: #218fa0;
+  -moz-text-stroke-width: 1px;
+  -webkit-text-stroke-width: 1px;
+  pointer-events: none;
+}
+
+/* =============================================legend========================================== */
+.legendGroup {
+  position: absolute;
+  z-index: 1500;
+  bottom: 12%;
+  right: 5%;
+  pointer-events: none;
+}
+.legend {
+  position: absolute;
+  z-index: 0;
+  bottom: 0;
+  right: 0;
+}
+
+.legend:hover {
+  z-index: 1;
+}
+
+.legend:nth-child(1) {
+  bottom: 50px;
+}
+
+.mlLegend {
+  bottom: 20%;
+}
+
+.legend text {
+  font: bold 16px sans-serif;
+  fill: black;
+  paint-order: stroke;
+  stroke-width: 2px;
+  stroke: white;
+  stroke-linecap: butt;
+  stroke-linejoin: miter;
+}
+
+.mlLegend > *,
+.depthLegend > * {
+  cursor: grab;
+  pointer-events: all;
+}
+.mlLegend circle {
+  fill: #888;
+  stroke: white;
+  stroke-width: 1px;
+}
+/* =============================================toolbar========================================== */
+.controller {
+  position: fixed;
+  bottom: 10%;
+  z-index: 1600;
+  pointer-events: auto;
+}
+
+.toolbar {
+  margin: 10px 10px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 3px 5px 0 5px;
+  border: 2px solid #fff;
+  border-radius: 50px;
+  background-clip: padding-box;
+  text-align: center;
+}
+
+.toolButton {
+  position: relative;
+  padding: 0 6px;
+}
+
+.toolButton:hover .tooltiptext {
+  visibility: visible;
+}
+
+.button {
+  padding: 5px;
+  cursor: pointer;
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  transition: all 0.2s ease-out;
+}
+
+.button:hover {
+  background: #06d85f;
+}
+
+.toolbar .tooltiptext {
+  visibility: hidden;
+  position: absolute;
+  background-color: #555;
+  color: #fff;
+  font-size: 18px;
+  text-align: center;
+  padding: 5px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  /* opacity: 0; */
+  /* transition: opacity .6s; */
+  transform: translateX(-50%);
+}
+
+.tooltip-top {
+  bottom: 125%;
+  left: 50%;
+}
+
+.tooltip-top::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #555 transparent transparent transparent;
+}
+
+/*============================================ pannel ============================================*/
+
+.popup {
+  margin: 70px auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 5px;
+  min-width: 300px;
+  transition: all 5s ease-in-out;
+
+  position: absolute;
+  bottom: 20%;
+  /* transition: opacity 500ms; */
+  /* visibility: hidden; */
+  /* opacity: 0; */
+  animation: popup 0.2s;
+  display: none;
+  pointer-events: all;
+}
+
+.popup:after {
+  content: "";
+  position: absolute;
+  bottom: -32px;
+  left: 12px;
+  border-style: solid;
+  border-width: 20px;
+  border-color: white transparent transparent transparent;
+}
+
+.popup h2 {
+  margin-top: 0;
+  color: #333;
+  font-family: Tahoma, Arial, sans-serif;
+  white-space: nowrap;
+}
+
+.popup .close {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  transition: all 200ms;
+  font-size: 30px;
+  font-weight: bold;
+  text-decoration: none;
+  color: #333;
+}
+
+.popup .close:hover {
+  color: #06d85f;
+}
+
+.popup .content {
+  max-height: 30%;
+  overflow: auto;
+}
+
+.popup label {
+  white-space: nowrap;
+}
+/* @media screen and (max-width: 700px) {
+    .toolbar {
+        width: 70%;
+    }
+
+    .popup {
+        width: 70%;
+    }
+} */
+
+@keyframes popup {
+  0% {
+    transform: scale(0.1);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.dropend > .dropdown-menu {
+  width: 320px;
+  /* inset: auto auto 0 !important; */
+}
+
+.dropdown-menu input,
+.dropdown-menu select {
+  min-width: 5em;
+  max-width: 10em;
+}
+
+/*============================================ bootstrap-slider ============================================ */
+
+#event_config .slider {
+  width: 100% !important;
+}
+
+.slider-handle {
+  --slider-handle-width: 16px;
+  width: var(--slider-handle-width);
+  height: var(--slider-handle-width);
+  margin-top: calc(10px - var(--slider-handle-width) * 0.5);
+}
+
+.slider-selection {
+  background: #0480be;
+}
+
+.slider-track {
+  border-color: #afafafb9;
+  border-style: solid;
+  border-width: 1px;
+}

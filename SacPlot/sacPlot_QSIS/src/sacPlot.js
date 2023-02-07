@@ -65,7 +65,6 @@ function sacPlots() {
     selector = vaule;
     return chart;
   };
-
   chart.data = (vaule) => {
     let paths = vaule;
 
@@ -164,7 +163,7 @@ function sacPlots() {
 
       return { raw, self, all };
     });
-    // console.log(rawData);
+    console.log(rawData);
     return chart;
   };
 

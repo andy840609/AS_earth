@@ -1,4 +1,7 @@
-function TWSanime() {
+import { specialEvent } from "./specialEvents.js";
+import { Timer } from "./Timer.js";
+
+export function TWSanime() {
   let selector = "body";
   let data = null;
 
@@ -68,11 +71,18 @@ function TWSanime() {
         console.debug(data);
 
         const getDateStr = (dateMs, toTime = true) => {
+          // console.debug(dateMs, new Date(dateMs).toISOString());
           return new Date(dateMs).toISOString().substring(0, toTime ? 16 : 10);
         };
         const getCircleRadius = (ML, circleSize) => {
+          // let ml_base = 3;
+          // return ML > ml_base ? (ML - ml_base) * circleSize + 0.1 : 0.1;
           let ml_base = 3;
-          return ML > ml_base ? (ML - ml_base) * circleSize + 0.1 : 0.1;
+          return (
+            (ML - ml_base) *
+              (ML > 6 ? Math.pow(circleSize, ML / 5) : circleSize) +
+            0.1
+          );
         };
 
         const dateText = selectorD3
@@ -90,11 +100,11 @@ function TWSanime() {
             (d, i) => Math[i === 0 ? "floor" : "ceil"](d / 86400000) * 86400000
           ); //==日期範圍(天之後的時間去掉)
 
-        //==動畫預設設定
+        //TODO:==動畫預設設定
         const defaultSetting = {
           tile: "WorldImagery", //==預設地圖圖層
           playSpeed: playSpeedDomain[0],
-          startDate: dateDomain[0],
+          startDate: 937849605850, //921: 937849605850 |  dateDomain[0]
           endDate: dateDomain[1],
           play: true, //==預設播放動畫
           lockView: true, //==預設鎖定地圖
@@ -112,6 +122,20 @@ function TWSanime() {
         //==leaflet obj reference
         let leafletMap,
           markerGroup = new L.layerGroup(),
+          eventIntroObj = {
+            eventList: [],
+            displayObj: {},
+            timer: [],
+            size: [0.3, 0.4],
+            position: [
+              [0.4, 0.3],
+              [0.25, 0.8],
+              [0.6, 0.3],
+              [0.55, 0.8],
+            ],
+            posIdx: 0,
+            eventDuration: 5000,
+          },
           latlngLayer;
 
         let markerTimer;
@@ -188,17 +212,17 @@ function TWSanime() {
                 return L.tileLayer(tile.url, {
                   attribution: tile.attribution,
                   minZoom: 6,
-                  maxZoom: 10,
+                  // maxZoom: 10,
                   // maxZoom: tile.maxZoom,
                 });
               };
               const tileProviders = {
-                OceanBasemap: getTileLayer({
-                  attribution:
-                    "Tiles &copy; Esri &mdash; Sources: GEBCO, NOAA, CHS, OSU, UNH, CSUMB, National Geographic, DeLorme, NAVTEQ, and Esri",
-                  url: "https://server.arcgisonline.com/ArcGIS/rest/services/Ocean_Basemap/MapServer/tile/{z}/{y}/{x}",
-                  maxZoom: 10,
-                }),
+                // OceanBasemap: getTileLayer({
+                //   attribution:
+                //     "Tiles &copy; Esri &mdash; Sources: GEBCO, NOAA, CHS, OSU, UNH, CSUMB, National Geographic, DeLorme, NAVTEQ, and Esri",
+                //   url: "https://server.arcgisonline.com/ArcGIS/rest/services/Ocean_Basemap/MapServer/tile/{z}/{y}/{x}",
+                //   maxZoom: 10,
+                // }),
                 OpenStreetMap: getTileLayer({
                   attribution:
                     '&copy; <a target="_blank" href="http://osm.org/copyright">OpenStreetMap</a> contributors',
@@ -262,6 +286,50 @@ function TWSanime() {
                 // console.debug(d.marker);
               });
               markerGroup.addTo(leafletMap);
+            };
+
+            let initEventIntro = () => {
+              // todo:initEventIntro
+              let screenWidth = window.innerWidth,
+                screenHeight = window.innerHeight;
+              let width = screenWidth * eventIntroObj.size[0],
+                height = screenHeight * eventIntroObj.size[1];
+
+              Object.keys(specialEvent).forEach((key, i) => {
+                let eventHtml = `
+                <div class="p-3" style="\
+                background-image :linear-gradient(rgba(0,0,0,.25),rgba(0,0,0,.85)),\
+                url(./img/event/${specialEvent[key].pic});
+                background-position: center center;
+                background-repeat: no-repeat;
+                background-attachment: fixed;
+                background-size: cover;">
+                  <p class="eventIntroTitle">${specialEvent[key].title}</p>
+                  <p class="eventIntroStr">${specialEvent[key].str}</p>
+                </div>
+                `;
+
+                let icon = L.divIcon({
+                  className: "eventIntroDiv",
+                  html: eventHtml,
+                  iconSize: [width, height], // 設置圖片尺寸
+                  iconAnchor: [width / 2, height / 2],
+                });
+                let marker = L.marker([0, 0], { icon });
+                let outerLine = L.polyline([0, 0], {
+                  className: "eventIntroLine_outer",
+                });
+                let innerLine = L.polyline([0, 0], {
+                  className: "eventIntroLine_inter",
+                });
+
+                eventIntroObj.displayObj[key] = {
+                  marker,
+                  outerLine,
+                  innerLine,
+                };
+                eventIntroObj.eventList.push(parseInt(key));
+              });
             };
             let initToolBar = () => {
               let initHTML = () => {
@@ -1062,6 +1130,7 @@ function TWSanime() {
             initTimeScale();
             initMap();
             initMarker();
+            initEventIntro();
             initToolBar();
             initLegend();
           }
@@ -1184,6 +1253,7 @@ function TWSanime() {
                 newData.forEach((d) =>
                   L.DomUtil.removeClass(d.marker.getElement(), "anime-paused")
                 );
+                eventIntroObj.timer.forEach((t) => t.resume());
                 break;
               case "pause":
                 dateText.interrupt();
@@ -1191,6 +1261,7 @@ function TWSanime() {
                 newData.forEach((d) =>
                   L.DomUtil.addClass(d.marker.getElement(), "anime-paused")
                 );
+                eventIntroObj.timer.forEach((t) => t.pause());
                 break;
               case "changeDateRange":
               // progressControl
@@ -1198,6 +1269,7 @@ function TWSanime() {
               //   .property("value", 0)
               //   .property("value", 0);
               case "dragProgress":
+                //marker隱藏
                 data.forEach((d) => {
                   L.DomUtil.removeClass(
                     d.marker.getElement(),
@@ -1208,6 +1280,12 @@ function TWSanime() {
                     `anime-toggled-${animDataObj.displayStyle}`
                   );
                 });
+
+                //特殊事件框全部消失
+                eventIntroObj.timer.forEach((t) =>
+                  t.callback ? t.callback() : false
+                );
+                eventIntroObj.posIdx = 0;
               case "changeSpeed":
               default: //init and speed change
                 // console.debug(action);
@@ -1249,7 +1327,103 @@ function TWSanime() {
                       if (startTimer) updateProgress(d.date);
                       //==聲音
                       if (animDataObj.audio) playerAudio(d.ML);
+                      //todo:==特殊地震介紹
+                      if (eventIntroObj.eventList.includes(d.date)) {
+                        let displayObj = eventIntroObj.displayObj[d.date],
+                          marker = displayObj.marker,
+                          outerLine = displayObj.outerLine,
+                          innerLine = displayObj.innerLine;
+
+                        let getEventDivPos = () => {
+                          let bounds = leafletMap.getBounds(),
+                            range = {
+                              lat: [
+                                bounds._northEast.lat,
+                                bounds._southWest.lat,
+                              ],
+                              lng: [
+                                bounds._southWest.lng,
+                                bounds._northEast.lng,
+                              ],
+                            },
+                            gap = {
+                              lat: range.lat.reduce((a, b) => b - a),
+                              lng: range.lng.reduce((a, b) => b - a),
+                            };
+                          let position =
+                            eventIntroObj.position[eventIntroObj.posIdx];
+                          eventIntroObj.posIdx++;
+
+                          if (
+                            eventIntroObj.posIdx >
+                            eventIntroObj.position.length - 1
+                          )
+                            eventIntroObj.posIdx = 0;
+                          return [
+                            range.lat[0] + gap.lat * position[0],
+                            range.lng[0] + gap.lng * position[1],
+                          ];
+                        };
+
+                        // const eventDivPos = [24, 117];
+                        const eventDivPos = getEventDivPos();
+
+                        //==連接線
+                        const linePos = [
+                          d.crood,
+                          [
+                            eventDivPos[0],
+                            d.crood[1] +
+                              Math.sign(eventDivPos[1] - d.crood[1]) * 0.5,
+                          ],
+                          eventDivPos,
+                        ];
+                        outerLine.setLatLngs(linePos).addTo(leafletMap);
+                        innerLine.setLatLngs(linePos).addTo(leafletMap);
+
+                        // let polyGroup = new L.layerGroup()
+                        //   .setZIndex(1000)
+                        //   .addTo(leafletMap);
+                        // outerLine.setLatLngs(linePos).addTo(polyGroup);
+                        // innerLine.setLatLngs(linePos).addTo(polyGroup);
+
+                        //==事件框
+                        marker.setLatLng(eventDivPos).addTo(leafletMap);
+                        L.DomUtil.addClass(
+                          marker.getElement(),
+                          "eventIntroDiv_show"
+                        );
+
+                        let callback = () => {
+                          // console.debug("callback call");
+
+                          [marker, outerLine, innerLine].forEach((obj) => {
+                            if (!obj.getElement()) {
+                              obj.remove();
+                              return;
+                            }
+                            L.DomUtil.addClass(
+                              obj.getElement(),
+                              "eventIntro_fade"
+                            );
+                            window.setTimeout(() => {
+                              obj.remove();
+                            }, eventIntroObj.eventDuration / 5);
+                          });
+                          eventIntroObj.timer = eventIntroObj.timer.filter(
+                            (t) => t !== timer
+                          );
+                        };
+
+                        let timer = new Timer(
+                          callback,
+                          eventIntroObj.eventDuration
+                        );
+                        eventIntroObj.timer.push(timer);
+                        // console.debug(timer);
+                      }
                     }
+                    // console.debug(new Date(d.date).toISOString(), d.ML, d.date);
                   };
                   let delay = newTimeScale(d.date);
                   let timer = new Timer(

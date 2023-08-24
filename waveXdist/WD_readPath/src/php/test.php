@@ -1,25 +1,26 @@
 <?php
 
 // echo $_POST['path'];
-$dataPath = '../' . $_POST['path'];
+// $dataPath = '../' . $_POST['path'];
+$dataPath = '/var/www/html/BATS_TTD/data/';
 $folderStr = $_POST['folderStr'];
 // $folderStr = 'xy_';
 // echo $dataPath;
-
+// echo readlink('/var/www/html/BATS_TTD/dataTest/');
+// if (is_link($dataPath)){echo 'true';}else {echo 'false';};
 
 //===ls所有目錄名稱
 $CMD = 'ls ' . $dataPath;
 exec($CMD, $output, $retval);
-// echo $CMD . $output . $retval;
+// echo implode(',',$output);
 
 //===ls各目錄下資料夾
 $resultArr = [];
 foreach ($output as $catalog) {
     // echo $CMD . $value . "      ";
-    // echo $output . '  ';
+    // echo  '  ' . implode(",", $output);
     exec($CMD . $catalog, $folders, $reval);
 
-    // break;
     foreach ($folders as $f)
         if (substr($f, 0, strlen($folderStr)) === $folderStr) {
             // echo $catalog . '  ';

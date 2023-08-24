@@ -1,63 +1,43 @@
 $("#Map").css({ height: $("#filter").height() - $("#submit").outerHeight() });
 
-const tileProviders = [
-  {
-    name: "OceanBasemap",
-    attribution:
-      "Tiles &copy; Esri &mdash; Sources: GEBCO, NOAA, CHS, OSU, UNH, CSUMB, National Geographic, DeLorme, NAVTEQ, and Esri",
-    url: "https://server.arcgisonline.com/ArcGIS/rest/services/Ocean_Basemap/MapServer/tile/{z}/{y}/{x}",
+const getTileLayer = (tile) => {
+  return L.tileLayer(tile.url, {
+    attribution: tile.attribution,
+    minZoom: 6,
     maxZoom: 10,
-  },
-  {
-    name: "OpenStreetMap",
+    // maxZoom: tile.maxZoom,
+  });
+};
+const tileProviders = {
+  OpenStreetMap: getTileLayer({
     attribution:
       '&copy; <a target="_blank" href="http://osm.org/copyright">OpenStreetMap</a> contributors',
     url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     maxZoom: 18,
-  },
-  {
-    name: "OpenTopoMap",
+  }),
+  OpenTopoMap: getTileLayer({
     attribution:
       'Map data: &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
     url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
     maxZoom: 18,
-  },
-  {
-    name: "WorldImagery",
+  }),
+  WorldImagery: getTileLayer({
     attribution:
       "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
     url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     maxZoom: 18,
-  },
-];
+  }),
+};
 
 //load the map
-let Map = L.map("Map");
-//  lat lon（ center, zoom）
-Map.setView([23, 121], 7);
-L.tileLayer(tileProviders[0].url, {
-  attribution: tileProviders[0].attribution,
-  minZoom: 6,
-  maxZoom: tileProviders[0].maxZoom,
-}).addTo(Map);
+let Map = L.map("Map").setView([23, 121], 7);
 
-// change the map setting
-tile = {};
-tileProviders.forEach(function (map) {
-  tile[map.name] = L.tileLayer(map.url, {
-    attribution: map.attribution,
-    minZoom: 6,
-    maxZoom: map.maxZoom,
-  });
-});
-L.control.layers(tile).addTo(Map);
-
+// map tiles
+L.control.layers(tileProviders).addTo(Map);
 // map sacles
-L.control
-  .scale({
-    position: "topright",
-  })
-  .addTo(Map);
+L.control.scale({ position: "topright" }).addTo(Map);
+// map default tile
+tileProviders["OpenStreetMap"].addTo(Map);
 
 // add Leaflet-Geoman controls with some options to the map
 Map.pm.addControls({

@@ -52,11 +52,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next-http-backend/1.4.1/i18nextHttpBackend.min.js"></script>
     <script src="src/loc-i18next.min.js"></script>
     <script src="src/Leaflet.Graticule.js"></script>
-    <script src="src/Timer.js"></script>
-    <script src="src/main.js"></script>
-
-    <script>
-      var anime = TWSanime().selector("main");
+    <script type="module" src="src/main.js"></script>
+    <script type="module">
+      import { TWSanime } from "./src/main.js";
+      let anime = TWSanime().selector("main");
 
       anime();
     </script>

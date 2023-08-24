@@ -1,8 +1,8 @@
 <?php
 // GDMS 資料庫
-$hostname = '140.109.82.84';
-$user = 'xuys';
-$pass = 'dmcpw@2705';
+$hostname = '192.168.211.124';
+$user = 'andy';
+$pass = 'Tecdb@7005';
 
 $dbname = 'seis';
 global $link;

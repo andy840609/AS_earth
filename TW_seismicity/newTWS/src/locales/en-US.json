@@ -5,6 +5,7 @@
   "playspeed": "Play speed",
   "audio": "Audio",
   "language": "Language",
+  "eventIntro": "Special events",
   "toolbar": {
     "setting": "Setting ( {{hotkey}} )",
     "lockView": {

@@ -5,6 +5,7 @@
   "playspeed": "播放速度",
   "audio": "音效",
   "language": "語言",
+  "eventIntro": "大地震說明",
   "toolbar": {
     "setting": "設定 ( {{hotkey}} )",
     "lockView": {

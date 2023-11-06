@@ -104,10 +104,11 @@ export function TWSanime() {
         const defaultSetting = {
           tile: "WorldImagery", //==預設地圖圖層
           playSpeed: playSpeedDomain[0],
-          startDate: 937849605850, //921: 937849605850 |  dateDomain[0]
+          startDate: dateDomain[0], //921: 937849605850 |  dateDomain[0]
           endDate: dateDomain[1],
           play: true, //==預設播放動畫
           lockView: true, //==預設鎖定地圖
+          eventIntro: true, //==預設特殊事件顯示
           audio: false, //==預設聲音關閉(chrome66後不能自動播放)
           volume: 0.5, //==預設聲音大小
           circleSize: 2, //==預設marker半徑係數
@@ -187,6 +188,7 @@ export function TWSanime() {
             lockView = getValue("lockView"),
             audio = getValue("audio"),
             volume = getValue("volume"),
+            eventIntro = getValue("eventIntro"),
             circleSize = getValue("circleSize"),
             displayStyle = getValue("displayStyle");
 
@@ -200,6 +202,7 @@ export function TWSanime() {
             lockView,
             audio,
             volume,
+            eventIntro,
             circleSize,
             displayStyle,
             newData: getData(option.filterData),
@@ -247,6 +250,7 @@ export function TWSanime() {
               leafletMap = L.map("Map", {
                 // attributionControl: false,
                 // zoomControl: false,
+                // renderer: L.canvas(),
               }).setView([23, 120], 7);
 
               // map tiles
@@ -287,7 +291,6 @@ export function TWSanime() {
               });
               markerGroup.addTo(leafletMap);
             };
-
             let initEventIntro = () => {
               // todo:initEventIntro
               let screenWidth = window.innerWidth,
@@ -296,9 +299,16 @@ export function TWSanime() {
                 height = screenHeight * eventIntroObj.size[1];
 
               Object.keys(specialEvent).forEach((key, i) => {
+                let urlHtml = specialEvent[key].url
+                  ? `
+                <p class='eventIntroUrl'>
+                  <a href='${specialEvent[key].url}' target='_blank'>TEC地震教材</a>
+                </p>`
+                  : "";
+
                 let eventHtml = `
                 <div class="p-3" style="\
-                background-image :linear-gradient(rgba(0,0,0,.25),rgba(0,0,0,.85)),\
+                background-image :linear-gradient(rgba(0,0,0,.15),rgba(0,0,0,.75)),\
                 url(./img/event/${specialEvent[key].pic});
                 background-position: center center;
                 background-repeat: no-repeat;
@@ -306,6 +316,7 @@ export function TWSanime() {
                 background-size: cover;">
                   <p class="eventIntroTitle">${specialEvent[key].title}</p>
                   <p class="eventIntroStr">${specialEvent[key].str}</p>
+                  ${urlHtml}
                 </div>
                 `;
 
@@ -558,10 +569,15 @@ export function TWSanime() {
                       </div>
                       `;
                       break;
-
-                    // case "audio":
-                    //   html = ``;
-                    //   break;
+                    case "eventIntro":
+                      html = `
+                      <div class="form-switch toolButton">
+                        <span class="tooltiptext tooltip-top"
+                        data-i18n="switch" i18n-options="{ hotkey: 'E' }">
+                        </span>
+                        <input id="eventIntro" class="mt-2 form-check-input" type="checkbox" role="switch" checked="${defaultSetting.eventIntro}">
+                      </div>`;
+                      break;
                   }
                   return html;
                 }
@@ -574,7 +590,7 @@ export function TWSanime() {
 
                 const panelControl = {
                   slider: ["progress", "playspeed", "audio"],
-                  select: ["language"],
+                  select: ["language", "eventIntro"],
                   checkbox: ["mL_legend", "depth_legend", "grid_line"],
                   dropdown: ["event_config"],
                 };
@@ -623,10 +639,12 @@ export function TWSanime() {
                 let selectHtml = panelControl.select
                   .map(
                     (type) => `
+                            <div class="d-flex flex-row row my-2">
                               <label class="text-start fs-5 fw-bold col-5" data-i18n="${type}"></label>                      
                               <div class="col-7">
                               ${getControllerHTML(type)} 
-                              </div>`
+                              </div>
+                            </div>`
                   )
                   .join("");
 
@@ -645,7 +663,7 @@ export function TWSanime() {
                                   <a class="close" href="#">&times;</a>
                                   <div class="mx-1">
                                       ${sliderHtml}
-                                      <div class="d-flex flex-row row my-1">
+                                      <div class="">
                                         ${selectHtml}
                                       </div>
                                       <div class="d-flex justify-content-end row my-1">
@@ -1328,7 +1346,11 @@ export function TWSanime() {
                       //==聲音
                       if (animDataObj.audio) playerAudio(d.ML);
                       //todo:==特殊地震介紹
-                      if (eventIntroObj.eventList.includes(d.date)) {
+                      // console.debug(animDataObj.eventIntro);
+                      if (
+                        animDataObj.eventIntro &&
+                        eventIntroObj.eventList.includes(d.date)
+                      ) {
                         let displayObj = eventIntroObj.displayObj[d.date],
                           marker = displayObj.marker,
                           outerLine = displayObj.outerLine,
@@ -1452,7 +1474,8 @@ export function TWSanime() {
           let settingBtn = toolbar.select("#settingBtn"),
             lockViewBtn = toolbar.select("#lockViewBtn"),
             playBtn = toolbar.select("#playBtn"),
-            audioCkb = toolbar.select("#audio input[type='checkbox']");
+            audioCkb = toolbar.select("#audio input[type='checkbox']"),
+            eventCkb = toolbar.select("#eventIntro");
 
           let animeControllEvent = () => {
             let toolbarEvent = () => {
@@ -1510,6 +1533,7 @@ export function TWSanime() {
                 playspeedControl = setPanel.select("#playspeed"),
                 audioControl = setPanel.select("#audio"),
                 languageControl = setPanel.select("#language"),
+                eventIntroControl = setPanel.select("#eventIntro"),
                 displayControl = setPanel.selectAll("input[name='display']");
 
               let pannel = () => {
@@ -1579,6 +1603,12 @@ export function TWSanime() {
                   controller.dispatch("changeLanguage", {
                     detail: { lang: this.value },
                   });
+                });
+
+                eventIntroControl.on("change", function () {
+                  let check = this.checked;
+                  animDataObj = getNewData({ eventIntro: check });
+                  // console.debug(check);
                 });
               };
               let dropdownMenu = () => {
@@ -1855,6 +1885,11 @@ export function TWSanime() {
                 case "KeyA":
                   audioCkb
                     .property("checked", !animDataObj.audio)
+                    .dispatch("change");
+                  break;
+                case "KeyE":
+                  eventCkb
+                    .property("checked", !animDataObj.eventIntro)
                     .dispatch("change");
                   break;
               }

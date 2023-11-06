@@ -1,5 +1,6 @@
 <?php
-// GDMS 資料庫
+header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
+// tecdb2 資料庫
 $hostname = '192.168.211.124';
 $user = 'andy';
 $pass = 'Tecdb@7005';

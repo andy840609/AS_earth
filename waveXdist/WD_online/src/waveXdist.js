@@ -1913,7 +1913,7 @@ function waveXdist() {
                     mouseG.style("display", "none");
                     tooltip.style("display", "none");
                   };
-                  updateHandler(action, tooltipUpdateObj, null, !e.isTrusted);
+                  action();
                 })
                 .on("mousemove", function (e) {
                   // update tooltip content, line, circles and text when mouse moves
@@ -1975,7 +1975,7 @@ function waveXdist() {
                     mouseG.style("display", "inline");
                   };
 
-                  updateHandler(action, tooltipUpdateObj);
+                  action();
                 });
             eventRect.call(mouseMoveBehavior);
           }
@@ -2093,7 +2093,7 @@ function waveXdist() {
                   selectionRect.update(width - margin.right, p[1]);
                   // console.debug(selectionRect.getNewAttributes());
                 };
-                updateHandler(action, tooltipUpdateObj);
+                action();
               })
               .on("end", (e) => {
                 loadingEffect("show");
@@ -2225,11 +2225,11 @@ function waveXdist() {
                 pathGroup.raise();
                 pathGroup
                   .on("mousemove", (e) => {
-                    updateHandler(hover, tooltipUpdateObj, [e.target]);
+                    hover(e.target);
                   })
                   .on("mouseleave", (e) => {
                     // console.debug(e);
-                    updateHandler(leave, tooltipUpdateObj, null, !e.isTrusted);
+                    leave();
                   })
                   .on("click", (e) => {
                     let action = () => {
@@ -2273,7 +2273,7 @@ function waveXdist() {
                       );
                       stationCheckbox.property("checked", show);
                     };
-                    updateHandler(action);
+                    action();
                   });
 
                 let hover = (target) => {
@@ -2515,7 +2515,7 @@ function waveXdist() {
                     updateChart();
                     updateStaionDropDownMenu();
                   };
-                  updateHandler(action);
+                  action();
                 });
               // reset button
               xAxisName_radioGroup
@@ -2559,7 +2559,7 @@ function waveXdist() {
                 normalizeScale = e.target.value;
                 updateChart();
               };
-              updateHandler(action);
+              action();
             } else e.target.value = normalizeScale;
           });
         }

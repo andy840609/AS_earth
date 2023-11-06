@@ -414,6 +414,10 @@ datalist {
   font-size: 14px;
 }
 
+.eventIntroDiv .eventIntroUrl {
+  font-size: 12px;
+}
+
 .eventIntroLine_outer,
 .eventIntroLine_inter {
   stroke-linejoin: bevel;

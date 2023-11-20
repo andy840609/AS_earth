@@ -1,0 +1,11 @@
+{
+    "presets": [
+        "@babel/preset-env"
+    ],
+    //加入以下設定,轉譯時會使用@babel/plugin-transform-runtime
+    // "plugins": [
+    //     [
+    //         "@babel/plugin-transform-runtime"
+    //     ]
+    // ]
+}

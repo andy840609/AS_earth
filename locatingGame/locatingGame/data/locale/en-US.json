@@ -1,0 +1,366 @@
+{
+    "UI": {
+        "startGame": "startGame",
+        "setting": "setting",
+        "rank": "rank",
+        "intro": "intro",
+        "links": "links",
+        "contact": "contact",
+        "control": "control",
+        "controlHint": "controlHint",
+        "keyRepeat": "keyRepeat",
+        "up": "up",
+        "down": "down",
+        "left": "left",
+        "right": "right",
+        "attack": "attack",
+        "language": "language",
+        "zh-TW": "zh-TW",
+        "en-US": "en-US",
+        "characterSet": "characterSet",
+        "characterName": "characterName",
+        "characterPhoto": "characterPhoto",
+        "chooseCharacter": "chooseCharacter",
+        "choosePhoto": "choosePhoto",
+        "chooseBGcolor": "chooseBGcolor",
+        "avatarConfirm": "avatarConfirm",
+        "avatarErro": "avatarErro",
+        "tutorial1": "tutorial1",
+        "tutorial2": "tutorial2",
+        "tutorial3": "tutorial3",
+        "tutorial4": "tutorial4",
+        "tutorial5": "tutorial5",
+        "stepText": "stepText \t / \t",
+        "info1": "info1",
+        "info1_detail": "info1_detail",
+        "info2": "info2",
+        "info2_detail1": "info2_detail1",
+        "info2_detail2": "info2_detail2",
+        "skip": "skip",
+        "previous": "previous",
+        "next": "next",
+        "done": "done",
+        "ok": "ok",
+        "close": "close",
+        "cancel": "cancel",
+        "sidekickHint": "sidekickHint",
+        "oom": "oom",
+        "gameOver1": "gameOver1",
+        "gameOver2": "gameOver2",
+        "exit": "exit",
+        "pause": "pause",
+        "backpack": "backpack",
+        "detector": "detector",
+        "timeRemain": "timeRemain",
+        "shiftLeft": "shiftLeft",
+        "functionKey": "functionKey",
+        "shiftRight": "shiftRight",
+        "reset": "reset",
+        "shiftLeft_dig": "shiftLeft_dig",
+        "functionKey_dig": "functionKey_dig",
+        "shiftRight_dig": "shiftRight_dig",
+        "reset_dig": "reset_dig",
+        "resume": "resume",
+        "tutorial": "tutorial",
+        "playerStats": "playerStats",
+        "velocityChart": "velocityChart",
+        "questInfo": "questInfo",
+        "velocityStr": "velocityStr",
+        "distance": "distance",
+        "timeGap": "timeGap",
+        "preDistance": "preDistance",
+        "estimatedTime": "estimatedTime",
+        "DAYS": "DAYS",
+        "HRS": "HRS",
+        "MINS": "MINS",
+        "SECS": "SECS",
+        "hourglass": "hourglass",
+        "resurrect": "resurrect",
+        "giveup": "giveup",
+        "Question": "Question",
+        "bossName": "bossName",
+        "velocityChartLock": "velocityChartLock",
+        "mapClickConfirm1": "mapClickConfirm1",
+        "mapClickConfirm2": "mapClickConfirm2",
+        "enterGate": "enterGate",
+        "yes": "yes",
+        "no": "no",
+        "station": "station",
+        "assumedEpicenter": "assumedEpicenter",
+        "rankChartStr1": "rankChartStr1",
+        "rankChartStr2": "rankChartStr2",
+        "score": "score",
+        "replay": "replay",
+        "playerCount": "playerCount",
+        "shareTo": "shareTo",
+        "downloadCert": "downloadCert",
+        "whosCert": "whosCert",
+        "certTitle": "certTitle",
+        "certLabel1": "certLabel1",
+        "certLabel2": "certLabel2",
+        "certLabel3": "certLabel3",
+        "certLabel4": "certLabel4",
+        "certLabel5": "certLabel5"
+    },
+    "Load": {
+        "loading": "loading",
+        "LoadingAsset": "LoadingAsset",
+        "aaa": "sss",
+        "aaa": "sss"
+    },
+    "Lines": {
+        "player": {
+            "0": "......",
+            "3": "都結束了嗎......"
+        },
+        "boss": {
+            "0": "果然到了這裡呢...\f\n接下來要考驗你的智慧了"
+        },
+        "sidekick": {
+            "0": {
+                "0": "你受了重傷！\n需要時間來回復體力，\n記得休息跟戰鬥一樣重要喔！",
+                "1": "世界末日到了...\n不過別擔心！\n我們可以用時光機再試一次",
+                "2": "你回來了...\n這次我們一定能成功的！"
+            },
+            "1": {
+                "0": "勇者\t你來了!\n我是博士貓頭鷹，\n我會協助你一起拯救世界，\n儘管魔王的力量很強大，\n你也一定沒問題的！",
+                "1": "這裡是距離世界末日\n剩餘的時間，我們必須在一切\n太遲之前打倒魔王",
+                "2": "這裡是地圖上的功能列，\n可以查看各種資訊，\n速度圖是用來分析魔王所在地——\n震源城位置的圖表，不過要等\n我們蒐集足夠的測站情報才能查看",
+                "3": "各個測站的位置\n我幫你標示在地圖上了，\n如果還有什麼不懂的地方再問我！",
+                "4": "那麼事不宜遲馬上出發前往\n測站蒐集情報吧！\n( 點擊\t圖示進入測站，\n點擊\t再看一次說明 )"
+            },
+            "2": {
+                "0": "很好我們得到新的情報了！\n再蒐集\t個情報或許就能\n找出震源城的位置",
+                "1": "繼續蒐集更多情報吧\n( 點擊\t圖示 )"
+            },
+            "3": {
+                "0": "你真厲害!\n我們蒐集到足夠的情報了，\n現在可以根據情報來推論\n震源城可能的位置",
+                "1": "那麼打開速度圖來整理情報吧\n( 點擊\t圖示 )"
+            },
+            "4": {
+                "0": "沒錯就是這樣！\n剛才我們從測站取得的情報\n就是時間 ( S波到時減掉P波到時 )",
+                "1": "把時間乘上速度參數就能得到\n距離 ( 圓的半徑長度 ) ，由此推論\n震源可能位於測站的方圓幾公里處\n ( 圓上每點都是一樣距離 )",
+                "2": "而三圓交點就能確定震央位置了，\n試著拉動把手來調整速度參數，\n使三圓交於一點，震源城就在\n這點下面",
+                "3": "確定了震源城的位置就出發\n討伐魔王吧!\n( 拖動把手\t調整速度參數，\n使三圓交於一點再點擊交點探索 )"
+            },
+            "5": {
+                "0": "沒有找到震源城嗎？\n別氣餒下次一定能找到的",
+                "1": "打開速度圖試著調整速度參數\n到合理範圍，或是到測站再次\n蒐集情報",
+                "2": "( 拖動把手\t調整\n速度參數，或是到測站\t\n更正速度情報 )"
+            },
+            "defend": {
+                "0": "勇者[size=26][color=orange][b]\t[/b][/color][/size]你好！\n我是博士派來幫助你的助手\t，\f\n讓我來說明一下我們的任務進行方式吧",
+                "1": "首先說操作方式，\n [size=26][color=red][b]\t[/b][/color][/size] 和 [size=26][color=red][b]\t[/b][/color][/size] 能控制人物的移動， [size=26][color=red][b]\t[/b][/color][/size] 是跳躍，\n [size=26][color=red][b]\t[/b][/color][/size] 是攻擊鍵，靠近光球後按下 [size=26][color=red][b]\t[/b][/color][/size] 能撿起/放下",
+                "2": "現在說明UI介面，\n右上角的是功能列，\n想要[u]暫停遊戲或查看探測器[/u]都在這裡喔",
+                "3": "再來是探測器介面，有看到螢幕上的波形嗎？\n地震波形是地震儀記錄到的地面振動訊號，\n可以試著[u]拉動螢幕的左右邊界[/u]來放大顯示波形",
+                "4": "這個是你的狀態欄，\n [size=26][color=red][b]HP[/b][/color][/size] 是你的生命值，小心不要讓他歸零了！\n [size=26][color=blue][b]MP[/b][/color][/size] 每次攻擊都會消耗，不過別擔心 [size=26][color=blue][b]MP[/b][/color][/size] 會自己回復",
+                "5": "而最後是倒數計時器，\n在進行任務的同時也要[u]注意剩餘時間喔[/u]，\n我們必須在魔王毀滅世界前打敗他！",
+                "6": "不過事情變的麻煩了呢...\n魔王派出了他的手下來阻礙我們進行任務",
+                "7": "試著躲開怪物的攻擊，然後[u]把光球放到正確的P波和S波位置[/u]，\n這樣我們就能得到用來找出震源城地點的時間情報了，\n那麼我們一起努力吧！"
+            },
+            "dig": {
+                "0": "[size=26][color=orange][b]\t[/b][/color][/size]還記得我們的任務嗎？\n我們要找出位於地底下的震源城",
+                "1": "探測器上顯示的是小地圖\n可以拉動方框來調整畫面位置",
+                "2": "這個是[u]深度尺標[/u]，\n可以從這裡知道我們在地下幾公里的地方",
+                "3": "記得任務同時也要[u]注意剩餘時間[/u]喔，\n有任何最新消息我再告訴你\f\n那麼就開始挖吧！",
+                "4": "發現震源城了！\n魔王就在裡面等著我們...\f\n我們有一段很酷的冒險呢，\n[size=26][color=orange][b]\t[/b][/color][/size]一定能打倒魔王的！\f\n準備好就出發吧"
+            },
+            "boss": {
+                "0": ""
+            }
+        },
+        "enemy": {
+            "0": "不會讓你再靠近了"
+        }
+    },
+    "Hints": {
+        "defend": {
+            "0": {
+                "0": "在探測器介面上拖曳\n兩邊就能放大波形",
+                "1": "靠近光球後按下\t撿起",
+                "2": "走到正確位置後\n按下\t放下"
+            },
+            "1": {
+                "0": "博士會隨時與我們通訊",
+                "1": "相信你自己就像\n我相信著你",
+                "2": "小心不要被怪物撞到",
+                "3": "永不放棄！"
+            },
+            "2": {
+                "0": "放好位置就按esc或\n右上角存檔離開"
+            }
+        },
+        "dig": {
+            "0": {
+                "0": "按方向鍵\n來挖進地底吧",
+                "1": "有些石頭比較硬"
+            },
+            "1": {
+                "0": "博士會給我們\n有用的資訊",
+                "1": "堅持到最後",
+                "2": "我跟你是最棒的搭檔"
+            },
+            "2": {
+                "0": "我會永遠追隨你的！",
+                "1": "看起來震源城不在這裡\n按esc退出吧",
+                "2": "挖超過震源城了",
+                "terrain1": "沈積岩是由各種自然營\n力（河流、冰川、風）\n搬運而來的沈積物，\n經壓密、膠結等作用而\n形成的。是覆蓋在地表\n上最普遍的岩石，屬於\n地表或地表附近較接近\n常溫、常壓條件下的聚\n積體。",
+                "terrain2": "火成岩是由岩漿或熔岩\n冷卻固化形成的。有些\n岩漿在地殼內即固化\n就是所謂的深成岩；有\n些岩漿噴出地表而形成\n火山岩。固體地球的地\n殼及上部地函就是由火\n成岩組成的，包含大家\n所熟知的岩石圈及軟流\n圈。",
+                "terrain3": "變質岩是由已有的岩石\n在深埋地底的高溫、高\n壓環境下，使得它雖\n然仍然在固態的情況，\n岩石的成分及組織構造\n都發生了變化，生成特\n殊的礦物以及特殊的變\n質構造。"
+            }
+        },
+        "boss": {
+            "0": {
+                "0": "用博士教過我們的\n戰勝震源吧"
+            },
+            "1": {
+                "0": "與博士的通訊\n中斷了...",
+                "1": "加油你是世界的希望",
+                "2": "你可以的你是最厲害的",
+                "3": "上吧！\n我會在旁邊支持你的"
+            }
+        }
+    },
+    "Tips": {
+        "0": "你知道嗎？\n臺灣的地震大多發生\n在東部耶",
+        "1": "告訴你一個祕密\n最早到達的地震波\n是P波",
+        "2": "我們至少要蒐集到\n3個測站的情報才能\n開始找震央",
+        "3": "小知識時間\n臺灣位在歐亞板塊與\n菲律賓海板塊的交界處",
+        "4": "通常S波的振幅比較大\n這題會考喔",
+        "5": "地震規模只有數值\n沒有單位唷",
+        "6": "地震震度只有整數值\n目前臺灣最大震度\n是7級",
+        "7": "地震來時保命三步驟是\n趴下、掩護、穩住",
+        "8": "其實每一種岩性的地層\n都有可能會發生地震",
+        "9": "如果想要獲得正確的\n地震資訊，就應該查詢\n氣象局的網站",
+        "10": "臺灣位於板塊交界處\n所以地震特別多",
+        "11": "臺灣本島的地震深度\n多在30公里以內",
+        "12": "我跟你說\n臺灣東北外海的地震\n最深可達300公里"
+    },
+    "Quiz": {
+        "0": {
+            "content": "臺灣的地震主要發生在臺灣的哪裡?",
+            "choices": [
+                "東部",
+                "西部",
+                "南部",
+                "北部"
+            ],
+            "answer": "東部"
+        },
+        "1": {
+            "content": "最早到達的地震波是?",
+            "choices": [
+                "P波",
+                "S波",
+                "表面波",
+                "T波"
+            ],
+            "answer": "P波"
+        },
+        "2": {
+            "content": "這個遊戲至少幾個測站才能決定震央位置?",
+            "choices": [
+                "1個",
+                "2個",
+                "3個",
+                "4個"
+            ],
+            "answer": "3個"
+        },
+        "3": {
+            "content": "臺灣位在哪兩個板塊交界處?",
+            "choices": [
+                "歐亞板塊與菲律賓海板塊",
+                "歐亞板塊與太平洋板塊",
+                "太平洋板塊與菲律賓海板塊",
+                "歐亞板塊與南中國海板塊"
+            ],
+            "answer": "歐亞板塊與菲律賓海板塊"
+        },
+        "4": {
+            "content": "通常哪種震波的振幅比較大?",
+            "choices": [
+                "P波",
+                "S波",
+                "SP波",
+                "X波"
+            ],
+            "answer": "S波"
+        },
+        "5": {
+            "content": "以下哪種說法可能是臺灣氣象局的報告?",
+            "choices": [
+                "發生了10級大地震",
+                "芮氏規模7.8級",
+                "最大震度6.5",
+                "最大震度5級"
+            ],
+            "answer": "最大震度5級"
+        },
+        "6": {
+            "content": "地震發生的當下該做什麼來保命?",
+            "choices": [
+                "馬上逃出屋外",
+                "扶住櫃子避免傾倒",
+                "躲到冰箱旁邊",
+                "趴下、掩護、穩住"
+            ],
+            "answer": "趴下、掩護、穩住"
+        },
+        "7": {
+            "content": "地震會發生在哪種岩性的地層內?",
+            "choices": [
+                "沉積岩",
+                "火成岩",
+                "變質岩",
+                "沒有特定岩性"
+            ],
+            "answer": "沒有特定岩性"
+        },
+        "8": {
+            "content": "如何獲得正確的地震資訊?",
+            "choices": [
+                "根據火燒雲現象判斷",
+                "查詢氣象局速報",
+                "瀏覽地牛翻身網站",
+                "觀察螞蟻遷徙"
+            ],
+            "answer": "查詢氣象局速報"
+        },
+        "9": {
+            "content": "臺灣爲何地震頻繁?",
+            "choices": [
+                "位於板塊交界處",
+                "火山很多",
+                "臺灣是海島",
+                "地牛發脾氣"
+            ],
+            "answer": "位於板塊交界處"
+        },
+        "10": {
+            "content": "臺灣本島的地震深度多在幾公里以內?",
+            "choices": [
+                "30",
+                "100",
+                "300",
+                "3"
+            ],
+            "answer": "30"
+        },
+        "11": {
+            "content": "臺灣東北外海的地震最深可達幾公里?",
+            "choices": [
+                "30",
+                "100",
+                "300",
+                "70"
+            ],
+            "answer": "300"
+        }
+    },
+    "Intro": {
+        "intro": "地震通常是因為地底下的斷層面兩側突然錯動所引起，這個錯動起始點的位置稱為震源，而震源垂直投影到地面的位置就叫做震央。在這個遊戲裡，震源位置就是大魔王作亂的地方，你的任務就是找出大魔王的所在地，為此我們需要先到地震測站獲得情報，藉由P波(Primary wave, 首達波)和S波(Secondary, 次達波)的到時差來估計震央距，當蒐集到三個測站的震央距時就能找出震央的可能位置，有了震央位置就能尋找位於地底下的震源，找到大魔王居住的震源城並回答正確的地震知識就能擊敗牠完成任務取得任務證書，我們的地震防災就靠你了！加油！",
+        "epicenter": "[size=26]▲[/size]地震發生時，地震震源向上垂直投影到地面的位置，也就是地面距震源最近的地方。\n（ 資料來源：臺灣地震科學中心 [size=16][color=blue][u=blue][area=url:https://tec.earth.sinica.edu.tw/glossaryquery.php]https://tec.earth.sinica.edu.tw/glossaryquery.php[/area][/u][/color][/size] ）",
+        "PSwave": "[size=26]▲[/size]P波到達的時間通常是在垂直向波形中，最先出現明顯大幅震盪的位置；而S波到達的時間則是在東西向或南北向波形上，振幅開始變得較大且略為變疏的地方。圖爲桃園縣爺亨測站所記錄的一筆波形資料，作為挑選P波與S波的範例，地震位於125公里外的花蓮外海。\n（ 資料來源：臺灣地震科學雲端學習平台 [size=16][color=blue][u=blue][area=url:http://qcntw.earth.sinica.edu.tw/index.php/eqk-game/location-game]http://qcntw.earth.sinica.edu.tw/index.php/eqk-game/location-game[/area][/u][/color][/size] ）"
+    }
+}

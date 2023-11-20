@@ -1,0 +1,9 @@
+Education Promotion for Seismology
+
+I am an assistant at the institute of earth science in Academia Sinica. we are making seismicity data visualization through charts or games. I am willing to use Twitter to share our results of earth sicence.
+
+We have a game about locating the epicenter of an earthquake. when the player  resolve all the quizzes and clear the game. They will receive a certificate about his score and post on Twitter to show their friends.
+
+I am not using Twitter API for analyzing Twitter users' data. Only use for education promotion proposes that more people can see Taiwan seismicity through social media. They can share something interesting about what they find in earth science.
+
+all the research results are on our public websites like GDMS, TAPS...etc. It is open data that everyone can download.

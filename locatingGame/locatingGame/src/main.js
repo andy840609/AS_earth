@@ -558,39 +558,39 @@ function locatingGame() {
           GameData.getLanguageJSON = getLanguageJSON;
 
           // DEV: 1.跳過開頭選角、教學
-          {
-            gameDisplay(true);
-            let doneTutorial = await new Promise((resolve, reject) => {
-              const config = Object.assign(getPhaserConfig(width, height), {
-                scene: new GameStartScene(GameData, {
-                  getWaveImg: getWaveImg,
-                  tutorialData: data.tutorialData,
-                  resolve: resolve,
-                  getLanguageJSON: getLanguageJSON,
-                  rankingData: rankingData, //排行榜
-                }),
-              });
-              new Phaser.Game(config);
-            });
-            // console.debug(doneTutorial);
-            gameDisplay(false);
+          // {
+          //   gameDisplay(true);
+          //   let doneTutorial = await new Promise((resolve, reject) => {
+          //     const config = Object.assign(getPhaserConfig(width, height), {
+          //       scene: new GameStartScene(GameData, {
+          //         getWaveImg: getWaveImg,
+          //         tutorialData: data.tutorialData,
+          //         resolve: resolve,
+          //         getLanguageJSON: getLanguageJSON,
+          //         rankingData: rankingData, //排行榜
+          //       }),
+          //     });
+          //     new Phaser.Game(config);
+          //   });
+          //   // console.debug(doneTutorial);
+          //   gameDisplay(false);
 
-            if (doneTutorial) {
-              const gainItems = [
-                ["pan", 0],
-                ["bread", 5],
-                ["bone", 3],
-              ];
-              hintTextAnime("itemGain1", gainItems);
-            }
-          }
+          //   if (doneTutorial) {
+          //     const gainItems = [
+          //       ["pan", 0],
+          //       ["bread", 5],
+          //       ["bone", 3],
+          //     ];
+          //     hintTextAnime("itemGain1", gainItems);
+          //   }
+          // }
           initMap();
 
           //==test
           // gameStart("defend");
           // gameStart("dig");
           // DEV: 4.過關動畫
-          // initEndScene(true);
+          initEndScene(true);
           //==test
         };
         startScene();
@@ -784,7 +784,7 @@ function locatingGame() {
         };
         gameOverScene();
         // DEV: 5.排行圖
-        // congratsScene();
+        congratsScene();
       }
       function initMap() {
         const fadeInDuration = 300;

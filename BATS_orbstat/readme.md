@@ -1,0 +1,1 @@
+influx v1 shell -t RuJGmRcfZT5WhJLIEk-z-KgUwYFcT9d3C3WlcQLvn6gxojxzGwAEHsnBpRRS3bs0PZUMSfL2C8Vj9sC_FOM1ZQ==

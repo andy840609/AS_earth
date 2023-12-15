@@ -782,8 +782,9 @@ function locatingGame() {
           initRankChart();
           initMenu();
         };
-        gameOverScene();
-        // DEV: 5.排行圖
+        // DEV: 跳過結尾動畫
+        // gameOverScene();
+        // DEV: 5.結局
         congratsScene();
       }
       function initMap() {

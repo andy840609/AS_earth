@@ -469,3 +469,22 @@ datalist {
     opacity: 0;
   }
 }
+
+#seismicity #loading {
+  --loading-width: 150px;
+  --loading-height: 60px;
+
+  position: absolute;
+  width: var(--loading-width);
+  height: var(--loading-height);
+  left: calc(50% - var(--loading-width) * 0.5);
+  top: calc(50% - var(--loading-height));
+  z-index: 500;
+  padding: 10px 10px;
+  background: #3c3c3c;
+  color: #fff;
+  text-align: center;
+  box-shadow: 2px 2px 10px;
+  border-radius: 5px;
+  pointer-events: none;
+}

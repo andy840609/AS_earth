@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>resp</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+      crossorigin="anonymous"
+    />
+    <!-- FontAwesome 6.5.1 -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link href="../src/resp.css" rel="stylesheet" />
+  </head>
+
+  <body>
+    <main class="container"></main>
+    <!-- Bootstrap Bundle (includes Popper.js) -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+
+    <script src="../src/complex.min.js"></script>
+    <script src="../src/respFun.js"></script>
+    <script src="../src/respChart.js"></script>
+    <script>
+      // const z = [
+      //   new Complex(0, 0),
+      //   new Complex(0, 0),
+      //   new Complex(-1.08e2, 0),
+      //   new Complex(-1.61e2, 0),
+      // ];
+      // const p = [
+      //   new Complex(-1.815e-2, 1.799e-2),
+      //   new Complex(-1.815e-2, -1.799e-2),
+      //   new Complex(-1.73e2, 0),
+      //   new Complex(-1.96e2, 2.31e2),
+      //   new Complex(-1.96e2, -2.31e2),
+      //   new Complex(-7.32e2, 1.451e3),
+      //   new Complex(-7.32e2, -1.451e3),
+      // ];
+      let chart = RespChart().selector(".container");
+
+      chart();
+    </script>
+  </body>
+</html>

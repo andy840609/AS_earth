@@ -1525,14 +1525,14 @@ function requestRate() {
               g
                 .attr("transform", `translate(${margin.left},0)`)
                 .call((g) => {
-                  let axisFun = d3.axisLeft(y);
-                  yAxisOption.logScale
-                    ? axisFun.ticks(
+                  let ticks = yAxisOption.logScale
+                    ? [
                         Math.log10(y.domain()[1] / y.domain()[0]) + 1,
-                        formatPower
-                      )
-                    : axisFun.ticks(height / 30);
-                  axisFun(g);
+                        formatPower,
+                      ]
+                    : [height / 30];
+
+                  d3.axisLeft(y).ticks(...ticks)(g);
                 })
                 .call((g) => g.select(".domain").attr("display", "none"))
                 .call((g) =>

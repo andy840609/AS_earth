@@ -1,0 +1,143 @@
+text,
+label,
+a,
+span {
+  user-select: none;
+}
+
+/* --------download button-------- */
+#charts {
+  position: relative;
+  padding: 10px 15px;
+}
+
+#charts .toggle-nav {
+  text-decoration: none;
+  padding: 5px 9px 5px 10px;
+  display: inline-block;
+  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.15);
+  border: rgb(197, 197, 197) 1px solid;
+  border-radius: 3px;
+  text-shadow: 0px 1px 0px rgba(0, 0, 0, 0.5);
+  color: #777;
+  font-size: 20px;
+}
+
+#charts .toggle-nav:hover,
+#charts .toggle-nav.show {
+  text-decoration: none;
+  color: rgba(0, 0, 0, 0.658);
+}
+
+#charts .toggle-menu {
+  position: absolute;
+  right: 0px;
+}
+
+#charts .toggle-menu > .dropdown-menu {
+  width: 200px;
+  top: 100%;
+  padding: 0px 0px 0px 0px;
+  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.15);
+  border: rgb(197, 197, 197) 1px solid;
+  border-radius: 3px;
+  background-color: #fff;
+}
+
+#charts .toggle-menu > .dropdown-menu a {
+  text-decoration: none;
+  color: #777;
+  text-align: center;
+  font-size: 16px;
+}
+
+#charts .toggle-menu > .dropdown-menu a:hover {
+  background: #1abc9c;
+  color: #fff;
+}
+
+/* --------charts-------- */
+/* .yAxis .domain {
+  stroke: none;
+} */
+
+#charts svg {
+  height: 900px;
+  width: 100%;
+}
+
+#chartMain #loading {
+  --loading-width: 150px;
+  --loading-height: 60px;
+
+  position: absolute;
+  width: var(--loading-width);
+  height: var(--loading-height);
+  left: calc(50% - var(--loading-width) * 0.5);
+  top: calc(50% - var(--loading-height));
+  z-index: 50;
+  padding: 10px 10px;
+  background: #3c3c3c;
+  color: #fff;
+  text-align: center;
+  box-shadow: 2px 2px 10px;
+  border-radius: 5px;
+  pointer-events: none;
+}
+
+#chartMain > #outerDiv {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 10;
+  width: 100%;
+  height: 100%;
+  display: none;
+}
+
+#chartMain > #outerDiv > #innerDiv {
+  background-color: rgb(255, 255, 255);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+#chartMain .tooltip {
+  position: absolute;
+  z-index: 999;
+  background-color: #d3d3d3;
+  padding: 20px 20px 20px 20px;
+  opacity: 0.9;
+  display: none;
+}
+
+#chartMain .tooltip > font {
+  font-size: 24px;
+}
+
+#chartMain .tooltip > font.tooltip_amp {
+  color: red;
+}
+#chartMain .tooltip > font.tooltip_phs {
+  color: blue;
+}
+
+/* --------chartOptions-------- */
+#chartOptions #paramMenu textarea {
+  height: 150px;
+  width: 400px;
+  resize: both;
+}
+
+#chartOptions #paramMenu #paramHintBlock,
+#chartOptions #paramMenu i {
+  white-space: pre-line;
+  line-height: 1;
+}
+
+.tooltip-inner {
+  text-align: left;
+  line-height: 1;
+}

@@ -1,145 +1,149 @@
 .header {
-    color: #474b42;
-    background-color: #ebf6f7;
-    border-bottom: 1px solid #89c3eb;
-    padding: 20px;
-    padding-right: 100px;
+  color: #474b42;
+  background-color: #ebf6f7;
+  border-bottom: 1px solid #89c3eb;
+  padding: 20px;
+  padding-right: 100px;
 }
 
-.footer>p {
-    margin: 0;
+.footer > p {
+  margin: 0;
 }
 
 .card {
-    padding: 0;
+  padding: 0;
 }
 
 a {
-    color: #0d6efd;
-    text-decoration: none;
+  color: #0d6efd;
+  text-decoration: none;
 }
 
 img {
-    max-width: 80%;
-    margin-bottom: 5px;
+  max-width: 80%;
+  margin-bottom: 5px;
 }
 
 #main {
-    position: relative;
+  position: relative;
 }
 
 .watermark {
-    position: absolute;
-    z-index: -1;
-    right: 15vw;
-    bottom: 10px;
-    /* width: 25%; */
+  position: absolute;
+  z-index: -1;
+  right: 15vw;
+  bottom: 10px;
+  opacity: 0.4;
+  /* width: 25%; */
 }
 
-.burger-menu:checked~.nav {
-    opacity: 1;
-    width: 100%;
-    right: 0;
+.burger-menu:checked ~ .nav {
+  opacity: 1;
+  width: 100%;
+  right: 0;
 }
 
 .burger-menu {
-    position: fixed;
-    top: 2vh;
-    right: 5.5vw;
-    display: none;
+  position: fixed;
+  top: 2vh;
+  right: 5.5vw;
+  display: none;
 }
 
 .menu-background {
-    height: 50px;
-    width: 50px;
-    background-color: #ebf6f7;
-    border: 1px solid #89c3eb;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: transform 0.8s cubic-bezier(0.86, 0, 0.07, 1);
+  height: 50px;
+  width: 50px;
+  background-color: #ebf6f7;
+  border: 1px solid #89c3eb;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.8s cubic-bezier(0.86, 0, 0.07, 1);
 }
 
 .menu-button-container {
-    position: absolute;
-    z-index: 2000;
-    height: 100%;
-    width: 50px;
-    cursor: pointer;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    display: flex;
+  position: absolute;
+  z-index: 2000;
+  height: 100%;
+  width: 50px;
+  cursor: pointer;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  display: flex;
 }
 
 #menu-toggle {
-    display: none;
+  display: none;
 }
 
 .menu-button,
 .menu-button::before,
 .menu-button::after {
-    display: block;
-    background-color: #474b42;
-    position: absolute;
-    height: 4px;
-    width: 30px;
-    transition: transform 400ms cubic-bezier(0.23, 1, 0.32, 1);
-    border-radius: 2px;
+  display: block;
+  background-color: #474b42;
+  position: absolute;
+  height: 4px;
+  width: 30px;
+  transition: transform 400ms cubic-bezier(0.23, 1, 0.32, 1);
+  border-radius: 2px;
 }
 
 .menu-button::before {
-    content: '';
-    margin-top: -8px;
+  content: "";
+  margin-top: -8px;
 }
 
 .menu-button::after {
-    content: '';
-    margin-top: 8px;
+  content: "";
+  margin-top: 8px;
 }
 
-#menu-toggle:checked~.burger-menu>.menu-button-container .menu-button::before {
-    margin-top: 0px;
-    transform: rotate(405deg);
+#menu-toggle:checked
+  ~ .burger-menu
+  > .menu-button-container
+  .menu-button::before {
+  margin-top: 0px;
+  transform: rotate(405deg);
 }
 
-#menu-toggle:checked~.burger-menu>.menu-button-container .menu-button {
-    background: rgba(255, 255, 255, 0);
+#menu-toggle:checked ~ .burger-menu > .menu-button-container .menu-button {
+  background: rgba(255, 255, 255, 0);
 }
 
-#menu-toggle:checked~.burger-menu>.menu-button-container .menu-button::after {
-    margin-top: 0px;
-    transform: rotate(-405deg);
+#menu-toggle:checked
+  ~ .burger-menu
+  > .menu-button-container
+  .menu-button::after {
+  margin-top: 0px;
+  transform: rotate(-405deg);
 }
 
 @media (max-width: 767px) {
+  .burger-menu {
+    display: flex;
+    justify-content: flex-end;
+  }
 
-    .burger-menu {
-        display: flex;
-        justify-content: flex-end;
-    }
+  .menu {
+    position: fixed;
+    top: 0;
+    z-index: 1500;
+    height: 50em;
+    margin-top: 50px;
 
-    .menu {
-        position: fixed;
-        top: 0;
-        z-index: 1500;
-        height: 50em;
-        margin-top: 50px;
+    opacity: 0;
+    width: 0;
+    right: -100%;
+    transition: all 0.8s;
+  }
 
-        opacity: 0;
-        width: 0;
-        right: -100%;
-        transition: all 0.8s;
-    }
+  #menu-toggle:checked ~ .menu {
+    opacity: 1;
+    width: 100%;
+    right: 0;
+  }
 
-
-    #menu-toggle:checked~.menu {
-        opacity: 1;
-        width: 100%;
-        right: 0;
-    }
-
-    #menu-toggle:checked~.burger-menu>.menu-background {
-        transform: scale(80);
-    }
-
+  #menu-toggle:checked ~ .burger-menu > .menu-background {
+    transform: scale(80);
+  }
 }

@@ -399,7 +399,7 @@ function waveXdist() {
 
       Object.assign(compositeData, eventlist.data[0]);
       // console.debug(eventlist.data[0]);
-      console.debug(compositeData);
+      // console.debug(compositeData);
 
       return compositeData;
     });
@@ -449,6 +449,25 @@ function waveXdist() {
           hideLoading_flag = false;
           break;
       }
+    }
+    //===delay update
+    function updateHandler(
+      action,
+      updateObj,
+      parameter = null,
+      mustDone = false
+    ) {
+      // console.debug(parameter)
+      // console.debug(chartUpdateObj.updateFlag);
+
+      if (!updateObj.updateFlag) updateObj.updateTimeOut.stop();
+
+      updateObj.updateTimeOut = d3.timeout(() => {
+        parameter ? action(...parameter) : action();
+        updateObj.updateFlag = true;
+      }, updateObj.updateDelay);
+
+      updateObj.updateFlag = mustDone;
     }
 
     //===append chart options
@@ -706,6 +725,11 @@ function waveXdist() {
       // })
 
       //================
+      let eventUpdateObj = {
+        updateFlag: true,
+        updateTimeOut: null,
+        updateDelay: 300,
+      };
       let mousedownFlag = false;
       let windowJQ = $(window);
       windowJQ
@@ -787,20 +811,25 @@ function waveXdist() {
 
       xAxisName_radioGroup.find("#distRange").on("change", function (e) {
         // console.debug('distRange change');
-
-        let range = e.target.getAttribute("value").split(",");
-        $(e.target.parentNode).find("#distRange_min").val(range[0]);
-        $(e.target.parentNode).find("#distRange_max").val(range[1]);
-        chartContainerD3.selectAll("#distRange_min").dispatch("input");
+        let action = () => {
+          let range = e.target.getAttribute("value").split(",");
+          $(e.target.parentNode).find("#distRange_min").val(range[0]);
+          $(e.target.parentNode).find("#distRange_max").val(range[1]);
+          chartContainerD3.selectAll("#distRange_min").dispatch("blur");
+        };
+        updateHandler(action, eventUpdateObj);
       });
 
       xAxisName_radioGroup.find("#azRange").on("change", function (e) {
         // console.debug(e.target.parentNode);
         // console.debug(e.target.value);
-        let range = e.target.getAttribute("value").split(",");
-        $(e.target.parentNode).find("#azRange_min").val(range[0]);
-        $(e.target.parentNode).find("#azRange_max").val(range[1]);
-        chartContainerD3.selectAll("#azRange_min").dispatch("input");
+        let action = () => {
+          let range = e.target.getAttribute("value").split(",");
+          $(e.target.parentNode).find("#azRange_min").val(range[0]);
+          $(e.target.parentNode).find("#azRange_max").val(range[1]);
+          chartContainerD3.selectAll("#azRange_min").dispatch("blur");
+        };
+        updateHandler(action, eventUpdateObj);
       });
 
       //====================normalize
@@ -823,7 +852,7 @@ function waveXdist() {
       chartContainerJQ
         .find("#normalizeScale")
         .val(normalizeScale[default_normalizeScaleIdx])
-        .on("input", function (e) {
+        .on("blur", function (e) {
           // console.debug('normalizeScale input');
           // console.debug(e.target.value);
           let inputVal = parseFloat(e.target.value);
@@ -842,10 +871,13 @@ function waveXdist() {
         .attr("value", default_normalizeScaleIdx)
         .on("input propertychange", function (e) {
           // console.debug('NSRange change');
-          let NSIndex = e.target.value;
-          let scale = normalizeScale[NSIndex];
-          chartContainerJQ.find("#normalizeScale").val(scale);
-          chartContainerD3.selectAll("#normalizeScale").dispatch("input");
+          let action = () => {
+            let NSIndex = e.target.value;
+            let scale = normalizeScale[NSIndex];
+            chartContainerJQ.find("#normalizeScale").val(scale);
+            chartContainerD3.selectAll("#normalizeScale").dispatch("blur");
+          };
+          updateHandler(action, eventUpdateObj);
         });
 
       // normalizeScale.forEach((d, i) => {
@@ -902,7 +934,7 @@ function waveXdist() {
         });
 
         let getPaths = (optionValue) => {
-          console.debug("optionValue= " + optionValue);
+          console.debug("catlog index= " + optionValue);
           let event = catalogArr[optionValue];
           let catalog = event.catalog;
 
@@ -955,7 +987,7 @@ function waveXdist() {
       getFileData();
     }
     function WD_Charts(xAxisScale = "linear", xAxisName = "dist") {
-      console.debug(data);
+      console.debug("data=", data);
       // console.debug(xAxisName)
       let colorPalette = {}; //to fixed color for each station
       const dataKeys = data.column; //0: "network", 1: "station", 2: "channel", 3: "data", 4: "dist", 5:"az"
@@ -1247,7 +1279,7 @@ function waveXdist() {
             : newDataObj.channel_selectGroup;
 
         let newData, newTimeArr;
-        // console.debug(xAxis_domainObj);
+        // console.debug("xAxis_domainObj= ", xAxis_domainObj);
 
         let newData_normalize = (newData) => {
           // console.debug('***normalize...***');
@@ -1466,6 +1498,8 @@ function waveXdist() {
           // console.debug(groupData);
           let rangeInit = (function () {
             let get_niceDomain = (domain) => {
+              let range = domain.reduce((a, b) => b - a) * 0.1;
+              domain = [domain[0] - range, domain[1] + range];
               return d3.scaleLinear().domain(domain).nice().domain();
             };
 
@@ -1473,27 +1507,18 @@ function waveXdist() {
             // dist_domain = get_niceDomain([0,
             //     d3.max([].concat(...networkKey.map(net => [].concat(...groupData[net].map(d => d)))
             //     ), d => d[dataKeys[4]])]);
-            dist_domain = get_niceDomain(
-              d3.extent(
-                [].concat(
-                  ...networkKey.map((net) =>
-                    [].concat(...groupData[net].map((d) => d))
-                  )
-                ),
-                (d) => d[dataKeys[4]]
+            let tmpArr = [].concat(
+              ...networkKey.map((net) =>
+                [].concat(...groupData[net].map((d) => d))
               )
+            );
+            dist_domain = get_niceDomain(
+              d3.extent(tmpArr, (d) => d[dataKeys[4]])
             );
 
             // az_domain = [0, 360];//方位角最大360
             az_domain = get_niceDomain(
-              d3.extent(
-                [].concat(
-                  ...networkKey.map((net) =>
-                    [].concat(...groupData[net].map((d) => d))
-                  )
-                ),
-                (d) => d[dataKeys[5]]
-              )
+              d3.extent(tmpArr, (d) => d[dataKeys[5]])
             );
             // console.debug(dataKeys);
             // console.debug(newData)
@@ -1528,7 +1553,7 @@ function waveXdist() {
           })();
         }
         function render() {
-          console.debug(newDataObj);
+          console.debug("chart data=", newDataObj);
           //==物件依照xAxisName的值由小排到大
           const sort_newData = (data, sortingKey) => {
             // console.debug(data, sortingKey)
@@ -1850,24 +1875,6 @@ function waveXdist() {
           updateTimeOut: null,
           updateDelay: 10,
         };
-        let updateHandler = (
-          action,
-          updateObj = chartUpdateObj,
-          parameter = null,
-          mustDone = false
-        ) => {
-          // console.debug(parameter)
-          // console.debug(chartUpdateObj.updateFlag);
-
-          if (!updateObj.updateFlag) updateObj.updateTimeOut.stop();
-
-          updateObj.updateTimeOut = d3.timeout(() => {
-            parameter ? action(...parameter) : action();
-            updateObj.updateFlag = true;
-          }, updateObj.updateDelay);
-
-          updateObj.updateFlag = mustDone;
-        };
 
         //===event eles
         const eventRect = svg.append("g").attr("class", "eventRect");
@@ -2135,7 +2142,8 @@ function waveXdist() {
                     mouseG.style("display", "none");
                     tooltip.style("display", "none");
                   };
-                  updateHandler(action, tooltipUpdateObj, null, !e.isTrusted);
+                  // updateHandler(action, tooltipUpdateObj, null, !e.isTrusted);
+                  action();
                 })
                 .on("mousemove", function (e) {
                   // update tooltip content, line, circles and text when mouse moves
@@ -2197,7 +2205,8 @@ function waveXdist() {
                     mouseG.style("display", "inline");
                   };
 
-                  updateHandler(action, tooltipUpdateObj);
+                  // updateHandler(action, tooltipUpdateObj);
+                  action();
                 });
             eventRect.call(mouseMoveBehavior);
           }
@@ -2315,7 +2324,8 @@ function waveXdist() {
                   selectionRect.update(width - margin.right, p[1]);
                   // console.debug(selectionRect.getNewAttributes());
                 };
-                updateHandler(action, tooltipUpdateObj);
+                // updateHandler(action, tooltipUpdateObj);
+                action();
               })
               .on("end", (e) => {
                 loadingEffect("show");
@@ -2448,11 +2458,13 @@ function waveXdist() {
                 pathGroup.raise();
                 pathGroup
                   .on("mousemove", (e) => {
-                    updateHandler(hover, tooltipUpdateObj, [e.target]);
+                    // updateHandler(hover, tooltipUpdateObj, [e.target]);
+                    hover();
                   })
                   .on("mouseleave", (e) => {
                     // console.debug(e);
-                    updateHandler(leave, tooltipUpdateObj, null, !e.isTrusted);
+                    // updateHandler(leave, tooltipUpdateObj, null, !e.isTrusted);
+                    leave();
                   })
                   .on("click", (e) => {
                     let action = () => {
@@ -2504,7 +2516,8 @@ function waveXdist() {
                         .find("#stationtable")
                         .trigger("updateData", [chartData, colorPalette]);
                     };
-                    updateHandler(action);
+                    // updateHandler(action);
+                    action();
                   });
 
                 let hover = (target) => {
@@ -2661,12 +2674,13 @@ function waveXdist() {
               const rangeObj = { dist: dist_domain, az: az_domain };
 
               // console.debug(dist_domain, az_domain);
+              // console.debug("rangeObj= ", rangeObj);
               // range drag
               xAxisName_radioGroup
                 .selectAll('input[name ="xAxisRange"]')
-                .on("input", (e) => {
+                .on("blur", (e) => {
                   if (chartUpdateObj.updateFlag) loadingEffect("show");
-                  // console.debug(e.target);
+                  // console.debug("blur");
                   //==========================target vaule check=================================
                   let eleID = e.target.id.split("_");
                   let name = eleID[0];
@@ -2746,8 +2760,16 @@ function waveXdist() {
                     updateChart();
                     updateStaionDropDownMenu();
                   };
-                  updateHandler(action);
+                  // updateHandler(action);
+                  action();
+                })
+                .on("keyup", (e) => {
+                  // console.debug(e);
+                  // Detect Enter
+                  if (e.keyCode == 13)
+                    e.target.dispatchEvent(new Event("blur"));
                 });
+
               // reset button
               xAxisName_radioGroup
                 .selectAll('button[name ="rangeReset"]')
@@ -2764,7 +2786,7 @@ function waveXdist() {
                     rangeData[1];
                   chartContainerD3
                     .selectAll("#" + key + "Range_min")
-                    .dispatch("input");
+                    .dispatch("blur");
                 });
             });
 
@@ -2782,17 +2804,24 @@ function waveXdist() {
 
             updateChart();
           });
-          chartContainerD3.selectAll("#normalizeScale").on("input", (e) => {
-            // console.debug(e.target);
-            if (!isNaN(e.target.value)) {
-              loadingEffect("show");
-              let action = () => {
-                normalizeScale = e.target.value;
-                updateChart();
-              };
-              updateHandler(action);
-            } else e.target.value = normalizeScale;
-          });
+          chartContainerD3
+            .selectAll("#normalizeScale")
+            .on("blur", (e) => {
+              // console.debug(e.target);
+              if (!isNaN(e.target.value)) {
+                loadingEffect("show");
+                let action = () => {
+                  normalizeScale = e.target.value;
+                  updateChart();
+                };
+                // updateHandler(action);
+                action();
+              } else e.target.value = normalizeScale;
+            })
+            .on("keyup", (e) => {
+              // Detect Enter
+              if (e.keyCode == 13) e.target.dispatchEvent(new Event("blur"));
+            });
         }
         function keyboardEvent() {
           let hotkeyPressFlag = true; //avoid from trigger event too often

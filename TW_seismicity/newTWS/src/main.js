@@ -56,12 +56,10 @@ export function TWSanime() {
                     <div id="innerdiv" style=" background-color: rgb(255, 255, 255);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div>                      
                 </div>
 
-                <!--<div id='loading'>
-                    <div class="spinner-border"role="status">
-                        <span class="sr-only" >Loading...</span>
-                    </div>
-                    Loading...
-                </div>-->
+                <div class="d-flex align-items-center justify-content-center" id="loading">
+                  <span class="spinner-border" role="status"></span>
+                  <span class="px-2">Loading...</span>
+                </div>
             </div>
             `
       );
@@ -83,6 +81,39 @@ export function TWSanime() {
               (ML > 6 ? Math.pow(circleSize, ML / 5) : circleSize) +
             0.1
           );
+        };
+
+        const loadingObj = {
+          flag: false,
+          timeOut: null,
+        };
+        const loadingEffect = (flag = true) => {
+          const transitionDuration = 200;
+
+          if (loadingObj.flag) loadingObj.timeOut.stop();
+
+          let loadingGroup = selectorD3.select("#loading");
+          switch (flag) {
+            case true:
+              d3.timeout(() => {
+                loadingGroup.style("opacity", 1).style("display", "inline");
+              }, 0);
+              break;
+            case false:
+              loadingObj.timeOut = d3.timeout(() => {
+                loadingGroup
+                  .transition()
+                  .duration(transitionDuration)
+                  .style("opacity", 0);
+                d3.timeout(
+                  () => loadingGroup.style("display", "none"),
+                  transitionDuration
+                );
+                loadingObj.flag = false;
+              }, transitionDuration);
+              break;
+          }
+          loadingObj.flag = flag;
         };
 
         const dateText = selectorD3
@@ -1465,6 +1496,7 @@ export function TWSanime() {
             init();
           }
           update();
+          loadingEffect(false);
         }
         updateAnime();
 
@@ -1536,7 +1568,7 @@ export function TWSanime() {
                 eventIntroControl = setPanel.select("#eventIntro"),
                 displayControl = setPanel.selectAll("input[name='display']");
 
-              let pannel = () => {
+              let panel = () => {
                 playspeedControl.select("input").on("input", function () {
                   let playSpeed = parseInt(this.value);
                   let startDate = dateText.property("value");
@@ -1551,6 +1583,7 @@ export function TWSanime() {
                 });
 
                 progressControl.select("input").on("input", function () {
+                  loadingEffect(true);
                   // console.debug(this.value);
                   let startDate = timeScale
                     .invert(parseFloat(this.value) * 1000)
@@ -1859,7 +1892,7 @@ export function TWSanime() {
                 //   e.stopPropagation()
                 // );
               };
-              pannel();
+              panel();
               dropdownMenu();
             };
             toolbarEvent();

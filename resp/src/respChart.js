@@ -1111,7 +1111,7 @@ function RespChart() {
                 updateChart();
               });
 
-            let resParam = { z: false, p: false, f0: 1 };
+            let resParam = { z: [], p: false, f0: 1 };
             let hintBlock = chartOptions.select("#paramMenu #paramHintBlock");
 
             //====instType,z,p,f0 input
@@ -1228,8 +1228,14 @@ function RespChart() {
                   Object.assign(resParam, { [key]: value });
                   target.classList.remove("is-invalid");
                 } else {
-                  Object.assign(resParam, { [key]: false });
-                  target.classList.add("is-invalid");
+                  let insType = parseInt(instTypeSelect.property("value"));
+                  if (key === "z" && insType === 0) {
+                    Object.assign(resParam, { [key]: [] });
+                    target.classList.remove("is-invalid");
+                  } else {
+                    Object.assign(resParam, { [key]: false });
+                    target.classList.add("is-invalid");
+                  }
                 }
 
                 // console.debug("result=", { [key]: value }, resParam);

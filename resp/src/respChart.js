@@ -428,12 +428,13 @@ function RespChart() {
         const loadingGroup = d3.select(chartRootNode).selectAll("#loading");
 
         let chartElements = chartTypes.reduce((acc, type) => {
-          let xAxis = chartGroup.append("g").attr("class", "xAxis");
-          let yAxis = chartGroup.append("g").attr("class", "yAxis");
-          let focusGroup = chartGroup.append("g").attr("class", "focus");
+          let chartG = chartGroup.append("g").attr("class", type);
+          let xAxis = chartG.append("g").attr("class", "xAxis");
+          let yAxis = chartG.append("g").attr("class", "yAxis");
+          let focusGroup = chartG.append("g").attr("class", "focus");
           return {
             ...acc,
-            [type]: { xAxis, yAxis, focusGroup, x: null, y: null },
+            [type]: { chartG, xAxis, yAxis, focusGroup, x: null, y: null },
           };
         }, {});
         // console.debug(chartElements);
@@ -535,8 +536,8 @@ function RespChart() {
 
             let makeText = (type, i) => {
               // console.debug(type, i);
-              let { xAxis, yAxis } = chartElements[type];
-              chartGroup
+              let { xAxis, yAxis, chartG } = chartElements[type];
+              chartG
                 .append("g")
                 .attr("class", "title")
                 .append("text")
@@ -577,18 +578,25 @@ function RespChart() {
                 chartGroup
                   .append("g")
                   .attr("class", "nf")
-                  .append("text")
-                  .attr("fill", "currentColor")
-                  .attr("x", width - 5)
-                  .attr("y", 0)
-                  .attr("text-anchor", "end")
-                  .attr("alignment-baseline", "before-edge")
-                  .attr("font-size", nf_size)
-                  .text("A0 @ $fq Hz =")
-                  .append("tspan")
-                  .attr("alignment-baseline", "before-edge")
-                  .attr("x", width - 5)
-                  .attr("y", nf_size + 2);
+                  .call((g) => {
+                    g.append("text")
+                      .attr("fill", "currentColor")
+                      .attr("x", width - 5)
+                      .attr("y", 0)
+                      .attr("text-anchor", "end")
+                      .attr("alignment-baseline", "before-edge")
+                      .attr("font-size", nf_size)
+                      .text("A0 @ $fq Hz =");
+
+                    g.append("text")
+                      .attr("fill", "currentColor")
+                      .attr("x", width - 5)
+                      .attr("y", nf_size + 2)
+                      .attr("text-anchor", "end")
+                      .attr("alignment-baseline", "before-edge")
+                      .attr("font-size", nf_size)
+                      .text("9999");
+                  });
               else if (i === chartTypes.length - 1)
                 xAxis
                   .append("text")
@@ -608,7 +616,7 @@ function RespChart() {
             console.debug("newDataObj=", newDataObj);
 
             let makeChart = (type, i) => {
-              let { xAxis, yAxis, focusGroup } = chartElements[type];
+              let { chartG, xAxis, yAxis, focusGroup } = chartElements[type];
 
               let chart = newDataObj.chart[type],
                 options = chart.options,
@@ -626,7 +634,7 @@ function RespChart() {
               }
 
               let y = d3[options.logScale.y ? "scaleLog" : "scaleLinear"]()
-                .domain(d3.extent(newData.y))
+                .domain(i ? [-180, 180] : d3.extent(newData.y))
                 .range([
                   height * (i + 1) - margin.bottom,
                   height * i + margin.top,
@@ -638,38 +646,44 @@ function RespChart() {
               // console.debug(x.domain(), y.domain());
 
               let refreshText = () => {
-                if (i > 0) return;
                 // console.debug(newDataObj.data.nf.toExponential(6));
 
                 // update nf
-                let nf = newDataObj.data.nf
-                  .toExponential(6)
-                  .replace(/e([+\-]?\d+)/i, (match, exp) => {
-                    let expStr = "";
-                    if (parseInt(exp) !== 0)
-                      expStr = ` x 10${(parseInt(exp) + "").replace(
-                        /./g,
-                        (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c] || "⁻"
-                      )}`;
-                    return expStr;
+                if (i == 0) {
+                  let nf = newDataObj.data.nf
+                    .toExponential(6)
+                    .replace(/e([+\-]?\d+)/i, (match, exp) => {
+                      let expStr = "";
+                      if (parseInt(exp) !== 0)
+                        expStr = ` x 10${(parseInt(exp) + "").replace(
+                          /./g,
+                          (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c] || "⁻"
+                        )}`;
+                      return expStr;
+                    });
+
+                  chartGroup.selectAll(".nf>text").call((g) => {
+                    console.debug(g);
+                    g.each((a) => console.debug(a));
+                    // g.select("text").text(nf);
+                    // g.select("tspan").text(nf);
                   });
-                chartGroup.select(".nf tspan").text(nf);
+                  // chartGroup.select(".nf tspan").text(nf);
+                }
 
                 // update title
-                chartGroup.selectAll(".title>text").call((titleG) =>
-                  titleG.each(function (_, i) {
-                    let text = !newDataObj.option.title
-                      ? {
-                          ampChart: "Amplitude Response",
-                          phsChart: "Phase Response",
-                        }[type]
-                      : i === 0
-                      ? newDataObj.option.title
-                      : "";
+                chartG.select(".title>text").text(() => {
+                  let text = !newDataObj.option.title
+                    ? {
+                        ampChart: "Amplitude Response",
+                        phsChart: "Phase Response",
+                      }[type]
+                    : i === 0
+                    ? newDataObj.option.title
+                    : "";
 
-                    d3.select(this).text(text);
-                  })
-                );
+                  return text;
+                });
               };
               let updateAxis = () => {
                 function formatPower(x) {

@@ -650,23 +650,26 @@ function RespChart() {
 
                 // update nf
                 if (i == 0) {
-                  let nf = newDataObj.data.nf
-                    .toExponential(6)
-                    .replace(/e([+\-]?\d+)/i, (match, exp) => {
-                      let expStr = "";
-                      if (parseInt(exp) !== 0)
-                        expStr = ` x 10${(parseInt(exp) + "").replace(
-                          /./g,
-                          (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c] || "⁻"
-                        )}`;
-                      return expStr;
-                    });
+                  chartGroup.select(".nf").call((g) => {
+                    function toEXP(number) {
+                      return number
+                        .toExponential(6)
+                        .replace(/e([+\-]?\d+)/i, (match, exp) => {
+                          let expStr = "";
+                          if (parseInt(exp) !== 0)
+                            expStr = ` x 10${(parseInt(exp) + "").replace(
+                              /./g,
+                              (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c] || "⁻"
+                            )}`;
+                          return expStr;
+                        });
+                    }
 
-                  chartGroup.selectAll(".nf>text").call((g) => {
-                    console.debug(g);
-                    g.each((a) => console.debug(a));
-                    // g.select("text").text(nf);
-                    // g.select("tspan").text(nf);
+                    let fq = newDataObj.param.f0;
+                    nf = toEXP(newDataObj.data.nf);
+
+                    g.select("text:nth-child(1)").text(`A0 @ ${fq} Hz =`);
+                    g.select("text:nth-child(2)").text(nf);
                   });
                   // chartGroup.select(".nf tspan").text(nf);
                 }

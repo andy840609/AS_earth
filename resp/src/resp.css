@@ -125,6 +125,10 @@ span {
 }
 
 /* --------chartOptions-------- */
+#chartOptions .dropdown-menu * {
+  white-space: nowrap;
+}
+
 #chartOptions #paramMenu textarea {
   height: 150px;
   width: 400px;
@@ -135,6 +139,10 @@ span {
 #chartOptions #paramMenu i {
   white-space: pre-line;
   line-height: 1;
+}
+#chartOptions #paramMenu i > label {
+  font-family: var(--bs-body-font-family);
+  margin-left: 0.2rem;
 }
 
 .tooltip-inner {

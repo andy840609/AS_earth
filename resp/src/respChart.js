@@ -8,21 +8,27 @@ function RespChart() {
   };
   chart.param = (value) => {
     //default param=[z,p,f0]
-
     let z = [
-      [0, 0],
-      [0, 0],
-      [-1.08e2, 0],
-      [-1.61e2, 0],
+      [+0.0, +0.0],
+      [+0.0, +0.0],
+      [+0.0, +0.0],
+      [-3.163e1, +0.0],
+      [-1.6e2, +0.0],
+      [-3.5e2, +0.0],
+      [-3.177e3, +0.0],
     ];
     let p = [
-      [-1.815e-2, 1.799e-2],
-      [-1.815e-2, -1.799e-2],
-      [-1.73e2, 0],
-      [-1.96e2, 2.31e2],
-      [-1.96e2, -2.31e2],
-      [-7.32e2, 1.451e3],
-      [-7.32e2, -1.451e3],
+      [-3.6614e-2, +3.7059e-2],
+      [-3.6614e-2, -3.7059e-2],
+      [-3.255e1, +0.0],
+      [-1.42e2, +0.0],
+      [-3.64e2, +4.04e2],
+      [-3.64e2, -4.04e2],
+      [-1.26e3, +0.0],
+      [-4.9e3, +5.204e3],
+      [-4.9e3, -5.204e3],
+      [-7.1e3, +1.7e3],
+      [-7.1e3, -1.7e3],
     ];
 
     resParam = value && Object.keys(value).length ? value : { z, p, f0: 1 };
@@ -34,9 +40,13 @@ function RespChart() {
     const chartRootNode = document.querySelector(selector);
     const defaultSetting = {
       logScale: { frq: true, amp: true, phs: false },
+      insType: 1,
+      f0: 1,
     };
 
     function init() {
+      if (!resParam) chart.param();
+
       chartRootNode.insertAdjacentHTML(
         "beforeend",
         `
@@ -44,27 +54,19 @@ function RespChart() {
             <div class="row">
               <!-- ... param ... --> 
               <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
-                <label class="col-form-label text-center col-6" >PAZ</label>
                 <div class="btn-group btn-group-toggle col-6" role="group">
                     <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"  data-bs-auto-close="false" aria-expanded="false"> 
-                      select
+                    PAZ
                     </button>
                     <div class="dropdown-menu px-3" id="paramMenu">
                         <form class="form-group col-12">
-                          <div class="form-floating mb-2">
-                            <select class="form-select" id="instType">
-                              <option value="0">Displacement</option>
-                              <option value="1">Velocity</option>
-                              <option value="2">Acceleration</option>
-                            </select>
-                            <label for="instType">Instrument Type</label>
-                            <div class="invalid-feedback">
-                            Please fix Instrument Type.
-                            </div>
-                          </div>
+                        
+                          <!-- ... example ... --> 
+                          <i class="fa-regular fa-circle-question fa-lg d-flex flex-row mb-1" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Tooltip on right" data-bs-html="true"> 
+                            <label>Conventional PAZ file</label>
+                          </i>
 
-                          <i class="fa-regular fa-circle-question fa-lg mb-1" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Tooltip on right" data-bs-html="true"></i>
-
+                          <!-- ... ZEROS ... --> 
                           <div class="form-floating mb-3">
                             <textarea class="form-control" id="zerosInput" name="paramInput" data-key="z"></textarea>
                             <label for="zerosInput">ZEROS</label>
@@ -72,6 +74,7 @@ function RespChart() {
                             Please fix ZEROS.
                             </div>
                           </div>
+                          <!-- ... POLES ... --> 
                           <div class="form-floating mb-3">
                             <textarea class="form-control" id="polesInput" name="paramInput" data-key="p"></textarea>
                             <label for="polesInput">POLES</label>
@@ -79,16 +82,30 @@ function RespChart() {
                             Please fix POLES.
                             </div>
                           </div>
+                          <!-- ... Instrument Type... --> 
+                          <div class="form-floating mb-2">
+                            <select class="form-select" id="instType">
+                              <option value="0">Displacement</option>
+                              <option value="1" selected>Velocity</option>
+                              <option value="2">Acceleration</option>
+                            </select>
+                            <label for="instType">Output Instrument Type</label>
+                            <div class="invalid-feedback">
+                            Please fix Instrument Type.
+                            </div>
+                          </div>
+                          <!-- ... Normalization Frequency ... --> 
                           <div class="form-floating mb-3">
                             <input type="number" class="form-control" id="f0Input" name="paramInput" data-key="f0" value="1" min="0">
-                            <label for="f0Input">Normalization Frequency</label>
+                            <label for="f0Input">Normalization Frequency (Hz)</label>
                             <div class="invalid-feedback">
                             Please fix normalization frequency.
                             </div>
                           </div>
+                          <!-- ...Plot Title ... --> 
                           <div class="form-floating mb-3">
                             <input type="text" class="form-control" id="customTitle">
-                            <label for="customTitle">Custom Title</label>
+                            <label for="customTitle">Plot Title</label>
                           </div>
 
                         </form>
@@ -105,11 +122,10 @@ function RespChart() {
               </div>
 
               <!-- ... Axis ... -->    
-              <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">
-                  <label class="col-form-label text-center col-6" >Axis</label>
+              <div class="form-group col-lg-3 col-md-3 col-sm-6 d-flex flex-row align-items-start">        
                   <div class="btn-group btn-group-toggle col-6" role="group">
                       <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">            
-                        select
+                      Axis
                       </button>
                       <div class="dropdown-menu px-3" id="axisMenu">
                           <div class="form-group col-12">
@@ -169,24 +185,35 @@ function RespChart() {
       d3.select(chartRootNode)
         .select("#paramMenu i[data-bs-toggle='tooltip']")
         .call((icon) => {
-          // console.debug(node);
-          const text =
-            "example:<br>\
-            <br>\
-            ZEROS<br>\
-            0 0<br>\
-            0 0<br>\
-            -108 0<br>\
-            -161 0<br>\
-            <br>\
-            POLES<br>\
-            -0.01815 0.01799<br>\
-            -0.01815 -0.01799<br>\
-            -173 0<br>\
-            -196 231<br>\
-            -196 -231<br>\
-            -732 1451<br>\
-            -732 -1451<br>";
+          let complexToHTML = (paramObj) => {
+            const paramNames = {
+              z: "ZEROS",
+              p: "POLES",
+              f0: "Normalization Frequency",
+            };
+
+            let getText = (key) => {
+              return `${paramNames[key]}\r${
+                key !== "f0" ? paramObj[key].length : ""
+              }<br>${
+                key !== "f0"
+                  ? paramObj[key]
+                      .map((arr) =>
+                        arr
+                          .map((v) => (v < 0 ? "" : "+") + v.toExponential())
+                          .join("  ")
+                      )
+                      .join("<br>")
+                  : paramObj[key]
+              }<br>`;
+            };
+
+            return (
+              "example:<br><br>" +
+              ["z", "p"].map((key) => getText(key)).join("<br>")
+            );
+          };
+          let text = complexToHTML(resParam);
 
           new bootstrap.Tooltip(icon.node()).setContent({
             ".tooltip-inner": text,
@@ -199,7 +226,6 @@ function RespChart() {
       //       new bootstrap.Tooltip(this);
       //     })
       //   );
-      if (!resParam) chart.param();
     }
     function printChart() {
       chartRootNode
@@ -1128,7 +1154,12 @@ function RespChart() {
                 updateChart();
               });
 
-            let resParam = { z: [], p: false, f0: 1 };
+            let resParam = {
+              z: [],
+              p: false,
+              f0: defaultSetting.f0,
+              insType: defaultSetting.insType,
+            };
             let hintBlock = chartOptions.select("#paramMenu #paramHintBlock");
 
             //====instType,z,p,f0 input
@@ -1138,7 +1169,24 @@ function RespChart() {
                 p: "POLES",
                 f0: "Normalization Frequency",
               };
-              const paramKeys = Object.keys(resParam);
+              const paramKeys = Object.keys(paramNames);
+              // console.debug("instType=", instType);
+              // TAG:根據instType刪除指定數量的[0,0]
+              // if (!!instType) {
+              //   // 使用filter方法创建一个新数组，该数组不包含要删除的元素
+              //   arr = arr.filter((complex) => {
+              //     let isTarget =
+              //       Array.isArray(complex) &&
+              //       complex.reduce((a, b) => a + b) === 0;
+              //     if (isTarget && instType > 0) {
+              //       instType--;
+              //       return false; // 不包含要删除的元素
+              //     }
+              //     return true; // 包含不需要删除的元素
+              //   });
+              //   if (!!instType) arr = [false];
+              // }
+
               let validArr = paramKeys.map((key) =>
                   key === "f0"
                     ? !isNaN(parseInt(resParam[key]))
@@ -1186,7 +1234,7 @@ function RespChart() {
                   value = target.value;
                 // console.debug(key, value, target);
 
-                let getComplexArr = (str, instType = 0) => {
+                let getComplexArr = (str) => {
                   let arr = str
                     .trim()
                     .split("\n")
@@ -1204,22 +1252,6 @@ function RespChart() {
                         : false;
                     });
 
-                  // console.debug("instType=", instType);
-                  // 根據instType刪除指定數量的[0,0]
-                  if (!!instType) {
-                    // 使用filter方法创建一个新数组，该数组不包含要删除的元素
-                    arr = arr.filter((complex) => {
-                      let isTarget =
-                        Array.isArray(complex) &&
-                        complex.reduce((a, b) => a + b) === 0;
-                      if (isTarget && instType > 0) {
-                        instType--;
-                        return false; // 不包含要删除的元素
-                      }
-                      return true; // 包含不需要删除的元素
-                    });
-                    if (!!instType) arr = [false];
-                  }
                   return arr;
                 };
 
@@ -1230,8 +1262,7 @@ function RespChart() {
                     isValid = value.every((v) => !!v);
                     break;
                   case "z":
-                    let insType = parseInt(instTypeSelect.property("value"));
-                    value = getComplexArr(value, insType);
+                    value = getComplexArr(value);
                     isValid = value.every((v) => !!v);
                     break;
                   case "f0":
@@ -1245,8 +1276,7 @@ function RespChart() {
                   Object.assign(resParam, { [key]: value });
                   target.classList.remove("is-invalid");
                 } else {
-                  let insType = parseInt(instTypeSelect.property("value"));
-                  if (key === "z" && insType === 0) {
+                  if (key === "z" && resParam.insType === 0) {
                     Object.assign(resParam, { [key]: [] });
                     target.classList.remove("is-invalid");
                   } else {
@@ -1260,9 +1290,10 @@ function RespChart() {
                 submit_resParam();
               });
 
-            instTypeSelect.on("change", (e) =>
-              chartOptions.select("#paramMenu #zerosInput").dispatch("change")
-            );
+            instTypeSelect.on("change", (e) => {
+              Object.assign(resParam, { instType: parseInt(e.target.value) });
+              chartOptions.select("#paramMenu #zerosInput").dispatch("change");
+            });
 
             //====chart title
             chartOptions

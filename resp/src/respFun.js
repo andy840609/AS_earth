@@ -16,12 +16,28 @@
 // ];
 // const f0 = 1; // Normalization frequency (Hz)
 
-function getResData({ z, p, f0 = 1 }) {
+function getResData({ z, p, f0 = 1, instType = 1 }) {
+  // TAG:根據instType刪除指定數量的[0,0]
+  if (!!instType) {
+    // 使用filter方法创建一个新数组，该数组不包含要删除的元素
+    z = z.filter((complex) => {
+      let isTarget =
+        Array.isArray(complex) && complex.reduce((a, b) => a + b) === 0;
+      if (isTarget && instType > 0) {
+        instType--;
+        return false; // 要删除的元素
+      }
+      return true; // 不需要删除的元素
+    });
+    // if (!!instType) z = [false];
+  }
+
   // Calculate the number of zeros and poles
   const nz = z.length;
   const np = p.length;
   z = z.map((v) => new Complex(...v));
   p = p.map((v) => new Complex(...v));
+  console.log("instType = ", instType);
   console.log("param = ", z, p);
   console.log("NZ = ", nz);
   console.log("NP = ", np);

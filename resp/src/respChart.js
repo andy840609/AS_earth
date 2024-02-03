@@ -31,7 +31,8 @@ function RespChart() {
       [-7.1e3, -1.7e3],
     ];
 
-    resParam = value && Object.keys(value).length ? value : { z, p, f0: 1 };
+    resParam =
+      value && Object.keys(value).length ? value : { z, p, f0: 1, instType: 1 };
     // console.log("resParam= ", resParam);
     return chart;
   };
@@ -40,7 +41,7 @@ function RespChart() {
     const chartRootNode = document.querySelector(selector);
     const defaultSetting = {
       logScale: { frq: true, amp: true, phs: false },
-      insType: 1,
+      instType: 1,
       f0: 1,
     };
 
@@ -192,7 +193,7 @@ function RespChart() {
               f0: "Normalization Frequency",
             };
 
-            let getText = (key) => {
+            let getHTML = (key) => {
               return `${paramNames[key]}\r${
                 key !== "f0" ? paramObj[key].length : ""
               }<br>${
@@ -210,7 +211,7 @@ function RespChart() {
 
             return (
               "example:<br><br>" +
-              ["z", "p"].map((key) => getText(key)).join("<br>")
+              ["z", "p"].map((key) => getHTML(key)).join("<br>")
             );
           };
           let text = complexToHTML(resParam);
@@ -1154,47 +1155,27 @@ function RespChart() {
                 updateChart();
               });
 
+            //====instType,z,p,f0 input
+            const paramNames = {
+              z: "ZEROS",
+              p: "POLES",
+              f0: "Normalization Frequency",
+            };
+            const paramKeys = Object.keys(paramNames);
             let resParam = {
-              z: [],
+              z: false,
               p: false,
               f0: defaultSetting.f0,
-              insType: defaultSetting.insType,
+              instType: defaultSetting.instType,
             };
+
             let hintBlock = chartOptions.select("#paramMenu #paramHintBlock");
-
-            //====instType,z,p,f0 input
+            let paramInputArr = paramKeys.map((key) =>
+              chartOptions.select(`#paramMenu [data-key='${key}']`)
+            );
+            // console.debug(paramInputArr);
             let submit_resParam = () => {
-              const paramNames = {
-                z: "ZEROS",
-                p: "POLES",
-                f0: "Normalization Frequency",
-              };
-              const paramKeys = Object.keys(paramNames);
-              // console.debug("instType=", instType);
-              // TAG:根據instType刪除指定數量的[0,0]
-              // if (!!instType) {
-              //   // 使用filter方法创建一个新数组，该数组不包含要删除的元素
-              //   arr = arr.filter((complex) => {
-              //     let isTarget =
-              //       Array.isArray(complex) &&
-              //       complex.reduce((a, b) => a + b) === 0;
-              //     if (isTarget && instType > 0) {
-              //       instType--;
-              //       return false; // 不包含要删除的元素
-              //     }
-              //     return true; // 包含不需要删除的元素
-              //   });
-              //   if (!!instType) arr = [false];
-              // }
-
-              let validArr = paramKeys.map((key) =>
-                  key === "f0"
-                    ? !isNaN(parseInt(resParam[key]))
-                    : !!resParam[key]
-                ),
-                allValid = validArr.every((bool) => bool);
-
-              let getText = (key) => {
+              let getHintText = (key) => {
                 let text = `${paramNames[key]}\r${
                   key !== "f0" ? resParam[key].length : ""
                 }\n${
@@ -1208,6 +1189,33 @@ function RespChart() {
                 return text;
               };
 
+              let validArr = paramKeys.map((key, i) => {
+                  // console.debug(resParam[key]);
+                  let isValid = false;
+                  switch (key) {
+                    case "f0":
+                      isValid = !isNaN(parseInt(resParam[key]));
+                      break;
+                    case "p":
+                      isValid = !!resParam[key];
+                      break;
+                    case "z":
+                      // TAG:根據instType判斷有指定數量的[0,0]
+                      isValid =
+                        !!resParam[key] &&
+                        resParam[key].filter(
+                          (complex) =>
+                            Array.isArray(complex) &&
+                            complex.reduce((a, b) => a + b) === 0
+                        ).length >= resParam.instType;
+
+                      break;
+                  }
+                  paramInputArr[i].classed("is-invalid", !isValid);
+                  return isValid;
+                }),
+                allValid = validArr.every((bool) => bool);
+
               let text = "";
               if (allValid) {
                 newDataObj = getNewData({
@@ -1216,7 +1224,7 @@ function RespChart() {
                 updateChart();
 
                 // Math.sign(arr[1] === 1 ? "+" : "")
-                text = paramKeys.map((key) => getText(key)).join("\n");
+                text = paramKeys.map((key) => getHintText(key)).join("\n");
               } else {
                 text = `Please check ${paramKeys
                   .filter((key, i) => !validArr[i])
@@ -1225,7 +1233,7 @@ function RespChart() {
               }
               hintBlock.text(text);
             };
-            let instTypeSelect = chartOptions.select("#paramMenu #instType");
+
             chartOptions
               .selectAll("#paramMenu [name='paramInput']")
               .on("change", (e) => {
@@ -1257,40 +1265,27 @@ function RespChart() {
 
                 let isValid = false;
                 switch (key) {
+                  case "z":
                   case "p":
                     value = getComplexArr(value);
                     isValid = value.every((v) => !!v);
-                    break;
-                  case "z":
-                    value = getComplexArr(value);
-                    isValid = value.every((v) => !!v);
+                    let z_can_be_empty = key === "z" && resParam.instType === 0;
+                    Object.assign(resParam, {
+                      [key]: isValid ? value : z_can_be_empty ? [] : false,
+                    });
                     break;
                   case "f0":
                     value = parseFloat(value);
                     isValid = !isNaN(value);
+                    Object.assign(resParam, { [key]: isValid ? value : false });
                     break;
                 }
 
-                // if (key === "z") console.debug("z=", value);
-                if (isValid) {
-                  Object.assign(resParam, { [key]: value });
-                  target.classList.remove("is-invalid");
-                } else {
-                  if (key === "z" && resParam.insType === 0) {
-                    Object.assign(resParam, { [key]: [] });
-                    target.classList.remove("is-invalid");
-                  } else {
-                    Object.assign(resParam, { [key]: false });
-                    target.classList.add("is-invalid");
-                  }
-                }
-
                 // console.debug("result=", { [key]: value }, resParam);
-
                 submit_resParam();
               });
 
-            instTypeSelect.on("change", (e) => {
+            chartOptions.select("#paramMenu #instType").on("change", (e) => {
               Object.assign(resParam, { instType: parseInt(e.target.value) });
               chartOptions.select("#paramMenu #zerosInput").dispatch("change");
             });

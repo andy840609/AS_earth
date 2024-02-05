@@ -194,9 +194,8 @@ function RespChart() {
             };
 
             let getHTML = (key) => {
-              return `${paramNames[key]}\r${
-                key !== "f0" ? paramObj[key].length : ""
-              }<br>${
+              return `${paramNames[key]}<br>\
+              ${
                 key !== "f0"
                   ? paramObj[key]
                       .map((arr) =>
@@ -210,7 +209,7 @@ function RespChart() {
             };
 
             return (
-              "example:<br><br>" +
+              "example :<br><br>" +
               ["z", "p"].map((key) => getHTML(key)).join("<br>")
             );
           };
@@ -415,8 +414,9 @@ function RespChart() {
           let context = CanvasObjArr[1];
           let imageWidth = canvas.width;
           let imageHeight = canvas.height / svgArr.length;
-
+          // console.debug(CanvasObjArr);
           svgArr.forEach((svgNode, index) => {
+            // console.debug(svgNode, index);
             let svgUrl = getSvgUrl(svgNode);
             let image = new Image();
             image.src = svgUrl;
@@ -431,11 +431,10 @@ function RespChart() {
 
               //done drawing and output
               if (index == svgArr.length - 1) {
-                let imgUrl;
                 if (option == "bigimg") {
                   show(imageWidth, imageHeight);
                 } else {
-                  imgUrl = canvas.toDataURL("image/" + option);
+                  let imgUrl = canvas.toDataURL("image/" + option);
                   download(imgUrl, fileName + "." + option);
                 }
               }
@@ -448,7 +447,7 @@ function RespChart() {
         const chartTypes = ["ampChart", "phsChart"];
         const width = 500,
           height = 300;
-        const margin = { top: 30, right: 30, bottom: 35, left: 45 };
+        const margin = { top: 30, right: 30, bottom: 50, left: 45 };
         const svg = d3.create("svg").attr("viewBox", [0, 0, width, height * 2]);
         const chartGroup = svg.append("g").attr("class", "chartGroup");
         const legendGroup = svg.append("g").attr("class", "legendGroup");
@@ -559,7 +558,9 @@ function RespChart() {
           function init() {
             const title_size = 21,
               axis_name_size = 13,
-              nf_size = 10;
+              nf_size = 10,
+              logo_w = 50,
+              logo_h = 27.5;
 
             let makeText = (type, i) => {
               // console.debug(type, i);
@@ -601,30 +602,7 @@ function RespChart() {
                   }[type]
                 );
 
-              if (i === 0)
-                chartGroup
-                  .append("g")
-                  .attr("class", "nf")
-                  .call((g) => {
-                    g.append("text")
-                      .attr("fill", "currentColor")
-                      .attr("x", width - 5)
-                      .attr("y", 0)
-                      .attr("text-anchor", "end")
-                      .attr("alignment-baseline", "before-edge")
-                      .attr("font-size", nf_size)
-                      .text("A0 @ $fq Hz =");
-
-                    g.append("text")
-                      .attr("fill", "currentColor")
-                      .attr("x", width - 5)
-                      .attr("y", nf_size + 2)
-                      .attr("text-anchor", "end")
-                      .attr("alignment-baseline", "before-edge")
-                      .attr("font-size", nf_size)
-                      .text("9999");
-                  });
-              else if (i === chartTypes.length - 1)
+              if (i === chartTypes.length - 1) {
                 xAxis
                   .append("text")
                   .attr("class", "axis_name")
@@ -635,7 +613,61 @@ function RespChart() {
                   .attr("y", margin.top)
                   .attr("font-size", axis_name_size)
                   .text("Frequency (Hz)");
+              }
             };
+
+            chartGroup
+              .append("g")
+              .attr("class", "nf")
+              .call((g) => {
+                //== nf label
+                g.append("text")
+                  .attr("fill", "currentColor")
+                  .attr("x", width - 5)
+                  .attr("y", 0)
+                  .attr("text-anchor", "end")
+                  .attr("alignment-baseline", "before-edge")
+                  .attr("font-size", nf_size);
+                // .text("A0 @ $fq Hz =");
+
+                g.append("text")
+                  .attr("fill", "currentColor")
+                  .attr("x", width - 5)
+                  .attr("y", nf_size + 2)
+                  .attr("text-anchor", "end")
+                  .attr("alignment-baseline", "before-edge")
+                  .attr("font-size", nf_size);
+                // .text("9999");
+              })
+              .call(async (g) => {
+                let getLogo = () => {
+                  return fetch("/img/TECDC_logo_sml.jpg")
+                    .then((res) => res.blob())
+                    .then((blob) => {
+                      return new Promise((resolve) => {
+                        let reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.readAsDataURL(blob);
+                      });
+                    });
+                };
+                //== logo
+                g.append("text")
+                  .attr("fill", "currentColor")
+                  .attr("x", width - logo_w)
+                  .attr("y", height * 2 - 5)
+                  .attr("text-anchor", "end")
+                  .attr("alignment-baseline", "after-edge")
+                  .attr("font-size", nf_size)
+                  .text("Powered by TECDC");
+
+                g.append("svg:image")
+                  .attr("x", width - logo_w)
+                  .attr("y", height * 2 - logo_h)
+                  .attr("width", logo_w)
+                  .attr("height", logo_h)
+                  .attr("xlink:href", await getLogo());
+              });
 
             chartTypes.forEach((type, i) => makeText(type, i));
           }

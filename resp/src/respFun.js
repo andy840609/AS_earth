@@ -29,7 +29,6 @@ function getResData({ z, p, f0 = 1, instType = 1 }) {
       }
       return true; // 不需要删除的元素
     });
-    // if (!!instType) z = [false];
   }
 
   // Calculate the number of zeros and poles

@@ -114,7 +114,7 @@ function RespChart() {
                         <div class="form-group col-12">
                           <label id="paramHintLabel" for="paramHintBlock">Hint</label>
                           <div id="paramHintBlock" class="form-text">\
-                          Please enter param.
+                          Please enter POLES & ZEROS.
                           </div>
                         </div>
 

@@ -474,8 +474,8 @@ export function TWSanime() {
                       break;
                     case "language":
                       let language = [
-                        { str: "繁體中文", lang: "zh-TW" },
-                        { str: "English", lang: "en-US" },
+                        { str: "繁體中文", lang: "tw" },
+                        { str: "English", lang: "en" },
                       ];
                       html = `
                         <select class="form-control" id="language">
@@ -804,7 +804,7 @@ export function TWSanime() {
                   .init(
                     {
                       // debug: true,
-                      fallbackLng: "en-US",
+                      fallbackLng: "en",
                       load: "currentOnly",
                       // interpolation: {
                       //   prefix: "__",

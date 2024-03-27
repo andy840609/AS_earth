@@ -333,7 +333,7 @@ export function TWSanime() {
                 let urlHtml = specialEvent[key].url
                   ? `
                 <p class='eventIntroUrl'>
-                  <a href='${specialEvent[key].url}' target='_blank'>TEC地震教材</a>
+                  <a href='${specialEvent[key].url}' target='_blank'  data-i18n="TEC_pdf"></a>
                 </p>`
                   : "";
 
@@ -345,8 +345,8 @@ export function TWSanime() {
                 background-repeat: no-repeat;
                 background-attachment: fixed;
                 background-size: cover;">
-                  <p class="eventIntroTitle">${specialEvent[key].title}</p>
-                  <p class="eventIntroStr">${specialEvent[key].str}</p>
+                  <p class="eventIntroTitle" data-i18n="eventDetail.${specialEvent[key].str}.title"></p>
+                  <p class="eventIntroStr" data-i18n="eventDetail.${specialEvent[key].str}.str"></p>
                   ${urlHtml}
                 </div>
                 `;
@@ -357,6 +357,7 @@ export function TWSanime() {
                   iconSize: [width, height], // 設置圖片尺寸
                   iconAnchor: [width / 2, height / 2],
                 });
+                // console.debug(icon);
                 let marker = L.marker([0, 0], { icon });
                 let outerLine = L.polyline([0, 0], {
                   className: "eventIntroLine_outer",
@@ -364,7 +365,7 @@ export function TWSanime() {
                 let innerLine = L.polyline([0, 0], {
                   className: "eventIntroLine_inter",
                 });
-
+                key = new Date(key).getTime();
                 eventIntroObj.displayObj[key] = {
                   marker,
                   outerLine,
@@ -690,7 +691,7 @@ export function TWSanime() {
 
                 let setPanelHtml = `
                               <div id="setPanel" class="popup">
-                                  <h1 data-i18n="setting"></h1>
+                                  <h1 data-i18n="setting"></h1>                                  
                                   <a class="close" href="#">&times;</a>
                                   <div class="mx-1">
                                       ${sliderHtml}
@@ -796,6 +797,7 @@ export function TWSanime() {
                   localize(".controller");
                   localize(".legendGroup");
                 };
+
                 // use plugins and options as needed, for options, detail see
                 // http://i18next.com/docs/
                 i18next
@@ -1446,6 +1448,11 @@ export function TWSanime() {
                           marker.getElement(),
                           "eventIntroDiv_show"
                         );
+                        controller.dispatch("updateLocales", {
+                          detail: {
+                            target: ".eventIntroDiv_show",
+                          },
+                        });
 
                         let callback = () => {
                           // console.debug("callback call");

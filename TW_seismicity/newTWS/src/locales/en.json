@@ -35,5 +35,28 @@
   "sec": "s",
   "none": "none",
   "living": "living",
-  "pulsate": "pulsate"
+  "pulsate": "pulsate",
+  "eventDetail": {
+    "19990921": {
+      "title": "921 Earthquake",
+      "str": "Also known as the 921 Earthquake, it occurred at 1:47:15.9 AM on September 21, 1999. The epicenter was at a depth of 8 kilometers with a Richter magnitude of 7.3. It was a reverse fault earthquake in the central mountainous area of Taiwan, lasting approximately 102 seconds. The shaking was felt throughout the island. The epicenter was located in Jiji Township, Nantou County."
+    },
+    "20100304": {
+      "title": "Jiaxian Earthquake",
+      "str": "The Jiaxian Earthquake occurred at 8:18 AM local time on March 4, 2010. The epicenter was at a depth of 22.6 kilometers with a Richter magnitude of 6.4. It occurred at the border between Taoyuan Township and Maolin Township in Kaohsiung County, specifically 17.1 kilometers southeast of the Jiaxian Seismic Station in Kaohsiung."
+    },
+    "20160206": {
+      "title": "Meinong Earthquake",
+      "str": "A strong earthquake in Meinong, Kaohsiung, caused a nearly 200-meter-long fissure with a maximum height difference of about 3 meters on the 8th hole of Section B of the Nanbao Golf Course in Dainei District, Tainan City."
+    },
+    "20180206": {
+      "title": "Hualien Earthquake",
+      "str": "At 11:50 PM on February 6, 2018, with a depth of 6.3 kilometers and a Richter magnitude of 6.2, an earthquake struck near the coast of Hualien County, Taiwan. Prior to and after this earthquake, there were several earthquakes with Richter magnitudes above 5."
+    },
+    "20220918": {
+      "title": "Chihshang Earthquake",
+      "str": "On the evening of September 17, 2022, at 9:41:19 PM, a magnitude 6.4 earthquake struck Guanshan Township, Taitung County. The shaking was felt across Taiwan. With a depth of only 7.3 kilometers, it was an extremely shallow earthquake."
+    }
+  },
+  "TEC_pdf": "TEC information"
 }

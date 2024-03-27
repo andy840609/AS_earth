@@ -6,6 +6,8 @@
   "audio": "Audio",
   "language": "Language",
   "eventIntro": "Special events",
+  "loading": "Loading...",
+  "replayHint": "Replay after {{countdown}} seconds",
   "toolbar": {
     "setting": "Setting ( {{hotkey}} )",
     "lockView": {

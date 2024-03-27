@@ -58,7 +58,7 @@ export function TWSanime() {
 
                 <div class="d-flex align-items-center justify-content-center" id="loading">
                   <span class="spinner-border" role="status"></span>
-                  <span class="px-2">Loading...</span>
+                  <span class="px-2 loadingText" data-i18n="loading">Loading...</span>
                 </div>
             </div>
             `
@@ -86,8 +86,11 @@ export function TWSanime() {
         const loadingObj = {
           flag: false,
           timeOut: null,
+          isInfo: false, //重播提示框
         };
-        const loadingEffect = (flag = true) => {
+        // TAG:提示框
+        const loadingEffect = (flag = true, infoObj = null) => {
+          if (loadingObj.isInfo && !infoObj) return;
           const transitionDuration = 200;
 
           if (loadingObj.flag) loadingObj.timeOut.stop();
@@ -95,6 +98,25 @@ export function TWSanime() {
           let loadingGroup = selectorD3.select("#loading");
           switch (flag) {
             case true:
+              // 更新提示框文字
+              let loadingText = loadingGroup.select(".loadingText");
+              loadingText.attr("data-i18n", infoObj ? infoObj.text : "loading");
+
+              if (infoObj) {
+                loadingObj.timeOut.stop();
+                // console.debug(infoObj.countdown);
+                loadingText.attr(
+                  "i18n-options",
+                  `{countdown: ${infoObj.countdown}}`
+                );
+              }
+
+              controller.dispatch("updateLocales", {
+                detail: {
+                  target: "#loading .loadingText",
+                },
+              });
+
               d3.timeout(() => {
                 loadingGroup.style("opacity", 1).style("display", "inline");
               }, 0);
@@ -113,7 +135,8 @@ export function TWSanime() {
               }, transitionDuration);
               break;
           }
-          loadingObj.flag = flag;
+
+          Object.assign(loadingObj, { flag, isInfo: !!infoObj });
         };
 
         const dateText = selectorD3
@@ -138,6 +161,8 @@ export function TWSanime() {
           startDate: dateDomain[0], //921: 937849605850 |  dateDomain[0]
           endDate: dateDomain[1],
           play: true, //==預設播放動畫
+          replay: true, //==預設重播開關
+          replayDuration: 5000, //==預設重播計時
           lockView: true, //==預設鎖定地圖
           eventIntro: true, //==預設特殊事件顯示
           audio: false, //==預設聲音關閉(chrome66後不能自動播放)
@@ -756,10 +781,24 @@ export function TWSanime() {
                         });
                       };
                       break;
+                    //TAG:play
                     case "play":
                       value = defaultSetting.play;
                       icon = value ? "pause" : "play";
-                      onClick = function () {
+                      onClick = function (e) {
+                        console.debug(e);
+                        // 動畫結束按播放就會重播
+                        let isAnimEnd =
+                          timeScale(dateText.property("value")) ===
+                          timeScale.range()[1];
+
+                        if (isAnimEnd && e.isTrusted) {
+                          animDataObj = getNewData({
+                            startDate: timeScale.domain()[0],
+                          });
+                          updateAnime("dragProgress");
+                        }
+
                         this.value = !this.value;
                         leafletMap.fire("animCtrl", { play: this.value });
 
@@ -1257,6 +1296,27 @@ export function TWSanime() {
                       let date = i(t).getTime();
                       timeTunnel(date);
                     };
+                  })
+                  //TAG:播放結束處理
+                  .on("end", () => {
+                    let countdown = defaultSetting.replayDuration / 1000;
+                    let callback = () => {
+                      loadingEffect(true, {
+                        text: "replayHint",
+                        countdown: countdown--,
+                      });
+                      if (countdown <= 0) {
+                        timer.stop();
+                        loadingEffect(false, {
+                          text: "",
+                        });
+                      }
+                    };
+                    callback();
+                    let timer = d3.interval(callback, 1000);
+
+                    // 圖示變成play
+                    controller.select(`#playBtn`).dispatch("click");
                   });
               else timeTunnel(newDateDomain[0]);
             };
@@ -1294,6 +1354,7 @@ export function TWSanime() {
               //==ML大於6.5加鼓聲
               if (ML >= 6.5) getAudioPlayer("drum1").play();
             };
+            // TAG:播放流程控制
             switch (action) {
               case "play":
                 let pauseDate = dateText.property("value");

@@ -475,7 +475,7 @@ datalist {
   --loading-height: 60px;
 
   position: absolute;
-  width: var(--loading-width);
+  /* width: var(--loading-width); */
   height: var(--loading-height);
   left: calc(50% - var(--loading-width) * 0.5);
   top: calc(50% - var(--loading-height));
@@ -487,4 +487,5 @@ datalist {
   box-shadow: 2px 2px 10px;
   border-radius: 5px;
   pointer-events: none;
+  white-space: nowrap;
 }

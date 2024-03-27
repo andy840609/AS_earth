@@ -6,6 +6,8 @@
   "audio": "音效",
   "language": "語言",
   "eventIntro": "大地震說明",
+  "loading": "資料讀取中...",
+  "replayHint": "{{countdown}} 秒後自動重播",
   "toolbar": {
     "setting": "設定 ( {{hotkey}} )",
     "lockView": {

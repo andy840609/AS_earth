@@ -90,6 +90,7 @@ export function TWSanime() {
         };
         // TAG:提示框
         const loadingEffect = (flag = true, infoObj = null) => {
+          // console.debug("loadingEffect", flag, infoObj);
           if (loadingObj.isInfo && !infoObj) return;
           const transitionDuration = 200;
 
@@ -136,7 +137,7 @@ export function TWSanime() {
               break;
           }
 
-          Object.assign(loadingObj, { flag, isInfo: !!infoObj });
+          Object.assign(loadingObj, { flag, isInfo: !!infoObj?.text });
         };
 
         const dateText = selectorD3
@@ -161,7 +162,7 @@ export function TWSanime() {
           startDate: dateDomain[0], //921: 937849605850 |  dateDomain[0]
           endDate: dateDomain[1],
           play: true, //==預設播放動畫
-          replay: true, //==預設重播開關
+          autoReplay: true, //==預設重播開關
           replayDuration: 5000, //==預設重播計時
           lockView: true, //==預設鎖定地圖
           eventIntro: true, //==預設特殊事件顯示
@@ -245,6 +246,7 @@ export function TWSanime() {
             audio = getValue("audio"),
             volume = getValue("volume"),
             eventIntro = getValue("eventIntro"),
+            autoReplay = getValue("autoReplay"),
             circleSize = getValue("circleSize"),
             displayStyle = getValue("displayStyle");
 
@@ -259,6 +261,7 @@ export function TWSanime() {
             audio,
             volume,
             eventIntro,
+            autoReplay,
             circleSize,
             displayStyle,
             newData: getData(option.filterData),
@@ -399,6 +402,7 @@ export function TWSanime() {
                 eventIntroObj.eventList.push(parseInt(key));
               });
             };
+            // TAG:初始化功能按鈕和語言
             let initToolBar = () => {
               let initHTML = () => {
                 function getTooltipText(string, hotkey = undefined) {
@@ -632,8 +636,21 @@ export function TWSanime() {
                         <span class="tooltiptext tooltip-top"
                         data-i18n="switch" i18n-options="{ hotkey: 'E' }">
                         </span>
-                        <input id="eventIntro" class="mt-2 form-check-input" type="checkbox" role="switch" checked="${defaultSetting.eventIntro}">
+                        <input id="eventIntro" class="mt-2 form-check-input" type="checkbox" role="switch" ${
+                          defaultSetting.eventIntro ? "checked" : ""
+                        }>
                       </div>`;
+                      break;
+                    case "autoReplay":
+                      html = `
+                        <div class="form-switch toolButton">
+                          <span class="tooltiptext tooltip-top"
+                          data-i18n="switch" i18n-options="{ hotkey: 'R' }">
+                          </span>
+                          <input id="autoReplay" class="mt-2 form-check-input" type="checkbox" role="switch" ${
+                            defaultSetting.autoReplay ? "checked" : ""
+                          }>
+                        </div>`;
                       break;
                   }
                   return html;
@@ -647,7 +664,7 @@ export function TWSanime() {
 
                 const panelControl = {
                   slider: ["progress", "playspeed", "audio"],
-                  select: ["language", "eventIntro"],
+                  select: ["language", "eventIntro", "autoReplay"],
                   checkbox: ["mL_legend", "depth_legend", "grid_line"],
                   dropdown: ["event_config"],
                 };
@@ -786,13 +803,14 @@ export function TWSanime() {
                       value = defaultSetting.play;
                       icon = value ? "pause" : "play";
                       onClick = function (e) {
-                        console.debug(e);
+                        // console.debug(e);
                         // 動畫結束按播放就會重播
                         let isAnimEnd =
                           timeScale(dateText.property("value")) ===
                           timeScale.range()[1];
 
-                        if (isAnimEnd && e.isTrusted) {
+                        // 手動重播 || 自動重播觸發
+                        if ((isAnimEnd && e.isTrusted) || e.detail?.replay) {
                           animDataObj = getNewData({
                             startDate: timeScale.domain()[0],
                           });
@@ -1299,24 +1317,38 @@ export function TWSanime() {
                   })
                   //TAG:播放結束處理
                   .on("end", () => {
-                    let countdown = defaultSetting.replayDuration / 1000;
-                    let callback = () => {
-                      loadingEffect(true, {
-                        text: "replayHint",
-                        countdown: countdown--,
-                      });
-                      if (countdown <= 0) {
-                        timer.stop();
-                        loadingEffect(false, {
-                          text: "",
-                        });
-                      }
-                    };
-                    callback();
-                    let timer = d3.interval(callback, 1000);
+                    let playBtn = controller.select(`#playBtn`);
+                    let autoReplayFlag = controller
+                      .select("#autoReplay")
+                      .property("checked");
+
+                    // 開啟自動重播
+                    if (autoReplayFlag) {
+                      let countdown = defaultSetting.replayDuration / 1000;
+                      let timer;
+                      let callback = () => {
+                        let isPlaying = playBtn.property("value");
+                        if (!isPlaying)
+                          loadingEffect(true, {
+                            text: "replayHint",
+                            countdown: countdown--,
+                          });
+
+                        if (timer && (countdown <= 0 || isPlaying)) {
+                          timer.stop();
+                          loadingEffect(false, {}); //給空物件來取消重播提示
+                          if (!isPlaying)
+                            playBtn.dispatch("click", {
+                              detail: { replay: true },
+                            });
+                        }
+                      };
+                      callback();
+                      timer = d3.interval(callback, 1000);
+                    }
 
                     // 圖示變成play
-                    controller.select(`#playBtn`).dispatch("click");
+                    playBtn.dispatch("click");
                   });
               else timeTunnel(newDateDomain[0]);
             };
@@ -1575,7 +1607,8 @@ export function TWSanime() {
             lockViewBtn = toolbar.select("#lockViewBtn"),
             playBtn = toolbar.select("#playBtn"),
             audioCkb = toolbar.select("#audio input[type='checkbox']"),
-            eventCkb = toolbar.select("#eventIntro");
+            eventCkb = toolbar.select("#eventIntro"),
+            autoReplayCkb = toolbar.select("#autoReplay");
 
           let animeControllEvent = () => {
             let toolbarEvent = () => {
@@ -1634,6 +1667,7 @@ export function TWSanime() {
                 audioControl = setPanel.select("#audio"),
                 languageControl = setPanel.select("#language"),
                 eventIntroControl = setPanel.select("#eventIntro"),
+                autoReplayControl = setPanel.select("#autoReplay"),
                 displayControl = setPanel.selectAll("input[name='display']");
 
               let panel = () => {
@@ -1709,6 +1743,12 @@ export function TWSanime() {
                 eventIntroControl.on("change", function () {
                   let check = this.checked;
                   animDataObj = getNewData({ eventIntro: check });
+                  // console.debug(check);
+                });
+
+                autoReplayControl.on("change", function () {
+                  let check = this.checked;
+                  animDataObj = getNewData({ autoReplay: check });
                   // console.debug(check);
                 });
               };
@@ -1991,6 +2031,11 @@ export function TWSanime() {
                 case "KeyE":
                   eventCkb
                     .property("checked", !animDataObj.eventIntro)
+                    .dispatch("change");
+                  break;
+                case "KeyR":
+                  autoReplayCkb
+                    .property("checked", !animDataObj.autoReplay)
                     .dispatch("change");
                   break;
               }

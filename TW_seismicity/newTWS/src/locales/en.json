@@ -6,6 +6,7 @@
   "audio": "Audio",
   "language": "Language",
   "eventIntro": "Special events",
+  "autoReplay": "Auto replay",
   "loading": "Loading...",
   "replayHint": "Replay after {{countdown}} seconds",
   "toolbar": {

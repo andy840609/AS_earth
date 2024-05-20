@@ -1230,11 +1230,11 @@ export function waveXdist() {
                   .call((g) => {
                     if (xAxisScale == "band")
                       g.selectAll("g.xAxis g.tick text")
-                        .attr("x", 9)
+                        .attr("x", -9)
                         .attr("y", 0)
                         .attr("dy", ".35em")
-                        .attr("text-anchor", "start")
-                        .attr("transform", "rotate(90)");
+                        .attr("text-anchor", "end")
+                        .attr("transform", "rotate(-90)");
                   });
 
               let makeYAxis = (g) =>
@@ -1379,7 +1379,7 @@ export function waveXdist() {
                       g.selectAll("text")
                         .data([d])
                         .join("text")
-                        .attr("text-anchor", "start")
+                        .attr("text-anchor", "end")
                         .attr("alignment-baseline", "after-edge")
                         .attr("fill", color)
                         .attr("fill-opacity", opacity)
@@ -1388,7 +1388,7 @@ export function waveXdist() {
                           "transform",
                           `translate(${path_x(d.data[d.data.length - 1])},${
                             margin.top
-                          }) rotate(90)`
+                          }) rotate(-90)`
                         )
                         .text(
                           {

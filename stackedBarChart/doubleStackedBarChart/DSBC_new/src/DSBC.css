@@ -1,13 +1,13 @@
-.toggle-menu {
+#DSBC-chart .toggle-menu {
   position: relative;
   display: inline-block;
 }
 
-.toggle-menu ul.active {
+#DSBC-chart .toggle-menu ul.active {
   display: none;
 }
 
-.toggle-menu ul {
+#DSBC-chart .toggle-menu ul {
   width: 200px;
   height: 200px;
   position: absolute;
@@ -20,28 +20,28 @@
   background-color: #fff;
 }
 
-.toggle-menu li {
+#DSBC-chart .toggle-menu li {
   float: none;
   display: block;
 }
 
-.toggle-menu li a {
+#DSBC-chart .toggle-menu li a {
   text-decoration: none;
   color: #777;
   text-align: center;
   font-size: 16px;
 }
 
-.toggle-menu li a:hover {
+#DSBC-chart .toggle-menu li a:hover {
   background: #1abc9c;
   color: #fff;
 }
 
-.toggle-menu a {
+#DSBC-chart .toggle-menu a {
   display: block;
 }
 
-.toggle-nav {
+#DSBC-chart .toggle-nav {
   padding: 5px 9px 5px 10px;
   display: inline-block;
   box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.15);
@@ -52,19 +52,19 @@
   font-size: 20px;
 }
 
-.toggle-nav:hover,
-.toggle-nav.active {
+#DSBC-chart .toggle-nav:hover,
+#DSBC-chart .toggle-nav.active {
   text-decoration: none;
   color: rgba(0, 0, 0, 0.658);
 }
 
-text,
-label,
-a {
+#DSBC-chart text,
+#DSBC-chart label,
+#DSBC-chart a {
   user-select: none;
 }
 
-#loading {
+#DSBC-chart #chart-loading {
   --loading-width: 150px;
   --loading-height: 60px;
 
@@ -84,11 +84,11 @@ a {
   display: none;
 }
 
-#chartsOptions {
+#DSBC-chart #chartsOptions {
   white-space: nowrap;
 }
 
-#form-header,
-#displayOption {
+#DSBC-chart #form-header,
+#DSBC-chart #displayOption {
   display: none !important;
 }

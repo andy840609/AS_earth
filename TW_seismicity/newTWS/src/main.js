@@ -150,7 +150,8 @@ export function TWSanime() {
           .attr("class", "legendGroup");
         const mlDomain = [4, 8], //==規模範圍[3,7]
           depthDomain = [0, 320], //==深度範圍
-          playSpeedDomain = [1, 180], //==播放速度5~180days/s
+          // playSpeedDomain = [1, 180], //==播放速度5~180days/s
+          playSpeedDomain = [1, 5, 15, 30, 60, 90, 180], //==播放速度5~180days/s
           dateDomain = [data[0].date, data[data.length - 1].date].map(
             (d, i) => Math[i === 0 ? "floor" : "ceil"](d / 86400000) * 86400000
           ); //==日期範圍(天之後的時間去掉)
@@ -434,12 +435,21 @@ export function TWSanime() {
                           playSpeedDomain[1] / labelAmount
                         );
                       // console.debug(labelSpacing);
+                      // <input class="slider col-9 p-0" type="range"
+                      // min="${playSpeedDomain[0]}"
+                      // max="${playSpeedDomain[1]}"
+                      // value="${animDataObj.playSpeed}"
+                      // step="${tickSpacing}"
+                      // list="playSpeedTick">
+                      console.debug(animDataObj);
                       html = `
                       <input class="slider col-9 p-0" type="range"
-                          min="${playSpeedDomain[0]}"
-                          max="${playSpeedDomain[1]}"
-                          value="${animDataObj.playSpeed}"
-                          step="${tickSpacing}"
+                          min="0"
+                          max="${playSpeedDomain.length - 1}"
+                          value="${playSpeedDomain.indexOf(
+                            animDataObj.playSpeed
+                          )}"
+                          step="1"
                           list="playSpeedTick">        
                       <span class="col-3 text-nowrap" style="font-size: small";>      
                           <b class="fs-6">${
@@ -447,25 +457,28 @@ export function TWSanime() {
                           }</b> <span data-i18n="day"></span>/<sub data-i18n="sec"></sub>
                       </span>
                       <datalist class="fs-6 p-0" id="playSpeedTick" >
-                          ${d3
-                            .range(
-                              playSpeedDomain[0],
-                              playSpeedDomain[1] + 1,
-                              tickSpacing
-                            )
-                            .map(
-                              (val) => `<option value="${val}"
-                            ${
-                              val % labelSpacing === 0 || val === tickSpacing
-                                ? `label="x${
-                                    val / tickSpacing
-                                  }" style="font-size: small;"`
-                                : ""
-                            }></option>`
-                            )
-                            .join("")}
+                     ${playSpeedDomain
+                       .map((val, idx) => `<option value="${idx}"></option>`)
+                       .join("")}
                       </datalist>
                       `;
+                      // ${d3
+                      //   .range(
+                      //     playSpeedDomain[0],
+                      //     playSpeedDomain[1] + 1,
+                      //     tickSpacing
+                      //   )
+                      //   .map(
+                      //     (val) => `<option value="${val}"
+                      //   ${
+                      //     val % labelSpacing === 0 || val === tickSpacing
+                      //       ? `label="x${
+                      //           val / tickSpacing
+                      //         }" style="font-size: small;"`
+                      //       : ""
+                      //   }></option>`
+                      //   )
+                      //   .join("")}
                       break;
                     case "audio":
                       html = `
@@ -1672,7 +1685,7 @@ export function TWSanime() {
 
               let panel = () => {
                 playspeedControl.select("input").on("input", function () {
-                  let playSpeed = parseInt(this.value);
+                  let playSpeed = playSpeedDomain[this.value];
                   let startDate = dateText.property("value");
                   playspeedControl.select("span>b").text(playSpeed);
 

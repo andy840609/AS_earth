@@ -275,13 +275,13 @@ function DSBC() {
     };
 
     let init = () => {
-      let initNode = () => {
+      let initHeadOption = () => {
+        // TODO:圖表類型
         chartContainerJQ.append(`
                 <form id="form-header">
                     <div class="form-group">
                         <div class="row">
-                            // todo: 累積圖
-                            <!-- ... chart type ... -->                
+                            <!-- ... chart type  ... -->           
                             <div class="form-group col-lg-6 col-md-6 col-sm-12 d-flex flex-row align-items-start">
                                 <label class="col-form-label col-5" >圖表類型</label>
                                 <div class="btn-group btn-group-toggle col-7" data-toggle="buttons">
@@ -295,7 +295,8 @@ function DSBC() {
                        
                                 </div>
                             </div>   
-        
+                          
+
                         </div>
                     </div>       
                 </form>
@@ -304,6 +305,7 @@ function DSBC() {
         chartContainerJQ
           .find('input[name ="chartType"]')
           .on("click", () => printChart());
+        chartContainerJQ.find("#form-header").hide();
       };
       let initData = () => {
         const convertData = () => {
@@ -424,7 +426,7 @@ function DSBC() {
         [0, 1].forEach((i) => (colorPalette[i] = seriesColor[i]));
         requestColors();
       };
-      initNode();
+      initHeadOption();
       initData();
       initColor();
 
@@ -438,7 +440,7 @@ function DSBC() {
       //===================
     };
     let printChart = () => {
-      chartContainerJQ.find("#form-chart").remove();
+      chartContainerJQ.find("#DSBC-chart").remove();
       let getChartMenu = () => {
         // console.log(d.data);
         let div = document.createElement("div");
@@ -697,7 +699,7 @@ function DSBC() {
     function doubleChart() {
       ~(function init() {
         chartContainerJQ.append(`
-                <form id="form-chart">
+                <form id="DSBC-chart">
                 <div class="form-group" id="chartsOptions" style="display: inline;">
                 <div class="row">
     
@@ -846,7 +848,7 @@ function DSBC() {
                         <div id="innerdiv" style=" background-color: rgb(255, 255, 255);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div>                      
                     </div>
     
-                    <div id='loading'>
+                    <div id='chart-loading'>
                         <div class="spinner-border"role="status">
                             <span class="sr-only" >Loading...</span>
                         </div>

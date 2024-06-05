@@ -428,12 +428,12 @@ export function TWSanime() {
                       </span>`;
                       break;
                     case "playspeed":
-                      let tickSpacing = playSpeedDomain[0]; //==多少數值一個tick
+                      // let tickSpacing = playSpeedDomain[0]; //==多少數值一個tick
 
-                      let labelAmount = 3,
-                        labelSpacing = parseInt(
-                          playSpeedDomain[1] / labelAmount
-                        );
+                      // let labelAmount = 3,
+                      //   labelSpacing = parseInt(
+                      //     playSpeedDomain[1] / labelAmount
+                      //   );
                       // console.debug(labelSpacing);
                       // <input class="slider col-9 p-0" type="range"
                       // min="${playSpeedDomain[0]}"
@@ -458,7 +458,17 @@ export function TWSanime() {
                       </span>
                       <datalist class="fs-6 p-0" id="playSpeedTick" >
                      ${playSpeedDomain
-                       .map((val, idx) => `<option value="${idx}"></option>`)
+                       .map(
+                         (val, idx) =>
+                           `<option value="${idx}"
+                            ${
+                              1
+                                ? `label="x${
+                                    val / playSpeedDomain[0]
+                                  }" style="font-size: small;"`
+                                : ""
+                            }></option>`
+                       )
                        .join("")}
                       </datalist>
                       `;

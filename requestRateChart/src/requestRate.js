@@ -45,7 +45,7 @@ function requestRate() {
     //     return obj;
     // });
     data.column = column;
-    console.log("data=", data);
+    // console.log("data=", data);
     return chart;
   };
   chart.typeNameObj = (vaule) => {
@@ -523,8 +523,8 @@ function requestRate() {
             });
             return rateData;
           })();
-          console.log("timeData=", timeIntervalData);
-          console.log("rateData=", rateData);
+          // console.log("timeData=", timeIntervalData);
+          // console.log("rateData=", rateData);
 
           // rateData = function () {
           //     let rateData;
@@ -585,7 +585,7 @@ function requestRate() {
       initData();
     };
     let printChart = () => {
-      chartContainerJQ.find("#form-chart").remove();
+      chartContainerJQ.find("#requestRate-chart").remove();
       // chartContainerJQ.find('.tooltip').remove();
       let getChartMenu = () => {
         // console.log(d.data);
@@ -915,7 +915,7 @@ function requestRate() {
     function RQRchart() {
       ~(function init() {
         chartContainerJQ.append(`
-                <form id="form-chart">
+                <form id="requestRate-chart">
                 <div class="form-group" id="chartsOptions" style="display: inline;">
                 <div class="row">
     
@@ -1062,7 +1062,7 @@ function requestRate() {
                         <div id="innerdiv" style=" background-color: rgb(255, 255, 255);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div>                      
                     </div>
     
-                    <div id='loading'>
+                    <div id='chart-loading'>
                         <div class="spinner-border"role="status">
                             <span class="sr-only" >Loading...</span>
                         </div>
@@ -2336,7 +2336,7 @@ function requestRate() {
       const maxGroupCount = 20;
       ~(function init() {
         chartContainerJQ.append(`
-                <form id="form-chart">
+                <form id="requestRate-chart">
                 <div class="form-group" id="chartsOptions" style="display: inline;">
                     <div class="row">
 
@@ -2431,7 +2431,7 @@ function requestRate() {
                         <div id="innerdiv" style=" background-color: rgb(255, 255, 255);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div>                      
                     </div>
     
-                    <div id='loading'>
+                    <div id='chart-loading'>
                         <div class="spinner-border"role="status">
                             <span class="sr-only" >Loading...</span>
                         </div>
@@ -3293,7 +3293,7 @@ function requestRate() {
       // console.debug(fileSizeData);
       ~(function init() {
         chartContainerJQ.append(`
-                <form id="form-chart">
+                <form id="requestRate-chart">
                 <div class="form-group" id="chartsOptions" style="display: inline;">
                     <div class="row">
 
@@ -3398,7 +3398,7 @@ function requestRate() {
                         <div id="innerdiv" style=" background-color: rgb(255, 255, 255);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div>                      
                     </div>
     
-                    <div id='loading'>
+                    <div id='chart-loading'>
                         <div class="spinner-border"role="status">
                             <span class="sr-only" >Loading...</span>
                         </div>
@@ -4571,7 +4571,7 @@ function requestRate() {
 
     if (!(chartContainerJQ.find("#form-header").length >= 1)) {
       init();
-      console.log("init header & data for once");
+      // console.log("init header & data for once");
     }
     printChart();
   }

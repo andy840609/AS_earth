@@ -443,34 +443,35 @@ export function TWSanime() {
                       // list="playSpeedTick">
                       console.debug(animDataObj);
                       html = `
-                      <input class="slider col-9 p-0" type="range"
-                          min="0"
-                          max="${playSpeedDomain.length - 1}"
-                          value="${playSpeedDomain.indexOf(
-                            animDataObj.playSpeed
-                          )}"
-                          step="1"
-                          list="playSpeedTick">        
-                      <span class="col-3 text-nowrap" style="font-size: small";>      
-                          <b class="fs-6">${
-                            animDataObj.playSpeed
-                          }</b> <span data-i18n="day"></span>/<sub data-i18n="sec"></sub>
-                      </span>
-                      <datalist class="fs-6 p-0" id="playSpeedTick" >
-                     ${playSpeedDomain
-                       .map(
-                         (val, idx) =>
-                           `<option value="${idx}"
-                            ${
-                              1
-                                ? `label="x${
-                                    val / playSpeedDomain[0]
-                                  }" style="font-size: small;"`
-                                : ""
-                            }></option>`
-                       )
-                       .join("")}
-                      </datalist>
+                      <div class="d-flex flex-column col-9 p-0">
+                        <input class="slider w-100" type="range"
+                            min="0"
+                            max="${playSpeedDomain.length - 1}"
+                            value="${playSpeedDomain.indexOf(
+                              animDataObj.playSpeed
+                            )}"
+                            step="1"
+                            list="playSpeedTick">
+                        <datalist class="fs-6 p-0" id="playSpeedTick" >
+                        ${playSpeedDomain
+                          .map(
+                            (val, idx) =>
+                              `<option 
+                                value="${idx}"
+                                label="x${val / playSpeedDomain[0]}"
+                                style="font-size: small;">
+                              </option>`
+                          )
+                          .join("")}
+                        </datalist>
+                      </div>
+                      <div class="col-3">
+                        <span class="text-nowrap" style="font-size: small";>      
+                            <b class="fs-6">${
+                              animDataObj.playSpeed
+                            }</b> <span data-i18n="day"></span>/<sub data-i18n="sec"></sub>
+                        </span>
+                      </div>
                       `;
                       // ${d3
                       //   .range(

@@ -151,7 +151,7 @@ export function TWSanime() {
         const mlDomain = [4, 8], //==規模範圍[3,7]
           depthDomain = [0, 320], //==深度範圍
           // playSpeedDomain = [1, 180], //==播放速度5~180days/s
-          playSpeedDomain = [0.2, 0.5, 1, 5, 15, 30, 90], //==播放速度5~180days/s
+          playSpeedDomain = [0.01, 0.5, 1, 5, 15, 30, 90], //==播放速度5~180days/s
           dateDomain = [data[0].date, data[data.length - 1].date].map(
             (d, i) => Math[i === 0 ? "floor" : "ceil"](d / 86400000) * 86400000
           ); //==日期範圍(天之後的時間去掉)

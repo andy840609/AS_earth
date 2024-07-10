@@ -281,10 +281,10 @@ function TSchart() {
         }
       };
 
-      function getChartSvg() {
+      function getChartSvg(cha) {
         const width = 800,
-          height = 500;
-        const margin = { top: 30, right: 30, bottom: 50, left: 45 };
+          height = 250;
+        const margin = { top: 20, right: 30, bottom: 35, left: 35 };
         const svg = d3.create("svg").attr("viewBox", [0, 0, width, height]);
         const xAxis = svg.append("g").attr("class", "xAxis");
         const yAxis = svg.append("g").attr("class", "yAxis");
@@ -451,10 +451,18 @@ function TSchart() {
         data = await data;
       }
 
-      getChartDivHtml(0);
-      let chart0 = chartRootNode.querySelector("#chart0");
-      getChartMenu(chart0);
-      chart0.append(getChartSvg());
+      // getChartDivHtml(0);
+      // let chart0 = chartRootNode.querySelector("#chart0");
+      // getChartMenu(chart0);
+      // chart0.append(getChartSvg());
+
+      [0, 1, 2].forEach((cha, i) => {
+        getChartDivHtml(i);
+        let chart = chartRootNode.querySelector("#chart" + i);
+        getChartMenu(chart, cha);
+        let chartNode = getChartSvg(cha);
+        chart.append(chartNode);
+      });
     }
     //===init once
     if (!chartRootNode.querySelector("#chartsOptions")) init();

@@ -61,11 +61,6 @@ span {
   stroke: none;
 } */
 
-#charts svg {
-  height: 900px;
-  width: 100%;
-}
-
 #chartMain #loading {
   --loading-width: 150px;
   --loading-height: 60px;

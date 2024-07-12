@@ -440,8 +440,8 @@ function MlChart() {
         }
         updateChart();
 
-        function events(svg) {}
-        svg.call(events);
+        function events() {}
+        events();
 
         return svg.node();
       }

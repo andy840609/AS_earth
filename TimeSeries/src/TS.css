@@ -102,21 +102,31 @@ span {
 #chartMain .tooltip {
   position: absolute;
   z-index: 999;
-  background-color: #d3d3d3;
-  padding: 20px 20px 20px 20px;
+  /* border-spacing: 0; */
+  background-color: #fff;
+  border: 1px solid #ccc;
+  box-shadow: 7px 7px 12px -9px #777;
   opacity: 0.9;
   display: none;
+  pointer-events: none;
 }
 
-#chartMain .tooltip > font {
+#chartMain .tooltip tr > * {
   font-size: 24px;
+  padding: 2px 8px;
 }
-
-#chartMain .tooltip > font.tooltip_amp {
-  color: red;
+#chartMain .tooltip .tooltip-date {
+  background-color: #aaa;
+  text-align: left;
+  color: #fff;
 }
-#chartMain .tooltip > font.tooltip_phs {
-  color: blue;
+#chartMain .tooltip .tooltip-channel > span {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+}
+#chartMain .tooltip .tooltip-value {
+  border-left: 0.8px dotted #999;
 }
 
 /* --------chartOptions-------- */

@@ -381,10 +381,6 @@ function TSchart() {
               .append("g")
               .attr("class", "legend")
               .style("font-size", "12px")
-              .attr(
-                "transform",
-                `translate(${width - margin.right}, ${margin.top * 0.3})`
-              )
               .call((legend) => {
                 const path_width = 50;
                 const path_interval = 50;
@@ -445,6 +441,13 @@ function TSchart() {
                       .attr("y", legend_height / 2)
                       .text((d) => d);
                   });
+
+                legend.attr(
+                  "transform",
+                  `translate(${width - margin.right - legend_width}, ${
+                    margin.top * 0.3
+                  })`
+                );
               });
           }
           function render() {

@@ -382,14 +382,14 @@ function TSchart() {
               .attr("class", "legend")
               .style("font-size", "12px")
               .call((legend) => {
-                const path_width = 50;
-                const path_interval = 50;
-                const path_margin_horizontal = 10;
+                const rect_width = 8;
+                const rect_textW = 30;
+                const rect_margin = 5;
 
                 const legend_width =
-                  (path_width + path_interval) * legend_items.length +
-                  path_margin_horizontal * 2;
-                const legend_height = 50;
+                  (rect_width + rect_textW) * legend_items.length +
+                  rect_margin * 2;
+                const legend_height = (rect_width + rect_margin) * 2;
 
                 legend
                   .append("rect")
@@ -405,26 +405,17 @@ function TSchart() {
                   .selectAll("g")
                   .data(legend_items)
                   .join("g")
+                  .attr("class", "legend_itemG")
                   .call((g) => {
-                    g.append("line")
-                      .attr("stroke-width", 3)
-                      .attr("stroke-opacity", 1)
-                      .attr("stroke", (d) => getColor(d))
+                    g.append("rect")
                       .attr(
-                        "x1",
-                        (d, i) =>
-                          (path_width + path_interval) * i +
-                          path_margin_horizontal
+                        "x",
+                        (d, i) => (rect_width + rect_textW) * i + rect_margin
                       )
-                      .attr(
-                        "x2",
-                        (d, i) =>
-                          (path_interval + path_width) * i +
-                          path_width +
-                          path_margin_horizontal
-                      )
-                      .attr("y1", legend_height / 2)
-                      .attr("y2", legend_height / 2);
+                      .attr("y", legend_height / 2 - rect_width * 0.5)
+                      .attr("height", rect_width)
+                      .attr("width", rect_width)
+                      .attr("fill", (d) => getColor(d));
 
                     g.append("text")
                       .attr("font-weight", "bold")
@@ -433,10 +424,10 @@ function TSchart() {
                       .attr(
                         "x",
                         (d, i) =>
-                          i * (path_width + path_interval) +
-                          path_width +
-                          path_interval / 2 +
-                          path_margin_horizontal
+                          i * (rect_width + rect_textW) +
+                          rect_width +
+                          rect_textW / 2 +
+                          rect_margin
                       )
                       .attr("y", legend_height / 2)
                       .text((d) => d);

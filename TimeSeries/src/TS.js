@@ -20,7 +20,11 @@ function TSchart() {
           (acc, col, idx) => ({
             ...acc,
             [header[idx]]:
-              header[idx] === "date" ? new Date(col) : parseFloat(col),
+              header[idx] === "date_float"
+                ? new Date(
+                    (parseFloat(col) - 1970) * 365.2425 * 24 * 60 * 60 * 1000
+                  )
+                : parseFloat(col),
           }),
           {}
         );
@@ -355,9 +359,9 @@ function TSchart() {
             : null;
 
           const getData = (xAxis_domain) => {
-            let newData = data.map((d) => ({ x: d.date, y: d[cha] }));
+            let newData = data.map((d) => ({ x: d.date_float, y: d[cha] }));
             if (xAxis_domain) {
-              let dateArr = data.map((d) => d.date);
+              let dateArr = data.map((d) => d.date_float);
               let idx_domain = xAxis_domain.map(
                 (d, i) => d3.bisectCenter(dateArr, d) + i //包含最大範圍
               );
@@ -366,12 +370,26 @@ function TSchart() {
             }
             return newData;
           };
+          const getReg = (data) => {
+            let x0 = data[0].x.getTime();
+            let arr = data.map((d) => [d.y, d.x.getTime()]);
+            // let arr = [
+            //   [0, 1],
+            //   [32, 67],
+            //   [12, 79],
+            // ];
+            console.debug("getReg", arr);
+            // console.debug("last= ", data[data.length - 1].x.toISOString());
+            return regression.linear(arr);
+          };
 
           let newData = getData(xAxis_domain);
+          let regData = getReg(newData);
 
           return {
             newData,
             xAxis_domain: xAxis_domain,
+            regData,
           };
         }
         function updateChart(trans = false) {
@@ -454,7 +472,8 @@ function TSchart() {
 
             let x_domain = options.xDomain
               ? options.xDomain
-              : d3.extent(newData, (d) => d.x);
+              : [newData[0].x, newData[newData.length - 1].x];
+
             let x_diff = getDateDiff(x_domain);
 
             x = d3["scaleUtc"]()
@@ -505,10 +524,13 @@ function TSchart() {
                           )
                       );
                       ticks[len - 1] = x_domain[1];
+
+                      //==去除zoom後重複的tick
                       ticks = ticks
                         .map((d) => d.getTime())
                         .filter((d, i, array) => array.indexOf(d) === i)
                         .map((d) => new Date(d));
+                      // console.debug("ticks", ticks);
                       return ticks;
                     };
 
@@ -516,7 +538,7 @@ function TSchart() {
                       .axisBottom(x)
                       .tickSizeOuter(0)
                       .tickValues(getTickValues(tickAmount))
-                      .tickFormat(d3.timeFormat("%Y-%m-%d"));
+                      .tickFormat(d3.utcFormat("%Y-%m-%d"));
                     axisFun(g);
                   });
 
@@ -753,7 +775,8 @@ function TSchart() {
                         tooltip.call((div) => {
                           div
                             .select(".tooltip-date")
-                            .text(data.x.toISOString().split("T")[0]);
+                            .text(data.x.toISOString().split(".")[0]);
+                          // .text(data.x.toISOString().split("T")[0]);
                           div.select(".tooltip-channel>text").text(cha);
                           div.select(".tooltip-value").text(data.y);
                           div

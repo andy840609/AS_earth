@@ -313,6 +313,460 @@
         "character": "doctor",
         "line": "I knew you could!\f\nThank you for everything you've done. The planet Erth will never forget your heroic deeds!\f\nThe portal behind the Epicenter City will send you home. Farewell, brave one!"
       }
+    },
+    "bigMap": {
+      "0": {
+        "0": "You are badly injured!\nYou need time to recover,\nremember that resting is as important as fighting!",
+        "1": "The end of the world is here...\nBut don't worry!\nWe can use the time machine to try again.",
+        "2": "You're back...\nThis time we will definitely succeed!"
+      },
+      "1": {
+        "0": "Brave one!\nI forgot to introduce myself earlier, my name is Doctor Owl.\nAlthough the Demon King is powerful, I will assist you, so there's no problem at all!",
+        "1": "Here is the remaining time until the end of the world,\n the timer starts when you enter the level,\nwe must defeat the Demon King before it's too late.",
+        "2": "Here is the function bar on the map,\n you can check various information and items here.\nYou can use the equipment obtained here.",
+        "3": "The Speed Chart is used to analyze the location of the\nDemon King's city - Epicenter City.\nHowever, we need to collect enough station information\nbefore we can view it!",
+        "4": "The Knowledge Treasury is here to review your\nearthquake knowledge. If you answer the questions correctly, you can get items that will help with the mission.",
+        "5": "I have marked the locations of the earthquake stations on the map for you.\nIf you have any questions, feel free to ask me!\nNow, without further delay, let's head to the stations to gather information!",
+        "6": "(Click the icon to answer quizzes and get items,\nclick the icon to enter the station,\nclick to review the instructions again.)"
+      },
+      "2": {
+        "0": "Great, we got new information!\nIf we gather a few more pieces of information, we might be able\nto locate Epicenter City.",
+        "1": "Keep gathering more information.\n(Click the icon.)"
+      },
+      "3": {
+        "0": "You're amazing!\nWe've collected enough information,\nnow we can deduce the possible location\nof Epicenter City based on the information.",
+        "1": "Let's open the Speed Chart to organize the information.\n(Click the icon.)"
+      },
+      "4": {
+        "0": "Exactly right!\nThe information we got from the stations earlier\nis the time (subtract the P-wave arrival time from the S-wave arrival time).",
+        "1": "Multiplying the time by the speed parameter gives\nus the distance (the radius of the circle),\nallowing us to infer the epicenter location\nwithin a few kilometers of the stations (every point on the circle is equidistant).",
+        "2": "The intersection of the three circles determines the epicenter location.\nTry moving the handles to adjust the speed parameter,\nso that the three circles intersect at one point. Epicenter City is located\nbelow that point.",
+        "3": "Once the location of Epicenter City is confirmed, set out\nto defeat the Demon King!\n(Drag the handle to adjust the speed parameter,\nmake the three circles intersect at one point, and click the intersection to explore.)"
+      },
+      "5": {
+        "0": "Didn't find Epicenter City?\nDon't be discouraged, you'll find it next time.",
+        "1": "Open the Speed Chart and try adjusting the speed parameter\nto a reasonable range, or go back to the stations\nand gather more information.",
+        "2": "(Drag the handle to adjust\nthe speed parameter, or go to the station\nto correct the speed information.)"
+      }
+    },
+    "endCredit": {
+      "tag": {
+        "title": "[stroke=white][color=black][size=48][b]\t[/b][/size][r]",
+        "content": "[size=36]\t[r][/size]"
+      },
+      "list": {
+        "0": {
+          "post": "[right=10]Game assets",
+          "names": [
+            "Kenney.nl",
+            "craftpix.net",
+            "opengameart.org",
+            "TopeconHeroes",
+            "pngegg"
+          ]
+        },
+        "1": {
+          "post": "Special thanks",
+          "names": [
+            "Phaser (HTML5 Game Framework)",
+            "Rex@Github (Phaser plugins)",
+            "Amy Liao (Art director)",
+            "Peter (Music and SFX creator)",
+            "National Fire Agency, Ministry of the Interior"
+          ]
+        },
+        "2": {
+          "post": "Thanks for playing![r][r][r]",
+          "names": ["[img=IESDMClogo][left=80] [/left][img=IESlogo]"]
+        }
+      }
+    }
+  },
+  "Hints": {
+    "tutorial": {
+      "0": {
+        "0": "Nice to meet you.\nI am the assistant.",
+        "1": "Complete the tutorial according to the title instructions.",
+        "2": "You can get equipment items by completing the tutorial!"
+      },
+      "1": {
+        "0": "The weather is really nice today.",
+        "1": "I will always follow you."
+      }
+    },
+    "defend": {
+      "0": {
+        "0": "Drag on both sides of the detector interface\nto zoom in on the waveform.",
+        "1": "Press \t to pick up when close to the light ball.",
+        "2": "Walk to the correct position and\npress \t to place it down."
+      },
+      "1": {
+        "0": "The doctor will communicate with us at any time.",
+        "1": "Believe in yourself just like\nI believe in you.",
+        "2": "Be careful not to get hit by monsters.",
+        "3": "Never give up!"
+      },
+      "2": {
+        "0": "Once positioned correctly, press esc or\nthe top right corner to save and exit."
+      }
+    },
+    "dig": {
+      "0": {
+        "0": "Use the arrow keys\nto dig underground.",
+        "1": "Some rocks are harder."
+      },
+      "1": {
+        "0": "The doctor will give us\nuseful information.",
+        "1": "Hold on until the end.",
+        "2": "You and I are the best partners."
+      },
+      "2": {
+        "0": "I will follow you forever!",
+        "1": "It looks like Epicenter City is not here.\nPress esc to exit.",
+        "2": "Dug past Epicenter City.",
+        "terrain1": "Sedimentary rock is formed by various natural agents\n(rivers, glaciers, wind) transporting sediments,\nand then undergoing compaction and cementation.\nIt is the most common rock covering the surface,\nand it is formed under conditions closer to normal temperature and pressure near the surface.",
+        "terrain2": "Igneous rock is formed from the cooling and solidification\nof magma or lava. Some magmas solidify within the crust,\nforming what is known as plutonic rock;\nsome magmas erupt onto the surface and form\nvolcanic rock. The crust and upper mantle\nof the solid Earth are composed of igneous rocks,\nincluding the lithosphere and asthenosphere.",
+        "terrain3": "Metamorphic rock is formed from existing rocks\nunder high temperature and pressure conditions\nin the deep underground. Even though they remain solid,\ntheir composition and structure change,\nresulting in special minerals and unique metamorphic structures."
+      }
+    },
+    "boss": {
+      "0": {
+        "0": "Use what the doctor taught us\nto defeat the Earthquake Demon King."
+      },
+      "1": {
+        "0": "Communication with the doctor\nhas been interrupted...",
+        "1": "Come on, you are the hope of the world.",
+        "2": "You can do it, you are the best.",
+        "3": "Go for it!\nI will support you from the side."
+      }
+    }
+  },
+  "Doctor": {
+    "Tips": {
+      "0": "Did you know?\nMost earthquakes in Taiwan\noccur in the eastern region.",
+      "1": "Here's a secret:\nThe first seismic wave to arrive\nis the P-wave.",
+      "2": "We need to collect information from\nat least three stations\nbefore we can start locating the epicenter.",
+      "3": "Knowledge time:\nTaiwan is located at the junction of the\nEurasian Plate and the Philippine Sea Plate.",
+      "4": "Usually, the amplitude of the S-wave is larger.\nThis will be on the test.",
+      "5": "Earthquake magnitude is just a number,\nwith no unit.",
+      "6": "Earthquake intensity is an integer value.\nThe highest intensity in Taiwan\nis 7.",
+      "7": "The three steps to save your life during an earthquake are\nDrop, Cover, and Hold On.",
+      "8": "Most earthquakes are caused by fault movements.",
+      "9": "For accurate earthquake information,\nyou should check the\nCentral Weather Bureau website.",
+      "10": "Taiwan is located at the junction of tectonic plates,\nso there are more earthquakes.",
+      "11": "Most earthquakes in Taiwan occur\nat depths of less than 30 kilometers.",
+      "12": "Let me tell you,\nearthquakes in the northeastern offshore area of Taiwan\ncan be as deep as 300 kilometers."
+    },
+    "Emergencies": {
+      "0": {
+        "eventName": "Major Earthquake",
+        "rules": "A major earthquake is about to occur!!!\nMove to the table and hold \t to take cover.",
+        "clear": "Well done! During an earthquake, the priority is to protect yourself. Here is your reward!",
+        "lines": {
+          "0": "Emergency situation!\nThe Demon King is about to launch an earthquake attack!",
+          "1": "The most important thing during an earthquake is to protect your head and neck.",
+          "2": "Remember 'Drop, Cover, and Hold On!' When hiding under a table, hold onto the legs.",
+          "3": "Use the table as a shield now to avoid injury."
+        },
+        "items": {
+          "drop": "Drop",
+          "cover": "Cover",
+          "hold": "Hold On"
+        }
+      },
+      "1": {
+        "eventName": "Emergency Kit",
+        "rules": "Collect emergency supplies!!!\nPress \t to pick up items and put them in the emergency kit.",
+        "clear": "Preparing an emergency kit means no worries during evacuation. Here is your reward!",
+        "lines": {
+          "0": "Emergency situation!\nLet's prepare an emergency kit!",
+          "1": "After an earthquake, if you need to evacuate urgently, you will need an emergency kit.",
+          "2": "The emergency kit should be placed at the door or in an easily accessible place, and its contents should be updated every six months.",
+          "3": "Evacuation principles: wear shoes, put on a safety helmet, and carry an emergency kit.",
+          "4": "Prepare an emergency kit now, just in case."
+        },
+        "items": {
+          "emergBag": "Collection Quantity",
+          "emergBattery": "Battery",
+          "emergFlashlight": "Flashlight",
+          "emergFood": "Dry Food",
+          "emergWater": "Water",
+          "emergTissue": "Tissue",
+          "emergShoes": "Shoes",
+          "emergHat": "Safety Helmet",
+          "emergKit": "First Aid Kit"
+        }
+      }
+    }
+  },
+  "Quiz": {
+    "0": {
+      "content": "Where do most earthquakes occur in Taiwan?",
+      "choices": ["East", "West", "South", "North"],
+      "answer": "East"
+    },
+    "1": {
+      "content": "What is the first type of seismic wave to reach a station?",
+      "choices": ["P-wave", "S-wave", "Surface wave", "T-wave"],
+      "answer": "P-wave"
+    },
+    "2": {
+      "content": "How many stations are needed at a minimum to determine the epicenter's location in this game?",
+      "choices": ["1", "2", "3", "4"],
+      "answer": "3"
+    },
+    "3": {
+      "content": "Which two tectonic plates meet at Taiwan?",
+      "choices": [
+        "Eurasian Plate and Philippine Sea Plate",
+        "Eurasian Plate and Pacific Plate",
+        "Pacific Plate and Philippine Sea Plate",
+        "Eurasian Plate and South China Sea Plate"
+      ],
+      "answer": "Eurasian Plate and Philippine Sea Plate"
+    },
+    "4": {
+      "content": "Which type of seismic wave generally has a larger amplitude?",
+      "choices": ["P-wave", "S-wave", "SP-wave", "X-wave"],
+      "answer": "S-wave"
+    },
+    "5": {
+      "content": "Which of the following statements might be a report from the Taiwan Meteorological Bureau?",
+      "choices": [
+        "A magnitude 10 earthquake occurred",
+        "Magnitude 7.8 on the Richter scale",
+        "Maximum intensity 6.5",
+        "Intensity of 6 strong"
+      ],
+      "answer": "Intensity of 6 strong"
+    },
+    "6": {
+      "content": "What should you do immediately to protect yourself during an earthquake?",
+      "choices": [
+        "Run outside immediately",
+        "Hold onto furniture to prevent it from falling",
+        "Hide next to the refrigerator",
+        "Drop, cover, and hold on"
+      ],
+      "answer": "Drop, cover, and hold on"
+    },
+    "7": {
+      "content": "What is the most common cause of earthquakes?",
+      "choices": [
+        "Fault movement in the rock layers",
+        "Volcanic eruptions",
+        "Meteorite impacts",
+        "Tidal changes"
+      ],
+      "answer": "Fault movement in the rock layers"
+    },
+    "8": {
+      "content": "How can you obtain accurate earthquake information?",
+      "choices": [
+        "Based on the fire cloud phenomenon",
+        "Check the meteorological bureau's latest report",
+        "Browse the Earthquake Information website",
+        "Observe ant migrations"
+      ],
+      "answer": "Check the meteorological bureau's latest report"
+    },
+    "9": {
+      "content": "Why are there so many earthquakes in Taiwan?",
+      "choices": [
+        "Because it is located at the tectonic plate boundary",
+        "Because there are many volcanoes",
+        "Because Taiwan is an island",
+        "Because of earth movement"
+      ],
+      "answer": "Because it is located at the tectonic plate boundary"
+    },
+    "10": {
+      "content": "What is the typical depth range of earthquakes on the main island of Taiwan?",
+      "choices": ["30 km", "100 km", "300 km", "3 km"],
+      "answer": "30 km"
+    },
+    "11": {
+      "content": "What is the maximum depth of earthquakes off the northeast coast of Taiwan?",
+      "choices": ["30 km", "100 km", "300 km", "70 km"],
+      "answer": "300 km"
+    },
+    "12": {
+      "content": "Which of the following is unrelated to reducing earthquake hazards?",
+      "choices": [
+        "Secure furniture to walls or floors",
+        "Properly sort trash",
+        "Pay attention to changes in building structure",
+        "Prepare emergency supplies"
+      ],
+      "answer": "Properly sort trash"
+    }
+  },
+  "Intro": {
+    "intro": "Earthquakes are usually caused by sudden movements along fault planes beneath the earth's surface. The location where the fault begins to rupture is called the focus, while the point on the surface directly above the focus is called the epicenter. In this game, the focus is where the 'big bad guy' is causing trouble. Your mission is to find the location of the big bad guy. To do this, we need to first gather information from seismic stations. By estimating the distance to the epicenter from the arrival times of P-waves and S-waves, we can determine the possible location of the epicenter. With the epicenter location, we can locate the focus underground and find the lair of the big bad guy. Answering the earthquake knowledge questions correctly will defeat the big bad guy and complete the mission to earn a certificate. Earthquake disaster prevention relies on you! Good luck!",
+    "epicenter": "[size=26]▲[/size] The point on the surface where the earthquake focus projects vertically upward is the epicenter, the closest point on the surface to the focus.\n(Source: Taiwan Earthquake Science Center [size=16][color=blue][u=blue][area=url:https://tec.earth.sinica.edu.tw/glossaryquery.php]https://tec.earth.sinica.edu.tw/glossaryquery.php[/area][/u][/color][/size])",
+    "PSwave": "[size=26]▲[/size] The time P-waves arrive is usually where the first significant and large vibrations are observed in the vertical waveform; S-waves arrive when the amplitude becomes larger and slightly more spaced out in the east-west or north-south waveform. The image shows a waveform recorded at the Yeheng Station in Taoyuan County, serving as an example of identifying P-waves and S-waves, with the earthquake located 125 km away off the coast of Hualien.\n(Source: Taiwan Earthquake Cloud Learning Platform [size=16][color=blue][u=blue][area=url:http://qcntw.earth.sinica.edu.tw/index.php/eqk-game/location-game]http://qcntw.earth.sinica.edu.tw/index.php/eqk-game/location-game[/area][/u][/color][/size])",
+    "questInfo0": "Earthquake Location refers to using the seismic wave arrival time data recorded by seismic stations to estimate the time, location, and depth of an earthquake. With the earthquake's location, we can further estimate its magnitude.",
+    "questInfo1": "Official earthquake reports from the Central Weather Bureau Earthquake Reporting Center typically include:\n&nbsp;&nbsp;&nbsp;&nbsp;1. The time of the earthquake (local time in Taipei)\n&nbsp;&nbsp;&nbsp;&nbsp;2. Coordinates of the epicenter\n&nbsp;&nbsp;&nbsp;&nbsp;3. Geographic description of the epicenter\n&nbsp;&nbsp;&nbsp;&nbsp;4. Depth of the earthquake\n&nbsp;&nbsp;&nbsp;&nbsp;5. Magnitude of the earthquake\n&nbsp;&nbsp;&nbsp;&nbsp;6. Intensity in various locations\nAdditional information may include aftershock intensity maps, fault rupture mechanisms (also known as focal mechanism solutions), and more.",
+    "questInfo2": "1. Epicenter and Focus:\nWhen describing the earthquake's location, there are two terms: 'Focus' refers to the point underground where the fault begins to rupture or move, while the 'Epicenter' is the point on the surface directly above the focus. The distance between the focus and the epicenter is the earthquake's depth.\n\n2. Magnitude and Intensity:\nWhen describing an earthquake's size, 'Magnitude' and 'Intensity' are commonly used terms. Magnitude represents the energy released by the earthquake. An earthquake has only one magnitude value, which does not change with location, but different magnitude scales exist. The Richter scale (ML) used by Taiwan is a common scale; whereas 'Intensity' refers to the shaking level experienced in various locations during the earthquake. The intensity may vary depending on the distance from the epicenter or differences in surface layers. Earlier, intensity was determined based on human perception or damage to buildings. Now, it is quantitatively calculated based on the maximum ground acceleration and velocity. The Central Weather Bureau released a new intensity grading table in 2020. For details, please refer to the bureau's information.",
+    "questInfo3": "Earthquake location requires three components:\n&nbsp;&nbsp;&nbsp;&nbsp;1. Coordinates of each seismic station.\n&nbsp;&nbsp;&nbsp;&nbsp;2. Arrival times of seismic waves at each station.\n&nbsp;&nbsp;&nbsp;&nbsp;3. 'Velocity structure' underground.\nWe interpret the arrival times of seismic waves from the recorded waveform data and compare them with the 'theoretical arrival times' calculated based on the velocity structure. By continuously improving the 'trial location' to align the theoretical arrival times with the observed arrival times, we can determine the focus's location.",
+    "questInfo4": "Seismic waves received by a station include various types of waves, with two major categories being Body Waves and Surface Waves. Body Waves, such as P-waves and S-waves, penetrate underground and provide information about the Earth's internal structure. Surface Waves are confined to the Earth's shallow layers and usually have the highest amplitude and longest period due to their two-dimensional energy dispersion, compared to the three-dimensional dispersion of Body Waves.",
+    "questInfo5": "Body Waves are divided into P-waves and S-waves. P-waves (Primary waves) are longitudinal waves, so if seismic waves are broken into this type, they will be the first to arrive at a seismic station, as they move through solid, liquid, and gas media. S-waves (Secondary waves) are transverse waves, which arrive after P-waves as they move only through solid media. The speed of P-waves is usually faster than S-waves. Surface Waves include Love waves and Rayleigh waves. Love waves are shear waves moving horizontally with particles vibrating perpendicular to the direction of wave propagation. Rayleigh waves cause particles to move in an elliptical path, resulting in vertical and horizontal displacements along the wave's propagation direction, with the wave having a slower speed than Body Waves.",
+    "questInfo6": "The waveform data received by seismic stations is typically recorded in three components: east-west, north-south, and vertical. The east-west and north-south components are horizontal vectors. Since P-waves primarily appear in the vertical component and arrive first, the time of P-wave arrival is usually identified as the point of significant initial large oscillations in the vertical waveform. S-waves are more evident and have larger amplitude and slightly lower frequency in the horizontal waveforms, so their arrival time is usually identified as the point where the amplitude becomes larger and slightly more spaced out in the east-west or north-south waveforms. The image below shows a waveform recorded at the Yeheng Station in Taoyuan County, serving as an example of identifying P-waves and S-waves, with the earthquake located 125 km away off the coast of Hualien.",
+    "questInfo7": "When an earthquake's depth is relatively shallow (less than about 30 km), the arrival times of P-waves and S-waves are usually positively correlated with the 'epicentral distance' (the distance between the epicenter and the station) (Figure 1). Thus, the time difference between the arrival of P-waves and S-waves at the same station ('Ts-Tp') also shows a positive correlation with the epicentral distance (Figure 2). In other words, based on the observed time difference between P-waves and S-waves at the same station, we can roughly estimate the epicentral distance. \nFigure 1: Waveform diagrams for each component of stations arranged by epicentral distance (left: vertical, center and right: horizontal), with the blue line indicating the P-wave arrival time and the red line indicating the S-wave arrival time.\n\nFigure 2: The time difference between P- and S-waves (Ts-Tp) shows a linear relationship with the epicentral distance.",
+    "questInfo8": "A simplified method is to first identify the P-wave and S-wave arrival times from the station records, then estimate the epicentral distance based on the time difference between P-wave and S-wave arrivals (Ts-Tp) (see Q8). The location of the epicenter is likely to be at a distance from the station equal to the epicentral distance. In other words, if you draw a circle with the station as the center and the epicentral distance as the radius on a map, any point on the circumference is a possible location of the epicenter. Once you have the time differences from three (or more) stations, you can draw three (or more) circles, and the intersection of these circles should indicate the epicenter's location. Since the constant used to estimate the epicentral distance from Ts-Tp is related to the earthquake's depth and geological structure, this constant value varies with each earthquake. Generally, the epicentral distance (in km) is approximately Ts-Tp (in seconds) multiplied by 7.5 to 8.5 (km/s). This method is suitable for estimating shallow earthquakes but not deep ones.\n\nIllustration of earthquake location: Multiply the time difference between P- and S-waves (Ts-Tp) by an empirical constant (~8 km/s) to estimate the epicentral distance. If there are three or more stations, circles with radii equal to the epicentral distance should roughly intersect at one point. This intersection is highly likely to be the epicenter location."
+  },
+  "Item": {
+    "pan": {
+      "name": "Frying Pan",
+      "short": "Seems perfect for frying eggs",
+      "long": "Increases defense and can turn pigeon eggs into breakfast"
+    },
+    "syringe": {
+      "name": "Adrenaline",
+      "short": "Nothing can stop you",
+      "long": "Enhances your potential, increasing attack power, movement speed, and jumping ability, and provides immunity to all slowing effects"
+    },
+    "medicalKit": {
+      "name": "Medical Kit",
+      "short": "Your personal doctor",
+      "long": "HP will gradually recover over time"
+    },
+    "scientistCard": {
+      "name": "Science Badge",
+      "short": "You are a great scientist",
+      "long": "All creatures worship you!"
+    },
+    "bone": {
+      "name": "Bone",
+      "short": "Bones that dogs love",
+      "long": "Tasty, nutritious, and convenient, throws on the ground to divert dogs' attention"
+    },
+    "catfood": {
+      "name": "Cat Food",
+      "short": "Fish can food that cats love",
+      "long": "Love it, give it the best; throw on the ground to divert cats' attention"
+    },
+    "seeds": {
+      "name": "Sunflower Seeds",
+      "short": "Roasted seeds for pigeons",
+      "long": "A healthy food rich in polyunsaturated fatty acids; throw on the ground to attract pigeons"
+    },
+    "sunny": {
+      "name": "Sunny-Side Up Egg",
+      "short": "Restores a small amount of HP and MP",
+      "long": "A good day starts in the morning"
+    },
+    "bread": {
+      "name": "Bread",
+      "short": "Restores a small amount of HP",
+      "long": "Delicious bread"
+    },
+    "greens": {
+      "name": "Vegetables",
+      "short": "Restores MP",
+      "long": "Delicious vegetables"
+    },
+    "okra": {
+      "name": "Okra",
+      "short": "Restores a large amount of MP",
+      "long": "Delicious okra"
+    },
+    "croissant": {
+      "name": "Croissant",
+      "short": "Restores a small amount of HP and MP",
+      "long": "Delicious croissant"
+    },
+    "carrot": {
+      "name": "Carrot",
+      "short": "Restores a small amount of MP",
+      "long": "Delicious carrot"
+    },
+    "pumpkin": {
+      "name": "Pumpkin",
+      "short": "Restores a large amount of HP and MP",
+      "long": "Delicious pumpkin"
+    }
+  },
+  "quickQuestion": {
+    "0": {
+      "content": "What information from the seismic station records is used for earthquake location?",
+      "choices": ["Arrival Time", "Amplitude", "Frequency", "Resonance"],
+      "answer": "Arrival Time"
+    },
+    "1": {
+      "content": "Which of the following is not included in the Central Weather Bureau's routine earthquake reports?",
+      "choices": [
+        "Epicenter Coordinates",
+        "Earthquake Depth",
+        "Earthquake Magnitude",
+        "Fault Length"
+      ],
+      "answer": "Fault Length"
+    },
+    "2": {
+      "content": "Which of the following statements is incorrect?",
+      "choices": [
+        "The epicenter is the position of the earthquake source projected vertically onto the Earth's surface",
+        "An earthquake has only one magnitude",
+        "Intensity refers to the shaking level at various locations during the earthquake",
+        "The magnitude used by the Central Weather Bureau is not the Richter scale"
+      ],
+      "answer": "The magnitude used by the Central Weather Bureau is not the Richter scale"
+    },
+    "3": {
+      "content": "Which of the following is not a factor in earthquake location?",
+      "choices": [
+        "Coordinates of each seismic station",
+        "Arrival times of seismic waves at each station",
+        "Underground velocity structure",
+        "Earthquake magnitude"
+      ],
+      "answer": "Earthquake magnitude"
+    },
+    "4": {
+      "content": "Which type of seismic wave generally has a longer period?",
+      "choices": ["Body Waves", "Surface Waves", "P-Waves", "S-Waves"],
+      "answer": "Surface Waves"
+    },
+    "5": {
+      "content": "Comparing P-waves and S-waves, which of the following is correct?",
+      "choices": [
+        "S-waves have higher frequency",
+        "P-waves have larger amplitude",
+        "P-waves travel faster",
+        "S-waves are longitudinal waves"
+      ],
+      "answer": "P-waves travel faster"
+    },
+    "6": {
+      "content": "Which of the following is incorrect about identifying P-wave and S-wave arrival times?",
+      "choices": [
+        "In the vertical waveform, the first significant increase in amplitude is the P-wave",
+        "In the horizontal waveform, the location where amplitude significantly increases and frequency is slightly lower is the S-wave",
+        "S-waves are usually identified in east-west or north-south waveforms",
+        "S-waves are the fastest arriving seismic waves"
+      ],
+      "answer": "S-waves are the fastest arriving seismic waves"
+    },
+    "7": {
+      "content": "How do we estimate the distance between the station and the earthquake using P-wave and S-wave arrival times?",
+      "choices": [
+        "A larger time difference (Ts-Tp) indicates a greater distance from the epicenter",
+        "Because the teacher said so",
+        "A larger time difference (Ts-Tp) indicates a shorter distance from the epicenter",
+        "The time difference (Ts-Tp) is unrelated to the epicentral distance"
+      ],
+      "answer": "A larger time difference (Ts-Tp) indicates a greater distance from the epicenter"
+    },
+    "8": {
+      "content": "Which statement about simple methods for estimating earthquake location is incorrect?",
+      "choices": [
+        "Epicentral distance is the time difference (Ts-Tp) multiplied by a velocity parameter",
+        "The velocity parameter for shallow earthquakes is usually between 7.5 and 8.5 km/s",
+        "The time difference is the time of S-wave arrival minus the time of P-wave arrival",
+        "Drawing a circle with the station as the center and the epicentral distance as the radius may not accurately indicate the earthquake source"
+      ],
+      "answer": "Drawing a circle with the station as the center and the epicentral distance as the radius may not accurately indicate the earthquake source"
     }
   }
 }

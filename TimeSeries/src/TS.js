@@ -314,6 +314,9 @@ function TSchart() {
             case "dU":
               color = "rgb(0, 123, 187)";
               break;
+            case "reg.":
+              color = "black";
+              break;
             default:
               color = "black";
               break;
@@ -370,26 +373,11 @@ function TSchart() {
             }
             return newData;
           };
-          const getReg = (data) => {
-            let x0 = data[0].x.getTime();
-            let arr = data.map((d) => [d.y, d.x.getTime()]);
-            // let arr = [
-            //   [0, 1],
-            //   [32, 67],
-            //   [12, 79],
-            // ];
-            console.debug("getReg", arr);
-            // console.debug("last= ", data[data.length - 1].x.toISOString());
-            return regression.linear(arr);
-          };
-
           let newData = getData(xAxis_domain);
-          let regData = getReg(newData);
 
           return {
             newData,
             xAxis_domain: xAxis_domain,
-            regData,
           };
         }
         function updateChart(trans = false) {
@@ -566,6 +554,9 @@ function TSchart() {
               yAxis.call(makeYAxis);
             };
             let updateFocus = () => {
+              let dataGroup = focusGroup.append("g").attr("class", "dataGroup"),
+                regGroup = focusGroup.append("g").attr("class", "regGroup");
+
               let updateLine = () => {
                 let line = (data) => {
                   let pathAttr = d3
@@ -575,7 +566,7 @@ function TSchart() {
                     .y((d) => y(d.y));
                   return pathAttr(data);
                 };
-                focusGroup
+                dataGroup
                   .selectAll("path")
                   .data([newData])
                   .join("path")
@@ -594,7 +585,7 @@ function TSchart() {
                   });
               };
               let updateCircles = () => {
-                focusGroup
+                dataGroup
                   .selectAll("circle")
                   .data(newData)
                   .join("circle")
@@ -606,8 +597,46 @@ function TSchart() {
                   .attr("cx", (d) => x(d.x))
                   .attr("cy", (d) => y(d.y));
               };
+              let updateRegLine = () => {
+                const getReg = (data) => {
+                  // let x0 = data[0].x.getTime();
+                  // let arr = data.map((d) => [d.y, d.x.getTime()]);
+                  // // let arr = [
+                  // //   [0, 1],
+                  // //   [32, 67],
+                  // //   [12, 79],
+                  // // ];
+                  // console.debug("getReg", arr);
+                  // // console.debug("last= ", data[data.length - 1].x.toISOString());
+
+                  return regLinear(arr);
+                };
+
+                let linearReg = d3
+                  .regressionLinear()
+                  .x((d) => d.x.getTime())
+                  .y((d) => d.y)
+                  .domain(x_domain);
+
+                console.debug("linearReg=", linearReg(newData));
+
+                regGroup
+                  .selectAll("line")
+                  .data([linearReg(newData)])
+                  .join("line")
+                  .attr("class", "regression")
+                  .attr("stroke", getColor("reg."))
+                  // .attr("stroke-width", 0.5)
+                  // .attr("stroke-linejoin", "round")
+                  // .attr("stroke-linecap", "round")
+                  .attr("x1", (d) => x(d[0][0]))
+                  .attr("x2", (d) => x(d[1][0]))
+                  .attr("y1", (d) => y(d[0][1]))
+                  .attr("y2", (d) => y(d[1][1]));
+              };
               updateLine();
               updateCircles();
+              updateRegLine();
             };
 
             updateAxis();

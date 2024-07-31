@@ -29,6 +29,12 @@
       integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
       crossorigin="anonymous"
     ></script>
+    <!-- d3-regression會清空d3的prop，所以先引入 -->
+    <script
+      src="https://unpkg.com/d3-regression@1.3.10/dist/d3-regression.min.js"
+      integrity="sha384-5w4v9hMKc8RjF/drMQHqiK7dvovFyz8kwp8df1kYLWjgIsg+zB2fRZpMz0WCc0sY"
+      crossorigin="anonymous"
+    ></script>
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"
       integrity="sha384-su5kReKyYlIFrI62mbQRKXHzFobMa7BHp1cK6julLPbnYcCW9NIZKJiTODjLPeDh"
@@ -39,7 +45,8 @@
       integrity="sha384-5c/prnUc7MzXF7auiBy6n8cSZk2mqlHCyJ3iE2kdV2JRNAF4vmY7p8e5vso0rSTU"
       crossorigin="anonymous"
     ></script>
-    <script src="src/regression.min.js"></script>
+    <!-- <script src="src/regression.min.js"></script> -->
+
     <script src="src/TS.js"></script>
     <script>
       let chart = TSchart().selector(".container");

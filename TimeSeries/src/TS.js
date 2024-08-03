@@ -23,7 +23,7 @@ function TSchart() {
               header[idx] === "date_float"
                 ? new Date(
                     (parseFloat(col) - 1970) * 365.2425 * 24 * 60 * 60 * 1000
-                  )
+                  ).getTime()
                 : parseFloat(col),
           }),
           {}
@@ -48,6 +48,92 @@ function TSchart() {
 
   function chart() {
     const chartRootNode = document.querySelector(selector);
+
+    let getColor = (key) => {
+      let color;
+      switch (key) {
+        case "dN":
+          color = "rgb(201, 23, 30)";
+          break;
+        case "dE":
+          color = "rgb(49, 103, 69)";
+          break;
+        case "dU":
+          color = "rgb(0, 123, 187)";
+          break;
+        case "reg.":
+          color = "black";
+          break;
+        default:
+          color = "black";
+          break;
+      }
+
+      return color;
+    };
+    let floatCalc = (operator, ...theArgs) => {
+      function isFloat(n) {
+        return n.toString().indexOf(".") >= 0;
+      }
+
+      let powerArr = theArgs.map((d) =>
+        isFloat(d) ? d.toString().split(".")[1].length : 0
+      );
+      let maxPower = Math.max(...powerArr);
+      // console.debug(maxPower);
+      let newArgs = theArgs.map(
+        (d, i) =>
+          parseInt(d.toString().replace(".", "")) *
+          Math.pow(10, maxPower - powerArr[i])
+      );
+      switch (operator) {
+        default:
+        case "+":
+          return newArgs.reduce((a, b) => a + b) / Math.pow(10, maxPower);
+        case "-":
+          return newArgs.reduce((a, b) => a - b) / Math.pow(10, maxPower);
+        case "*":
+          return (
+            newArgs.reduce((a, b) => a * b) /
+            Math.pow(10, maxPower * newArgs.length)
+          );
+        case "/":
+          return (
+            newArgs.reduce((a, b) => a / b) *
+            Math.pow(10, maxPower * (newArgs.length - 2))
+          );
+      }
+    };
+    let toEXP = (number, maxIndex = undefined) => {
+      // console.debug(number);
+      let singed = number < 0,
+        numberAbs = Math.abs(number);
+
+      //maxIndex 轉成指定10的次方
+      if (maxIndex || maxIndex == 0) {
+        let index = number == 0 ? 0 : maxIndex;
+        let constant =
+          floatCalc("/", numberAbs, Math.pow(10, index)) * (singed ? -1 : 1);
+        // let constant = numberAbs / Math.pow(10, index) * (singed ? -1 : 1);
+        // console.debug(constant, index);
+        return [constant, index];
+      } else if (numberAbs >= 10) {
+        let intLength = Math.floor(numberAbs).toString().length;
+        let index = intLength - 1;
+        let constant = (numberAbs / Math.pow(10, index)) * (singed ? -1 : 1);
+        // console.debug(constant, index);
+        return [constant, index];
+      }
+      //tickRange < 1
+      else if (numberAbs > 0 && numberAbs < 1) {
+        let constant = numberAbs;
+        let str = constant.toString();
+        let index = (str.split(".")[1] || "").length;
+        constant *= (singed ? -1 : 1) * Math.pow(10, index);
+        // console.debug(constant, index);
+        return [constant, -index];
+      } else return [number, 0];
+    };
 
     function init() {
       chartRootNode.insertAdjacentHTML(
@@ -175,7 +261,6 @@ function TSchart() {
       };
       chart.loadingEffect = loadingEffect;
     }
-
     async function printChart(plotType) {
       chartRootNode
         .querySelectorAll("#charts>*")
@@ -409,28 +494,6 @@ function TSchart() {
 
         let x, y;
         let newDataObj;
-        let getColor = (key) => {
-          let color;
-          switch (key) {
-            case "dN":
-              color = "rgb(201, 23, 30)";
-              break;
-            case "dE":
-              color = "rgb(49, 103, 69)";
-              break;
-            case "dU":
-              color = "rgb(0, 123, 187)";
-              break;
-            case "reg.":
-              color = "black";
-              break;
-            default:
-              color = "black";
-              break;
-          }
-
-          return color;
-        };
 
         function getNewData(controlObj = {}) {
           let xAxis_domain = controlObj.hasOwnProperty("xAxis_domain")
@@ -551,27 +614,28 @@ function TSchart() {
               let diffDays = diffTime / (1000 * 60 * 60 * 24);
               return diffDays;
             }
-            let options = { logScale: [] };
-            let yAxisOption = {};
             let newData = newDataObj.newData;
-
-            let x_domain = options.xDomain
-              ? options.xDomain
-              : [newData[0].x, newData[newData.length - 1].x];
+            //==之後能加logScale
+            let logScale = false;
+            let x_domain = newDataObj.xAxis_domain ?? [
+              newData[0].x,
+              newData[newData.length - 1].x,
+            ];
 
             let x_diff = getDateDiff(x_domain);
 
             x = d3["scaleUtc"]()
               .domain(
-                x_domain.map((d, i) =>
-                  new Date(d).setDate(
-                    d.getDate() + (i ? 1 : -1) * x_diff * 0.01
+                newDataObj.xAxis_domain ??
+                  x_domain.map((d, i) =>
+                    new Date(d).setDate(
+                      new Date(d).getDate() + (i ? 1 : -1) * x_diff * 0.01
+                    )
                   )
-                )
               )
               .range([margin.left, width - margin.right]);
 
-            y = d3[options.logScale.y ? "scaleLog" : "scaleLinear"]()
+            y = d3[logScale ? "scaleLog" : "scaleLinear"]()
               .domain(d3.extent(newData, (d) => d.y))
               .range([height - margin.bottom, margin.top]);
             y.nice();
@@ -599,20 +663,16 @@ function TSchart() {
                     const tickAmount = Math.floor(width / 80);
                     let getTickValues = (len) => {
                       let tickGap = getDateDiff(x_domain) / (len - 1);
-                      let ticks = Array.from(
-                        { length: len },
-                        (_, i) =>
-                          new Date(
-                            new Date(x_domain[0]).setDate(
-                              x_domain[0].getDate() + i * tickGap
-                            )
-                          )
+                      let ticks = Array.from({ length: len }, (_, i) =>
+                        new Date(x_domain[0]).setDate(
+                          new Date(x_domain[0]).getDate() + i * tickGap
+                        )
                       );
                       ticks[len - 1] = x_domain[1];
 
                       //==去除zoom後重複的tick
                       ticks = ticks
-                        .map((d) => d.getTime())
+                        .map((d) => d)
                         .filter((d, i, array) => array.indexOf(d) === i)
                         .map((d) => new Date(d));
                       // console.debug("ticks", ticks);
@@ -632,7 +692,7 @@ function TSchart() {
                   .attr("transform", `translate(${margin.left},0)`)
                   .call((g) => {
                     let axisFun = d3.axisLeft(y);
-                    yAxisOption.logScale
+                    logScale
                       ? axisFun.ticks(
                           Math.log10(y.domain()[1] / y.domain()[0]) + 1,
                           formatPower
@@ -697,7 +757,7 @@ function TSchart() {
               let updateRegLine = () => {
                 let linearReg = d3
                   .regressionLinear()
-                  .x((d) => d.x.getTime())
+                  .x((d) => d.x)
                   .y((d) => d.y)
                   .domain(x.domain());
 
@@ -716,7 +776,7 @@ function TSchart() {
                   .attr("y1", (d) => y(d[0][1]))
                   .attr("y2", (d) => y(d[1][1]));
 
-                // console.debug("Reg=", regGroup.selectAll("line").data()[0]);
+                console.debug("Reg=", regGroup.selectAll("line").data()[0]);
               };
               updateLine();
               updateCircles();
@@ -875,8 +935,7 @@ function TSchart() {
                         tooltip.call((div) => {
                           div
                             .select(".tooltip-date")
-                            .text(data.x.toISOString().split(".")[0]);
-                          // .text(data.x.toISOString().split("T")[0]);
+                            .text(new Date(data.x).toISOString().split(".")[0]);
                           div.select(".tooltip-channel>text").text(cha);
                           div.select(".tooltip-value").text(data.y);
                           div
@@ -1028,6 +1087,8 @@ function TSchart() {
                   newDataObj = getNewData({
                     xAxis_domain: xAxis_domain,
                   });
+
+                  chart.loadingEffect(true);
                   updateChart();
 
                   selectionRect.remove();
@@ -1099,61 +1160,53 @@ function TSchart() {
         return svg.node();
       }
       function getWindowChart() {
-        // const data = waveformData;
-        // console.debug(data);
-        // channel = channel.reverse().filter((cha) => data[cha].x.length > 1);
-        // console.debug(channel);
+        const channelArr_reverse = channelArr.reverse();
+
         const width = 800,
           height = 500,
           height2 = 65,
-          margin = getMargin();
+          margin = { top: 20, right: 30, bottom: 35, left: 35 };
         const svg = d3
           .create("svg")
           .attr("viewBox", [0, 0, width, height + height2]);
         const xAxis = svg.append("g").attr("class", "xAxis");
         const yAxis = svg.append("g").attr("class", "yAxis");
-        const focus = svg
+        const legendGroup = svg.append("g").attr("class", "legendGroup");
+        const focusGroup = svg
           .append("g")
-          .attr("class", "paths")
+          .attr("class", "focus")
           .attr("clip-path", "url(#clip)");
 
         let x, y;
         let newDataObj;
         // console.debug(index);
         function getNewData(controlObj = {}) {
-          // console.debug(data);
           let xAxis_domain = controlObj.hasOwnProperty("xAxis_domain")
             ? controlObj.xAxis_domain
             : null;
 
-          function getData(xAxis_domain) {
-            let newData = {};
+          const getData = (xAxis_domain) => {
+            let newData = channelArr_reverse.reduce((acc, cha) => {
+              return {
+                ...acc,
+                [cha]: data.map((d) => ({ x: d.date_float, y: d[cha] })),
+              };
+            }, {});
 
+            // console.log(xAxis_domain);
             if (xAxis_domain) {
-              // console.debug(xAxis_domain);
-              let xData = data[channel[0]].x;
-              let i1 = d3.bisectCenter(xData, xAxis_domain[0]);
-              let i2 = d3.bisectCenter(xData, xAxis_domain[1]) + 1; //包含最大範圍
+              let dateArr = data.map((d) => d.date_float);
+              let idx_domain = xAxis_domain.map(
+                (d, i) => d3.bisectCenter(dateArr, d) + i //包含最大範圍
+              );
 
-              newData = channel.reduce((acc, key) => {
-                // 從累加器中獲取當前鍵值對應的分組，如果不存在則創建一個新的空陣列
-                // const curGroup = acc[key] ?? [];
-                // 將當前物件合併到當前分組中
-                return {
-                  ...acc,
-                  [key]: {
-                    x: xData.slice(i1, i2),
-                    y: data[key].y.slice(i1, i2),
-                  },
-                };
-              }, {});
-
-              // console.debug(newData);
-            } else newData = data;
-
+              Object.keys(newData).forEach((cha) => {
+                newData[cha] = newData[cha].slice(...idx_domain);
+              });
+            }
             return newData;
-          }
-          function getDataRange(data) {
+          };
+          const getDataRange = (data) => {
             const tickBaseArr = [1, 2, 5, 10];
             const maxTickAmount = 20;
 
@@ -1198,8 +1251,8 @@ function TSchart() {
               return tickValues;
             };
 
-            let supData = channel.map((cha) => {
-              let domain = d3.extent(data[cha].y);
+            let supData = channelArr_reverse.map((cha) => {
+              let domain = d3.extent(data[cha], (d) => d.y);
               let range = domain.reduce((a, b) =>
                 Math.abs(floatCalc("-", b, a))
               );
@@ -1253,84 +1306,121 @@ function TSchart() {
               tickValues,
               tickPower: toEXP(tickRange)[1],
             };
-          }
+          };
 
           let newData = getData(xAxis_domain);
-
           let chartData =
-            newData[channel[0]].x.length > 1
+            newData[channelArr_reverse[0]].length > 1
               ? getDataRange(newData)
               : newDataObj.chartData;
 
           return {
-            newData: newData,
-            xAxis_domain: xAxis_domain,
-            chartData: chartData,
-            // normalize: normalize,
+            newData,
+            xAxis_domain,
+            chartData,
           };
         }
         function updateChart(trans = false) {
           function init() {
-            svg
-              .append("g")
-              .attr("class", "SN_number")
-              .style("display", "none")
-              .call((g) => {
-                g.append("text")
-                  .attr("fill", "currentColor")
-                  .attr("x", margin.left)
-                  .attr("y", margin.top * 0.7)
-                  .attr("text-anchor", "start")
-                  .attr("font-size", 13)
-                  .text(`( x 10\u00A0\u00A0\u00A0\u00A0)`);
+            // legend
+            // {    const legend_items = [cha, "reg."];
+            //     legendGroup
+            //       .append("g")
+            //       .attr("class", "legend")
+            //       .style("font-size", "12px")
+            //       .call((legend) => {
+            //         const rect_width = 8;
+            //         const rect_textW = 30;
+            //         const rect_margin = 5;
 
-                g.append("text")
-                  .attr("class", "power")
-                  .attr("font-size", 10)
-                  .attr("x", margin.left + 33)
-                  .attr("y", margin.top * 0.4)
-                  .text(``);
+            //         const legend_width =
+            //           (rect_width + rect_textW) * legend_items.length +
+            //           rect_margin * 2;
+            //         const legend_height = (rect_width + rect_margin) * 2;
+
+            //         legend
+            //           .append("rect")
+            //           .attr("height", legend_height)
+            //           .attr("width", legend_width)
+            //           .attr("fill", "#D3D3D3")
+            //           .attr("opacity", 0.5)
+            //           .attr("stroke-width", "1")
+            //           .attr("stroke", "black")
+            //           .attr("stroke-opacity", 0.8);
+
+            //         legend
+            //           .selectAll("g")
+            //           .data(legend_items)
+            //           .join("g")
+            //           .attr("class", "legend_itemG")
+            //           .call((g) => {
+            //             g.append("rect")
+            //               .attr(
+            //                 "x",
+            //                 (d, i) => (rect_width + rect_textW) * i + rect_margin
+            //               )
+            //               .attr("y", legend_height / 2 - rect_width * 0.5)
+            //               .attr("height", rect_width)
+            //               .attr("width", rect_width)
+            //               .attr("fill", (d) => getColor(d));
+
+            //             g.append("text")
+            //               .attr("font-weight", "bold")
+            //               .style("text-anchor", "middle")
+            //               .attr("alignment-baseline", "middle")
+            //               .attr(
+            //                 "x",
+            //                 (d, i) =>
+            //                   i * (rect_width + rect_textW) +
+            //                   rect_width +
+            //                   rect_textW / 2 +
+            //                   rect_margin
+            //               )
+            //               .attr("y", legend_height / 2)
+            //               .text((d) => d);
+            //           });
+
+            //         legend.attr(
+            //           "transform",
+            //           `translate(${width - margin.right - legend_width}, ${
+            //             margin.top * 0.3
+            //           })`
+            //         );
+            //       });
+            // }
+
+            // groups for data and reg.
+            focusGroup
+              .selectAll("g")
+              .data(channelArr_reverse)
+              .join("g")
+              .attr("class", (cha) => `channelGroup_${cha}`)
+              .call((channelG) => {
+                channelG.append("g").attr("class", "regGroup");
+                channelG.append("g").attr("class", "dataGroup");
               });
 
+            //===遮罩讓path和事件不超出邊界
             svg
-              .append("g")
-              .attr("class", "referenceTime")
-              .append("text")
-              .attr("fill", "currentColor")
-              .attr("x", width - margin.right)
-              .attr("y", margin.top / 2)
-              .attr("text-anchor", "end")
-              .attr("alignment-baseline", "central")
-              .attr("font-weight", "bold")
-              .attr("font-size", "13")
-              .text("reference time : " + event);
-
-            xAxis
-              .append("text")
-              .attr("class", "axis_name")
-              .attr("fill", "black")
-              .attr("font-weight", "bold")
-              .attr("x", width / 2)
-              .attr("y", margin.top + 10)
-              .attr("font-size", "13")
-              .text("Time (s)");
-
-            yAxis
-              .append("text")
-              .attr("class", "axis_name")
-              .attr("fill", "black")
-              .attr("font-weight", "bold")
-              .attr("font-size", "10")
-              .style("text-anchor", "middle")
-              .attr("alignment-baseline", "text-before-edge")
-              .attr("transform", "rotate(-90)")
-              .attr("x", -height / 2)
-              .attr("y", -margin.left + 8)
-              .attr("font-size", "13")
-              .text("Amplitude (cm/s/s)");
+              .append("defs")
+              .append("clipPath")
+              .attr("id", "clip")
+              .append("rect")
+              .attr("id", "chartRenderRange")
+              .attr("x", margin.left)
+              .attr("y", margin.top)
+              .attr("width", width - margin.right - margin.left)
+              .attr("height", height - margin.top - margin.bottom)
+              .attr("fill", "none")
+              .attr("pointer-events", "all");
           }
           function render() {
-            // console.debug(newDataObj);
+            console.debug(newDataObj);
+            function getDateDiff(dateArr) {
+              let diffTime = Math.abs(dateArr[1] - dateArr[0]);
+              let diffDays = diffTime / (1000 * 60 * 60 * 24);
+              return diffDays;
+            }
             const newData = newDataObj.newData;
             const chartData = newDataObj.chartData;
             let supData = chartData.supData,
@@ -1338,17 +1428,22 @@ function TSchart() {
               tickPower = chartData.tickPower,
               tickValues = chartData.tickValues;
 
-            let getDomain = (axis) => {
-              return d3.extent(
-                [].concat(
-                  ...channel.map((cha) => d3.extent(newData[cha][axis]))
-                )
-              );
-            };
+            let tmpData = newData[channelArr_reverse[0]];
+            let x_domain = newDataObj.xAxis_domain ?? [
+              tmpData[0].x,
+              tmpData[tmpData.length - 1].x,
+            ];
+            let x_diff = getDateDiff(x_domain);
 
-            x = d3
-              .scaleLinear()
-              .domain(getDomain("x"))
+            x = d3["scaleUtc"]()
+              .domain(
+                newDataObj.xAxis_domain ??
+                  x_domain.map((d, i) =>
+                    new Date(d).setDate(
+                      new Date(d).getDate() + (i ? 1 : -1) * x_diff * 0.01
+                    )
+                  )
+              )
               .range([margin.left, width - margin.right]);
 
             y = d3
@@ -1360,12 +1455,33 @@ function TSchart() {
               let makeXAxis = (g) =>
                 g
                   .attr("transform", `translate(0,${height - margin.bottom})`)
-                  .call(
-                    d3
+                  .call((g) => {
+                    const tickAmount = Math.floor(width / 80);
+                    let getTickValues = (len) => {
+                      let tickGap = getDateDiff(x_domain) / (len - 1);
+                      let ticks = Array.from({ length: len }, (_, i) =>
+                        new Date(x_domain[0]).setDate(
+                          new Date(x_domain[0]).getDate() + i * tickGap
+                        )
+                      );
+                      ticks[len - 1] = x_domain[1];
+
+                      //==去除zoom後重複的tick
+                      ticks = ticks
+                        .map((d) => d)
+                        .filter((d, i, array) => array.indexOf(d) === i)
+                        .map((d) => new Date(d));
+                      // console.debug("ticks", ticks);
+                      return ticks;
+                    };
+
+                    let axisFun = d3
                       .axisBottom(x)
-                      .ticks(width / 80)
                       .tickSizeOuter(0)
-                  );
+                      .tickValues(getTickValues(tickAmount))
+                      .tickFormat(d3.utcFormat("%Y-%m-%d"));
+                    axisFun(g);
+                  });
               let makeYAxis = (g) =>
                 g.attr("transform", `translate(${margin.left},0)`).call((g) => {
                   //==計算tick要扣多少
@@ -1379,7 +1495,6 @@ function TSchart() {
                     .axisLeft(y)
                     .tickValues(tickValues)
                     .tickFormat(function (v, i) {
-                      // return;
                       //是分隔線
                       let isDivider =
                         v >= supMaxArr[cha_idx] || i == tickValues.length - 1;
@@ -1393,7 +1508,7 @@ function TSchart() {
                         let text = tick
                           .select("text")
                           .attr("font-weight", "bold")
-                          .attr("fill", getColor(channel[cha_idx]));
+                          .attr("fill", getColor(channelArr_reverse[cha_idx]));
 
                         if (isDivider) {
                           let val = floatCalc(
@@ -1414,10 +1529,13 @@ function TSchart() {
                               .join("text")
                               .attr("class", "dividerTick")
                               .attr("font-weight", "bold")
-                              .attr("fill", getColor(channel[cha_idx - 1]))
+                              .attr(
+                                "fill",
+                                getColor(channelArr_reverse[cha_idx - 1])
+                              )
                               .attr("x", tick_x)
                               .attr("dy", 8)
-                              .text(toEXP(val, tickPower)[0]);
+                              .text(val);
                           }
 
                           //多一個title
@@ -1430,14 +1548,13 @@ function TSchart() {
                             .attr("fill", "currentColor")
                             .attr("text-anchor", "start")
                             .attr("alignment-baseline", "before-edge")
+                            .attr("x", 2)
                             .attr("font-weight", "bold")
                             .attr("font-size", "13")
                             .text(
-                              `${network}.${staCode}.${
-                                channel[
-                                  cha_idx - (i == tickValues.length - 1 ? 0 : 1)
-                                ]
-                              }`
+                              channelArr_reverse[
+                                cha_idx - (i == tickValues.length - 1 ? 0 : 1)
+                              ]
                             );
                         }
 
@@ -1448,7 +1565,8 @@ function TSchart() {
                           .attr("stroke-opacity", isDivider ? 1 : 0.2);
                       });
 
-                      return toEXP(val, tickPower)[0];
+                      // return toEXP(val, tickPower)[0];
+                      return val;
                     });
                   //
                   axis(g);
@@ -1470,38 +1588,99 @@ function TSchart() {
                 yAxis.call(makeYAxis);
               }
             };
-            let updatePaths = () => {
-              // console.debug(data);
-              let lineSup = (data, index) => {
-                let supRange = supData[index].supRange;
-                let line = d3
-                  .line()
-                  .defined((d, i) => !isNaN(data.y[i]))
-                  .x((d) => x(d))
-                  .y((d, i) => y(data.y[i] + supRange));
-                return line(data.x);
-              };
+            let updateFocus = () => {
+              let dataGroups = focusGroup.selectAll("g.dataGroup"),
+                regGroups = focusGroup.selectAll("g.regGroup");
 
-              focus
-                .selectAll("path")
-                .data(channel)
-                .join("path")
-                .attr("fill", "none")
-                .attr("stroke", (cha) => getColor(cha))
-                .attr("stroke-width", 1)
-                .attr("stroke-linejoin", "round")
-                .attr("stroke-linecap", "round")
-                .call((path) => {
-                  if (trans)
-                    path
-                      .transition()
-                      .duration(1000)
-                      .attr("d", (cha, i) => lineSup(newData[cha], i));
-                  else path.attr("d", (cha, i) => lineSup(newData[cha], i));
+              let updateLine = () => {
+                let lineSup = (data, index) => {
+                  let supRange = supData[index].supRange;
+                  let line = d3
+                    .line()
+                    .defined((d) => !isNaN(d.y))
+                    .x((d) => x(d.x))
+                    .y((d) => y(d.y + supRange));
+                  return line(data);
+                };
+                dataGroups.call((groups) => {
+                  // console.log(groups);
+                  groups.each(function (cha, i) {
+                    let dataG = d3.select(this);
+                    dataG
+                      .selectAll("path")
+                      .data([cha])
+                      .join("path")
+                      .attr("fill", "none")
+                      .attr("stroke", getColor(cha))
+                      .attr("stroke-width", 0.5)
+                      .attr("stroke-linejoin", "round")
+                      .attr("stroke-linecap", "round")
+                      .call((path) => {
+                        if (trans)
+                          path
+                            .transition()
+                            .duration(1000)
+                            .attr("d", lineSup(newData[cha], i));
+                        else path.attr("d", lineSup(newData[cha], i));
+                      });
+                  });
                 });
+              };
+              let updateCircles = () => {
+                dataGroups.call((groups) => {
+                  groups.each(function (cha, i) {
+                    // console.log(cha, i);
+                    let dataG = d3.select(this);
+                    dataG
+                      .selectAll("circle")
+                      .data(newData[cha])
+                      .join("circle")
+                      .attr("fill", getColor(cha))
+                      .attr("stroke", getColor(cha))
+                      .attr("stroke-width", 1)
+                      .attr("stroke-opacity", 0.5)
+                      .attr("r", 1)
+                      .attr("cx", (d) => x(d.x))
+                      .attr("cy", (d) => y(d.y + supData[i].supRange));
+                  });
+                });
+              };
+              let updateRegLine = () => {
+                let linearReg = d3
+                  .regressionLinear()
+                  .x((d) => d.x)
+                  .y((d) => d.y)
+                  .domain(x.domain());
+
+                regGroups.call((groups) => {
+                  // console.log(groups);
+                  groups.each(function (cha, i) {
+                    let regG = d3.select(this);
+                    regG
+                      .selectAll("line")
+                      .data([linearReg(newData[cha])])
+                      .join("line")
+                      .attr("class", "regression")
+                      .attr("stroke", getColor("reg."))
+                      .attr("stroke-width", 1)
+                      .attr("stroke-opacity", 0.8)
+                      .attr("stroke-linejoin", "round")
+                      .attr("stroke-linecap", "round")
+                      .attr("x1", (d) => x(d[0][0]))
+                      .attr("x2", (d) => x(d[1][0]))
+                      .attr("y1", (d) => y(d[0][1] + supData[i].supRange))
+                      .attr("y2", (d) => y(d[1][1] + supData[i].supRange));
+
+                    // console.debug("Reg=", regG.selectAll("line").data()[0]);
+                  });
+                });
+              };
+              updateLine();
+              updateCircles();
+              updateRegLine();
             };
             updateAxis();
-            updatePaths();
+            updateFocus();
           }
 
           if (!newDataObj) {
@@ -1510,13 +1689,13 @@ function TSchart() {
             init();
           }
           render();
+          chart.loadingEffect(false);
         }
 
         updateChart();
         function events() {
           //===event eles
           const eventRect = svg.append("g").attr("class", "eventRect");
-          const defs = svg.append("defs");
           //====================================tooltip==================================================
           const tooltip = d3
             .select(chartRootNode)
@@ -1525,19 +1704,6 @@ function TSchart() {
             .attr("class", "tooltip");
 
           function pathEvent() {
-            //===遮罩讓path和事件不超出邊界
-            defs
-              .append("clipPath")
-              .attr("id", "clip")
-              .append("rect")
-              .attr("id", "chartRenderRange")
-              .attr("x", margin.left)
-              .attr("y", margin.top)
-              .attr("width", width - margin.right - margin.left)
-              .attr("height", height - margin.top - margin.bottom)
-              .attr("fill", "none")
-              .attr("pointer-events", "all");
-
             eventRect.append("use").attr("xlink:href", "#chartRenderRange");
 
             //====================================mouse move==================================================
@@ -1566,7 +1732,7 @@ function TSchart() {
                     let action = () => {
                       let newData = newDataObj.newData,
                         chartData = newDataObj.chartData,
-                        xData = newData[channel[0]].x;
+                        xData = newData[channelArr_reverse[0]].map((d) => d.x);
 
                       const pointer = d3.pointer(e, this);
                       let mouseOnIdx = d3.bisectCenter(
@@ -1586,13 +1752,13 @@ function TSchart() {
 
                       mouseG
                         .selectAll(".mouse-per-line")
-                        .data(channel)
+                        .data(channelArr_reverse)
                         .join("g")
                         .attr("class", "mouse-per-line")
                         .attr("transform", (cha, i) => {
                           let supRange = chartData.supData[i].supRange;
-                          let transX = x(newData[cha].x[mouseOnIdx]);
-                          let transY = y(newData[cha].y[mouseOnIdx] + supRange);
+                          let transX = x(newData[cha][mouseOnIdx].x);
+                          let transY = y(newData[cha][mouseOnIdx].y + supRange);
                           return `translate(${transX},${transY})`;
                         })
                         .call((gCollection) => {
@@ -1615,7 +1781,7 @@ function TSchart() {
                                     .style(
                                       "stroke",
                                       mainCircle
-                                        ? getColor(channel[i])
+                                        ? getColor(channelArr_reverse[i])
                                         : "white"
                                     )
                                     .style("fill", "none")
@@ -1635,7 +1801,9 @@ function TSchart() {
 
                         const divHtml = `
                         <font class='tooltip_tag'>Time : </font><br/>
-                        <font size='5'>${x} </font> s<br/>
+                        <font size='5'>${
+                          new Date(x).toISOString().split(".")[0]
+                        } </font> <br/>
                         <font class='tooltip_tag'>Amplitude : </font><br/>`;
 
                         let box = tooltip.node().getBoundingClientRect();
@@ -1654,23 +1822,13 @@ function TSchart() {
                           )
                           .style("top", `${mouseY}px`)
                           .selectAll("div")
-                          .data(channel.slice(0).reverse())
+                          .data(channelArr_reverse.slice(0).reverse())
                           .join("div")
                           .style("color", (cha) => getColor(cha))
                           .style("font-size", 10)
                           .html((cha, i) => {
-                            let power = chartData.tickPower;
-                            let y = newData[cha].y[mouseOnIdx];
-                            let constant = parseFloat(
-                              toEXP(y, power)[0].toFixed(3)
-                            );
-
-                            let html = `<font size='5'>${
-                              constant +
-                              (power && constant !== 0
-                                ? ` x 10<sup>${power}</sup>`
-                                : "")
-                            } </font>`;
+                            let y = newData[cha][mouseOnIdx].y;
+                            let html = `<font size='5'>${y} </font>`;
                             return html;
                           });
                       };
@@ -1809,8 +1967,10 @@ function TSchart() {
                     xAxis_domain: xAxis_domain,
                   });
 
-                  if (newDataObj.newData[channel[0]].x.length > 1)
+                  if (newDataObj.newData[channelArr_reverse[0]].length > 1) {
+                    chart.loadingEffect(true);
                     updateChart();
+                  }
 
                   selectionRect.remove();
                   updateBrush(xAxis_domain);
@@ -1821,9 +1981,8 @@ function TSchart() {
             mouseDrag();
           }
           function brushEvent() {
-            const chaIdx = channel.length - 1,
-              cha = channel[chaIdx],
-              chaData = data[cha];
+            const chaIdx = channelArr_reverse.length - 1,
+              cha = channelArr_reverse[chaIdx];
 
             let brushArea = svg
               .append("g")
@@ -1832,7 +1991,7 @@ function TSchart() {
 
             brushArea
               .selectAll("path")
-              .data([chaData])
+              .data([newDataObj.newData[cha]])
               .join("path")
               .attr("fill", "none")
               .attr("stroke-width", 1)
@@ -1841,6 +2000,7 @@ function TSchart() {
               .attr("stroke-opacity", 1)
               .attr("stroke", "#272727")
               .attr("d", (d) => {
+                // console.debug(d);
                 let chaChartData = newDataObj.chartData.supData[chaIdx];
                 let y2 = d3
                   .scaleLinear()
@@ -1850,11 +2010,11 @@ function TSchart() {
                 let line2 = (data) => {
                   let pathAttr = d3
                     .line()
-                    .defined((d, i) => !isNaN(data.y[i]))
-                    .x((d) => x(d))
-                    .y((d, i) => y2(data.y[i]));
+                    .defined((d) => !isNaN(d.y))
+                    .x((d) => x(d.x))
+                    .y((d) => y2(d.y));
 
-                  return pathAttr(data.x);
+                  return pathAttr(data);
                 };
 
                 return line2(d);
@@ -1920,10 +2080,10 @@ function TSchart() {
       if (!data) {
         chart.data();
         data = await data;
+        console.log("data= ", data);
       }
 
       switch (plotType) {
-        default:
         case "trace":
           channelArr.forEach((cha, i) => {
             getChartDivHtml(i);
@@ -1933,6 +2093,7 @@ function TSchart() {
             chart.append(chartNode);
           });
           break;
+        default:
         case "window":
           getChartDivHtml(0);
           let window = chartRootNode.querySelector("#chart0");

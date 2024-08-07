@@ -134,6 +134,17 @@ function TSchart() {
         return [constant, -index];
       } else return [number, 0];
     };
+    let niceEXP = (number, DP = 2) => {
+      return number.toExponential(DP).replace(/e([+\-]?\d+)/i, (match, exp) => {
+        let expStr = "";
+        if (parseInt(exp) !== 0)
+          expStr = ` x 10${(parseInt(exp) + "").replace(
+            /./g,
+            (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c] || "⁻"
+          )}`;
+        return expStr;
+      });
+    };
 
     function init() {
       chartRootNode.insertAdjacentHTML(
@@ -484,13 +495,13 @@ function TSchart() {
           height = 250;
         const margin = { top: 20, right: 30, bottom: 35, left: 35 };
         const svg = d3.create("svg").attr("viewBox", [0, 0, width, height]);
-        const xAxis = svg.append("g").attr("class", "xAxis");
-        const yAxis = svg.append("g").attr("class", "yAxis");
         const legendGroup = svg.append("g").attr("class", "legendGroup");
         const focusGroup = svg
           .append("g")
           .attr("class", "focus")
           .attr("clip-path", "url(#clip)");
+        const xAxis = svg.append("g").attr("class", "xAxis");
+        const yAxis = svg.append("g").attr("class", "yAxis");
 
         let x, y;
         let newDataObj;
@@ -530,12 +541,12 @@ function TSchart() {
               .call((legend) => {
                 const rect_width = 8;
                 const rect_textW = 30;
-                const rect_margin = 5;
+                const rect_margin = 7;
 
-                const legend_width =
-                  (rect_width + rect_textW) * legend_items.length +
-                  rect_margin * 2;
-                const legend_height = (rect_width + rect_margin) * 2;
+                const legend_width = rect_width + rect_textW + rect_margin * 2;
+                const legend_height =
+                  (rect_width + rect_margin) * legend_items.length +
+                  rect_margin;
 
                 legend
                   .append("rect")
@@ -548,43 +559,41 @@ function TSchart() {
                   .attr("stroke-opacity", 0.8);
 
                 legend
+                  .attr(
+                    "transform",
+                    `translate(${width - margin.right - legend_width}, ${
+                      margin.top * 0.3
+                    })`
+                  )
                   .selectAll("g")
                   .data(legend_items)
                   .join("g")
                   .attr("class", "legend_itemG")
                   .call((g) => {
                     g.append("rect")
+                      .attr("x", rect_margin)
                       .attr(
-                        "x",
-                        (d, i) => (rect_width + rect_textW) * i + rect_margin
+                        "y",
+                        (d, i) => rect_margin + i * (rect_width + rect_margin)
                       )
-                      .attr("y", legend_height / 2 - rect_width * 0.5)
                       .attr("height", rect_width)
                       .attr("width", rect_width)
                       .attr("fill", (d) => getColor(d));
 
                     g.append("text")
                       .attr("font-weight", "bold")
-                      .style("text-anchor", "middle")
+                      .attr("text-anchor", "start")
                       .attr("alignment-baseline", "middle")
+                      .attr("x", rect_margin * 2 + rect_width)
                       .attr(
-                        "x",
+                        "y",
                         (d, i) =>
-                          i * (rect_width + rect_textW) +
-                          rect_width +
-                          rect_textW / 2 +
-                          rect_margin
+                          rect_margin +
+                          rect_width * 0.5 +
+                          i * (rect_width + rect_margin)
                       )
-                      .attr("y", legend_height / 2)
                       .text((d) => d);
                   });
-
-                legend.attr(
-                  "transform",
-                  `translate(${width - margin.right - legend_width}, ${
-                    margin.top * 0.3
-                  })`
-                );
               });
 
             // groups for data and reg.
@@ -606,6 +615,26 @@ function TSchart() {
               .attr("height", height - margin.top - margin.bottom)
               .attr("fill", "none")
               .attr("pointer-events", "all");
+
+            //==slopeText
+            yAxis
+              .append("g")
+              .attr("class", "slopeTextG")
+              .call((g) => {
+                g.append("text")
+                  .attr("fill", "currentColor")
+                  .attr("y", margin.top * 0.7)
+                  .attr("text-anchor", "start")
+                  .attr("font-weight", "bold")
+                  .attr("font-size", "13");
+
+                // g.append("text")
+                //   .attr("class", "power")
+                //   .attr("font-size", 10)
+                //   .attr("x", margin.left + 33)
+                //   .attr("y", margin.top * 0.4)
+                //   .text(``);
+              });
           }
           function render() {
             console.debug(newDataObj);
@@ -760,10 +789,11 @@ function TSchart() {
                   .x((d) => d.x)
                   .y((d) => d.y)
                   .domain(x.domain());
+                let regData = linearReg(newData);
 
                 regGroup
                   .selectAll("line")
-                  .data([linearReg(newData)])
+                  .data([regData])
                   .join("line")
                   .attr("class", "regression")
                   .attr("stroke", getColor("reg."))
@@ -776,7 +806,12 @@ function TSchart() {
                   .attr("y1", (d) => y(d[0][1]))
                   .attr("y2", (d) => y(d[1][1]));
 
-                console.debug("Reg=", regGroup.selectAll("line").data()[0]);
+                console.debug("Reg=", regData);
+
+                //== slope text
+                yAxis
+                  .selectAll(".slopeTextG>text")
+                  .text(`slope = ${niceEXP(regData.a)}`);
               };
               updateLine();
               updateCircles();
@@ -800,6 +835,7 @@ function TSchart() {
         function events() {
           //===event eles
           const eventRect = svg.append("g").attr("class", "eventRect");
+          legendGroup.raise();
           //====================================tooltip==================================================
           const tooltip = d3
             .select(chartRootNode)
@@ -1169,13 +1205,13 @@ function TSchart() {
         const svg = d3
           .create("svg")
           .attr("viewBox", [0, 0, width, height + height2]);
-        const xAxis = svg.append("g").attr("class", "xAxis");
-        const yAxis = svg.append("g").attr("class", "yAxis");
         const legendGroup = svg.append("g").attr("class", "legendGroup");
         const focusGroup = svg
           .append("g")
           .attr("class", "focus")
           .attr("clip-path", "url(#clip)");
+        const xAxis = svg.append("g").attr("class", "xAxis");
+        const yAxis = svg.append("g").attr("class", "yAxis");
 
         let x, y;
         let newDataObj;
@@ -1323,78 +1359,73 @@ function TSchart() {
         function updateChart(trans = false) {
           function init() {
             // legend
-            // {    const legend_items = [cha, "reg."];
-            //     legendGroup
-            //       .append("g")
-            //       .attr("class", "legend")
-            //       .style("font-size", "12px")
-            //       .call((legend) => {
-            //         const rect_width = 8;
-            //         const rect_textW = 30;
-            //         const rect_margin = 5;
+            const legend_items = [...channelArr, "reg."];
+            legendGroup
+              .append("g")
+              .attr("class", "legend")
+              .style("font-size", "12px")
+              .call((legend) => {
+                const rect_width = 8;
+                const rect_textW = 30;
+                const rect_margin = 7;
 
-            //         const legend_width =
-            //           (rect_width + rect_textW) * legend_items.length +
-            //           rect_margin * 2;
-            //         const legend_height = (rect_width + rect_margin) * 2;
+                const legend_width = rect_width + rect_textW + rect_margin * 2;
+                const legend_height =
+                  (rect_width + rect_margin) * legend_items.length +
+                  rect_margin;
 
-            //         legend
-            //           .append("rect")
-            //           .attr("height", legend_height)
-            //           .attr("width", legend_width)
-            //           .attr("fill", "#D3D3D3")
-            //           .attr("opacity", 0.5)
-            //           .attr("stroke-width", "1")
-            //           .attr("stroke", "black")
-            //           .attr("stroke-opacity", 0.8);
+                legend
+                  .append("rect")
+                  .attr("height", legend_height)
+                  .attr("width", legend_width)
+                  .attr("fill", "#D3D3D3")
+                  .attr("opacity", 0.5)
+                  .attr("stroke-width", "1")
+                  .attr("stroke", "black")
+                  .attr("stroke-opacity", 0.8);
 
-            //         legend
-            //           .selectAll("g")
-            //           .data(legend_items)
-            //           .join("g")
-            //           .attr("class", "legend_itemG")
-            //           .call((g) => {
-            //             g.append("rect")
-            //               .attr(
-            //                 "x",
-            //                 (d, i) => (rect_width + rect_textW) * i + rect_margin
-            //               )
-            //               .attr("y", legend_height / 2 - rect_width * 0.5)
-            //               .attr("height", rect_width)
-            //               .attr("width", rect_width)
-            //               .attr("fill", (d) => getColor(d));
+                legend
+                  .attr(
+                    "transform",
+                    `translate(${width - margin.right - legend_width}, ${
+                      margin.top * 0.3
+                    })`
+                  )
+                  .selectAll("g")
+                  .data(legend_items)
+                  .join("g")
+                  .attr("class", "legend_itemG")
+                  .call((g) => {
+                    g.append("rect")
+                      .attr("x", rect_margin)
+                      .attr(
+                        "y",
+                        (d, i) => rect_margin + i * (rect_width + rect_margin)
+                      )
+                      .attr("height", rect_width)
+                      .attr("width", rect_width)
+                      .attr("fill", (d) => getColor(d));
 
-            //             g.append("text")
-            //               .attr("font-weight", "bold")
-            //               .style("text-anchor", "middle")
-            //               .attr("alignment-baseline", "middle")
-            //               .attr(
-            //                 "x",
-            //                 (d, i) =>
-            //                   i * (rect_width + rect_textW) +
-            //                   rect_width +
-            //                   rect_textW / 2 +
-            //                   rect_margin
-            //               )
-            //               .attr("y", legend_height / 2)
-            //               .text((d) => d);
-            //           });
-
-            //         legend.attr(
-            //           "transform",
-            //           `translate(${width - margin.right - legend_width}, ${
-            //             margin.top * 0.3
-            //           })`
-            //         );
-            //       });
-            // }
-
-            // groups for data and reg.
+                    g.append("text")
+                      .attr("font-weight", "bold")
+                      .attr("text-anchor", "start")
+                      .attr("alignment-baseline", "middle")
+                      .attr("x", rect_margin * 2 + rect_width)
+                      .attr(
+                        "y",
+                        (d, i) =>
+                          rect_margin +
+                          rect_width * 0.5 +
+                          i * (rect_width + rect_margin)
+                      )
+                      .text((d) => d);
+                  });
+              });
             focusGroup
               .selectAll("g")
               .data(channelArr_reverse)
               .join("g")
-              .attr("class", (cha) => `channelGroup_${cha}`)
+              .attr("class", "channelGroup")
               .call((channelG) => {
                 channelG.append("g").attr("class", "regGroup");
                 channelG.append("g").attr("class", "dataGroup");
@@ -1654,11 +1685,14 @@ function TSchart() {
 
                 regGroups.call((groups) => {
                   // console.log(groups);
+
                   groups.each(function (cha, i) {
+                    let regData = linearReg(newData[cha]);
                     let regG = d3.select(this);
+
                     regG
                       .selectAll("line")
-                      .data([linearReg(newData[cha])])
+                      .data([regData])
                       .join("line")
                       .attr("class", "regression")
                       .attr("stroke", getColor("reg."))
@@ -1671,7 +1705,13 @@ function TSchart() {
                       .attr("y1", (d) => y(d[0][1] + supData[i].supRange))
                       .attr("y2", (d) => y(d[1][1] + supData[i].supRange));
 
-                    // console.debug("Reg=", regG.selectAll("line").data()[0]);
+                    // console.debug("Reg=", regData);
+
+                    //== slope text
+                    yAxis
+                      .selectAll("text.dividerTitle")
+                      .filter((_, text_i) => text_i === i)
+                      .text(`slope = ${niceEXP(regData.a)}`);
                   });
                 });
               };
@@ -2069,8 +2109,62 @@ function TSchart() {
             brushMove();
             return updateBrush;
           }
+          function infoBoxDragEvent() {
+            let raiseAndDrag = (d3_selection) => {
+              let x_fixed = 0,
+                y_fixed = 0;
+              let legend_dragBehavior = d3
+                .drag()
+                .on("start", function (e) {
+                  // console.log('drag start');
+                  // console.debug(this);
+                  let matrix = this.transform.baseVal[0].matrix;
+                  x_fixed = e.x - matrix.e;
+                  y_fixed = e.y - matrix.f;
+                })
+                .on("drag end", function (e) {
+                  // console.log('drag');
+                  let translateX = e.x - x_fixed;
+                  let translateY = e.y - y_fixed;
+
+                  let targetSVGRect = this.getBBox();
+                  let targetWidth = targetSVGRect.width;
+                  let targetHeight = targetSVGRect.height;
+
+                  // console.debug(targetSVGRect);
+                  let range_margin = 5;
+                  let xRange = [
+                    0 + range_margin,
+                    width - targetWidth - range_margin,
+                  ];
+                  let yRange = [
+                    range_margin,
+                    height - targetHeight - range_margin,
+                  ];
+                  //不能拉出svg範圍
+
+                  if (translateX < xRange[0]) translateX = xRange[0];
+                  else if (translateX > xRange[1]) translateX = xRange[1];
+                  // console.debug(width)
+                  if (translateY < yRange[0]) translateY = yRange[0];
+                  else if (translateY > yRange[1]) translateY = yRange[1];
+
+                  d3.select(this).attr(
+                    "transform",
+                    `translate(${translateX}, ${translateY})`
+                  );
+                });
+
+              d3_selection
+                .attr("cursor", "grab")
+                .call((g) => g.raise()) //把選中元素拉到最上層(比zoom的選取框優先)
+                .call(legend_dragBehavior);
+            };
+            svg.select(".legend").call(raiseAndDrag);
+          }
           pathEvent();
           let updateBrush = brushEvent();
+          infoBoxDragEvent();
         }
         events();
 
@@ -2084,6 +2178,7 @@ function TSchart() {
       }
 
       switch (plotType) {
+        default:
         case "trace":
           channelArr.forEach((cha, i) => {
             getChartDivHtml(i);
@@ -2093,7 +2188,6 @@ function TSchart() {
             chart.append(chartNode);
           });
           break;
-        default:
         case "window":
           getChartDivHtml(0);
           let window = chartRootNode.querySelector("#chart0");

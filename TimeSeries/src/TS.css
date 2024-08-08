@@ -5,8 +5,7 @@ span {
   user-select: none;
 }
 
-/* --------download button-------- */
-#charts {
+.chart {
   position: relative;
   padding: 10px 15px;
 }
@@ -111,6 +110,10 @@ span {
   pointer-events: none;
 }
 
+#chartMain .tooltip tr {
+  border: 0.5px solid #aaa;
+}
+
 #chartMain .tooltip tr > * {
   font-size: 24px;
   padding: 2px 8px;
@@ -129,23 +132,27 @@ span {
   border-left: 0.8px dotted #999;
 }
 
-/* --------chartOptions-------- */
-#chartOptions .dropdown-menu * {
+/* --------chartsOptions-------- */
+#chartsOptions .dropdown-menu {
+  padding: 10px 20px;
+}
+
+#chartsOptions .dropdown-menu * {
   white-space: nowrap;
 }
 
-#chartOptions #paramMenu textarea {
+#chartsOptions #paramMenu textarea {
   height: 150px;
   width: 400px;
   resize: both;
 }
 
-#chartOptions #paramMenu #paramHintBlock,
-#chartOptions #paramMenu i {
+#chartsOptions #paramMenu #paramHintBlock,
+#chartsOptions #paramMenu i {
   white-space: pre-line;
   line-height: 1;
 }
-#chartOptions #paramMenu i > label {
+#chartsOptions #paramMenu i > label {
   font-family: var(--bs-body-font-family);
   margin-left: 0.2rem;
 }

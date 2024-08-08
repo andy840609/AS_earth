@@ -2,6 +2,7 @@ function TSchart() {
   let selector = "body";
   let data = null;
 
+  const YEAR_TO_MS = 365.2425 * 24 * 60 * 60 * 1000;
   // Date.prototype.toString = () => 123;
   // console.debug(Date.prototype, new Date().toLocaleTimeString());
 
@@ -21,9 +22,7 @@ function TSchart() {
             ...acc,
             [header[idx]]:
               header[idx] === "date_float"
-                ? new Date(
-                    (parseFloat(col) - 1970) * 365.2425 * 24 * 60 * 60 * 1000
-                  ).getTime()
+                ? new Date((parseFloat(col) - 1970) * YEAR_TO_MS).getTime()
                 : parseFloat(col),
           }),
           {}
@@ -48,6 +47,7 @@ function TSchart() {
 
   function chart() {
     const chartRootNode = document.querySelector(selector);
+    const D3chartRoot = d3.select(chartRootNode);
 
     let getColor = (key) => {
       let color;
@@ -153,8 +153,9 @@ function TSchart() {
       <div class="form-group" id="chartsOptions" style="display: inline;">
           <div class="row">
 
-            <div class="form-group col-12">
-            <label class="col-form-label me-3">Plot</label>
+          <!-- ... plotType ... -->
+            <div class="form-group col-lg-3 col-md-4 col-sm-6">
+              <label class="col-form-label me-3">Plot</label>
               <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
                 <input type="radio" class="btn-check" name="plotType" id="trace" value="trace" autocomplete="off" checked>
                 <label class="btn btn-secondary" for="trace">trace</label>
@@ -162,10 +163,43 @@ function TSchart() {
                 <input type="radio" class="btn-check" name="plotType" id="window" value="window" autocomplete="off">
                 <label class="btn btn-secondary" for="window">window</label>
               
-               <!-- <input type="radio" class="btn-check" name="plotType" id="overlay" value="overlay" autocomplete="off">
+                <!-- <input type="radio" class="btn-check" name="plotType" id="overlay" value="overlay" autocomplete="off">
                 <label class="btn btn-secondary" for="overlay">overlay</label> -->
               </div>
             </div>
+
+            <!-- ... display ... -->
+            <div class="form-group col-lg-3 col-md-4 col-sm-6">
+              <label class="col-form-label me-3">Display</label>
+              <div class="btn-group btn-group-toggle col-7" role="group">
+                <button id="displaySelectButton" type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">select</button>
+                <div class="dropdown-menu" id="displayDropDownMenu" aria-labelledby="displaySelectButton">
+
+                <div class="form-check col-4">
+                  <input class="form-check-input  col-4" type="checkbox" id="display_reg" name="reg" checked>
+                  <label class="form-check-label text-nowrap col-8" for="display_reg">linear regression</label>
+                </div>
+                <div class="form-check col-4">
+                 <input class="form-check-input  col-4" type="checkbox" id="display_data" name="data" checked>
+                 <label class="form-check-label text-nowrap col-8" for="display_data">data</label>
+                </div>
+                <div class="form-check col-4">
+                  <input class="form-check-input  col-4" type="checkbox" id="display_error" name="error" checked>
+                  <label class="form-check-label text-nowrap col-8" for="display_error">error bar</label>
+                </div>
+                <div class="form-check col-4">
+                  <input class="form-check-input  col-4" type="checkbox" id="display_slope" name="slope" checked>
+                  <label class="form-check-label text-nowrap col-8" for="display_slope">slope label</label>
+                </div>
+                 <div class="form-check col-4">
+                 <input class="form-check-input  col-4" type="checkbox" id="display_legend" name="legend" checked>
+                 <label class="form-check-label text-nowrap col-8" for="display_legend">legend</label>
+                </div>
+
+                </div>
+              </div>
+            </div>
+            
 
         </div>
 
@@ -187,55 +221,58 @@ function TSchart() {
       `
       );
 
-      d3.selectAll('input[name ="plotType"]').on("change", async function (e) {
-        // console.debug(e, this.value);
-        chart.loadingEffect(true);
-        // 讓loading先出現
-        await new Promise((r) => d3.timeout(() => r(true), 10));
+      //================plotType change
+      D3chartRoot.selectAll('input[name ="plotType"]').on(
+        "change",
+        async function (e) {
+          // console.debug(e, this.value);
+          chart.loadingEffect(true);
+          // 讓loading先出現
+          await new Promise((r) => d3.timeout(() => r(true), 10));
 
-        let chartsOptions = chartRootNode.querySelector("#chartsOptions");
-        chartsOptions.querySelector("#otherOptions")?.remove();
-        // console.debug(chart);
-        switch (this.value) {
-          case "overlay":
-            chartsOptions.insertAdjacentHTML(
-              "beforeend",
-              `<div id="otherOptions" class="row">
-                <!-- ... channel selector ... -->    
-                <div class="dropdown form-group col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start">
-                  <label for="chaSelectButton" class="col-form-label col-5" >Channel</label>
-                  <button class="btn btn-secondary dropdown-toggle col-7" type="button" id="chaSelectButton" data-bs-toggle="dropdown" aria-expanded="false">
-                    select
-                  </button>
-                  <div class="dropdown-menu" aria-labelledby="networkSelectButton" id="chaDropDownMenu">
-                  </div>
-                </div>
+          let chartsOptions = chartRootNode.querySelector("#chartsOptions");
+          chartsOptions.querySelector("#otherOptions")?.remove();
+          // console.debug(chart);
+          // switch (this.value) {
+          //   case "overlay":
+          //     chartsOptions.insertAdjacentHTML(
+          //       "beforeend",
+          //       `<div id="otherOptions" class="row">
+          //         <!-- ... channel selector ... -->
+          //         <div class="dropdown form-group col-lg-3 col-md-4 col-sm-6 d-flex flex-row align-items-start">
+          //           <label for="chaSelectButton" class="col-form-label col-5" >Channel</label>
+          //           <button class="btn btn-secondary dropdown-toggle col-7" type="button" id="chaSelectButton" data-bs-toggle="dropdown" aria-expanded="false">
+          //             select
+          //           </button>
+          //           <div class="dropdown-menu" aria-labelledby="networkSelectButton" id="chaDropDownMenu">
+          //           </div>
+          //         </div>
 
-                <!-- ... legend ... -->    
-                <div class="dropdown form-group col-lg-3 col-md-4 col-sm-6 d-flex align-items-center flex-row flex-nowrap">
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="legendCkb" checked>
-                    <label class="form-check-label" for="legendCkb">
-                      Legend
-                    </label>
-                  </div>
-                </div>
+          //         <!-- ... legend ... -->
+          //         <div class="dropdown form-group col-lg-3 col-md-4 col-sm-6 d-flex align-items-center flex-row flex-nowrap">
+          //           <div class="form-check">
+          //             <input class="form-check-input" type="checkbox" id="legendCkb" checked>
+          //             <label class="form-check-label" for="legendCkb">
+          //               Legend
+          //             </label>
+          //           </div>
+          //         </div>
 
-              </div>`
-            );
-            break;
+          //       </div>`
+          //     );
+          //     break;
+          // }
+
+          printChart(this.value);
         }
-
-        //================dropdown-menu內元素被點擊不關閉menu
-        let All_dropdownMenu = d3
-          .select(chartsOptions)
-          .selectAll(".dropdown-menu");
-        All_dropdownMenu.on("click.bs.dropdown", function (e) {
+      );
+      //================dropdown-menu內元素被點擊不關閉menu
+      D3chartRoot.selectAll(".dropdown-menu").on(
+        "click.bs.dropdown",
+        function (e) {
           e.stopPropagation();
-        });
-
-        printChart(this.value);
-      });
+        }
+      );
 
       //== loading
       let loadingObj = {
@@ -278,6 +315,11 @@ function TSchart() {
         .forEach((chart) => chart.remove());
 
       const channelArr = ["dN", "dE", "dU"];
+      const errorObj = {
+        dN: "sN",
+        dE: "sE",
+        dU: "sU",
+      };
 
       let getChartDivHtml = (idx) => {
         let chartDiv = `<div id="chart${idx}" class="chart col-md-12 col-sm-12"></div>`;
@@ -534,24 +576,41 @@ function TSchart() {
           function init() {
             // legend
             const legend_items = [cha, "reg."];
+            const legend_attr = {
+              rect_width: 8,
+              rect_textW: 30,
+              rect_margin: 7,
+              get legend_width() {
+                return (
+                  legend_attr.rect_width +
+                  legend_attr.rect_textW +
+                  legend_attr.rect_margin * 2
+                );
+              },
+              get legend_height() {
+                return (
+                  (legend_attr.rect_width + legend_attr.rect_margin) *
+                    legend_items.length +
+                  legend_attr.rect_margin
+                );
+              },
+            };
+
             legendGroup
+              .attr(
+                "transform",
+                `translate(${
+                  width - margin.right - legend_attr.legend_width
+                }, ${margin.top * 0.3})`
+              )
               .append("g")
               .attr("class", "legend")
               .style("font-size", "12px")
               .call((legend) => {
-                const rect_width = 8;
-                const rect_textW = 30;
-                const rect_margin = 7;
-
-                const legend_width = rect_width + rect_textW + rect_margin * 2;
-                const legend_height =
-                  (rect_width + rect_margin) * legend_items.length +
-                  rect_margin;
-
                 legend
                   .append("rect")
-                  .attr("height", legend_height)
-                  .attr("width", legend_width)
+                  .attr("height", legend_attr.legend_height)
+                  .attr("width", legend_attr.legend_width)
                   .attr("fill", "#D3D3D3")
                   .attr("opacity", 0.5)
                   .attr("stroke-width", "1")
@@ -559,38 +618,37 @@ function TSchart() {
                   .attr("stroke-opacity", 0.8);
 
                 legend
-                  .attr(
-                    "transform",
-                    `translate(${width - margin.right - legend_width}, ${
-                      margin.top * 0.3
-                    })`
-                  )
                   .selectAll("g")
                   .data(legend_items)
                   .join("g")
                   .attr("class", "legend_itemG")
                   .call((g) => {
                     g.append("rect")
-                      .attr("x", rect_margin)
+                      .attr("x", legend_attr.rect_margin)
                       .attr(
                         "y",
-                        (d, i) => rect_margin + i * (rect_width + rect_margin)
+                        (_, i) =>
+                          legend_attr.rect_margin +
+                          i * (legend_attr.rect_width + legend_attr.rect_margin)
                       )
-                      .attr("height", rect_width)
-                      .attr("width", rect_width)
+                      .attr("height", legend_attr.rect_width)
+                      .attr("width", legend_attr.rect_width)
                       .attr("fill", (d) => getColor(d));
 
                     g.append("text")
                       .attr("font-weight", "bold")
                       .attr("text-anchor", "start")
                       .attr("alignment-baseline", "middle")
-                      .attr("x", rect_margin * 2 + rect_width)
+                      .attr(
+                        "x",
+                        legend_attr.rect_margin * 2 + legend_attr.rect_width
+                      )
                       .attr(
                         "y",
                         (d, i) =>
-                          rect_margin +
-                          rect_width * 0.5 +
-                          i * (rect_width + rect_margin)
+                          legend_attr.rect_margin +
+                          legend_attr.rect_width * 0.5 +
+                          i * (legend_attr.rect_width + legend_attr.rect_margin)
                       )
                       .text((d) => d);
                   });
@@ -806,12 +864,12 @@ function TSchart() {
                   .attr("y1", (d) => y(d[0][1]))
                   .attr("y2", (d) => y(d[1][1]));
 
-                console.debug("Reg=", regData);
+                // console.debug("Reg=", regData);
 
                 //== slope text
                 yAxis
                   .selectAll(".slopeTextG>text")
-                  .text(`slope = ${niceEXP(regData.a)}`);
+                  .text(`slope = ${(regData.a * YEAR_TO_MS).toFixed(2)} mm/yr`);
               };
               updateLine();
               updateCircles();
@@ -835,7 +893,6 @@ function TSchart() {
         function events() {
           //===event eles
           const eventRect = svg.append("g").attr("class", "eventRect");
-          legendGroup.raise();
           //====================================tooltip==================================================
           const tooltip = d3
             .select(chartRootNode)
@@ -966,7 +1023,7 @@ function TSchart() {
                         let chart_centerX =
                           x.range().reduce((a, b) => b - a) / 2;
                         let mouseX = e.offsetX,
-                          mouseY = e.clientY;
+                          mouseY = e.offsetY;
 
                         tooltip.call((div) => {
                           div
@@ -987,8 +1044,6 @@ function TSchart() {
                             .style("top", `${mouseY}px`)
                             .style("display", "inline");
                         });
-
-                        tooltip;
                       };
 
                       mouseG.style("display", "inline");
@@ -1186,17 +1241,52 @@ function TSchart() {
                 .call((g) => g.raise()) //把選中元素拉到最上層(比zoom的選取框優先)
                 .call(legend_dragBehavior);
             };
-            svg.select(".legend").call(raiseAndDrag);
+            legendGroup.call(raiseAndDrag);
+          }
+          function chartOptionEvent() {
+            // console.debug(cha);
+            if (cha !== channelArr[channelArr.length - 1]) return;
+
+            //=====display
+            // data: focusGroup.selectAll(".dataGroup>.dataLine"),
+            // error: focusGroup.selectAll(".dataGroup>.errorBar"),
+            let displayEles = {
+              get data() {
+                return D3chartRoot.selectAll(".focus .dataGroup");
+              },
+              get reg() {
+                return D3chartRoot.selectAll(".focus .regGroup");
+              },
+              get error() {
+                return focusGroup;
+              },
+              get legend() {
+                return D3chartRoot.selectAll(".legendGroup");
+              },
+              get slope() {
+                return D3chartRoot.selectAll(".yAxis .slopeTextG");
+              },
+            };
+
+            D3chartRoot.selectAll("#displayDropDownMenu input")
+              .property("checked", true)
+              .on("click", function (e) {
+                displayEles[this.name].style(
+                  "display",
+                  this.checked ? "inline" : "none"
+                );
+              });
           }
           pathEvent();
           infoBoxDragEvent();
+          chartOptionEvent();
         }
         events();
 
         return svg.node();
       }
       function getWindowChart() {
-        const channelArr_reverse = channelArr.reverse();
+        const channelArr_reverse = [...channelArr].reverse();
 
         const width = 800,
           height = 500,
@@ -1225,7 +1315,11 @@ function TSchart() {
             let newData = channelArr_reverse.reduce((acc, cha) => {
               return {
                 ...acc,
-                [cha]: data.map((d) => ({ x: d.date_float, y: d[cha] })),
+                [cha]: data.map((d) => ({
+                  x: d.date_float,
+                  y: d[cha],
+                  error: d[errorObj[cha]],
+                })),
               };
             }, {});
 
@@ -1360,24 +1454,41 @@ function TSchart() {
           function init() {
             // legend
             const legend_items = [...channelArr, "reg."];
+            const legend_attr = {
+              rect_width: 8,
+              rect_textW: 30,
+              rect_margin: 7,
+              get legend_width() {
+                return (
+                  legend_attr.rect_width +
+                  legend_attr.rect_textW +
+                  legend_attr.rect_margin * 2
+                );
+              },
+              get legend_height() {
+                return (
+                  (legend_attr.rect_width + legend_attr.rect_margin) *
+                    legend_items.length +
+                  legend_attr.rect_margin
+                );
+              },
+            };
+
             legendGroup
+              .attr(
+                "transform",
+                `translate(${
+                  width - margin.right - legend_attr.legend_width
+                }, ${margin.top * 0.3})`
+              )
               .append("g")
               .attr("class", "legend")
               .style("font-size", "12px")
               .call((legend) => {
-                const rect_width = 8;
-                const rect_textW = 30;
-                const rect_margin = 7;
-
-                const legend_width = rect_width + rect_textW + rect_margin * 2;
-                const legend_height =
-                  (rect_width + rect_margin) * legend_items.length +
-                  rect_margin;
-
                 legend
                   .append("rect")
-                  .attr("height", legend_height)
-                  .attr("width", legend_width)
+                  .attr("height", legend_attr.legend_height)
+                  .attr("width", legend_attr.legend_width)
                   .attr("fill", "#D3D3D3")
                   .attr("opacity", 0.5)
                   .attr("stroke-width", "1")
@@ -1385,42 +1496,43 @@ function TSchart() {
                   .attr("stroke-opacity", 0.8);
 
                 legend
-                  .attr(
-                    "transform",
-                    `translate(${width - margin.right - legend_width}, ${
-                      margin.top * 0.3
-                    })`
-                  )
                   .selectAll("g")
                   .data(legend_items)
                   .join("g")
                   .attr("class", "legend_itemG")
                   .call((g) => {
                     g.append("rect")
-                      .attr("x", rect_margin)
+                      .attr("x", legend_attr.rect_margin)
                       .attr(
                         "y",
-                        (d, i) => rect_margin + i * (rect_width + rect_margin)
+                        (_, i) =>
+                          legend_attr.rect_margin +
+                          i * (legend_attr.rect_width + legend_attr.rect_margin)
                       )
-                      .attr("height", rect_width)
-                      .attr("width", rect_width)
+                      .attr("height", legend_attr.rect_width)
+                      .attr("width", legend_attr.rect_width)
                       .attr("fill", (d) => getColor(d));
 
                     g.append("text")
                       .attr("font-weight", "bold")
                       .attr("text-anchor", "start")
                       .attr("alignment-baseline", "middle")
-                      .attr("x", rect_margin * 2 + rect_width)
+                      .attr(
+                        "x",
+                        legend_attr.rect_margin * 2 + legend_attr.rect_width
+                      )
                       .attr(
                         "y",
                         (d, i) =>
-                          rect_margin +
-                          rect_width * 0.5 +
-                          i * (rect_width + rect_margin)
+                          legend_attr.rect_margin +
+                          legend_attr.rect_width * 0.5 +
+                          i * (legend_attr.rect_width + legend_attr.rect_margin)
                       )
                       .text((d) => d);
                   });
               });
+
+            // groups for data and reg.
             focusGroup
               .selectAll("g")
               .data(channelArr_reverse)
@@ -1428,7 +1540,11 @@ function TSchart() {
               .attr("class", "channelGroup")
               .call((channelG) => {
                 channelG.append("g").attr("class", "regGroup");
-                channelG.append("g").attr("class", "dataGroup");
+                channelG
+                  .append("g")
+                  .attr("class", "dataGroup")
+                  .append("g")
+                  .attr("class", "dataCircles");
               });
 
             //===遮罩讓path和事件不超出邊界
@@ -1444,6 +1560,19 @@ function TSchart() {
               .attr("height", height - margin.top - margin.bottom)
               .attr("fill", "none")
               .attr("pointer-events", "all");
+
+            //==slopeText
+            yAxis
+              .append("g")
+              .attr("class", "slopeTextG")
+              .call((g) => {
+                g.append("text")
+                  .attr("fill", "currentColor")
+                  .attr("y", margin.top * 0.7)
+                  .attr("text-anchor", "start")
+                  .attr("font-weight", "bold")
+                  .attr("font-size", "13");
+              });
           }
           function render() {
             console.debug(newDataObj);
@@ -1520,7 +1649,7 @@ function TSchart() {
                     cha_idx = 0;
 
                   //==移除上次多的分隔線和title
-                  yAxis.selectAll("g.title").remove();
+                  yAxis.selectAll("g.dividerTick").remove();
 
                   let axis = d3
                     .axisLeft(y)
@@ -1554,11 +1683,10 @@ function TSchart() {
                             //多一個tick
                             text.attr("dy", -1);
                             tick
-                              .attr("class", "title")
                               .selectAll("text.dividerTick")
                               .data([0])
                               .join("text")
-                              .attr("class", "dividerTick")
+                              .attr("class", "newTick")
                               .attr("font-weight", "bold")
                               .attr(
                                 "fill",
@@ -1571,11 +1699,11 @@ function TSchart() {
 
                           //多一個title
                           tick
-                            .attr("class", "title")
-                            .selectAll("text.dividerTitle")
+                            .attr("class", "dividerTick")
+                            .selectAll("text.dividerLabel")
                             .data([0])
                             .join("text")
-                            .attr("class", "dividerTitle")
+                            .attr("class", "dividerLabel")
                             .attr("fill", "currentColor")
                             .attr("text-anchor", "start")
                             .attr("alignment-baseline", "before-edge")
@@ -1638,9 +1766,10 @@ function TSchart() {
                   groups.each(function (cha, i) {
                     let dataG = d3.select(this);
                     dataG
-                      .selectAll("path")
+                      .selectAll("path.dataLine")
                       .data([cha])
                       .join("path")
+                      .attr("class", "dataLine")
                       .attr("fill", "none")
                       .attr("stroke", getColor(cha))
                       .attr("stroke-width", 0.5)
@@ -1663,6 +1792,7 @@ function TSchart() {
                     // console.log(cha, i);
                     let dataG = d3.select(this);
                     dataG
+                      .select("g.dataCircles")
                       .selectAll("circle")
                       .data(newData[cha])
                       .join("circle")
@@ -1673,6 +1803,42 @@ function TSchart() {
                       .attr("r", 1)
                       .attr("cx", (d) => x(d.x))
                       .attr("cy", (d) => y(d.y + supData[i].supRange));
+                  });
+                });
+              };
+              let updateErrorBars = () => {
+                let areaSup = (data, index) => {
+                  let supRange = supData[index].supRange;
+                  const area = d3
+                    .area()
+                    .x((d) => x(d.x))
+                    .y0((d) => y(d.y - d.error + supRange))
+                    .y1((d) => y(d.y + d.error + supRange));
+                  return area(data);
+                };
+                dataGroups.call((groups) => {
+                  // console.log(groups);
+                  groups.each(function (cha, i) {
+                    let dataG = d3.select(this);
+                    dataG
+                      .selectAll("path.errorBar")
+                      .data([cha])
+                      .join("path")
+                      .attr("class", "errorBar")
+                      .attr("opacity", 0.4)
+                      .attr("fill", getColor(cha))
+                      // .attr("stroke", getColor(cha))
+                      // .attr("stroke-width", 3)
+                      // .attr("stroke-linejoin", "round")
+                      // .attr("stroke-linecap", "round")
+                      .call((path) => {
+                        if (trans)
+                          path
+                            .transition()
+                            .duration(1000)
+                            .attr("d", areaSup(newData[cha], i));
+                        else path.attr("d", areaSup(newData[cha], i));
+                      });
                   });
                 });
               };
@@ -1709,12 +1875,23 @@ function TSchart() {
 
                     //== slope text
                     yAxis
-                      .selectAll("text.dividerTitle")
+                      .selectAll("text.dividerLabel")
                       .filter((_, text_i) => text_i === i)
-                      .text(`slope = ${niceEXP(regData.a)}`);
+                      .style(
+                        "display",
+                        D3chartRoot.select(
+                          "#displayDropDownMenu input[name='slope']"
+                        ).property("checked")
+                          ? "inline"
+                          : "none"
+                      )
+                      .text(
+                        `slope = ${(regData.a * YEAR_TO_MS).toFixed(2)} mm/yr`
+                      );
                   });
                 });
               };
+              updateErrorBars();
               updateLine();
               updateCircles();
               updateRegLine();
@@ -1744,9 +1921,40 @@ function TSchart() {
             .attr("class", "tooltip");
 
           function pathEvent() {
-            eventRect.append("use").attr("xlink:href", "#chartRenderRange");
+            function init() {
+              //===遮罩讓事件不超出邊界
+              eventRect.append("use").attr("xlink:href", "#chartRenderRange");
 
-            //====================================mouse move==================================================
+              tooltip.html(() => {
+                const tooltipHtml = `
+                <div class="tooltip-container">
+                  <table class="tooltip-table">
+                    <tbody>
+                      <tr>
+                        <th class="tooltip-date" colspan="2"></th>
+                      </tr>
+                      ${channelArr
+                        .map(
+                          (cha) => `
+                        <tr>
+                          <td class="tooltip-channel">
+                            <span style="background-color:${getColor(
+                              cha
+                            )}"></span>
+                            <text></text>
+                          </td>
+                          <td class="tooltip-value"></td>
+                        </tr>`
+                        )
+                        .join("")}
+                    </tbody>
+                  </table>
+                </div>`;
+
+                return tooltipHtml;
+              });
+            }
+            //show tooltip
             function mouseMove() {
               const mouseG = eventRect
                 .append("g")
@@ -1779,8 +1987,6 @@ function TSchart() {
                         xData,
                         x.invert(pointer[0])
                       );
-
-                      let chart_centerX = x.range().reduce((a, b) => b - a) / 2;
 
                       mouseLine.attr("d", () => {
                         let xPos = pointer[0];
@@ -1834,54 +2040,59 @@ function TSchart() {
                               );
                           });
                         });
-                      let mouseX = e.offsetX,
-                        mouseY = e.offsetY;
-                      const updateTooltip = () => {
-                        let x = parseFloat(xData[mouseOnIdx].toFixed(2));
 
-                        const divHtml = `
-                        <font class='tooltip_tag'>Time : </font><br/>
-                        <font size='5'>${
-                          new Date(x).toISOString().split(".")[0]
-                        } </font> <br/>
-                        <font class='tooltip_tag'>Amplitude : </font><br/>`;
+                      const updateTooltip = () => {
+                        let date = xData[mouseOnIdx];
+                        // console.log(x, xData[mouseOnIdx]);
 
                         let box = tooltip.node().getBoundingClientRect();
                         let tooltipW = box.width;
+                        let chart_centerX =
+                          x.range().reduce((a, b) => b - a) / 2;
+                        let mouseX = e.offsetX,
+                          mouseY = e.offsetY;
 
-                        tooltip
-                          .html(divHtml)
-                          .style(
-                            "left",
-                            `${
-                              mouseX +
-                              (pointer[0] > chart_centerX
-                                ? -tooltipW * 1.5
-                                : tooltipW / 2)
-                            }px`
-                          )
-                          .style("top", `${mouseY}px`)
-                          .selectAll("div")
-                          .data(channelArr_reverse.slice(0).reverse())
-                          .join("div")
-                          .style("color", (cha) => getColor(cha))
-                          .style("font-size", 10)
-                          .html((cha, i) => {
-                            let y = newData[cha][mouseOnIdx].y;
-                            let html = `<font size='5'>${y} </font>`;
-                            return html;
-                          });
+                        tooltip.call((div) => {
+                          div
+                            .select(".tooltip-date")
+                            .text(new Date(date).toISOString().split(".")[0]);
+
+                          div
+                            .selectAll(".tooltip-channel")
+                            .each(function (_, i) {
+                              let cha = channelArr[i],
+                                d = newData[cha][mouseOnIdx];
+
+                              let tr = d3.select(this.parentNode);
+                              tr.select(".tooltip-channel>text").text(cha);
+                              tr.select(".tooltip-value").text(
+                                `${d.y} ± ${d.error}`
+                              );
+                            });
+
+                          div
+                            .style(
+                              "left",
+                              `${
+                                mouseX +
+                                (pointer[0] > chart_centerX
+                                  ? -tooltipW * 1.5
+                                  : tooltipW / 2)
+                              }px`
+                            )
+                            .style("top", `${mouseY}px`)
+                            .style("display", "inline");
+                        });
                       };
 
                       mouseG.style("display", "inline");
-                      tooltip.style("display", "inline");
                       updateTooltip();
                     };
                     action();
                   });
               eventRect.call(mouseMoveBehavior);
             }
-            //====================================zoom==================================================
+            //zoom
             function mouseDrag() {
               let selectionRect = {
                 element: null,
@@ -2017,6 +2228,7 @@ function TSchart() {
                 });
               eventRect.call(dragBehavior);
             }
+            init();
             mouseMove();
             mouseDrag();
           }
@@ -2160,11 +2372,39 @@ function TSchart() {
                 .call((g) => g.raise()) //把選中元素拉到最上層(比zoom的選取框優先)
                 .call(legend_dragBehavior);
             };
-            svg.select(".legend").call(raiseAndDrag);
+            legendGroup.call(raiseAndDrag);
+          }
+          function chartOptionEvent() {
+            //=====display
+            let displayEles = {
+              data: focusGroup.selectAll(".dataGroup>:not(.errorBar)"),
+              error: focusGroup.selectAll(".dataGroup>.errorBar"),
+              reg: focusGroup.selectAll(".regGroup"),
+              legend: legendGroup,
+              get slope() {
+                return yAxis.selectAll(".dividerLabel");
+              },
+              // get data() {
+              //   return focusGroup.selectAll(".dataGroup>:not(.errorBar)");
+              // },
+              // get error() {
+              //   return focusGroup.selectAll(".dataGroup>.errorBar");
+              // },
+            };
+
+            D3chartRoot.selectAll("#displayDropDownMenu input")
+              .property("checked", true)
+              .on("click", function (e) {
+                displayEles[this.name].style(
+                  "display",
+                  this.checked ? "inline" : "none"
+                );
+              });
           }
           pathEvent();
-          let updateBrush = brushEvent();
           infoBoxDragEvent();
+          chartOptionEvent();
+          let updateBrush = brushEvent();
         }
         events();
 
@@ -2178,7 +2418,6 @@ function TSchart() {
       }
 
       switch (plotType) {
-        default:
         case "trace":
           channelArr.forEach((cha, i) => {
             getChartDivHtml(i);
@@ -2188,6 +2427,7 @@ function TSchart() {
             chart.append(chartNode);
           });
           break;
+        default:
         case "window":
           getChartDivHtml(0);
           let window = chartRootNode.querySelector("#chart0");

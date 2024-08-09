@@ -161,3 +161,22 @@ span {
   text-align: left;
   line-height: 1;
 }
+
+/* brush */
+#chartMain .brushArea .brush .handle {
+  fill: #000;
+  opacity: 0.8;
+  stroke-width: 1px;
+  stroke: #fff;
+}
+
+#chartMain .brushArea .brush .overlay {
+  fill: #9d9d9d;
+  opacity: 0.3;
+}
+
+#chartMain .brushArea .brush .selection {
+  fill: #1f1e1e;
+  stroke-width: 1px;
+  stroke: #fff;
+}

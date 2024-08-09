@@ -554,7 +554,11 @@ function TSchart() {
             : null;
 
           const getData = (xAxis_domain) => {
-            let newData = data.map((d) => ({ x: d.date_float, y: d[cha] }));
+            let newData = data.map((d) => ({
+              x: d.date_float,
+              y: d[cha],
+              error: d[errorObj[cha]],
+            }));
             if (xAxis_domain) {
               let dateArr = data.map((d) => d.date_float);
               let idx_domain = xAxis_domain.map(
@@ -657,7 +661,11 @@ function TSchart() {
             // groups for data and reg.
             focusGroup.call((focusG) => {
               focusG.append("g").attr("class", "regGroup");
-              focusG.append("g").attr("class", "dataGroup");
+              focusG
+                .append("g")
+                .attr("class", "dataGroup")
+                .append("g")
+                .attr("class", "dataCircles");
             });
 
             //===遮罩讓path和事件不超出邊界
@@ -685,13 +693,6 @@ function TSchart() {
                   .attr("text-anchor", "start")
                   .attr("font-weight", "bold")
                   .attr("font-size", "13");
-
-                // g.append("text")
-                //   .attr("class", "power")
-                //   .attr("font-size", 10)
-                //   .attr("x", margin.left + 33)
-                //   .attr("y", margin.top * 0.4)
-                //   .text(``);
               });
           }
           function render() {
@@ -811,9 +812,10 @@ function TSchart() {
                   return pathAttr(data);
                 };
                 dataGroup
-                  .selectAll("path")
+                  .selectAll("path.dataLine")
                   .data([newData])
                   .join("path")
+                  .attr("class", "dataLine")
                   .attr("fill", "none")
                   .attr("stroke", getColor(cha))
                   .attr("stroke-width", 0.5)
@@ -830,6 +832,7 @@ function TSchart() {
               };
               let updateCircles = () => {
                 dataGroup
+                  .select("g.dataCircles")
                   .selectAll("circle")
                   .data(newData)
                   .join("circle")
@@ -871,6 +874,28 @@ function TSchart() {
                   .selectAll(".slopeTextG>text")
                   .text(`slope = ${(regData.a * YEAR_TO_MS).toFixed(2)} mm/yr`);
               };
+              let updateErrorBars = () => {
+                let area = (data) => {
+                  const area = d3
+                    .area()
+                    .x((d) => x(d.x))
+                    .y0((d) => y(d.y - d.error))
+                    .y1((d) => y(d.y + d.error));
+                  return area(data);
+                };
+                dataGroup
+                  .selectAll("path.errorBar")
+                  .data([newData])
+                  .join("path")
+                  .attr("class", "errorBar")
+                  .attr("opacity", 0.4)
+                  .attr("fill", getColor(cha))
+                  .call((path) => {
+                    if (trans) path.transition().duration(1000).attr("d", area);
+                    else path.attr("d", area);
+                  });
+              };
+              updateErrorBars();
               updateLine();
               updateCircles();
               updateRegLine();
@@ -1030,7 +1055,9 @@ function TSchart() {
                             .select(".tooltip-date")
                             .text(new Date(data.x).toISOString().split(".")[0]);
                           div.select(".tooltip-channel>text").text(cha);
-                          div.select(".tooltip-value").text(data.y);
+                          div
+                            .select(".tooltip-value")
+                            .text(`${data.y} ± ${data.error}`);
                           div
                             .style(
                               "left",
@@ -1248,17 +1275,17 @@ function TSchart() {
             if (cha !== channelArr[channelArr.length - 1]) return;
 
             //=====display
-            // data: focusGroup.selectAll(".dataGroup>.dataLine"),
-            // error: focusGroup.selectAll(".dataGroup>.errorBar"),
             let displayEles = {
               get data() {
-                return D3chartRoot.selectAll(".focus .dataGroup");
+                return D3chartRoot.selectAll(
+                  ".focus .dataGroup>:not(.errorBar)"
+                );
+              },
+              get error() {
+                return D3chartRoot.selectAll(".focus .dataGroup>.errorBar");
               },
               get reg() {
                 return D3chartRoot.selectAll(".focus .regGroup");
-              },
-              get error() {
-                return focusGroup;
               },
               get legend() {
                 return D3chartRoot.selectAll(".legendGroup");
@@ -1806,42 +1833,6 @@ function TSchart() {
                   });
                 });
               };
-              let updateErrorBars = () => {
-                let areaSup = (data, index) => {
-                  let supRange = supData[index].supRange;
-                  const area = d3
-                    .area()
-                    .x((d) => x(d.x))
-                    .y0((d) => y(d.y - d.error + supRange))
-                    .y1((d) => y(d.y + d.error + supRange));
-                  return area(data);
-                };
-                dataGroups.call((groups) => {
-                  // console.log(groups);
-                  groups.each(function (cha, i) {
-                    let dataG = d3.select(this);
-                    dataG
-                      .selectAll("path.errorBar")
-                      .data([cha])
-                      .join("path")
-                      .attr("class", "errorBar")
-                      .attr("opacity", 0.4)
-                      .attr("fill", getColor(cha))
-                      // .attr("stroke", getColor(cha))
-                      // .attr("stroke-width", 3)
-                      // .attr("stroke-linejoin", "round")
-                      // .attr("stroke-linecap", "round")
-                      .call((path) => {
-                        if (trans)
-                          path
-                            .transition()
-                            .duration(1000)
-                            .attr("d", areaSup(newData[cha], i));
-                        else path.attr("d", areaSup(newData[cha], i));
-                      });
-                  });
-                });
-              };
               let updateRegLine = () => {
                 let linearReg = d3
                   .regressionLinear()
@@ -1888,6 +1879,42 @@ function TSchart() {
                       .text(
                         `slope = ${(regData.a * YEAR_TO_MS).toFixed(2)} mm/yr`
                       );
+                  });
+                });
+              };
+              let updateErrorBars = () => {
+                let areaSup = (data, index) => {
+                  let supRange = supData[index].supRange;
+                  const area = d3
+                    .area()
+                    .x((d) => x(d.x))
+                    .y0((d) => y(d.y - d.error + supRange))
+                    .y1((d) => y(d.y + d.error + supRange));
+                  return area(data);
+                };
+                dataGroups.call((groups) => {
+                  // console.log(groups);
+                  groups.each(function (cha, i) {
+                    let dataG = d3.select(this);
+                    dataG
+                      .selectAll("path.errorBar")
+                      .data([cha])
+                      .join("path")
+                      .attr("class", "errorBar")
+                      .attr("opacity", 0.4)
+                      .attr("fill", getColor(cha))
+                      // .attr("stroke", getColor(cha))
+                      // .attr("stroke-width", 3)
+                      // .attr("stroke-linejoin", "round")
+                      // .attr("stroke-linecap", "round")
+                      .call((path) => {
+                        if (trans)
+                          path
+                            .transition()
+                            .duration(1000)
+                            .attr("d", areaSup(newData[cha], i));
+                        else path.attr("d", areaSup(newData[cha], i));
+                      });
                   });
                 });
               };
@@ -2300,7 +2327,7 @@ function TSchart() {
                   updateBrush();
                 }
                 newDataObj = getNewData({ xAxis_domain });
-                if (newDataObj.newData[cha].x.length) updateChart();
+                if (newDataObj.newData[cha].length) updateChart();
                 brush_flag = false;
                 d3.timeout(() => (brush_flag = true), 50);
               };
@@ -2418,6 +2445,7 @@ function TSchart() {
       }
 
       switch (plotType) {
+        default:
         case "trace":
           channelArr.forEach((cha, i) => {
             getChartDivHtml(i);
@@ -2427,7 +2455,6 @@ function TSchart() {
             chart.append(chartNode);
           });
           break;
-        default:
         case "window":
           getChartDivHtml(0);
           let window = chartRootNode.querySelector("#chart0");

@@ -10,7 +10,7 @@ function TSchart() {
     selector = value;
     return chart;
   };
-  chart.data = (value) => {
+  chart.data = (csvStr) => {
     function csvJSON(csvStr) {
       let rows = csvStr.trim().split("\n");
       let header = rows.shift().trim().split(",");
@@ -30,17 +30,7 @@ function TSchart() {
       });
     }
 
-    let requestData = (url) => {
-      return new Promise((resolve) => {
-        axios.get(url, { responseType: "blob" }).then((res) => {
-          res.data.text().then((csvStr) => {
-            resolve(csvJSON(csvStr));
-          });
-        });
-      });
-    };
-
-    data = value ? value : requestData("data/data.txt");
+    data = csvJSON(csvStr);
     // console.debug(data);
     return chart;
   };
@@ -2438,12 +2428,12 @@ function TSchart() {
         return svg.node();
       }
 
-      if (!data) {
-        chart.data();
-        data = await data;
-        console.log("data= ", data);
-      }
-
+      // if (!data) {
+      //   chart.data();
+      //   data = await data;
+      //   console.log("data= ", data);
+      // }
+      console.log("data= ", data);
       switch (plotType) {
         default:
         case "trace":

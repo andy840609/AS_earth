@@ -49,8 +49,12 @@
 
     <script src="src/TS.js"></script>
     <script>
-      let chart = TSchart().selector(".container");
-      chart();
+      axios.get("data/data.txt", { responseType: "blob" }).then((res) => {
+        res.data.text().then((csvStr) => {
+          let chart = TSchart().selector(".container").data(csvStr);
+          chart();
+        });
+      });
     </script>
   </body>
 </html>

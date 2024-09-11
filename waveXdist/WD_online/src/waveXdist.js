@@ -850,15 +850,15 @@ function waveXdist() {
           keyUnit = "";
         switch (key) {
           case "dist":
-            keyName = "Distance(km)";
+            keyName = "Distance (km)";
             keyUnit = "km";
             break;
           case "az":
-            keyName = "Azimuth(°)";
+            keyName = "Azimuth (°)";
             keyUnit = "°";
             break;
           case "time":
-            keyName = "Time(s)";
+            keyName = "Time (s)";
             keyUnit = "s";
             break;
           case "station":

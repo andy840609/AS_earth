@@ -31,7 +31,7 @@ function TSchart() {
     }
 
     data = csvJSON(csvStr);
-    // console.debug(data);
+    console.log("rawData=", data);
     return chart;
   };
 
@@ -525,7 +525,7 @@ function TSchart() {
       function getTraceChart(cha) {
         const width = 800,
           height = 250;
-        const margin = { top: 20, right: 30, bottom: 35, left: 35 };
+        const margin = { top: 20, right: 30, bottom: 35, left: 50 };
         const svg = d3.create("svg").attr("viewBox", [0, 0, width, height]);
         const legendGroup = svg.append("g").attr("class", "legendGroup");
         const focusGroup = svg
@@ -684,6 +684,31 @@ function TSchart() {
                   .attr("font-weight", "bold")
                   .attr("font-size", "13");
               });
+
+            //== title
+            xAxis
+              .append("text")
+              .attr("class", "axis_name")
+              .attr("fill", "black")
+              .attr("font-weight", "bold")
+              .attr("x", width / 2)
+              .attr("y", margin.top + 10)
+              .attr("font-size", "13")
+              .text("Date");
+
+            yAxis
+              .append("text")
+              .attr("class", "axis_name")
+              .attr("fill", "black")
+              .attr("font-weight", "bold")
+              .attr("font-size", "10")
+              .style("text-anchor", "middle")
+              .attr("alignment-baseline", "text-after-edge")
+              .attr("transform", "rotate(-90)")
+              .attr("x", -height / 2)
+              .attr("y", -margin.left + 13)
+              .attr("font-size", "13")
+              .text(`${cha} (mm)`);
           }
           function render() {
             console.debug(newDataObj);
@@ -1308,7 +1333,7 @@ function TSchart() {
         const width = 800,
           height = 500,
           height2 = 65,
-          margin = { top: 20, right: 30, bottom: 35, left: 35 };
+          margin = { top: 20, right: 30, bottom: 35, left: 50 };
         const svg = d3
           .create("svg")
           .attr("viewBox", [0, 0, width, height + height2]);
@@ -1590,6 +1615,17 @@ function TSchart() {
                   .attr("font-weight", "bold")
                   .attr("font-size", "13");
               });
+
+            //== title
+            xAxis
+              .append("text")
+              .attr("class", "axis_name")
+              .attr("fill", "black")
+              .attr("font-weight", "bold")
+              .attr("x", width / 2)
+              .attr("y", margin.top + 10)
+              .attr("font-size", "13")
+              .text("Date");
           }
           function render() {
             console.debug(newDataObj);
@@ -1700,7 +1736,7 @@ function TSchart() {
                             //多一個tick
                             text.attr("dy", -1);
                             tick
-                              .selectAll("text.dividerTick")
+                              .selectAll("text.newTick")
                               .data([0])
                               .join("text")
                               .attr("class", "newTick")
@@ -1714,24 +1750,51 @@ function TSchart() {
                               .text(val);
                           }
 
-                          //多一個title
-                          tick
-                            .attr("class", "dividerTick")
-                            .selectAll("text.dividerLabel")
-                            .data([0])
-                            .join("text")
-                            .attr("class", "dividerLabel")
-                            .attr("fill", "currentColor")
-                            .attr("text-anchor", "start")
-                            .attr("alignment-baseline", "before-edge")
-                            .attr("x", 2)
-                            .attr("font-weight", "bold")
-                            .attr("font-size", "13")
-                            .text(
-                              channelArr_reverse[
-                                cha_idx - (i == tickValues.length - 1 ? 0 : 1)
-                              ]
-                            );
+                          //多兩個title（channel和slope）
+                          tick.attr("class", "dividerTick").call((g) => {
+                            g.selectAll("text.dividerLabel")
+                              .data([0])
+                              .join("text")
+                              .attr("class", "dividerLabel")
+                              .attr("fill", "currentColor")
+                              .attr("text-anchor", "start")
+                              .attr("alignment-baseline", "before-edge")
+                              .attr("x", 2)
+                              .attr("font-weight", "bold")
+                              .attr("font-size", "13");
+                            // .text(
+                            //   channelArr_reverse[
+                            //     cha_idx - (i == tickValues.length - 1 ? 0 : 1)
+                            //   ]
+                            // );
+
+                            let title_chaIdx =
+                              cha_idx - (i == tickValues.length - 1 ? 0 : 1);
+                            g.selectAll("text.axis_name")
+                              .data([0])
+                              .join("text")
+                              .attr("class", "axis_name")
+                              .attr(
+                                "fill",
+                                getColor(channelArr_reverse[title_chaIdx])
+                              )
+                              .attr("font-weight", "bold")
+                              .attr("font-size", "10")
+                              .style("text-anchor", "middle")
+                              .attr("alignment-baseline", "text-before-edge")
+                              .attr("transform", "rotate(-90)")
+                              .attr(
+                                "x",
+                                (y(supData[title_chaIdx].supMax) -
+                                  y(supData[title_chaIdx].supMin)) /
+                                  2
+                              )
+                              .attr("y", -margin.left + 8)
+                              .attr("font-size", "13")
+                              .text(`${channelArr_reverse[title_chaIdx]} (mm)`);
+
+                            // console.debug("cha_idx", title_chaIdx);
+                          });
                         }
 
                         //tick line
@@ -2433,7 +2496,7 @@ function TSchart() {
       //   data = await data;
       //   console.log("data= ", data);
       // }
-      console.log("data= ", data);
+      // console.log("data= ", data);
       switch (plotType) {
         default:
         case "trace":

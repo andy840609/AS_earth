@@ -946,7 +946,7 @@ function requestRate() {
                                 <div class="col-12 d-flex flex-row">
                                     <div class="col-6 form-check d-flex align-items-start" style="text-align: center;">
                                         <input class="form-check-input col-3" type="checkbox" id="xAxis_log" name="xAxisScale" value="log" disabled>
-                                        <label class="" for="xAxis_log">logrithmic</label>
+                                        <label class="" for="xAxis_log">logarithmic</label>
                                     </div>
                                 </div>
     
@@ -985,7 +985,7 @@ function requestRate() {
                                 <div class="col-12 d-flex flex-row">
                                     <div class="col-4 form-check d-flex align-items-start" style="text-align: center;">
                                         <input class="form-check-input col-3" type="checkbox" id="yAxis_log" name="yAxisScale" value="log">
-                                        <label class="" for="yAxis_log">logrithmic</label>
+                                        <label class="" for="yAxis_log">logarithmic</label>
                                     </div>
                                 </div>                          
     
@@ -2410,7 +2410,7 @@ function requestRate() {
 
 
                             <label class="btn btn-secondary">
-                                <input type="radio" name ="scale" value="1"> logrithmic
+                                <input type="radio" name ="scale" value="1"> logarithmic
                             </label>
 
                         </div>
@@ -3317,7 +3317,7 @@ function requestRate() {
                                     <div class="col-12 d-flex flex-row">
                                         <div class="form-check d-flex align-items-start" style="text-align: center;">
                                             <input class="form-check-input" type="checkbox" id="xAxis_log" name="xAxisScale" value="log">
-                                            <label class="" for="xAxis_log">logrithmic</label>
+                                            <label class="" for="xAxis_log">logarithmic</label>
                                         </div>
                                     </div>
     
@@ -3356,7 +3356,7 @@ function requestRate() {
                                 <div class="col-12 d-flex flex-row">
                                     <div class="col-4 form-check d-flex align-items-start" style="text-align: center;">
                                         <input class="form-check-input col-3" type="checkbox" id="yAxis_log" name="yAxisScale" value="log">
-                                        <label class="" for="yAxis_log">logrithmic</label>
+                                        <label class="" for="yAxis_log">logarithmic</label>
                                     </div>
                                 </div>                          
     
